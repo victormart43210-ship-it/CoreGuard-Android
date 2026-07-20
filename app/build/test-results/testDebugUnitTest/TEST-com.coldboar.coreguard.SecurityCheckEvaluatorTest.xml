@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.coldboar.coreguard.SecurityCheckEvaluatorTest" tests="15" skipped="0" failures="0" errors="0" timestamp="2026-07-20T22:14:22" hostname="cursor" time="0.012">
+  <properties/>
+  <testcase name="RootCheckEvaluator returns FAIL on test-keys build tag" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="BuildTypeCheckEvaluator returns PASS for release build" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="SignatureCheckEvaluator returns FAIL on hash mismatch" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="RootCheckEvaluator returns PASS when no su found and no test-keys" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="EmulatorCheckEvaluator detects goldfish hardware" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.002"/>
+  <testcase name="SignatureCheckEvaluator is case-insensitive on hash comparison" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="BuildTypeCheckEvaluator returns WARN for debug build" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="SignatureCheckEvaluator returns WARN when expected hash is empty" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="DebuggerCheckEvaluator returns PASS when no debugger" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="EmulatorCheckEvaluator returns WARN on generic fingerprint" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="DebuggerCheckEvaluator returns FAIL when debugger attached" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="EmulatorCheckEvaluator returns PASS on real device fingerprint" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="SignatureCheckEvaluator returns PASS when hashes match" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <testcase name="DebuggerCheckEvaluator explanation is non-empty" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.001"/>
+  <testcase name="RootCheckEvaluator returns FAIL when su binary found" classname="com.coldboar.coreguard.SecurityCheckEvaluatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

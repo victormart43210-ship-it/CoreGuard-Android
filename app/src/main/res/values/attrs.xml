@@ -1,0 +1,11 @@
+<resources>
+    <declare-styleable name="AegishjalmurView">
+        <attr name="sigilColor" format="color" />
+        <attr name="slowRotate" format="boolean" />
+    </declare-styleable>
+
+    <declare-styleable name="GuardianScoreView">
+        <attr name="trackColor" format="color" />
+        <attr name="scoreTextColor" format="color" />
+    </declare-styleable>
+</resources>

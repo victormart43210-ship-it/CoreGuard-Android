@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="black">#FF000000</color>
+    <color name="gold">#FFD4AF37</color>
+    <color name="gold_bright">#FFF0D482</color>
+    <color name="gold_deep">#FF8F721E</color>
+    <color name="gold_sigil">#26D4AF37</color>
+    <color name="gold_sigil_faint">#14D4AF37</color>
+    <color name="obsidian">#FF0A0E17</color>
+    <color name="obsidian_deep">#FF060910</color>
+    <color name="status_fail">#FFFF5370</color>
+    <color name="status_fail_dim">#1FFF5370</color>
+    <color name="status_pass">#FF3DDC84</color>
+    <color name="status_pass_dim">#1F3DDC84</color>
+    <color name="status_warn">#FFFFB74D</color>
+    <color name="status_warn_dim">#1FFFB74D</color>
+    <color name="surface_card">#FF16202F</color>
+    <color name="surface_card_stroke">#332F3B52</color>
+    <color name="surface_dark">#FF121927</color>
+    <color name="text_primary">#FFECE7DB</color>
+    <color name="text_secondary">#FF8B93A7</color>
+    <color name="text_tertiary">#FF5C6478</color>
+    <color name="ward_teal">#FF35E0C2</color>
+    <color name="ward_teal_dim">#FF1E7E6E</color>
+    <color name="white">#FFFFFFFF</color>
+    <string name="app_name">CoreGuard</string>
+    <string name="btn_back">Back</string>
+    <string name="btn_security_dashboard">Enter the Sanctum</string>
+    <string name="btn_upgrade_premium">Forge Premium (Demo)</string>
+    <string name="cd_guardian_shield">Guardian score shield</string>
+    <string name="cd_sigil_background">Decorative ancient protection sigil</string>
+    <string name="check_state_fail">FAIL</string>
+    <string name="check_state_pass">PASS</string>
+    <string name="check_state_warn">WARN</string>
+    <string name="cpu_simulated_label">N/A (simulated – not measured)</string>
+    <string name="guardian_score_hint">Tap the shield for the full ritual of checks</string>
+    <string name="guardian_score_title">Guardian Score</string>
+    <string name="label_cpu_usage">Processor</string>
+    <string name="label_ram_usage">Memory</string>
+    <string name="main_subtitle">Ancient wards. Modern defense.</string>
+    <string name="main_tagline">Your device, under the Helm of Awe</string>
+    <string name="paywall_benefit_1">Advanced monitoring rituals</string>
+    <string name="paywall_benefit_2">Threat scroll export</string>
+    <string name="paywall_benefit_3">Priority counsel from the keepers</string>
+    <string name="paywall_btn_close">Not now</string>
+    <string name="paywall_btn_subscribe">Take the Oath (Demo)</string>
+    <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
+    <string name="paywall_description">Bind stronger wards to your device.</string>
+    <string name="paywall_headline">CoreGuard Premium</string>
+    <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
+    <string name="paywall_purchase_error">Error: %1$s</string>
+    <string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string>
+    <string name="paywall_title">Forge Premium</string>
+    <string name="rank_aegis">AEGIS</string>
+    <string name="rank_breached">BREACHED</string>
+    <string name="rank_exposed">EXPOSED</string>
+    <string name="rank_warded">WARDED</string>
+    <string name="section_vitals">Device Vitals</string>
+    <string name="security_dashboard_subtitle">Five wards stand between your device and harm</string>
+    <string name="security_dashboard_title">The Sanctum</string>
+    <string name="status_overall_fail">WARD BROKEN</string>
+    <string name="status_overall_pass">ALL WARDS HOLD</string>
+    <string name="status_overall_warn">WARDS WEAKENED</string>
+    <style name="TextAppearance.CoreGuard.SectionRune" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.24</item>
+        <item name="android:textColor">@color/gold</item>
+    </style>
+    <style name="TextAppearance.CoreGuard.Wordmark" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.18</item>
+        <item name="android:textColor">@color/gold_bright</item>
+    </style>
+    <style name="Theme.CoreGuard" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/gold</item>
+        <item name="colorOnPrimary">@color/obsidian_deep</item>
+        <item name="colorPrimaryContainer">@color/gold_deep</item>
+        <item name="colorOnPrimaryContainer">@color/gold_bright</item>
+        <item name="colorSecondary">@color/ward_teal</item>
+        <item name="colorOnSecondary">@color/obsidian_deep</item>
+        <item name="android:colorBackground">@color/obsidian</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/text_tertiary</item>
+        <item name="android:statusBarColor">@color/obsidian_deep</item>
+        <item name="android:navigationBarColor">@color/obsidian_deep</item>
+        <item name="android:windowBackground">@color/obsidian</item>
+    </style>
+    <style name="Widget.CoreGuard.Button.Ghost" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/gold_deep</item>
+        <item name="android:textColor">@color/gold_bright</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="cornerRadius">14dp</item>
+    </style>
+    <style name="Widget.CoreGuard.Button.Gold" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/gold</item>
+        <item name="android:textColor">@color/obsidian_deep</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="cornerRadius">14dp</item>
+    </style>
+    <style name="Widget.CoreGuard.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/surface_card</item>
+        <item name="cardCornerRadius">18dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/surface_card_stroke</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
+    <declare-styleable name="AegishjalmurView">
+        <attr format="color" name="sigilColor"/>
+        <attr format="boolean" name="slowRotate"/>
+    </declare-styleable>
+    <declare-styleable name="GuardianScoreView">
+        <attr format="color" name="trackColor"/>
+        <attr format="color" name="scoreTextColor"/>
+    </declare-styleable>
+</resources>

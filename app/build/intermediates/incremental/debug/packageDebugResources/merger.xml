@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<merger version="3"><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/src/main/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="main" generated-set="main$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/src/main/res"><file name="ic_launcher" path="/workspace/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml" qualifiers="anydpi-v26" type="mipmap"/><file name="ic_launcher_round" path="/workspace/app/src/main/res/mipmap-anydpi-v26/ic_launcher_round.xml" qualifiers="anydpi-v26" type="mipmap"/><file name="activity_main" path="/workspace/app/src/main/res/layout/activity_main.xml" qualifiers="" type="layout"/><file name="item_security_check" path="/workspace/app/src/main/res/layout/item_security_check.xml" qualifiers="" type="layout"/><file name="activity_security_dashboard" path="/workspace/app/src/main/res/layout/activity_security_dashboard.xml" qualifiers="" type="layout"/><file name="activity_paywall" path="/workspace/app/src/main/res/layout/activity_paywall.xml" qualifiers="" type="layout"/><file name="ic_launcher" path="/workspace/app/src/main/res/mipmap-anydpi/ic_launcher.xml" qualifiers="anydpi-v4" type="mipmap"/><file name="ic_launcher_round" path="/workspace/app/src/main/res/mipmap-anydpi/ic_launcher_round.xml" qualifiers="anydpi-v4" type="mipmap"/><file name="fade_up" path="/workspace/app/src/main/res/anim/fade_up.xml" qualifiers="" type="anim"/><file name="fade_up_delayed" path="/workspace/app/src/main/res/anim/fade_up_delayed.xml" qualifiers="" type="anim"/><file path="/workspace/app/src/main/res/values/colors.xml" qualifiers=""><color name="obsidian">#FF0A0E17</color><color name="obsidian_deep">#FF060910</color><color name="surface_dark">#FF121927</color><color name="surface_card">#FF16202F</color><color name="surface_card_stroke">#332F3B52</color><color name="gold">#FFD4AF37</color><color name="gold_bright">#FFF0D482</color><color name="gold_deep">#FF8F721E</color><color name="gold_sigil">#26D4AF37</color><color name="gold_sigil_faint">#14D4AF37</color><color name="ward_teal">#FF35E0C2</color><color name="ward_teal_dim">#FF1E7E6E</color><color name="text_primary">#FFECE7DB</color><color name="text_secondary">#FF8B93A7</color><color name="text_tertiary">#FF5C6478</color><color name="black">#FF000000</color><color name="white">#FFFFFFFF</color><color name="status_pass">#FF3DDC84</color><color name="status_warn">#FFFFB74D</color><color name="status_fail">#FFFF5370</color><color name="status_pass_dim">#1F3DDC84</color><color name="status_warn_dim">#1FFFB74D</color><color name="status_fail_dim">#1FFF5370</color></file><file path="/workspace/app/src/main/res/values/themes.xml" qualifiers=""><style name="Theme.CoreGuard" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/gold</item>
+        <item name="colorOnPrimary">@color/obsidian_deep</item>
+        <item name="colorPrimaryContainer">@color/gold_deep</item>
+        <item name="colorOnPrimaryContainer">@color/gold_bright</item>
+        <item name="colorSecondary">@color/ward_teal</item>
+        <item name="colorOnSecondary">@color/obsidian_deep</item>
+        <item name="android:colorBackground">@color/obsidian</item>
+        <item name="colorSurface">@color/surface_dark</item>
+        <item name="colorOnSurface">@color/text_primary</item>
+        <item name="colorOnSurfaceVariant">@color/text_secondary</item>
+        <item name="colorOutline">@color/text_tertiary</item>
+        <item name="android:statusBarColor">@color/obsidian_deep</item>
+        <item name="android:navigationBarColor">@color/obsidian_deep</item>
+        <item name="android:windowBackground">@color/obsidian</item>
+    </style><style name="TextAppearance.CoreGuard.Wordmark" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.18</item>
+        <item name="android:textColor">@color/gold_bright</item>
+    </style><style name="TextAppearance.CoreGuard.SectionRune" parent="TextAppearance.Material3.LabelLarge">
+        <item name="android:fontFamily">serif</item>
+        <item name="android:textAllCaps">true</item>
+        <item name="android:letterSpacing">0.24</item>
+        <item name="android:textColor">@color/gold</item>
+    </style><style name="Widget.CoreGuard.Card" parent="Widget.Material3.CardView.Elevated">
+        <item name="cardBackgroundColor">@color/surface_card</item>
+        <item name="cardCornerRadius">18dp</item>
+        <item name="cardElevation">0dp</item>
+        <item name="strokeColor">@color/surface_card_stroke</item>
+        <item name="strokeWidth">1dp</item>
+    </style><style name="Widget.CoreGuard.Button.Gold" parent="Widget.Material3.Button">
+        <item name="backgroundTint">@color/gold</item>
+        <item name="android:textColor">@color/obsidian_deep</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="cornerRadius">14dp</item>
+    </style><style name="Widget.CoreGuard.Button.Ghost" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="strokeColor">@color/gold_deep</item>
+        <item name="android:textColor">@color/gold_bright</item>
+        <item name="android:letterSpacing">0.06</item>
+        <item name="cornerRadius">14dp</item>
+    </style></file><file path="/workspace/app/src/main/res/values/strings.xml" qualifiers=""><string name="app_name">CoreGuard</string><string name="main_subtitle">Ancient wards. Modern defense.</string><string name="main_tagline">Your device, under the Helm of Awe</string><string name="guardian_score_title">Guardian Score</string><string name="guardian_score_hint">Tap the shield for the full ritual of checks</string><string name="rank_aegis">AEGIS</string><string name="rank_warded">WARDED</string><string name="rank_exposed">EXPOSED</string><string name="rank_breached">BREACHED</string><string name="section_vitals">Device Vitals</string><string name="label_ram_usage">Memory</string><string name="label_cpu_usage">Processor</string><string name="cpu_simulated_label">N/A (simulated – not measured)</string><string name="btn_security_dashboard">Enter the Sanctum</string><string name="btn_upgrade_premium">Forge Premium (Demo)</string><string name="btn_back">Back</string><string name="security_dashboard_title">The Sanctum</string><string name="security_dashboard_subtitle">Five wards stand between your device and harm</string><string name="status_overall_pass">ALL WARDS HOLD</string><string name="status_overall_warn">WARDS WEAKENED</string><string name="status_overall_fail">WARD BROKEN</string><string name="check_state_pass">PASS</string><string name="check_state_warn">WARN</string><string name="check_state_fail">FAIL</string><string name="paywall_title">Forge Premium</string><string name="paywall_headline">CoreGuard Premium</string><string name="paywall_description">Bind stronger wards to your device.</string><string name="paywall_benefit_1">Advanced monitoring rituals</string><string name="paywall_benefit_2">Threat scroll export</string><string name="paywall_benefit_3">Priority counsel from the keepers</string><string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string><string name="paywall_btn_subscribe">Take the Oath (Demo)</string><string name="paywall_btn_close">Not now</string><string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string><string name="paywall_purchase_cancelled">Purchase cancelled.</string><string name="paywall_purchase_error">Error: %1$s</string><string name="cd_sigil_background">Decorative ancient protection sigil</string><string name="cd_guardian_shield">Guardian score shield</string></file><file path="/workspace/app/src/main/res/values/attrs.xml" qualifiers=""><declare-styleable name="AegishjalmurView">
+        <attr format="color" name="sigilColor"/>
+        <attr format="boolean" name="slowRotate"/>
+    </declare-styleable><declare-styleable name="GuardianScoreView">
+        <attr format="color" name="trackColor"/>
+        <attr format="color" name="scoreTextColor"/>
+    </declare-styleable></file><file name="ic_launcher_foreground" path="/workspace/app/src/main/res/drawable/ic_launcher_foreground.xml" qualifiers="" type="drawable"/><file name="bg_gold_glow_card" path="/workspace/app/src/main/res/drawable/bg_gold_glow_card.xml" qualifiers="" type="drawable"/><file name="bg_obsidian_gradient" path="/workspace/app/src/main/res/drawable/bg_obsidian_gradient.xml" qualifiers="" type="drawable"/><file name="ic_eye_of_horus" path="/workspace/app/src/main/res/drawable/ic_eye_of_horus.xml" qualifiers="" type="drawable"/><file name="ic_arrow_back" path="/workspace/app/src/main/res/drawable/ic_arrow_back.xml" qualifiers="" type="drawable"/><file name="ic_rune_algiz" path="/workspace/app/src/main/res/drawable/ic_rune_algiz.xml" qualifiers="" type="drawable"/><file name="ic_triquetra" path="/workspace/app/src/main/res/drawable/ic_triquetra.xml" qualifiers="" type="drawable"/><file name="bg_state_chip" path="/workspace/app/src/main/res/drawable/bg_state_chip.xml" qualifiers="" type="drawable"/></source></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="debug" generated-set="debug$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/src/debug/res"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated$Generated" generated="true" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/build/generated/res/resValues/debug"/></dataSet><dataSet aapt-namespace="http://schemas.android.com/apk/res-auto" config="generated" generated-set="generated$Generated" ignore_pattern="!.svn:!.git:!.ds_store:!*.scc:.*:&lt;dir>_*:!CVS:!thumbs.db:!picasa.ini:!*~"><source path="/workspace/app/build/generated/res/resValues/debug"/></dataSet><mergedItems><configuration qualifiers=""><declare-styleable name="AegishjalmurView">
+        <attr format="color" name="sigilColor"/>
+        <attr format="boolean" name="slowRotate"/>
+    </declare-styleable><declare-styleable name="GuardianScoreView">
+        <attr format="color" name="trackColor"/>
+        <attr format="color" name="scoreTextColor"/>
+    </declare-styleable></configuration></mergedItems></merger>

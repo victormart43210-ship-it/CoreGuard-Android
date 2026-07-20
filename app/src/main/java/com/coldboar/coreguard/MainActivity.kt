@@ -4,15 +4,18 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.view.animation.AnimationUtils
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityMainBinding
 
 /**
  * Main screen.
  *
- * Displays a summary of device health (RAM usage + simulated CPU) and provides
- * navigation to the Security Dashboard. A lifecycle-safe polling loop updates
- * the memory stats while the activity is visible.
+ * Shows the animated Guardian Score shield (derived from the security checks),
+ * device vitals (RAM usage + simulated CPU) and navigation to the Sanctum
+ * (Security Dashboard). A lifecycle-safe polling loop updates the memory stats
+ * while the activity is visible.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -38,14 +41,17 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.btnSecurityDashboard.setOnClickListener {
+        val openSanctum = View.OnClickListener {
             startActivity(Intent(this, SecurityDashboardActivity::class.java))
         }
+        binding.btnSecurityDashboard.setOnClickListener(openSanctum)
+        binding.scoreContainer.setOnClickListener(openSanctum)
 
         binding.btnUpgradePremium.setOnClickListener {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }
 
+        playEntranceAnimations()
         updateMemoryStats()
     }
 
@@ -53,11 +59,36 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         startPolling()
         subscriptionManager.onPaywallDismissed() // reset guard when returning from paywall
+        updateGuardianScore()
     }
 
     override fun onPause() {
         super.onPause()
         stopPolling()
+    }
+
+    private fun playEntranceAnimations() {
+        val fadeUp = AnimationUtils.loadAnimation(this, R.anim.fade_up)
+        binding.tvWordmark.startAnimation(fadeUp)
+        binding.tvSubtitle.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_up_delayed))
+    }
+
+    /** Evaluates the security checks and animates the Guardian Score shield. */
+    private fun updateGuardianScore() {
+        val results = SecurityCheckRunner.run(this)
+        val score = GuardianScore.compute(results)
+        val rank = GuardianScore.rankFor(score)
+
+        val (rankLabel, rankColor) = when (rank) {
+            GuardianRank.AEGIS -> R.string.rank_aegis to getColor(R.color.gold)
+            GuardianRank.WARDED -> R.string.rank_warded to getColor(R.color.ward_teal)
+            GuardianRank.EXPOSED -> R.string.rank_exposed to getColor(R.color.status_warn)
+            GuardianRank.BREACHED -> R.string.rank_breached to getColor(R.color.status_fail)
+        }
+
+        binding.guardianScoreView.setScore(score, rankColor)
+        binding.tvRank.text = getString(rankLabel)
+        binding.tvRank.setTextColor(rankColor)
     }
 
     private fun startPolling() {
@@ -83,6 +114,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvRamPercent.text = if (percent != null) "$percent%" else "–"
+        binding.ramProgress.setProgressCompat(percent ?: 0, true)
 
         // CPU value is explicitly simulated – no real CPU measurement is performed.
         binding.tvCpuUsage.text = getString(R.string.cpu_simulated_label)
