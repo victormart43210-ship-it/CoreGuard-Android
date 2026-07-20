@@ -72,8 +72,14 @@ class AegishjalmurView @JvmOverloads constructor(
             repeatCount = ValueAnimator.INFINITE
             interpolator = LinearInterpolator()
             addUpdateListener {
-                rotationDeg = it.animatedValue as Float
-                invalidate()
+                // The rotation is very slow (3°/s), so redrawing every animation
+                // pulse is wasted work. Only invalidate once the angle moves a
+                // visible amount – keeps the decorative layer nearly free.
+                val next = it.animatedValue as Float
+                if (kotlin.math.abs(next - rotationDeg) >= 0.5f) {
+                    rotationDeg = next
+                    invalidate()
+                }
             }
             start()
         }
