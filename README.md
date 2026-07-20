@@ -34,6 +34,11 @@ present in this repository. Missing tRPC context cannot be repaired here.
 cd cli && go test -race ./... && go vet ./...
 ```
 
+## Play Store prep
+
+See [`docs/PLAY_STORE_LAUNCH.md`](docs/PLAY_STORE_LAUNCH.md), privacy policy, and
+listing assets under [`docs/store-listing/`](docs/store-listing/).
+
 ## License
 
 Apache License 2.0 — see [`LICENSE`](LICENSE).
