@@ -40,7 +40,8 @@ export COREGUARD_VERIFY_MODE=mock
 Release app builds need `COREGUARD_VERIFY_URL` pointing at a deployed verifier.
 See [docs/PLAY_CONSOLE_BILLING.md](docs/PLAY_CONSOLE_BILLING.md).
 
-See [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) and
+See [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md),
+[docs/SECURITY_BASELINE.md](docs/SECURITY_BASELINE.md), and
 [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
 
 ## Build

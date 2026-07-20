@@ -1,15 +1,18 @@
 # CoreGuard Threat Model
 
-> Version 1.0 — July 2026  
+> Version 1.1 — July 2026  
 > Status: **Draft** — not independently security-audited.
+
+Companion inventory: [SECURITY_BASELINE.md](SECURITY_BASELINE.md).
 
 ---
 
 ## 1. Scope
 
 This document covers threats relevant to the CoreGuard Android application
-(`com.coldboar.coreguard`). It does not cover server infrastructure because
-CoreGuard v1 is a standalone device-monitoring app with no backend.
+(`com.coldboar.coreguard`) and its optional **billing-server** purchase
+verification path. Device-local monitoring remains prototype-grade; server
+verification is required before treating Play purchases as premium grants.
 
 ---
 
@@ -17,10 +20,11 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 
 | Asset | Sensitivity | Notes |
 |-------|-------------|-------|
-| Premium entitlement status | Medium | Determines access to paid features |
+| Premium entitlement status | Medium | Live grant only after Play + billing-server verify; cache is non-authoritative |
+| Encrypted entitlement cache | Low–Medium | Labels only; no purchase tokens stored |
 | App integrity / code | High | Tampering enables bypass of security checks |
 | Device security state (check results) | Low–Medium | Read-only display; exposure could aid attacker reconnaissance |
-| User's privacy | Medium | App requests minimal permissions; no PII collected in v1 |
+| User's privacy | Medium | Minimal permissions; INTERNET for verify only; no PII collected in v1 |
 
 ---
 
@@ -62,10 +66,20 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 - **Impact**: Premium features unlocked without payment.
 - **Likelihood**: Medium (straightforward patch if code is not obfuscated).
 
-### T-6 — Billing Spoofing (future risk)
-- **Description**: When real Google Play Billing is integrated, a patched app or Lucky Patcher-style tool intercepts the purchase result.
-- **Impact**: False positive purchase reported.
-- **Likelihood**: Low–Medium (mitigated by server-side token verification, not yet implemented).
+### T-6 — Billing Spoofing
+- **Description**: A patched app or Lucky Patcher-style tool fakes a local purchase success without a real Play token.
+- **Impact**: False premium unlock if the client trusts the local result alone.
+- **Likelihood**: Medium without server verify; lower when billing-server is deployed and required.
+
+### T-7 — Stale / tampered entitlement cache
+- **Description**: Attacker edits plaintext prefs or replays an old encrypted cache entry to show premium UI.
+- **Impact**: Misleading UI; should not unlock gated features if live `isPremium()` is authoritative.
+- **Likelihood**: Medium on rooted devices; mitigated by non-authoritative cache design.
+
+### T-8 — Cleartext / MITM on verify calls
+- **Description**: Attacker intercepts HTTP verify traffic and forges `active: true`.
+- **Impact**: Fake premium grant.
+- **Likelihood**: Low when cleartext is disabled and HTTPS is used; higher if debug cleartext overrides leak into release.
 
 ---
 
@@ -73,39 +87,43 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 
 | Threat | Mitigation | Status |
 |--------|-----------|--------|
-| T-1 Debugger | `DebuggerCheckEvaluator` detects JDWP attachment and surfaces FAIL in dashboard | ✅ Implemented |
-| T-2 Repackaging | `SignatureCheckEvaluator` compares APK cert hash (requires configuring expected hash) | ⚠️ Implemented but hash not pinned in demo build |
-| T-3 Root | `RootCheckEvaluator` checks su binary paths and test-keys build tag | ✅ Implemented (heuristic; advanced roots not detected) |
-| T-4 Emulator | `EmulatorCheckEvaluator` checks build properties | ✅ Implemented (heuristic) |
-| T-5 Entitlement bypass | Release build enables ProGuard/R8 obfuscation | ✅ Enabled in release |
-| T-6 Billing spoofing | Play Billing + billing-server (Play Developer API) before granting premium | 🟢 Code complete; requires deployed server + Play credentials |
-| Code tampering (general) | `isMinifyEnabled = true` in release, ProGuard rules applied | ✅ Configured |
+| T-1 Debugger | `DebuggerCheckEvaluator` + RestrictedMode on FAIL | ✅ Prototype |
+| T-2 Repackaging | `SignatureCheckEvaluator` (expected hash) | ⚠️ Hash not pinned in demo |
+| T-3 Root | `RootCheckEvaluator` + RestrictedMode on FAIL | ✅ Heuristic only |
+| T-4 Emulator | `EmulatorCheckEvaluator` (WARN; does not force RestrictedMode) | ✅ Heuristic |
+| T-5 Entitlement bypass | R8 minify + server verify gate on Play path | 🟡 Client still patchable |
+| T-6 Billing spoofing | Play Billing + billing-server before `isPremium=true` | 🟢 Code complete; deploy required |
+| T-7 Cache abuse | `SecureStore` labels only; no tokens; live grant required | ✅ Design rule |
+| T-8 MITM | Cleartext disabled; HTTPS verify URL required for release | 🟡 No cert pinning yet |
+| Backup extraction | `allowBackup=false` + extraction/backup rules | ✅ |
+| Secrets in repo | CI security-gate blocks keystores / private keys | ✅ |
 
 ---
 
 ## 6. Residual Risks
 
-1. **No server-side entitlement verification**: The app relies entirely on the device-side `BillingProvider.isPremium()` call. A patched build can trivially return `true`. Mitigation: Add a backend JWT/token verification step before production.
+1. **Client still patchable**: Even with billing-server, a patched APK can short-circuit `isPremium()`. Server verify raises the bar for casual piracy; it is not DRM.
 
-2. **Signature pinning not active in demo**: `SignatureCheckEvaluator` defaults `expectedSha256 = ""` producing WARN, not FAIL. The expected certificate hash must be hardcoded (or fetched from a trusted server) in production.
+2. **Signature pinning not active in demo**: `SignatureCheckEvaluator` defaults `expectedSha256 = ""` → WARN. Pin the real cert hash before release.
 
-3. **Heuristic root/emulator detection**: Advanced rooting frameworks (Magisk with MagiskHide, etc.) can defeat file-path checks. The app provides a best-effort indicator, not a guarantee.
+3. **Heuristic root/emulator detection**: MagiskHide-class roots may evade file-path checks. RestrictedMode is a UX policy, not attestation.
 
-4. **No certificate transparency / network hardening**: CoreGuard v1 makes no network calls, so SSL pinning is not yet applicable. Add pinning if a backend is introduced.
+4. **No TLS certificate pinning**: Verify calls use system CAs only. Add pinning when the production verify host is stable.
 
-5. **No anti-tampering runtime integrity check beyond signature**: Binary instrumentation frameworks (Frida, etc.) can hook any method. Consider native checks or Play Integrity API in a later version.
+5. **No Play Integrity / anti-Frida**: Runtime hooks can bypass RestrictedMode and entitlement gates.
 
-6. **CPU metric is simulated**: No real CPU usage is measured. This is clearly labeled in the UI but constitutes a feature gap relative to a security-monitoring app's expectations.
+6. **CPU metric is simulated**: Labeled in UI; not a real security signal.
 
 ---
 
 ## 7. Out of Scope (v1)
 
-- Server infrastructure (none exists in v1)
-- Privacy/GDPR compliance (no PII collected in v1)
-- Supply-chain / dependency attacks (standard Gradle dependency resolution)
-- Physical device theft
+- Play Integrity / SafetyNet attestation
+- Full GDPR DPIA (no PII collected in v1; revisit if analytics added)
+- Supply-chain / dependency attacks beyond Dependabot defaults
+- Physical device theft / cold-boot attacks on Keystore
 
 ---
 
-*This threat model should be reviewed and updated whenever the attack surface changes — e.g., when a backend is added, billing is integrated, or new permissions are requested.*
+*Review this threat model whenever the attack surface changes — new permissions,
+verify URL hosts, Integrity API, or storage of purchase-related data.*

@@ -1,9 +1,11 @@
 # CoreGuard Release Readiness Guide
 
-> Version 1.0 — July 2026  
+> Version 1.1 — July 2026  
 > **Honest statement**: This document describes the steps needed to ship.
 > It does not claim guaranteed Play Store approval, completed billing, or
 > production-grade security guarantees where those are not yet implemented.
+
+Companion: [SECURITY_BASELINE.md](SECURITY_BASELINE.md) · [THREAT_MODEL.md](THREAT_MODEL.md).
 
 ---
 
@@ -15,8 +17,9 @@
 4. [Play Console Setup](#4-play-console-setup)
 5. [Data Safety & Privacy](#5-data-safety--privacy)
 6. [Billing Setup](#6-billing-setup)
-7. [Testing Tracks](#7-testing-tracks)
+7. [Testing Tracks](#7-testing-tracks--pipeline)
 8. [Pre-Launch Checklist](#8-pre-launch-checklist)
+9. [Security Hardening Checklist](#9-security-hardening-checklist)
 
 ---
 
@@ -27,6 +30,9 @@
 | **CPU usage** | 🔴 SIMULATED | No real CPU reading. Labeled "simulated" in UI and code. Must be replaced with a real `ActivityManager` or `/proc/stat` implementation before claiming real metrics. |
 | **Billing / premium** | 🟡 INTEGRATED | Debug = demo. Release = Play Billing + **billing-server** verification gate. |
 | **Purchase verification** | 🟢 IMPLEMENTED (deploy required) | `:billing-server` verifies tokens via Play Developer API (or mock mode). App grants premium only after `active:true`. You must deploy the server and set `COREGUARD_VERIFY_URL`. |
+| **SecureStore cache** | 🟢 PROTOTYPE | EncryptedSharedPreferences labels only — **never** a premium grant by itself. |
+| **RestrictedMode** | 🟢 PROTOTYPE | FAIL checks tighten feature access; client-bypassable. |
+| **Network baseline** | 🟢 | Cleartext disabled; backup/extraction restricted. |
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
 | **Root / emulator detection** | 🟡 HEURISTIC | Heuristic checks only. Advanced root frameworks may not be detected. |
 | **Play Store approval** | ⬛ NOT GUARANTEED | Submitting this app does not guarantee approval. Google reviews apps for policy compliance independently. |
@@ -127,21 +133,23 @@ To build a debug APK for quick testing:
 
 ## 5. Data Safety & Privacy
 
-CoreGuard v1 collects **no personal data** and makes **no network requests**.
+CoreGuard v1 collects **no personal data**. Release builds may call the
+billing-server verify endpoint (purchase token in transit) — host that over
+**HTTPS** only. Cleartext is disabled in the network security config.
 
 In the Data Safety form on Play Console:
 
 | Question | Answer |
 |----------|--------|
-| Does your app collect or share user data? | No |
-| Does the app use encryption in transit? | N/A (no network) |
-| Does the app provide a way to delete user data? | N/A |
+| Does your app collect or share user data? | No (local monitoring + optional purchase verify; no analytics/PII store) |
+| Does the app use encryption in transit? | Yes when `COREGUARD_VERIFY_URL` is HTTPS |
+| Does the app provide a way to delete user data? | Local encrypted cache cleared on uninstall; no server user profile in v1 |
 
-> If a backend is added in a later version, revisit and update this section and
-> the Data Safety form before publishing that version.
+> If you add analytics or account systems later, revisit this section and the
+> Data Safety form before publishing that version.
 
-**Privacy Policy**: Even with no data collection, Google Play may require a
-privacy policy URL. Host a simple policy stating no data is collected.
+**Privacy Policy**: Host [PRIVACY_POLICY.md](PRIVACY_POLICY.md) at a public URL
+for Play Console even when collection is minimal.
 
 ---
 
@@ -201,11 +209,13 @@ export COREGUARD_VERIFY_MODE=google
 ## 8. Pre-Launch Checklist
 
 - [ ] All unit tests pass: `./gradlew test`
+- [ ] Lint clean for debug: `./gradlew :app:lintDebug`
+- [ ] CI security-gate green (no keystores/secrets in tree)
 - [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
 - [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
 - [ ] CPU metric is no longer labeled "simulated" or is removed from release UI
 - [ ] Play Console subscription `coreguard_premium_monthly` created and tested on Internal Testing (see `docs/PLAY_CONSOLE_BILLING.md`)
-- [ ] `billing-server` deployed with Play service account; release built with `COREGUARD_VERIFY_URL`
+- [ ] `billing-server` deployed with Play service account; release built with `COREGUARD_VERIFY_URL` (HTTPS)
 - [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash
 - [ ] ProGuard/R8 release build tested (check no critical classes stripped)
 - [ ] App icon (512×512 px) created and set
@@ -215,6 +225,23 @@ export COREGUARD_VERIFY_MODE=google
 - [ ] Target audience / content rating questionnaire completed
 - [ ] App tested on at least one physical device via a Play testing track (not only sideload)
 - [ ] Security Dashboard shows expected PASS/WARN states on a non-rooted device
+- [ ] RestrictedMode banner verified on a FAIL scenario (e.g. debugger attached in debug)
+
+---
+
+## 9. Security Hardening Checklist
+
+Prototype controls shipped in-repo (see [SECURITY_BASELINE.md](SECURITY_BASELINE.md)):
+
+- [x] Cleartext traffic disabled (`network_security_config` + manifest)
+- [x] Backup / data-extraction rules + `allowBackup=false`
+- [x] RestrictedMode on FAIL checks + UI / entitlement gates
+- [x] SecureStore (EncryptedSharedPreferences) for entitlement **labels only**
+- [x] Unit tests for RestrictedMode + SecureStore
+- [x] CI secret scan + honesty gate + lint
+- [ ] Deploy public HTTPS verify URL (operator action)
+- [ ] Pin release signing cert SHA-256 (operator action)
+- [ ] Optional: Play Integrity / cert pinning (future)
 
 ---
 
