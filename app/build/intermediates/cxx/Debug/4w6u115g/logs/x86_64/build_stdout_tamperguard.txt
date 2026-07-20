@@ -1,3 +1,0 @@
-ninja: Entering directory `/workspace/app/.cxx/Debug/4w6u115g/x86_64'
-[1/2] Building CXX object CMakeFiles/tamperguard.dir/tamperguard.cpp.o
-[2/2] Linking CXX shared library /workspace/app/build/intermediates/cxx/Debug/4w6u115g/obj/x86_64/libtamperguard.so
