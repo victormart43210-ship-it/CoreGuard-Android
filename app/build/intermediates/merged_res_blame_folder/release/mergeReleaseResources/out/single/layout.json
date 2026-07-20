@@ -1,0 +1,30 @@
+[
+    {
+        "merged": "com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_main.xml",
+        "source": "com.coldboar.coreguard.app-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/item_security_check.xml",
+        "source": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-main-34:/layout/item_security_check.xml"
+    },
+    {
+        "merged": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_security_dashboard.xml",
+        "source": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-main-34:/layout/activity_security_dashboard.xml"
+    },
+    {
+        "merged": "com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_paywall.xml",
+        "source": "com.coldboar.coreguard.app-main-34:/layout/activity_paywall.xml"
+    },
+    {
+        "merged": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_main.xml",
+        "source": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-main-34:/layout/activity_main.xml"
+    },
+    {
+        "merged": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_paywall.xml",
+        "source": "/home/ubuntu/.gradle/daemon/8.9/com.coldboar.coreguard.app-main-34:/layout/activity_paywall.xml"
+    },
+    {
+        "merged": "com.coldboar.coreguard.app-mergeReleaseResources-32:/layout/activity_security_dashboard.xml",
+        "source": "com.coldboar.coreguard.app-main-34:/layout/activity_security_dashboard.xml"
+    }
+]

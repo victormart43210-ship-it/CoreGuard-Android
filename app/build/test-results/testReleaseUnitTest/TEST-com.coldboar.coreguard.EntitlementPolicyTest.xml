@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.coldboar.coreguard.EntitlementPolicyTest" tests="13" skipped="0" failures="0" errors="0" timestamp="2026-07-20T23:49:32" hostname="cursor" time="0.005">
+  <properties/>
+  <testcase name="EntitlementPolicy canExportReport is true for PREMIUM tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.001"/>
+  <testcase name="EntitlementPolicy returns PREMIUM when premium" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="DemoBillingProvider starts as non-premium by default" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="DemoBillingProvider can start as premium" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="EntitlementPolicy canAccessAdvancedMonitoring is false for FREE tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.001"/>
+  <testcase name="DemoBillingProvider launchPurchaseFlow returns Success and sets premium" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.001"/>
+  <testcase name="EntitlementPolicy canViewSecurityDashboard is true for PREMIUM tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="EntitlementPolicy canAccessAdvancedMonitoring is true for PREMIUM tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="DemoBillingProvider reset returns to initial state" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="EntitlementPolicy canViewSecurityDashboard is true for FREE tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="EntitlementPolicy canExportReport is false for FREE tier" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <testcase name="SubscriptionManager isPremium mirrors billing provider" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.001"/>
+  <testcase name="EntitlementPolicy returns FREE when not premium" classname="com.coldboar.coreguard.EntitlementPolicyTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

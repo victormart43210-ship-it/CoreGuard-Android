@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.coldboar.coreguard.MemoryUsageCalculatorTest" tests="11" skipped="0" failures="0" errors="0" timestamp="2026-07-20T23:49:32" hostname="cursor" time="0.006">
+  <properties/>
+  <testcase name="getUsedRamBytes returns null when context is null" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns MB for megabyte range" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.005"/>
+  <testcase name="getUsedRamPercent returns null when context is null" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns GB for gigabyte range" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns KB for kilobyte range" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns dash for null" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="getAvailableRamBytes returns null when context is null" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns bytes for small values" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="getTotalRamBytes returns null when context is null" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns dash for negative" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <testcase name="formatBytes returns zero bytes for zero value" classname="com.coldboar.coreguard.MemoryUsageCalculatorTest" time="0.0"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

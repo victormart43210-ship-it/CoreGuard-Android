@@ -1,0 +1,19 @@
+{
+    "logs": [
+        {
+            "outputFile": "com.coldboar.coreguard.app-mergeReleaseResources-31:/values-ldrtl-v17/values-ldrtl-v17.xml",
+            "map": [
+                {
+                    "source": "/home/ubuntu/.gradle/caches/8.9/transforms/281ab10f324b142ce07bbc1446f244ac/transformed/material-1.12.0/res/values-ldrtl-v17/values-ldrtl-v17.xml",
+                    "from": {
+                        "startLines": "2,3",
+                        "startColumns": "4,4",
+                        "startOffsets": "55,191",
+                        "endColumns": "135,140",
+                        "endOffsets": "186,327"
+                    }
+                }
+            ]
+        }
+    ]
+}

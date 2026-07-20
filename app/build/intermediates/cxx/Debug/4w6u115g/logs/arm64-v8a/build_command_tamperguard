@@ -1,0 +1,4 @@
+/home/ubuntu/android-sdk/cmake/3.22.1/bin/ninja \
+  -C \
+  /workspace/app/.cxx/Debug/4w6u115g/arm64-v8a \
+  tamperguard

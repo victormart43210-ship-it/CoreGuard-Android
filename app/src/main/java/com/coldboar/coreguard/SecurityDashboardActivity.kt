@@ -26,12 +26,20 @@ class SecurityDashboardActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         title = getString(R.string.security_dashboard_title)
 
+        val keyLevel = { CoreGuardApplication.get()?.keyManager?.securityLevel ?: KeySecurityLevel.SOFTWARE }
+
         val evaluators: List<SecurityCheckEvaluator> = listOf(
             DebuggerCheckEvaluator(),
+            NativeDebuggerEvaluator(),
+            FridaDetectionEvaluator(),
+            HookDetectionEvaluator(),
+            MemoryIntegrityEvaluator(),
             EmulatorCheckEvaluator(),
             RootCheckEvaluator(),
+            MountIntegrityEvaluator(),
             BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { getAppCertSha256() })
+            SignatureCheckEvaluator(actualSha256 = { getAppCertSha256() }),
+            StrongBoxCheckEvaluator(level = keyLevel)
         )
 
         val results = evaluators.map { it.evaluate() }
