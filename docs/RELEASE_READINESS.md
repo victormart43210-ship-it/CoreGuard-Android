@@ -155,11 +155,12 @@ privacy policy URL. Host a simple policy stating no data is collected.
 
 See **[PLAY_CONSOLE_BILLING.md](PLAY_CONSOLE_BILLING.md)** for Play Console product + Internal Testing steps, and **[../billing-server/README.md](../billing-server/README.md)** for the verifier service.
 
-**You still must (manual / account steps)**
-- Create subscription `coreguard_premium_monthly` in Play Console
-- Install from Internal Testing (not random sideload) for real purchases
-- Deploy `billing-server` with a Play service account and set `COREGUARD_VERIFY_URL` on the release build
+**Account steps still required (cannot be done without your Play JSON / hosting)**
+- Drop Play-linked `~/coreguard-secrets/play-service-account.json` and re-run `./scripts/play_pipeline.sh`
+- Deploy billing-server to a **public HTTPS** URL and set `COREGUARD_VERIFY_URL`
+- Finish base-plan pricing in Play Console if the API leaves a draft product
 - Host [PRIVACY_POLICY.md](PRIVACY_POLICY.md) at a public URL for Play Console
+- Install from the Internal Testing **opt-in link** (not a sideload QR)
 
 ### Wire-up already in the repo
 
@@ -167,10 +168,17 @@ See **[PLAY_CONSOLE_BILLING.md](PLAY_CONSOLE_BILLING.md)** for Play Console prod
 2. `HttpPurchaseVerifier` → `POST /v1/subscriptions/verify`
 3. `:billing-server` (Ktor) with Google Play Developer API or `COREGUARD_VERIFY_MODE=mock`
 4. Release signing via env (`KEYSTORE_PATH`, etc.) when set — secrets never committed
+5. `scripts/play_pipeline.sh` — product ensure → server → AAB → Internal Testing upload
 
 ---
 
-## 7. Testing Tracks
+## 7. Testing Tracks & pipeline
+
+```bash
+export COREGUARD_VERIFY_URL=https://your-public-billing-server.example
+export COREGUARD_VERIFY_MODE=google
+./scripts/play_pipeline.sh
+```
 
 | Track | Purpose | Who Gets It |
 |-------|---------|------------|
@@ -181,12 +189,12 @@ See **[PLAY_CONSOLE_BILLING.md](PLAY_CONSOLE_BILLING.md)** for Play Console prod
 
 ### Recommended Order
 1. Fix all FAIL checks in Security Dashboard for the test device.
-2. Deploy to Internal Testing.
-3. Run through all UI flows manually.
+2. Run `./scripts/play_pipeline.sh` with credentials + public VERIFY_URL.
+3. Install from Internal Testing opt-in link; run through UI flows.
 4. Run `./gradlew test` — all unit tests must pass.
 5. Promote to Closed Testing after no regressions found.
 6. Complete Play Console review questionnaires.
-7. Promote to Production only after billing is fully integrated and tested.
+7. Promote to Production only after billing verification is live and tested.
 
 ---
 

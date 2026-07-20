@@ -27,3 +27,22 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.ktor.server.tests)
 }
+
+tasks.register<JavaExec>("ensurePlayProduct") {
+    group = "play"
+    description = "Create or confirm Play subscription coreguard_premium_monthly (needs GOOGLE_APPLICATION_CREDENTIALS)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.coldboar.coreguard.billing.server.PlayConsoleOpsKt")
+    args("ensureProduct")
+}
+
+tasks.register<JavaExec>("uploadInternalTesting") {
+    group = "play"
+    description = "Upload AAB to Play Internal Testing track (needs GOOGLE_APPLICATION_CREDENTIALS and -Paab=...)"
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("com.coldboar.coreguard.billing.server.PlayConsoleOpsKt")
+    val aab = (project.findProperty("aab") as String?)
+        ?: System.getenv("COREGUARD_AAB_PATH")
+        ?: ""
+    args("uploadInternal", aab)
+}
