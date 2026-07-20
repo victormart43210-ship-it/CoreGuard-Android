@@ -43,7 +43,7 @@ class EntitlementPolicy(private val billing: BillingProvider) {
             BillingBackend.DEMO ->
                 if (billing.isPremium()) "demo_premium" else "demo_free"
             BillingBackend.PLAY ->
-                if (billing.isPremium()) "play_client_premium" else "play_free"
+                if (billing.isPremium()) "play_verified_premium" else "play_free"
         }
 }
 

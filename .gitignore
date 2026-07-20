@@ -16,6 +16,8 @@ key.properties
 secrets.properties
 **/google-services.json
 **/api-keys.properties
+**/*service-account*.json
+**/play-api-key.json
 .cxx/
 *.apk
 *.aab

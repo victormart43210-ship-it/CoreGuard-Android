@@ -15,24 +15,21 @@ import com.android.billingclient.api.Purchase
 import com.android.billingclient.api.PurchasesUpdatedListener
 import com.android.billingclient.api.QueryProductDetailsParams
 import com.android.billingclient.api.QueryPurchasesParams
+import com.coldboar.coreguard.billing.PurchaseVerifier
+import com.coldboar.coreguard.billing.PurchaseVerifyRequest
+import com.coldboar.coreguard.billing.VerificationResult
 
 /**
- * Google Play Billing Library integration.
+ * Google Play Billing Library integration with **server-side verification gate**.
  *
- * Connects [BillingClient], queries subscription product details, launches the
- * Play purchase sheet, acknowledges purchases, and caches premium locally.
+ * Flow: Play purchase → acknowledge → [PurchaseVerifier] → only then [isPremium]=true.
  *
- * **Honesty limits**
- * - [isPremium] reflects **client-side** Play purchase state only.
- * - This is **not** server-side purchase-token verification. Add backend
- *   verification with the Google Play Developer API before trusting entitlements
- *   in production.
- * - Requires a Play Console subscription product (default id:
- *   [PaywallActivity.PRODUCT_ID_PREMIUM]) and a build installed via Play
- *   (internal testing track, etc.). Sideloaded APKs often cannot complete purchases.
+ * Without a configured verifier backend, purchases will not unlock premium.
+ * Sideloaded APKs usually cannot complete Play purchases — use a Play testing track.
  */
 class PlayBillingProvider(
     context: Context,
+    private val purchaseVerifier: PurchaseVerifier,
     private val mainHandler: Handler = Handler(Looper.getMainLooper())
 ) : BillingProvider, PurchasesUpdatedListener {
 
@@ -41,12 +38,13 @@ class PlayBillingProvider(
     private val appContext = context.applicationContext
 
     @Volatile
-    private var premiumCached: Boolean = false
+    private var premiumVerified: Boolean = false
 
     @Volatile
     private var connected: Boolean = false
 
     private var pendingResult: ((PurchaseResult) -> Unit)? = null
+    private var pendingVerifyCount: Int = 0
 
     private val billingClient: BillingClient = BillingClient.newBuilder(appContext)
         .setListener(this)
@@ -61,7 +59,8 @@ class PlayBillingProvider(
         startConnection()
     }
 
-    override fun isPremium(): Boolean = premiumCached
+    /** True only after backend verification succeeds for an active subscription. */
+    override fun isPremium(): Boolean = premiumVerified
 
     override fun launchPurchaseFlow(
         activity: Activity?,
@@ -118,7 +117,6 @@ class PlayBillingProvider(
             if (launchResult.responseCode != BillingClient.BillingResponseCode.OK) {
                 deliver(PurchaseResult.Error(billingMessage(launchResult)))
             }
-            // Success / cancel delivered via onPurchasesUpdated.
         }
     }
 
@@ -133,11 +131,14 @@ class PlayBillingProvider(
             .build()
 
         billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
-            if (billingResult.responseCode == BillingClient.BillingResponseCode.OK) {
-                updatePremiumFromPurchases(purchases)
-                acknowledgeIfNeeded(purchases)
+            if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                mainHandler.post { onComplete?.invoke() }
+                return@queryPurchasesAsync
             }
-            mainHandler.post { onComplete?.invoke() }
+            acknowledgeIfNeeded(purchases)
+            verifyPremiumPurchases(purchases) {
+                mainHandler.post { onComplete?.invoke() }
+            }
         }
     }
 
@@ -151,15 +152,63 @@ class PlayBillingProvider(
         when (billingResult.responseCode) {
             BillingClient.BillingResponseCode.OK -> {
                 val list = purchases.orEmpty()
-                updatePremiumFromPurchases(list)
                 acknowledgeIfNeeded(list)
-                deliver(PurchaseResult.Success)
+                verifyPremiumPurchases(list) { verifiedOk ->
+                    if (verifiedOk) {
+                        deliver(PurchaseResult.Success)
+                    } else {
+                        deliver(
+                            PurchaseResult.Error(
+                                "Purchase completed in Play but server verification did not grant entitlement."
+                            )
+                        )
+                    }
+                }
             }
             BillingClient.BillingResponseCode.USER_CANCELED -> {
                 deliver(PurchaseResult.Cancelled)
             }
             else -> {
                 deliver(PurchaseResult.Error(billingMessage(billingResult)))
+            }
+        }
+    }
+
+    private fun verifyPremiumPurchases(purchases: List<Purchase>, onDone: (Boolean) -> Unit) {
+        val candidates = purchases.filter { purchase ->
+            purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
+                purchase.products.contains(PaywallActivity.PRODUCT_ID_PREMIUM)
+        }
+
+        if (candidates.isEmpty()) {
+            premiumVerified = false
+            onDone(false)
+            return
+        }
+
+        pendingVerifyCount = candidates.size
+        var anyVerified = false
+        var finished = 0
+
+        candidates.forEach { purchase ->
+            val request = PurchaseVerifyRequest(
+                packageName = PLAY_PACKAGE_NAME,
+                productId = PaywallActivity.PRODUCT_ID_PREMIUM,
+                purchaseToken = purchase.purchaseToken
+            )
+            purchaseVerifier.verify(request) { result ->
+                mainHandler.post {
+                    when (result) {
+                        is VerificationResult.Verified -> anyVerified = true
+                        is VerificationResult.Denied,
+                        is VerificationResult.Error -> Unit
+                    }
+                    finished++
+                    if (finished >= pendingVerifyCount) {
+                        premiumVerified = anyVerified
+                        onDone(anyVerified)
+                    }
+                }
             }
         }
     }
@@ -195,13 +244,6 @@ class PlayBillingProvider(
             .build()
     }
 
-    private fun updatePremiumFromPurchases(purchases: List<Purchase>) {
-        premiumCached = purchases.any { purchase ->
-            purchase.purchaseState == Purchase.PurchaseState.PURCHASED &&
-                purchase.products.contains(PaywallActivity.PRODUCT_ID_PREMIUM)
-        }
-    }
-
     private fun acknowledgeIfNeeded(purchases: List<Purchase>) {
         purchases
             .filter {
@@ -228,5 +270,10 @@ class PlayBillingProvider(
         } else {
             "Play Billing error ${result.responseCode}"
         }
+    }
+
+    companion object {
+        /** Play Console application id (never include `.debug` suffix). */
+        const val PLAY_PACKAGE_NAME = "com.coldboar.coreguard"
     }
 }

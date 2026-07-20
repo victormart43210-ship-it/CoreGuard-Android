@@ -78,7 +78,7 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 | T-3 Root | `RootCheckEvaluator` checks su binary paths and test-keys build tag | ✅ Implemented (heuristic; advanced roots not detected) |
 | T-4 Emulator | `EmulatorCheckEvaluator` checks build properties | ✅ Implemented (heuristic) |
 | T-5 Entitlement bypass | Release build enables ProGuard/R8 obfuscation | ✅ Enabled in release |
-| T-6 Billing spoofing | Client Play Billing + future server-side receipt verification | 🟡 Client integrated; server verification ❌ |
+| T-6 Billing spoofing | Play Billing + billing-server (Play Developer API) before granting premium | 🟢 Code complete; requires deployed server + Play credentials |
 | Code tampering (general) | `isMinifyEnabled = true` in release, ProGuard rules applied | ✅ Configured |
 
 ---

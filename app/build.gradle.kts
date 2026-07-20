@@ -15,22 +15,43 @@ android {
         versionName = "1.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Override at build time: -Pcoreguard.verifyUrl=https://your.api.example
+        // or env COREGUARD_VERIFY_URL. Empty → UnconfiguredPurchaseVerifier (no premium grant).
+        val verifyUrl = (project.findProperty("coreguard.verifyUrl") as String?)
+            ?.takeIf { it.isNotBlank() }
+            ?: System.getenv("COREGUARD_VERIFY_URL")
+            ?: ""
+        buildConfigField("String", "VERIFICATION_BASE_URL", "\"${verifyUrl.replace("\"", "\\\"")}\"")
+    }
+
+    signingConfigs {
+        val keystorePath = System.getenv("KEYSTORE_PATH")
+        if (!keystorePath.isNullOrBlank()) {
+            create("release") {
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS") ?: "coreguard"
+                keyPassword = System.getenv("KEY_PASSWORD")
+            }
+        }
     }
 
     buildTypes {
         release {
             isMinifyEnabled = true
-            // Release uses Play Billing Library. Demo unlock is disabled.
             buildConfigField("boolean", "USE_DEMO_BILLING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
+            if (signingConfigs.findByName("release") != null) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
-            // Debug keeps the demo entitlement path clearly separate.
             buildConfigField("boolean", "USE_DEMO_BILLING", "true")
         }
     }

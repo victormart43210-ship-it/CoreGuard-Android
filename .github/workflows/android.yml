@@ -29,7 +29,7 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Run unit tests
+      - name: Run unit tests (app + billing-server)
         run: ./gradlew test --stacktrace
 
       - name: Assemble debug APK

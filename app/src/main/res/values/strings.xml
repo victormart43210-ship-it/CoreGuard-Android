@@ -12,8 +12,8 @@
     <!-- Entitlement honesty banners -->
     <string name="entitlement_demo_free">Entitlement: Free (demo billing — not a purchase)</string>
     <string name="entitlement_demo_premium">Entitlement: Premium DEMO unlock — not a real purchase</string>
-    <string name="entitlement_play_free">Entitlement: Free (Play Billing — no active subscription)</string>
-    <string name="entitlement_play_premium">Entitlement: Premium (Play client-side — not server-verified)</string>
+    <string name="entitlement_play_free">Entitlement: Free (Play Billing — awaiting purchase or server verification)</string>
+    <string name="entitlement_play_premium">Entitlement: Premium (Play + server-verified)</string>
 
     <!-- Navigation -->
     <string name="btn_security_dashboard">View Security Dashboard</string>
@@ -35,12 +35,12 @@
     <string name="paywall_headline">CoreGuard Premium</string>
     <string name="paywall_description">Unlock advanced monitoring, threat export, and priority support.</string>
     <string name="paywall_demo_disclaimer">DEMO BUILD: No real payment is processed. Demo unlock is not purchase verification.</string>
-    <string name="paywall_play_disclaimer">Uses Google Play Billing. A successful sheet does not equal server-side purchase verification yet. Sideloaded APKs usually cannot complete purchases — use a Play testing track.</string>
+    <string name="paywall_play_disclaimer">Uses Google Play Billing, then server verification. Sideloaded APKs usually cannot purchase — use a Play testing track. Premium unlocks only after billing-server verifies the token.</string>
     <string name="paywall_btn_subscribe_demo">Simulate Unlock (Demo)</string>
     <string name="paywall_btn_subscribe_play">Continue with Google Play</string>
     <string name="paywall_btn_close">Not now</string>
     <string name="paywall_purchase_success_demo">Demo unlock simulated. No real payment was made.</string>
-    <string name="paywall_purchase_success_play">Play purchase acknowledged on-device. Server verification is not implemented yet.</string>
+    <string name="paywall_purchase_success_play">Purchase verified by billing-server. Premium unlocked.</string>
     <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
     <string name="paywall_purchase_error">Error: %1$s</string>
 </resources>

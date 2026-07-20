@@ -26,9 +26,19 @@ security against advanced attacks.
 |------|--------|
 | CPU usage | Simulated — labeled in UI |
 | Premium unlock (debug) | `DemoBillingProvider` — not a purchase |
-| Premium unlock (release) | `PlayBillingProvider` — Play Billing client-side; not server-verified |
+| Premium unlock (release) | Play Billing + `billing-server` token verification |
 | Signature pinning | Evaluator present; expected hash not configured |
 | Play Store approval | Not claimed |
+
+## billing-server
+
+```bash
+export COREGUARD_VERIFY_MODE=mock
+./gradlew :billing-server:run
+```
+
+Release app builds need `COREGUARD_VERIFY_URL` pointing at a deployed verifier.
+See [docs/PLAY_CONSOLE_BILLING.md](docs/PLAY_CONSOLE_BILLING.md).
 
 See [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) and
 [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).

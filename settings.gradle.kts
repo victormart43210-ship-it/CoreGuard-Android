@@ -21,3 +21,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "CoreGuard"
 include(":app")
+include(":billing-server")

@@ -73,7 +73,7 @@ class EntitlementPolicyTest {
                 onResult(PurchaseResult.Error("unused in test"))
             }
         }
-        assertEquals("play_client_premium", EntitlementPolicy(playStub).entitlementSourceLabel())
+        assertEquals("play_verified_premium", EntitlementPolicy(playStub).entitlementSourceLabel())
     }
 
     @Test
