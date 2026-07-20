@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".PaywallActivity">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center_horizontal">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/paywall_headline"
+            android:textAppearance="?attr/textAppearanceHeadline5"
+            android:layout_marginBottom="8dp"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/paywall_description"
+            android:textAppearance="?attr/textAppearanceBody1"
+            android:layout_marginBottom="8dp"
+            android:gravity="center" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/paywall_demo_disclaimer"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:textStyle="italic"
+            android:layout_marginBottom="24dp"
+            android:gravity="center" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSubscribe"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/paywall_btn_subscribe"
+            android:layout_marginBottom="12dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnClose"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/paywall_btn_close"
+            style="@style/Widget.Material3.Button.OutlinedButton" />
+
+        <TextView
+            android:id="@+id/tvPaywallStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:textAppearance="?attr/textAppearanceBody2"
+            android:gravity="center"
+            tools:text="" />
+
+    </LinearLayout>
+</ScrollView>
