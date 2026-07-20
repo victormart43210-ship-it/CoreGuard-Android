@@ -42,6 +42,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SecurityDashboardActivity::class.java))
         }
 
+        binding.btnNetworkDefenseLab.setOnClickListener {
+            startActivity(Intent(this, com.coldboar.coreguard.lab.NetworkDefenseLabActivity::class.java))
+        }
+
         binding.btnUpgradePremium.setOnClickListener {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }

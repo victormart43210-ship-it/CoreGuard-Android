@@ -102,6 +102,14 @@
             android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNetworkDefenseLab"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/btn_network_defense_lab"
+            android:layout_marginBottom="12dp"
+            style="@style/Widget.Material3.Button.TonalButton" />
+
+        <com.google.android.material.button.MaterialButton
             android:id="@+id/btnUpgradePremium"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

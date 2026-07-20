@@ -10,7 +10,25 @@
 
     <!-- Navigation -->
     <string name="btn_security_dashboard">View Security Dashboard</string>
+    <string name="btn_network_defense_lab">Open Network Defense Lab</string>
     <string name="btn_upgrade_premium">Upgrade to Premium (Demo)</string>
+
+    <!-- Network Defense Lab (educational simulation) -->
+    <string name="lab_title">Network Defense Lab</string>
+    <string name="lab_disclaimer">Prototype teaching simulation — not live network monitoring or IPS.</string>
+    <string name="lab_topology_cd">Interactive 16-node network topology</string>
+    <string name="lab_attack_bfs">Attack BFS</string>
+    <string name="lab_attack_dfs">Attack DFS</string>
+    <string name="lab_defend_direct">Defend</string>
+    <string name="lab_defend_cascade">Cascade</string>
+    <string name="lab_rollback">Rollback</string>
+    <string name="lab_toggle_mst">MST</string>
+    <string name="lab_toggle_protanopia">Protanopia</string>
+    <string name="lab_rollback_empty">Nothing to roll back</string>
+    <string name="lab_metrics_fmt">Healthy %1$d · Compromised %2$d · Defended %3$d · Steps %4$d</string>
+    <string name="lab_selected_fmt">Selected: %1$s · Vision: %2$s · MST: %3$s</string>
+    <string name="lab_events_empty">Events: —</string>
+    <string name="lab_event_fmt">Last: %1$s — %2$s</string>
 
     <!-- Security dashboard -->
     <string name="security_dashboard_title">Security Status</string>
