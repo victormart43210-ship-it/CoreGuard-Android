@@ -77,6 +77,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.androidx.security.crypto)
     implementation(libs.billing.ktx)
 
     testImplementation(libs.junit)

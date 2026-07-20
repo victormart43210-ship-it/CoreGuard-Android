@@ -72,8 +72,12 @@ class MainActivity : AppCompatActivity() {
         startPolling()
         subscriptionManager.onPaywallDismissed()
         if (app.billingProvider.backend == BillingBackend.PLAY) {
-            app.billingProvider.refreshPurchases { refreshSecurityAndEntitlementUi() }
+            app.billingProvider.refreshPurchases {
+                app.persistEntitlementCache()
+                refreshSecurityAndEntitlementUi()
+            }
         } else {
+            app.persistEntitlementCache()
             refreshSecurityAndEntitlementUi()
         }
     }

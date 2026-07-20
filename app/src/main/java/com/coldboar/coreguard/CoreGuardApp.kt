@@ -4,6 +4,9 @@ import android.app.Application
 import com.coldboar.coreguard.billing.HttpPurchaseVerifier
 import com.coldboar.coreguard.billing.PurchaseVerifier
 import com.coldboar.coreguard.billing.UnconfiguredPurchaseVerifier
+import com.coldboar.coreguard.security.CachedEntitlementSnapshot
+import com.coldboar.coreguard.security.EntitlementCacheWriter
+import com.coldboar.coreguard.security.SecureStore
 
 /**
  * Application entry point.
@@ -13,6 +16,7 @@ import com.coldboar.coreguard.billing.UnconfiguredPurchaseVerifier
  * - Release → [PlayBillingProvider] gated by [PurchaseVerifier] (billing-server)
  *
  * Demo unlock is never presented as purchase verification.
+ * [SecureStore] caches entitlement labels only — never grants premium by itself.
  */
 class CoreGuardApp : Application() {
 
@@ -37,6 +41,13 @@ class CoreGuardApp : Application() {
 
     val entitlementPolicy: EntitlementPolicy by lazy { EntitlementPolicy(billingProvider) }
 
+    val secureStore: SecureStore by lazy { SecureStore.create(this) }
+
+    /** Last cached entitlement snapshot (stale hint only; not a premium grant). */
+    @Volatile
+    var lastCachedEntitlement: CachedEntitlementSnapshot? = null
+        private set
+
     companion object {
         @Volatile
         private var instance: CoreGuardApp? = null
@@ -48,9 +59,21 @@ class CoreGuardApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        lastCachedEntitlement = runCatching { secureStore.readEntitlementSnapshot() }.getOrNull()
         if (!BuildConfig.USE_DEMO_BILLING) {
-            billingProvider.refreshPurchases(null)
+            billingProvider.refreshPurchases { persistEntitlementCache() }
+        } else {
+            persistEntitlementCache()
         }
+    }
+
+    /** Writes a live billing snapshot into encrypted storage. Does not grant premium. */
+    fun persistEntitlementCache() {
+        lastCachedEntitlement = EntitlementCacheWriter.persistLive(
+            store = secureStore,
+            billing = billingProvider,
+            policy = entitlementPolicy,
+        )
     }
 
     override fun onTerminate() {
