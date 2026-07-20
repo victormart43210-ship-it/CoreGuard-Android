@@ -3,8 +3,7 @@ package com.coldboar.coreguard
 /**
  * Entitlement tiers available in the app.
  *
- * Keep this enum in sync with the product IDs defined in the Play Console once
- * real billing is integrated.
+ * Keep this enum in sync with the product IDs defined in the Play Console.
  */
 enum class EntitlementTier {
     /** Free tier – limited feature set. */
@@ -18,50 +17,39 @@ enum class EntitlementTier {
  * Evaluates which features a user is entitled to based on the current
  * [BillingProvider] state.
  *
- * This class contains **policy logic only** – it does not perform purchases
- * or network calls. Inject a [BillingProvider] for production or test scenarios.
+ * Policy logic only – no purchases or network calls.
  *
- * When using [DemoBillingProvider], premium is a local demo flag only — not
- * purchase verification.
- *
- * @param billing The billing backend to query.
+ * Honesty:
+ * - [BillingBackend.DEMO] premium = local demo flag only
+ * - [BillingBackend.PLAY] premium = client-side Play cache only (not server-verified)
  */
 class EntitlementPolicy(private val billing: BillingProvider) {
 
-    /** Returns the user's current entitlement tier. */
     fun currentTier(): EntitlementTier =
         if (billing.isPremium()) EntitlementTier.PREMIUM else EntitlementTier.FREE
 
-    /** Returns true when the user may access security-dashboard detail view. */
-    fun canViewSecurityDashboard(): Boolean = true // available to all tiers
+    fun canViewSecurityDashboard(): Boolean = true
 
-    /** Returns true when the user may export or share the security report. */
     fun canExportReport(): Boolean = currentTier() == EntitlementTier.PREMIUM
 
-    /** Returns true when the user may access advanced threat monitoring. */
     fun canAccessAdvancedMonitoring(): Boolean = currentTier() == EntitlementTier.PREMIUM
 
     /**
-     * Human-readable source label for UI honesty.
-     * Distinguishes demo entitlement from a future Play-verified entitlement.
+     * Stable source label for tests/UI honesty.
+     * Play premium is labeled `play_client_premium` — not "verified".
      */
     fun entitlementSourceLabel(): String =
-        when (billing) {
-            is DemoBillingProvider ->
+        when (billing.backend) {
+            BillingBackend.DEMO ->
                 if (billing.isPremium()) "demo_premium" else "demo_free"
-            is PlayBillingProvider ->
-                if (billing.isPremium()) "play_verified_premium" else "play_free"
-            else ->
-                if (billing.isPremium()) "provider_premium" else "provider_free"
+            BillingBackend.PLAY ->
+                if (billing.isPremium()) "play_client_premium" else "play_free"
         }
 }
 
 /**
- * Convenience accessors that read from the process-wide [CoreGuardApp] when
- * available. Prefer injecting [EntitlementPolicy] in new code.
- *
- * Falls back to a local [DemoBillingProvider] only when the Application is not
- * yet initialized (unit tests). That fallback is **DEMO ONLY**.
+ * Convenience accessors via [CoreGuardApp] when available.
+ * Falls back to demo billing only for unit tests without Application.
  */
 object Entitlements {
 

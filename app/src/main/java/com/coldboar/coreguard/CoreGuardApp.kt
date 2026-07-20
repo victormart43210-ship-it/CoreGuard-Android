@@ -6,19 +6,27 @@ import android.app.Application
  * Application entry point.
  *
  * Owns the shared [BillingProvider] and [SubscriptionManager] so Activities
- * do not create divergent demo billing state.
+ * do not create divergent billing state.
  *
- * **DEMO ONLY**: The default provider is [DemoBillingProvider]. Replace with a
- * real Play Billing implementation before any production release that charges
- * users. Demo unlock is not purchase verification.
+ * Billing selection:
+ * - Debug ([BuildConfig.USE_DEMO_BILLING] = true) → [DemoBillingProvider]
+ * - Release → [PlayBillingProvider] (client-side Play Billing; not server-verified)
+ *
+ * Demo unlock is never presented as purchase verification.
  */
 class CoreGuardApp : Application() {
 
     /**
      * Shared billing backend for this process.
-     * Demo path only — not Google Play Billing.
+     * Debug uses demo; release uses Google Play Billing Library.
      */
-    val billingProvider: BillingProvider by lazy { DemoBillingProvider(startAsPremium = false) }
+    val billingProvider: BillingProvider by lazy {
+        if (BuildConfig.USE_DEMO_BILLING) {
+            DemoBillingProvider(startAsPremium = false)
+        } else {
+            PlayBillingProvider(this)
+        }
+    }
 
     /** Shared subscription / paywall launch guard for this process. */
     val subscriptionManager: SubscriptionManager by lazy { SubscriptionManager(billingProvider) }
@@ -37,5 +45,14 @@ class CoreGuardApp : Application() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        // Warm Play connection / refresh cached purchases when using Play backend.
+        if (!BuildConfig.USE_DEMO_BILLING) {
+            billingProvider.refreshPurchases(null)
+        }
+    }
+
+    override fun onTerminate() {
+        billingProvider.destroy()
+        super.onTerminate()
     }
 }

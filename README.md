@@ -25,9 +25,9 @@ security against advanced attacks.
 | Area | Status |
 |------|--------|
 | CPU usage | Simulated — labeled in UI |
-| Premium unlock | `DemoBillingProvider` only — not purchase verification |
+| Premium unlock (debug) | `DemoBillingProvider` — not a purchase |
+| Premium unlock (release) | `PlayBillingProvider` — Play Billing client-side; not server-verified |
 | Signature pinning | Evaluator present; expected hash not configured |
-| Google Play Billing | Interface + `PlayBillingProvider` stub only |
 | Play Store approval | Not claimed |
 
 See [docs/RELEASE_READINESS.md](docs/RELEASE_READINESS.md) and

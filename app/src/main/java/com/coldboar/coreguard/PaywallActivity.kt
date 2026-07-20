@@ -7,11 +7,10 @@ import com.coldboar.coreguard.databinding.ActivityPaywallBinding
 /**
  * Paywall screen.
  *
- * **DEMO ONLY** – displays a simulated upgrade prompt. No real payment is
- * processed here. Replace the demo purchase flow with a real Google Play
- * Billing integration ([PlayBillingProvider]) before distributing a paid build.
- *
- * Demo unlock is **not** purchase verification.
+ * Behavior depends on the active [BillingProvider]:
+ * - [DemoBillingProvider] (debug): simulated unlock — not a real purchase.
+ * - [PlayBillingProvider] (release): Google Play purchase sheet for
+ *   [PRODUCT_ID_PREMIUM]. Client-side success is not server verification.
  *
  * The [SubscriptionManager] prevents duplicate launches of this activity.
  */
@@ -30,13 +29,25 @@ class PaywallActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         title = getString(R.string.paywall_title)
 
+        val isDemo = billing.backend == BillingBackend.DEMO
+        binding.tvPaywallDisclaimer.text = getString(
+            if (isDemo) R.string.paywall_demo_disclaimer else R.string.paywall_play_disclaimer
+        )
+        binding.btnSubscribe.text = getString(
+            if (isDemo) R.string.paywall_btn_subscribe_demo else R.string.paywall_btn_subscribe_play
+        )
+
         binding.btnSubscribe.setOnClickListener {
-            // DEMO: simulates a purchase – no real payment is made.
-            billing.launchPurchaseFlow(PRODUCT_ID_PREMIUM) { result ->
+            billing.launchPurchaseFlow(this, PRODUCT_ID_PREMIUM) { result ->
                 when (result) {
                     is PurchaseResult.Success -> {
-                        binding.tvPaywallStatus.text =
-                            getString(R.string.paywall_purchase_success_demo)
+                        binding.tvPaywallStatus.text = getString(
+                            if (isDemo) {
+                                R.string.paywall_purchase_success_demo
+                            } else {
+                                R.string.paywall_purchase_success_play
+                            }
+                        )
                         finish()
                     }
                     is PurchaseResult.Cancelled -> {
@@ -60,7 +71,7 @@ class PaywallActivity : AppCompatActivity() {
     }
 
     companion object {
-        /** Play Console product ID placeholder – update before publishing. */
+        /** Must match the subscription product ID configured in Play Console. */
         const val PRODUCT_ID_PREMIUM = "coreguard_premium_monthly"
     }
 }

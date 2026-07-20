@@ -20,6 +20,8 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            // Release uses Play Billing Library. Demo unlock is disabled.
+            buildConfigField("boolean", "USE_DEMO_BILLING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -28,6 +30,8 @@ android {
         debug {
             isMinifyEnabled = false
             applicationIdSuffix = ".debug"
+            // Debug keeps the demo entitlement path clearly separate.
+            buildConfigField("boolean", "USE_DEMO_BILLING", "true")
         }
     }
 
@@ -52,6 +56,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.lifecycle.runtime.ktx)
+    implementation(libs.billing.ktx)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

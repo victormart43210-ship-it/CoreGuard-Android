@@ -120,7 +120,7 @@
             android:id="@+id/btnUpgradePremium"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/btn_upgrade_premium"
+            android:text="@string/btn_upgrade_premium_demo"
             style="@style/Widget.Material3.Button.OutlinedButton" />
 
     </LinearLayout>

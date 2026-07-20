@@ -29,6 +29,7 @@
             android:gravity="center" />
 
         <TextView
+            android:id="@+id/tvPaywallDisclaimer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/paywall_demo_disclaimer"
@@ -41,7 +42,7 @@
             android:id="@+id/btnSubscribe"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/paywall_btn_subscribe"
+            android:text="@string/paywall_btn_subscribe_demo"
             android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton

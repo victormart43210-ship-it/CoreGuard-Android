@@ -25,8 +25,8 @@
 | Feature | Status | Notes |
 |---------|--------|-------|
 | **CPU usage** | 🔴 SIMULATED | No real CPU reading. Labeled "simulated" in UI and code. Must be replaced with a real `ActivityManager` or `/proc/stat` implementation before claiming real metrics. |
-| **Billing / premium** | 🔴 DEMO ONLY | `DemoBillingProvider` simulates a purchase instantly. No Google Play Billing library is integrated. Do not publish as a paid app until `BillingProvider` is implemented with the Play Billing Library. |
-| **Purchase verification** | 🔴 NOT IMPLEMENTED | Server-side purchase token verification against the Google Play Developer API is required before production. |
+| **Billing / premium** | 🟡 INTEGRATED (client) | Debug = demo unlock. Release = Play Billing Library. **Server-side token verification still required** before trusting paid entitlements. |
+| **Purchase verification** | 🔴 NOT IMPLEMENTED | Server-side purchase token verification against the Google Play Developer API is required before production trust. |
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
 | **Root / emulator detection** | 🟡 HEURISTIC | Heuristic checks only. Advanced root frameworks may not be detected. |
 | **Play Store approval** | ⬛ NOT GUARANTEED | Submitting this app does not guarantee approval. Google reviews apps for policy compliance independently. |
@@ -147,33 +147,31 @@ privacy policy URL. Host a simple policy stating no data is collected.
 
 ## 6. Billing Setup
 
-**Current state**: `DemoBillingProvider` — no real billing. **Do not charge users.**
+**Current state**
+| Build type | Provider | Honesty |
+|------------|----------|---------|
+| **debug** (`USE_DEMO_BILLING=true`) | `DemoBillingProvider` | Simulated unlock — **not** a purchase |
+| **release** (`USE_DEMO_BILLING=false`) | `PlayBillingProvider` | Google Play Billing Library (client-side acknowledge + local cache) |
 
-### Steps to Integrate Real Billing
+**Still required before trusting paid entitlements in production**
+- Create subscription product `coreguard_premium_monthly` in Play Console
+- Install the app from a Play testing track (sideloaded APKs usually cannot purchase)
+- **Server-side** purchase-token verification via Google Play Developer API
+- Do not treat client-side `isPremium()` alone as fraud-proof
 
-1. Add the Play Billing Library dependency to `app/build.gradle.kts`:
-   ```kotlin
-   implementation("com.android.billingclient:billing-ktx:7.0.0")
-   ```
+### Play Billing already wired in-app
 
-2. Create a `PlayBillingProvider` that implements `BillingProvider`:
-   - Connect `BillingClient` in `onCreate`
-   - Query existing purchases on connect
-   - Implement `launchPurchaseFlow` using `BillingClient.launchBillingFlow`
-   - Verify purchase tokens server-side before granting entitlement
+1. Dependency: `com.android.billingclient:billing-ktx` (see `gradle/libs.versions.toml`)
+2. `PlayBillingProvider` connects `BillingClient`, queries subscription details, launches the Play sheet, acknowledges purchases, and refreshes cache
+3. `CoreGuardApp` selects demo vs Play via `BuildConfig.USE_DEMO_BILLING`
+4. UI copy distinguishes demo unlock from Play client-side premium
 
-3. Define a subscription product in the Play Console:
-   - **Product ID**: `coreguard_premium_monthly` (matches `PaywallActivity.PRODUCT_ID_PREMIUM`)
-   - Set price, billing period, and free trial if desired.
+### Remaining production steps
 
-4. **Replace** `DemoBillingProvider` with a completed `PlayBillingProvider` in
-   `CoreGuardApp` (single process-wide provider). Keep UI copy honest until
-   Play Billing + server verification are live.
-
-5. **Server-side verification** (required for production):
-   - Use the [Google Play Developer API](https://developers.google.com/android-publisher)
-     to verify purchase tokens before unlocking premium features.
-   - Store the entitlement server-side; don't trust the device alone.
+1. Define the subscription in Play Console (product id must match `PaywallActivity.PRODUCT_ID_PREMIUM`)
+2. Add license testers / Internal Testing track
+3. Implement backend verification before unlocking sensitive premium features
+4. Update Data Safety / payments declarations if you charge users
 
 ---
 
@@ -203,16 +201,16 @@ privacy policy URL. Host a simple policy stating no data is collected.
 - [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
 - [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
 - [ ] CPU metric is no longer labeled "simulated" or is removed from release UI
-- [ ] `DemoBillingProvider` replaced with `PlayBillingProvider`
+- [ ] Play Console subscription `coreguard_premium_monthly` created and tested on Internal Testing
 - [ ] Server-side purchase token verification implemented
 - [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash
 - [ ] ProGuard/R8 release build tested (check no critical classes stripped)
 - [ ] App icon (512×512 px) created and set
 - [ ] Play Console store listing completed
 - [ ] Privacy policy URL added to Play Console
-- [ ] Data Safety form completed
+- [ ] Data Safety form completed (update if you collect purchase/account data)
 - [ ] Target audience / content rating questionnaire completed
-- [ ] App tested on at least one physical device (not only emulator)
+- [ ] App tested on at least one physical device via a Play testing track (not only sideload)
 - [ ] Security Dashboard shows expected PASS/WARN states on a non-rooted device
 
 ---

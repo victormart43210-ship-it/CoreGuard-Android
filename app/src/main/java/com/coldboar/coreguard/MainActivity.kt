@@ -24,8 +24,11 @@ class MainActivity : AppCompatActivity() {
     private val pollingIntervalMs = 2_000L
     private var isPolling = false
 
+    private val app: CoreGuardApp
+        get() = application as CoreGuardApp
+
     private val subscriptionManager: SubscriptionManager
-        get() = (application as CoreGuardApp).subscriptionManager
+        get() = app.subscriptionManager
 
     private val pollingRunnable = object : Runnable {
         override fun run() {
@@ -48,6 +51,14 @@ class MainActivity : AppCompatActivity() {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }
 
+        binding.btnUpgradePremium.setText(
+            if (app.billingProvider.backend == BillingBackend.DEMO) {
+                R.string.btn_upgrade_premium_demo
+            } else {
+                R.string.btn_upgrade_premium_play
+            }
+        )
+
         updateMemoryStats()
         updateEntitlementBanner()
     }
@@ -57,7 +68,11 @@ class MainActivity : AppCompatActivity() {
         startPolling()
         // Reset duplicate-paywall guard when returning from PaywallActivity.
         subscriptionManager.onPaywallDismissed()
-        updateEntitlementBanner()
+        if (app.billingProvider.backend == BillingBackend.PLAY) {
+            app.billingProvider.refreshPurchases { updateEntitlementBanner() }
+        } else {
+            updateEntitlementBanner()
+        }
     }
 
     override fun onPause() {
@@ -94,11 +109,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateEntitlementBanner() {
-        val isPremium = subscriptionManager.isPremium()
-        binding.tvEntitlementBanner.text = if (isPremium) {
-            getString(R.string.entitlement_demo_premium)
-        } else {
-            getString(R.string.entitlement_demo_free)
+        val billing = app.billingProvider
+        val isPremium = billing.isPremium()
+        binding.tvEntitlementBanner.text = when (billing.backend) {
+            BillingBackend.DEMO -> getString(
+                if (isPremium) R.string.entitlement_demo_premium else R.string.entitlement_demo_free
+            )
+            BillingBackend.PLAY -> getString(
+                if (isPremium) R.string.entitlement_play_premium else R.string.entitlement_play_free
+            )
         }
     }
 }
