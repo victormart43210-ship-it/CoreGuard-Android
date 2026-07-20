@@ -38,8 +38,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?attr/textAppearanceCaption"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="8dp"
             tools:text="Entitlement: Free (demo billing)" />
+
+        <TextView
+            android:id="@+id/tvRestrictedBanner"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceCaption"
+            android:textColor="@color/status_fail"
+            android:visibility="gone"
+            android:layout_marginBottom="16dp"
+            tools:text="RESTRICTED MODE"
+            tools:visibility="visible" />
 
         <!-- RAM Card -->
         <com.google.android.material.card.MaterialCardView

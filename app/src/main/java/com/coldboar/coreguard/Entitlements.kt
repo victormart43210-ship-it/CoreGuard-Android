@@ -15,29 +15,34 @@ enum class EntitlementTier {
 
 /**
  * Evaluates which features a user is entitled to based on the current
- * [BillingProvider] state.
- *
- * Policy logic only – no purchases or network calls.
+ * [BillingProvider] state and optional restricted mode.
  *
  * Honesty:
- * - [BillingBackend.DEMO] premium = local demo flag only
- * - [BillingBackend.PLAY] premium = client-side Play cache only (not server-verified)
+ * - DEMO premium = local demo flag only (not a purchase)
+ * - PLAY premium = true only after billing-server verification in the Play path
+ * - Restricted mode overrides premium for sensitive features
  */
-class EntitlementPolicy(private val billing: BillingProvider) {
+class EntitlementPolicy(
+    private val billing: BillingProvider,
+    private val restrictedActive: Boolean = false
+) {
 
     fun currentTier(): EntitlementTier =
         if (billing.isPremium()) EntitlementTier.PREMIUM else EntitlementTier.FREE
 
     fun canViewSecurityDashboard(): Boolean = true
 
-    fun canExportReport(): Boolean = currentTier() == EntitlementTier.PREMIUM
+    fun canExportReport(): Boolean =
+        RestrictedMode.canExportReport(currentTier() == EntitlementTier.PREMIUM, restrictedActive)
 
-    fun canAccessAdvancedMonitoring(): Boolean = currentTier() == EntitlementTier.PREMIUM
+    fun canAccessAdvancedMonitoring(): Boolean =
+        RestrictedMode.canAccessAdvancedMonitoring(
+            currentTier() == EntitlementTier.PREMIUM,
+            restrictedActive
+        )
 
-    /**
-     * Stable source label for tests/UI honesty.
-     * Play premium is labeled `play_client_premium` — not "verified".
-     */
+    fun canLaunchPaywall(): Boolean = RestrictedMode.canLaunchPaywall(restrictedActive)
+
     fun entitlementSourceLabel(): String =
         when (billing.backend) {
             BillingBackend.DEMO ->

@@ -6,7 +6,6 @@
     <!-- Monitoring labels -->
     <string name="label_ram_usage">RAM Usage</string>
     <string name="label_cpu_usage">CPU Usage</string>
-    <!-- CPU value is simulated – no real CPU measurement is performed -->
     <string name="cpu_simulated_label">SIMULATED — not measured on device</string>
 
     <!-- Entitlement honesty banners -->
@@ -14,6 +13,10 @@
     <string name="entitlement_demo_premium">Entitlement: Premium DEMO unlock — not a real purchase</string>
     <string name="entitlement_play_free">Entitlement: Free (Play Billing — awaiting purchase or server verification)</string>
     <string name="entitlement_play_premium">Entitlement: Premium (Play + server-verified)</string>
+
+    <!-- Restricted mode -->
+    <string name="restricted_mode_banner">RESTRICTED MODE: high-risk security FAIL detected. Sensitive features locked (prototype gate).</string>
+    <string name="restricted_mode_paywall_blocked">Paywall blocked while restricted mode is active.</string>
 
     <!-- Navigation -->
     <string name="btn_security_dashboard">View Security Dashboard</string>

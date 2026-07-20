@@ -4,17 +4,16 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.view.View
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityMainBinding
 
 /**
  * Main screen.
  *
- * Displays a summary of device health (RAM usage + simulated CPU) and provides
- * navigation to the Security Dashboard. A lifecycle-safe polling loop updates
- * the memory stats while the activity is visible.
- *
- * CPU is **explicitly simulated** — no real CPU measurement is performed.
+ * Displays device health (RAM + simulated CPU), entitlement honesty banners,
+ * and restricted-mode state derived from local security checks.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -23,6 +22,7 @@ class MainActivity : AppCompatActivity() {
     private val pollingHandler = Handler(Looper.getMainLooper())
     private val pollingIntervalMs = 2_000L
     private var isPolling = false
+    private var restrictedActive: Boolean = false
 
     private val app: CoreGuardApp
         get() = application as CoreGuardApp
@@ -48,6 +48,10 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.btnUpgradePremium.setOnClickListener {
+            if (!RestrictedMode.canLaunchPaywall(restrictedActive)) {
+                Toast.makeText(this, R.string.restricted_mode_paywall_blocked, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             subscriptionManager.launchPaywallIfNotShowing(this)
         }
 
@@ -60,18 +64,17 @@ class MainActivity : AppCompatActivity() {
         )
 
         updateMemoryStats()
-        updateEntitlementBanner()
+        refreshSecurityAndEntitlementUi()
     }
 
     override fun onResume() {
         super.onResume()
         startPolling()
-        // Reset duplicate-paywall guard when returning from PaywallActivity.
         subscriptionManager.onPaywallDismissed()
         if (app.billingProvider.backend == BillingBackend.PLAY) {
-            app.billingProvider.refreshPurchases { updateEntitlementBanner() }
+            app.billingProvider.refreshPurchases { refreshSecurityAndEntitlementUi() }
         } else {
-            updateEntitlementBanner()
+            refreshSecurityAndEntitlementUi()
         }
     }
 
@@ -103,12 +106,17 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvRamPercent.text = if (percent != null) "$percent%" else "–"
-
-        // CPU value is explicitly simulated – no real CPU measurement is performed.
         binding.tvCpuUsage.text = getString(R.string.cpu_simulated_label)
     }
 
-    private fun updateEntitlementBanner() {
+    private fun refreshSecurityAndEntitlementUi() {
+        val (_, decision) = SecuritySnapshot.capture(this)
+        restrictedActive = decision.active
+        binding.tvRestrictedBanner.visibility = if (decision.active) View.VISIBLE else View.GONE
+        if (decision.active) {
+            binding.tvRestrictedBanner.text = getString(R.string.restricted_mode_banner)
+        }
+
         val billing = app.billingProvider
         val isPremium = billing.isPremium()
         binding.tvEntitlementBanner.text = when (billing.backend) {
