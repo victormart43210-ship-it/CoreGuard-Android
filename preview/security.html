@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CoreGuard Preview</title>
+  <style>
+    :root {
+      --primary: #6200EE;
+      --primary-dark: #3700B3;
+      --on-primary: #fff;
+      --bg: #fafafa;
+      --surface: #fff;
+      --text: #1a1a1a;
+      --muted: #5f6368;
+      --pass: #388E3C;
+      --warn: #F57C00;
+      --fail: #D32F2F;
+      --outline: #6750A4;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: "Roboto", "Google Sans", system-ui, sans-serif;
+      background: #121212;
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 24px 16px 48px;
+      gap: 16px;
+    }
+    h1 { color: #eee; font-weight: 500; font-size: 1.1rem; margin: 0; }
+    .hint { color: #9aa0a6; font-size: 0.85rem; margin: 0 0 8px; text-align: center; max-width: 360px; }
+    .phone {
+      width: 360px;
+      height: 740px;
+      background: #000;
+      border-radius: 28px;
+      padding: 12px;
+      box-shadow: 0 20px 60px rgba(0,0,0,.5);
+    }
+    .screen {
+      height: 100%;
+      background: var(--bg);
+      border-radius: 18px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+    .appbar {
+      background: var(--primary);
+      color: var(--on-primary);
+      padding: 14px 16px;
+      font-size: 1.15rem;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-height: 56px;
+    }
+    .appbar .back { cursor: pointer; opacity: .95; font-size: 1.2rem; }
+    .content { flex: 1; overflow: auto; padding: 16px; }
+    .title { font-size: 1.5rem; font-weight: 500; margin: 0 0 4px; }
+    .subtitle { color: var(--muted); font-size: 0.875rem; margin: 0 0 8px; }
+    .caption { color: var(--muted); font-size: 0.75rem; margin: 0 0 8px; line-height: 1.4; }
+    .card {
+      background: var(--surface);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.12), 0 1px 2px rgba(0,0,0,.08);
+    }
+    .card h3 { margin: 0 0 6px; font-size: 1rem; font-weight: 500; }
+    .card .value { font-size: 1.25rem; font-weight: 500; margin: 0; }
+    .card .meta { color: var(--muted); font-size: 0.875rem; margin: 4px 0 0; }
+    .btn {
+      display: block;
+      width: 100%;
+      border: none;
+      border-radius: 24px;
+      padding: 12px 16px;
+      font-size: 0.9rem;
+      font-weight: 500;
+      cursor: pointer;
+      margin-bottom: 12px;
+      text-align: center;
+    }
+    .btn-filled { background: var(--primary); color: #fff; }
+    .btn-outline {
+      background: transparent;
+      color: var(--primary);
+      border: 1px solid #cac4d0;
+    }
+    .check {
+      padding: 12px 0;
+      border-bottom: 1px solid #eee;
+    }
+    .check:last-child { border-bottom: none; }
+    .check-row { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+    .check-name { font-weight: 500; }
+    .state { font-weight: 700; }
+    .state.pass { color: var(--pass); }
+    .state.warn { color: var(--warn); }
+    .state.fail { color: var(--fail); }
+    .check-exp { color: var(--muted); font-size: 0.875rem; margin-top: 4px; line-height: 1.35; }
+    .overall { font-size: 1.4rem; font-weight: 500; margin: 0 0 8px; }
+    .paywall { text-align: center; padding-top: 24px; }
+    .paywall .headline { font-size: 1.5rem; font-weight: 500; margin: 0 0 8px; }
+    .paywall .desc { margin: 0 0 8px; line-height: 1.4; }
+    .paywall .disclaimer { font-style: italic; color: var(--muted); font-size: 0.85rem; margin: 0 0 24px; line-height: 1.4; }
+    .tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 8px;
+    }
+    .tabs button {
+      background: #2a2a2a; color: #ddd; border: 1px solid #444;
+      border-radius: 999px; padding: 8px 14px; cursor: pointer; font-size: 0.85rem;
+    }
+    .tabs button.active { background: var(--primary); border-color: var(--primary); color: #fff; }
+    [data-screen] { display: none; height: 100%; flex-direction: column; }
+    [data-screen].active { display: flex; }
+  </style>
+</head>
+<body>
+  <h1>CoreGuard UI preview</h1>
+  <p class="hint">Interactive mock of the debug build screens (not an emulator). CPU is labeled simulated; premium is demo-only.</p>
+  <div class="tabs">
+    <button type="button" data-go="main">Main</button>
+    <button type="button" class="active" data-go="security">Security</button>
+    <button type="button" data-go="paywall">Paywall</button>
+  </div>
+  <div class="phone">
+    <div class="screen">
+      <!-- MAIN -->
+      <div data-screen="main">
+        <div class="appbar">CoreGuard</div>
+        <div class="content">
+          <p class="title">CoreGuard</p>
+          <p class="subtitle">Security &amp; device monitoring (prototype)</p>
+          <p class="caption">Prototype build: CPU is simulated. Billing path depends on debug vs release.</p>
+          <p class="caption" id="entitlement">Entitlement: Free (demo billing — not a purchase)</p>
+
+          <div class="card">
+            <h3>RAM Usage</h3>
+            <p class="value">1.8 GB / 6.0 GB</p>
+            <p class="meta">30%</p>
+          </div>
+          <div class="card">
+            <h3>CPU Usage</h3>
+            <p class="meta">SIMULATED — not measured on device</p>
+          </div>
+          <button class="btn btn-filled" type="button" data-go="security">View Security Dashboard</button>
+          <button class="btn btn-outline" type="button" data-go="paywall">Upgrade to Premium (Demo)</button>
+        </div>
+      </div>
+
+      <!-- SECURITY -->
+      <div data-screen="security" class="active">
+        <div class="appbar"><span class="back" data-go="main">←</span> Security Status</div>
+        <div class="content">
+          <p class="overall state warn">OVERALL: WARN</p>
+          <p class="caption">Best-effort local heuristics. Not a guarantee against advanced attacks.</p>
+
+          <div class="check">
+            <div class="check-row"><span class="check-name">Debugger Attached</span><span class="state pass">PASS</span></div>
+            <div class="check-exp">No debugger detected. The app is running without a debugger attached.</div>
+          </div>
+          <div class="check">
+            <div class="check-row"><span class="check-name">Emulator Detected</span><span class="state warn">WARN</span></div>
+            <div class="check-exp">Device characteristics suggest this is an emulator. Security guarantees may differ from a real device.</div>
+          </div>
+          <div class="check">
+            <div class="check-row"><span class="check-name">Root Indicators</span><span class="state pass">PASS</span></div>
+            <div class="check-exp">No common root indicators found. Note: advanced root frameworks may not be detected.</div>
+          </div>
+          <div class="check">
+            <div class="check-row"><span class="check-name">Build Type</span><span class="state warn">WARN</span></div>
+            <div class="check-exp">This is a DEBUG build. Debug builds have relaxed security and must not be distributed.</div>
+          </div>
+          <div class="check">
+            <div class="check-row"><span class="check-name">App Signature</span><span class="state warn">WARN</span></div>
+            <div class="check-exp">No expected certificate hash configured. Signature pinning is not active.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAYWALL -->
+      <div data-screen="paywall">
+        <div class="appbar"><span class="back" data-go="main">←</span> Upgrade to Premium</div>
+        <div class="content paywall">
+          <p class="headline">CoreGuard Premium</p>
+          <p class="desc">Unlock advanced monitoring, threat export, and priority support.</p>
+          <p class="disclaimer">DEMO BUILD: No real payment is processed. Demo unlock is not purchase verification.</p>
+          <button class="btn btn-filled" type="button" id="btnDemoUnlock">Simulate Unlock (Demo)</button>
+          <button class="btn btn-outline" type="button" data-go="main">Not now</button>
+          <p class="caption" id="paywallStatus"></p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    function show(name) {
+      document.querySelectorAll('[data-screen]').forEach(el => el.classList.toggle('active', el.dataset.screen === name));
+      document.querySelectorAll('.tabs button').forEach(btn => btn.classList.toggle('active', btn.dataset.go === name));
+    }
+    document.querySelectorAll('[data-go]').forEach(el => {
+      el.addEventListener('click', () => show(el.dataset.go));
+    });
+    document.getElementById('btnDemoUnlock').addEventListener('click', () => {
+      document.getElementById('paywallStatus').textContent = 'Demo unlock simulated. No real payment was made.';
+      document.getElementById('entitlement').textContent = 'Entitlement: Premium DEMO unlock — not a real purchase';
+      setTimeout(() => show('main'), 700);
+    });
+  </script>
+</body>
+</html>

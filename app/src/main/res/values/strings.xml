@@ -1,0 +1,49 @@
+<resources>
+    <string name="app_name">CoreGuard</string>
+    <string name="main_subtitle">Security &amp; device monitoring (prototype)</string>
+    <string name="prototype_disclaimer">Prototype build: CPU is simulated. Billing path depends on debug vs release.</string>
+
+    <!-- Monitoring labels -->
+    <string name="label_ram_usage">RAM Usage</string>
+    <string name="label_cpu_usage">CPU Usage</string>
+    <string name="cpu_simulated_label">SIMULATED — not measured on device</string>
+
+    <!-- Entitlement honesty banners -->
+    <string name="entitlement_demo_free">Entitlement: Free (demo billing — not a purchase)</string>
+    <string name="entitlement_demo_premium">Entitlement: Premium DEMO unlock — not a real purchase</string>
+    <string name="entitlement_play_free">Entitlement: Free (Play Billing — awaiting purchase or server verification)</string>
+    <string name="entitlement_play_premium">Entitlement: Premium (Play + server-verified)</string>
+
+    <!-- Restricted mode -->
+    <string name="restricted_mode_banner">RESTRICTED MODE: high-risk security FAIL detected. Sensitive features locked (prototype gate).</string>
+    <string name="restricted_mode_paywall_blocked">Paywall blocked while restricted mode is active.</string>
+
+    <!-- Navigation -->
+    <string name="btn_security_dashboard">View Security Dashboard</string>
+    <string name="btn_upgrade_premium_demo">Upgrade to Premium (Demo)</string>
+    <string name="btn_upgrade_premium_play">Subscribe with Google Play</string>
+
+    <!-- Security dashboard -->
+    <string name="security_dashboard_title">Security Status</string>
+    <string name="security_dashboard_disclaimer">Best-effort local heuristics. Not a guarantee against advanced attacks.</string>
+    <string name="status_pass">PASS</string>
+    <string name="status_warn">WARN</string>
+    <string name="status_fail">FAIL</string>
+    <string name="status_overall_pass">OVERALL: PASS</string>
+    <string name="status_overall_warn">OVERALL: WARN</string>
+    <string name="status_overall_fail">OVERALL: FAIL</string>
+
+    <!-- Paywall -->
+    <string name="paywall_title">Upgrade to Premium</string>
+    <string name="paywall_headline">CoreGuard Premium</string>
+    <string name="paywall_description">Unlock advanced monitoring, threat export, and priority support.</string>
+    <string name="paywall_demo_disclaimer">DEMO BUILD: No real payment is processed. Demo unlock is not purchase verification.</string>
+    <string name="paywall_play_disclaimer">Uses Google Play Billing, then server verification. Sideloaded APKs usually cannot purchase — use a Play testing track. Premium unlocks only after billing-server verifies the token.</string>
+    <string name="paywall_btn_subscribe_demo">Simulate Unlock (Demo)</string>
+    <string name="paywall_btn_subscribe_play">Continue with Google Play</string>
+    <string name="paywall_btn_close">Not now</string>
+    <string name="paywall_purchase_success_demo">Demo unlock simulated. No real payment was made.</string>
+    <string name="paywall_purchase_success_play">Purchase verified by billing-server. Premium unlocked.</string>
+    <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
+    <string name="paywall_purchase_error">Error: %1$s</string>
+</resources>

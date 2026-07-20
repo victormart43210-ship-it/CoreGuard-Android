@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Prototype network baseline: cleartext HTTP is disabled.
+  Local emulator testing of billing-server over http://10.0.2.2 requires a
+  debug-only override — do not weaken this for release builds.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>
