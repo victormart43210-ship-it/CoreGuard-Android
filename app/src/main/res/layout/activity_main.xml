@@ -102,10 +102,10 @@
             android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnPegasusScanner"
+            android:id="@+id/btnNemesisScanner"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/btn_pegasus_scanner"
+            android:text="@string/btn_nemesis_scanner"
             android:layout_marginBottom="12dp" />
 
         <com.google.android.material.button.MaterialButton

@@ -7,7 +7,7 @@ import android.util.Log
 import java.io.File
 
 /**
- * Builds a [PegasusScanner] wired to real Android data sources and runs it.
+ * Builds a [NemesisScanner] wired to real Android data sources and runs it.
  *
  * Visibility without root is limited, so we scan:
  *  - every installed application package id,
@@ -20,7 +20,7 @@ object DeviceScanner {
 
     fun scan(context: Context): ScanReport {
         val matcher = IocRepository.matcher(context)
-        return PegasusScanner(
+        return NemesisScanner(
             matcher = matcher,
             installedPackages = { installedPackages(context) },
             runningProcesses = { readableProcessNames() },

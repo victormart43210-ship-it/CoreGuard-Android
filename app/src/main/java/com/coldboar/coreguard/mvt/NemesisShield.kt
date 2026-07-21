@@ -5,7 +5,7 @@ import android.content.Intent
 import androidx.core.content.ContextCompat
 
 /** Convenience controller for starting/stopping the [GuardVpnService]. */
-object PegasusShield {
+object NemesisShield {
 
     fun start(context: Context) {
         ContextCompat.startForegroundService(context, Intent(context, GuardVpnService::class.java))

@@ -4,7 +4,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
-class PegasusScannerTest {
+class NemesisScannerTest {
 
     private val matcher = IocMatcher(
         listOf(
@@ -16,7 +16,7 @@ class PegasusScannerTest {
 
     @Test
     fun `clean device yields CLEAN verdict`() {
-        val scanner = PegasusScanner(
+        val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { listOf("com.android.chrome", "com.coldboar.coreguard") },
             runningProcesses = { listOf("system_server", "zygote") },
@@ -30,7 +30,7 @@ class PegasusScannerTest {
 
     @Test
     fun `malicious package yields INFECTED with critical detection`() {
-        val scanner = PegasusScanner(
+        val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { listOf("com.android.chrome", "com.network.android") }
         )
@@ -43,7 +43,7 @@ class PegasusScannerTest {
 
     @Test
     fun `malicious process is detected`() {
-        val scanner = PegasusScanner(
+        val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { emptyList() },
             runningProcesses = { listOf("/system/bin/pegasus-implant") }
@@ -55,7 +55,7 @@ class PegasusScannerTest {
 
     @Test
     fun `malicious file yields SUSPICIOUS when only high severity`() {
-        val scanner = PegasusScanner(
+        val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { emptyList() },
             accessibleFiles = { listOf("/data/local/tmp/implant.so") }
@@ -75,8 +75,8 @@ class PegasusScannerTest {
             ArtifactKind.FILE, "y",
             Indicator(IndicatorType.FILEPATH, "y", "m"), ThreatSeverity.HIGH
         )
-        assertEquals(ScanVerdict.INFECTED, PegasusScanner.classify(listOf(high, critical)))
-        assertEquals(ScanVerdict.SUSPICIOUS, PegasusScanner.classify(listOf(high)))
-        assertEquals(ScanVerdict.CLEAN, PegasusScanner.classify(emptyList()))
+        assertEquals(ScanVerdict.INFECTED, NemesisScanner.classify(listOf(high, critical)))
+        assertEquals(ScanVerdict.SUSPICIOUS, NemesisScanner.classify(listOf(high)))
+        assertEquals(ScanVerdict.CLEAN, NemesisScanner.classify(emptyList()))
     }
 }

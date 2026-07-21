@@ -14,7 +14,7 @@ import com.coldboar.coreguard.databinding.ActivityThreatScannerBinding
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
 import com.coldboar.coreguard.mvt.LastScan
-import com.coldboar.coreguard.mvt.PegasusShield
+import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ShieldState
@@ -23,7 +23,7 @@ import com.google.android.material.card.MaterialCardView
 import java.util.concurrent.Executors
 
 /**
- * The Pegasus Scanner screen.
+ * The Nemesis Scanner screen.
  *
  * Runs a [DeviceScanner] forensic scan against Amnesty MVT-style indicators and
  * lets the user toggle the [GuardVpnService] spyware-domain blocker.
@@ -41,7 +41,7 @@ class ThreatScannerActivity : AppCompatActivity() {
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == RESULT_OK) {
-            PegasusShield.start(this)
+            NemesisShield.start(this)
         } else {
             Toast.makeText(this, R.string.shield_consent_denied, Toast.LENGTH_SHORT).show()
             binding.switchShield.isChecked = false
@@ -59,7 +59,7 @@ class ThreatScannerActivity : AppCompatActivity() {
         binding.btnRunScan.setOnClickListener { runScan() }
         binding.switchShield.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked && !ShieldState.isActive) enableShield()
-            else if (!isChecked && ShieldState.isActive) PegasusShield.stop(this)
+            else if (!isChecked && ShieldState.isActive) NemesisShield.stop(this)
         }
 
         LastScan.report?.let { renderReport(it) }
@@ -88,7 +88,7 @@ class ThreatScannerActivity : AppCompatActivity() {
 
     private fun enableShield() {
         val prepare = VpnService.prepare(this)
-        if (prepare != null) vpnConsent.launch(prepare) else PegasusShield.start(this)
+        if (prepare != null) vpnConsent.launch(prepare) else NemesisShield.start(this)
     }
 
     private fun renderShield() {

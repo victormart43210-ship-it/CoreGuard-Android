@@ -40,15 +40,16 @@ data class ScanReport(
     val indicatorCount: Int,
     val detections: List<Detection>
 ) {
-    val verdict: ScanVerdict = PegasusScanner.classify(detections)
+    val verdict: ScanVerdict = NemesisScanner.classify(detections)
     val durationMillis: Long get() = (finishedAtMillis - startedAtMillis).coerceAtLeast(0)
     val scannedArtifacts: Int get() = scannedPackages + scannedProcesses + scannedFiles
 }
 
 /**
- * A "Pegasus scanner" inspired by Amnesty International's Mobile Verification
- * Toolkit (MVT): it enumerates on-device artifacts and matches them against a
- * set of mercenary-spyware Indicators of Compromise.
+ * The "Nemesis scanner" – a mercenary-spyware forensic scanner inspired by
+ * Amnesty International's Mobile Verification Toolkit (MVT). It enumerates
+ * on-device artifacts and matches them against a set of Indicators of
+ * Compromise for spyware such as Pegasus.
  *
  * On a non-rooted Android device an in-app scanner has far less visibility than
  * MVT running against a full forensic acquisition, so this focuses on what is
@@ -58,7 +59,7 @@ data class ScanReport(
  * All inputs are injected so the matching + classification logic is unit
  * testable without an Android runtime.
  */
-class PegasusScanner(
+class NemesisScanner(
     private val matcher: IocMatcher,
     private val installedPackages: () -> List<String>,
     private val runningProcesses: () -> List<String> = { emptyList() },

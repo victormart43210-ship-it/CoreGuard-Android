@@ -42,7 +42,7 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SecurityDashboardActivity::class.java))
         }
 
-        binding.btnPegasusScanner.setOnClickListener {
+        binding.btnNemesisScanner.setOnClickListener {
             startActivity(Intent(this, ThreatScannerActivity::class.java))
         }
 
