@@ -20,7 +20,7 @@ object CpuUsageCalculator {
 
     @Synchronized
     fun getUsagePercent(procStatReader: () -> String = ::readProcStat): Int? {
-        val snapshot = try {
+        val parsedSnapshot = try {
             parseSnapshot(procStatReader())
         } catch (_: Exception) {
             null
@@ -28,6 +28,10 @@ object CpuUsageCalculator {
             previousSnapshot = null
             return null
         }
+        val snapshot = CpuSnapshot(
+            totalTicks = parsedSnapshot.first,
+            idleTicks = parsedSnapshot.second
+        )
 
         val previous = previousSnapshot
         previousSnapshot = snapshot
