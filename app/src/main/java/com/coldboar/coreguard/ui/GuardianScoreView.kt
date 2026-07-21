@@ -63,7 +63,7 @@ class GuardianScoreView @JvmOverloads constructor(
             try {
                 trackPaint.color = getColor(
                     R.styleable.GuardianScoreView_trackColor,
-                    context.getColor(R.color.surface_card)
+                    context.getColor(R.color.pewter_card)
                 )
                 textPaint.color = getColor(
                     R.styleable.GuardianScoreView_scoreTextColor,

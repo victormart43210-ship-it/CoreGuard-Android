@@ -4,15 +4,20 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_obsidian_gradient"
+    android:background="@drawable/bg_azure_pewter"
     tools:context=".PaywallActivity">
 
-    <com.coldboar.coreguard.ui.AegishjalmurView
+    <com.coldboar.coreguard.ui.EnochianSealView
         android:layout_width="460dp"
         android:layout_height="460dp"
         android:layout_gravity="center"
         app:sigilColor="@color/gold_sigil_faint"
         app:slowRotate="true" />
+
+    <!-- Floating gold particles -->
+    <com.coldboar.coreguard.ui.GoldParticlesView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -68,7 +73,7 @@
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:importantForAccessibility="no"
-                    android:src="@drawable/ic_triquetra" />
+                    android:src="@drawable/ic_sigillum_dei" />
 
                 <TextView
                     android:layout_width="wrap_content"
@@ -105,7 +110,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:importantForAccessibility="no"
-                            android:src="@drawable/ic_rune_algiz" />
+                            android:src="@drawable/ic_unicursal_hexagram" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -127,7 +132,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:importantForAccessibility="no"
-                            android:src="@drawable/ic_rune_algiz" />
+                            android:src="@drawable/ic_unicursal_hexagram" />
 
                         <TextView
                             android:layout_width="wrap_content"
@@ -148,7 +153,7 @@
                             android:layout_width="18dp"
                             android:layout_height="18dp"
                             android:importantForAccessibility="no"
-                            android:src="@drawable/ic_rune_algiz" />
+                            android:src="@drawable/ic_unicursal_hexagram" />
 
                         <TextView
                             android:layout_width="wrap_content"

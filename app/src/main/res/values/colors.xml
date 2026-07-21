@@ -1,25 +1,27 @@
 <resources>
-    <!-- Ancient Guardian palette -->
-    <color name="obsidian">#FF0A0E17</color>
-    <color name="obsidian_deep">#FF060910</color>
-    <color name="surface_dark">#FF121927</color>
-    <color name="surface_card">#FF16202F</color>
-    <color name="surface_card_stroke">#332F3B52</color>
+    <!-- Azure / pewter palette (mystical secret-society, tech edge) -->
+    <color name="azure">#FF0E2438</color>
+    <color name="azure_deep">#FF081826</color>
+    <color name="azure_surface">#FF12304A</color>
+    <color name="pewter_card">#FF1B3852</color>
+    <color name="pewter_card_stroke">#405C7A96</color>
+    <color name="pewter_glow">#FF2E5A7A</color>
 
     <!-- Relic gold -->
     <color name="gold">#FFD4AF37</color>
     <color name="gold_bright">#FFF0D482</color>
     <color name="gold_deep">#FF8F721E</color>
-    <color name="gold_sigil">#26D4AF37</color>
-    <color name="gold_sigil_faint">#14D4AF37</color>
+    <color name="gold_sigil">#30D4AF37</color>
+    <color name="gold_sigil_faint">#1AD4AF37</color>
+    <color name="gold_particle">#FFF0D482</color>
 
     <!-- Ward teal -->
     <color name="ward_teal">#FF35E0C2</color>
     <color name="ward_teal_dim">#FF1E7E6E</color>
 
-    <color name="text_primary">#FFECE7DB</color>
-    <color name="text_secondary">#FF8B93A7</color>
-    <color name="text_tertiary">#FF5C6478</color>
+    <color name="text_primary">#FFEDEFF4</color>
+    <color name="text_secondary">#FF9FB2C6</color>
+    <color name="text_tertiary">#FF6A7F95</color>
 
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>

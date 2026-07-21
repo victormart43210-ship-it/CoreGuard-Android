@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Unicursal hexagram – the emblem of Thelema, drawn as a single continuous
+     line, with a central rose. Ancient symbol of union and protection. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:pathData="M12,1 L20.6,17 L3.4,7 L12,23 L20.6,7 L3.4,17 Z"
+        android:strokeColor="@color/gold"
+        android:strokeWidth="1.5"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+    <!-- Central rose -->
+    <path
+        android:pathData="M12,12 m-2,0 a2,2 0 1,0 4,0 a2,2 0 1,0 -4,0"
+        android:strokeColor="@color/gold_bright"
+        android:strokeWidth="1.2" />
+    <path
+        android:pathData="M12,10.4 L12.9,12 L12,13.6 L11.1,12 Z"
+        android:fillColor="@color/gold_bright" />
+</vector>

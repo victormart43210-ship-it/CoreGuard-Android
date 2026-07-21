@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- CoreGuard launcher: gold shield engraved with the Algiz protection rune -->
+<!-- CoreGuard launcher: gold shield engraved with the unicursal hexagram
+     (the emblem of Thelema) -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -7,7 +8,7 @@
     android:viewportHeight="108">
     <!-- Shield outline -->
     <path
-        android:fillColor="#FF16202F"
+        android:fillColor="#FF16324C"
         android:strokeColor="#FFD4AF37"
         android:strokeWidth="2.5"
         android:pathData="M54,22 L79,31 L79,54 C79,67.5 68,77.5 54,83 C40,77.5 29,67.5 29,54 L29,31 Z" />
@@ -16,17 +17,16 @@
         android:strokeColor="#FF8F721E"
         android:strokeWidth="1.2"
         android:pathData="M54,27.5 L74.5,35 L74.5,53.5 C74.5,64.5 65.5,72.9 54,77.7 C42.5,72.9 33.5,64.5 33.5,53.5 L33.5,35 Z" />
-    <!-- Algiz rune of protection -->
+    <!-- Unicursal hexagram -->
     <path
-        android:pathData="M54,71 L54,38 M54,49 L43,38 M54,49 L65,38"
+        android:pathData="M54,36 L69.5,64.8 L38.5,46.8 L69.5,46.8 L38.5,64.8 Z"
         android:strokeColor="#FFF0D482"
-        android:strokeWidth="4"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round" />
-    <!-- Rune base serif -->
-    <path
-        android:pathData="M48,71 L60,71"
-        android:strokeColor="#FFF0D482"
-        android:strokeWidth="4"
+        android:strokeWidth="2.6"
+        android:strokeLineJoin="round"
         android:strokeLineCap="round" />
+    <!-- Central rose -->
+    <path
+        android:pathData="M54,55.2 m-3,0 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0"
+        android:strokeColor="#FFF0D482"
+        android:strokeWidth="1.8" />
 </vector>

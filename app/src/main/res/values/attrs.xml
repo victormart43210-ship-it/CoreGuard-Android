@@ -1,5 +1,5 @@
 <resources>
-    <declare-styleable name="AegishjalmurView">
+    <declare-styleable name="EnochianSealView">
         <attr name="sigilColor" format="color" />
         <attr name="slowRotate" format="boolean" />
     </declare-styleable>

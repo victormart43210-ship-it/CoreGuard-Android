@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">CoreGuard</string>
-    <string name="main_subtitle">Ancient wards. Modern defense.</string>
-    <string name="main_tagline">Your device, under the Helm of Awe</string>
+    <string name="main_subtitle">Occult wards. Modern defense.</string>
+    <string name="main_tagline">Your device, sealed beneath the Sigillum Dei</string>
 
     <!-- Guardian score -->
     <string name="guardian_score_title">Guardian Score</string>
@@ -48,6 +48,6 @@
     <string name="paywall_purchase_error">Error: %1$s</string>
 
     <!-- Accessibility -->
-    <string name="cd_sigil_background">Decorative ancient protection sigil</string>
+    <string name="cd_sigil_background">Decorative Enochian protection seal</string>
     <string name="cd_guardian_shield">Guardian score shield</string>
 </resources>

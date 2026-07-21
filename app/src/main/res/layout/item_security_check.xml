@@ -19,7 +19,7 @@
             android:layout_width="26dp"
             android:layout_height="26dp"
             android:importantForAccessibility="no"
-            android:src="@drawable/ic_rune_algiz"
+            android:src="@drawable/ic_unicursal_hexagram"
             tools:tint="@color/status_pass" />
 
         <LinearLayout

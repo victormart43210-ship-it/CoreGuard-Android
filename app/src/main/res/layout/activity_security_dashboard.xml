@@ -4,17 +4,22 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_obsidian_gradient"
+    android:background="@drawable/bg_azure_pewter"
     tools:context=".SecurityDashboardActivity">
 
-    <!-- Protection sigil watching over the sanctum -->
-    <com.coldboar.coreguard.ui.AegishjalmurView
+    <!-- Enochian seal watching over the sanctum -->
+    <com.coldboar.coreguard.ui.EnochianSealView
         android:layout_width="500dp"
         android:layout_height="500dp"
         android:layout_gravity="center_horizontal|bottom"
         android:layout_marginBottom="-180dp"
         app:sigilColor="@color/gold_sigil_faint"
         app:slowRotate="true" />
+
+    <!-- Floating gold particles -->
+    <com.coldboar.coreguard.ui.GoldParticlesView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
 
     <ScrollView
         android:layout_width="match_parent"
@@ -56,14 +61,14 @@
                     android:textSize="22sp" />
             </LinearLayout>
 
-            <!-- Eye of Horus watching over the checks -->
+            <!-- Sigillum Dei Aemeth watching over the checks -->
             <ImageView
-                android:layout_width="72dp"
-                android:layout_height="48dp"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="18dp"
+                android:layout_marginTop="16dp"
                 android:importantForAccessibility="no"
-                android:src="@drawable/ic_eye_of_horus" />
+                android:src="@drawable/ic_sigillum_dei" />
 
             <TextView
                 android:id="@+id/tvOverallStatus"
