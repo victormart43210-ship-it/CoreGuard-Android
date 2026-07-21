@@ -46,7 +46,7 @@ data class ScanReport(
 }
 
 /**
- * The "Nemesis scanner" – a mercenary-spyware forensic scanner inspired by
+ * The "Nemesis scanner" – a clandestine-spyware forensic scanner inspired by
  * Amnesty International's Mobile Verification Toolkit (MVT). It enumerates
  * on-device artifacts and matches them against a set of Indicators of
  * Compromise for spyware such as Pegasus.

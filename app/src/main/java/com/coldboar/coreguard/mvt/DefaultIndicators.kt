@@ -35,7 +35,7 @@ object DefaultIndicators {
             "smsverication.info"
         ).forEach { add(Indicator(IndicatorType.DOMAIN, it, PEGASUS, AMNESTY_REF)) }
 
-        // --- Representative mercenary-spyware process/package markers ---
+        // --- Representative clandestine-spyware process/package markers ---
         add(Indicator(IndicatorType.PROCESS, "bh", PEGASUS, AMNESTY_REF))
         add(Indicator(IndicatorType.PROCESS, "roleaccountd", PEGASUS, AMNESTY_REF))
         add(Indicator(IndicatorType.PROCESS, "com.network.android", "Chrysaor (Pegasus Android)", AMNESTY_REF))

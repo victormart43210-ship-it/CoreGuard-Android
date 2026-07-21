@@ -18,7 +18,7 @@ class SpywareScanEvaluator(
                 id = "spyware_scan",
                 displayName = "Spyware Scan (MVT)",
                 state = SecurityCheckState.WARN,
-                explanation = "No forensic scan has been run yet. Open the Nemesis Scanner to check for mercenary spyware."
+                explanation = "No forensic scan has been run yet. Open the Nemesis Scanner to check for clandestine spyware."
             )
 
         return when (report.verdict) {

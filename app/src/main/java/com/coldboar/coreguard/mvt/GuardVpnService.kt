@@ -31,7 +31,7 @@ import java.net.InetSocketAddress
  *    [protect]ed socket and relays the answer back.
  *
  * This is a userspace, non-root way to stop a compromised app from reaching
- * known mercenary-spyware infrastructure. It cannot block traffic that uses a
+ * known clandestine-spyware infrastructure. It cannot block traffic that uses a
  * hardcoded IP (no DNS lookup); that limitation is documented for the user.
  */
 class GuardVpnService : VpnService() {
@@ -164,7 +164,7 @@ class GuardVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "CoreGuard Shield", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Blocks known mercenary-spyware domains" }
+            ).apply { description = "Blocks known clandestine-spyware domains" }
             manager.createNotificationChannel(channel)
         }
         val pi = PendingIntent.getActivity(

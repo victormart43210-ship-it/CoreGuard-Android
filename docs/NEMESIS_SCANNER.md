@@ -1,8 +1,7 @@
 # Nemesis Scanner & Domain Blocker
 
-CoreGuard ships an on-device **Nemesis scanner** (a mercenary-spyware forensic
-scanner — Pegasus and beyond) and a **spyware-domain blocker**, inspired by
-Amnesty International's
+CoreGuard ships an on-device **Nemesis scanner** (a clandestine-spyware forensic
+scanner) and a **spyware-domain blocker**, inspired by Amnesty International's
 [Mobile Verification Toolkit (MVT)](https://github.com/mvt-project/mvt).
 
 > **Attribution & honesty.** CoreGuard is **not affiliated with or endorsed by
@@ -15,7 +14,7 @@ Amnesty International's
 
 ### 1. Nemesis forensic scanner (`mvt` package)
 Enumerates on-device artifacts and matches them against a set of
-mercenary-spyware Indicators of Compromise (IOCs):
+clandestine-spyware Indicators of Compromise (IOCs):
 
 | Artifact | Source | Indicator types |
 |----------|--------|-----------------|

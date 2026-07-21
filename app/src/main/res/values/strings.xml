@@ -13,9 +13,9 @@
     <string name="btn_nemesis_scanner">Nemesis Scanner</string>
     <string name="btn_upgrade_premium">Upgrade to Premium (Demo)</string>
 
-    <!-- Nemesis scanner (mercenary-spyware forensics) -->
+    <!-- Nemesis scanner (clandestine-spyware forensics) -->
     <string name="scanner_title">Nemesis Scanner</string>
-    <string name="scanner_subtitle">Forensic scan for mercenary spyware (incl. Pegasus), powered by Amnesty MVT indicators</string>
+    <string name="scanner_subtitle">Forensic scan for clandestine spyware, powered by Amnesty MVT indicators</string>
     <string name="scanner_run">Run Forensic Scan</string>
     <string name="scanner_scanning">Scanning device against %1$d indicators…</string>
     <string name="scanner_verdict_clean">NO SPYWARE DETECTED</string>

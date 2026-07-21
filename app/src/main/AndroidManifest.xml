@@ -53,7 +53,7 @@
             android:foregroundServiceType="specialUse">
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
-                android:value="Blocks known mercenary-spyware C2 domains via a local VPN sinkhole" />
+                android:value="Blocks known clandestine-spyware C2 domains via a local VPN sinkhole" />
             <intent-filter>
                 <action android:name="android.net.VpnService" />
             </intent-filter>
