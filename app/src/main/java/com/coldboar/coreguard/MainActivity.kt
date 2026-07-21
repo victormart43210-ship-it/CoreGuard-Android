@@ -47,6 +47,10 @@ class MainActivity : AppCompatActivity() {
         binding.btnSecurityDashboard.setOnClickListener(openSanctum)
         binding.scoreContainer.setOnClickListener(openSanctum)
 
+        binding.btnNemesisScanner.setOnClickListener {
+            startActivity(Intent(this, ThreatScannerActivity::class.java))
+        }
+
         binding.btnUpgradePremium.setOnClickListener {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }
@@ -94,6 +98,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPolling() {
         if (isPolling) return
         isPolling = true
+        CpuUsageCalculator.reset()
         pollingHandler.post(pollingRunnable)
     }
 
@@ -116,7 +121,11 @@ class MainActivity : AppCompatActivity() {
         binding.tvRamPercent.text = if (percent != null) "$percent%" else "–"
         binding.ramProgress.setProgressCompat(percent ?: 0, true)
 
-        // CPU value is explicitly simulated – no real CPU measurement is performed.
-        binding.tvCpuUsage.text = getString(R.string.cpu_simulated_label)
+        val cpuPercent = CpuUsageCalculator.getUsagePercent()
+        binding.tvCpuUsage.text = if (cpuPercent != null) {
+            getString(R.string.cpu_usage_value, cpuPercent)
+        } else {
+            getString(R.string.cpu_measuring_label)
+        }
     }
 }
