@@ -10,7 +10,31 @@
 
     <!-- Navigation -->
     <string name="btn_security_dashboard">View Security Dashboard</string>
+    <string name="btn_nemesis_scanner">Nemesis Scanner</string>
     <string name="btn_upgrade_premium">Upgrade to Premium (Demo)</string>
+
+    <!-- Nemesis scanner (privacy integrity check) -->
+    <string name="scanner_title">Nemesis Scanner</string>
+    <string name="scanner_subtitle">A privacy integrity check for your device — defending your right to private communication.</string>
+    <string name="scanner_run">Run Privacy Check</string>
+    <string name="scanner_scanning">Checking device against %1$d privacy signatures…</string>
+    <string name="scanner_verdict_clean">PRIVACY INTACT</string>
+    <string name="scanner_verdict_suspicious">POSSIBLE PRIVACY RISK</string>
+    <string name="scanner_verdict_infected">PRIVACY THREAT FOUND</string>
+    <string name="scanner_summary">%1$d items checked · %2$d signatures · %3$d ms</string>
+    <string name="scanner_no_detections">Nothing flagged on this device. A clean result is reassuring but not a guarantee — a full off-device analysis is more thorough.</string>
+    <string name="scanner_detections_header">Findings</string>
+    <string name="scanner_attribution">Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. CoreGuard is an independent project and is not affiliated with Amnesty International.</string>
+
+    <!-- Privacy shield (domain blocker) -->
+    <string name="shield_title">Privacy Shield</string>
+    <string name="shield_desc">Blocks connections to servers known to track or surveil, using a private on-device VPN.</string>
+    <string name="shield_off">Off</string>
+    <string name="shield_active">On · %1$d blocked</string>
+    <string name="shield_consent_denied">Privacy Shield needs VPN permission to run.</string>
+
+    <!-- Security dashboard (privacy summary) -->
+    <string name="check_spyware">Privacy Integrity</string>
 
     <!-- Security dashboard -->
     <string name="security_dashboard_title">Security Status</string>
