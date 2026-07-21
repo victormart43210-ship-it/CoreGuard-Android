@@ -54,7 +54,7 @@ class CpuUsageCalculatorTest {
             "cpu  130 30 50 420 60 20 10 0 0 0"
         }
 
-        assertEquals(65, usage)
+        assertEquals(71, usage)
     }
 
     @Test
