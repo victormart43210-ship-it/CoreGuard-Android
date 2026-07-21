@@ -18,14 +18,14 @@ data class Detection(
 ) {
     val title: String
         get() = when (kind) {
-            ArtifactKind.PACKAGE -> "Malicious app installed"
-            ArtifactKind.PROCESS -> "Spyware process running"
-            ArtifactKind.FILE -> "Malicious file present"
-            ArtifactKind.DOMAIN -> "Contact with malicious infrastructure"
+            ArtifactKind.PACKAGE -> "Flagged app installed"
+            ArtifactKind.PROCESS -> "Flagged process running"
+            ArtifactKind.FILE -> "Flagged file present"
+            ArtifactKind.DOMAIN -> "Contact with a flagged server"
         }
 
     val detail: String
-        get() = "$artifact → ${indicator.malware} (${indicator.type.name.lowercase()} IOC)"
+        get() = "$artifact → ${indicator.malware} (${indicator.type.name.lowercase()} signature)"
 }
 
 /**

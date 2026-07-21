@@ -163,8 +163,8 @@ class GuardVpnService : VpnService() {
         val manager = getSystemService(NotificationManager::class.java)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
-                CHANNEL_ID, "CoreGuard Shield", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Blocks known clandestine-spyware domains" }
+                CHANNEL_ID, "Privacy Shield", NotificationManager.IMPORTANCE_LOW
+            ).apply { description = "Protects your private connections" }
             manager.createNotificationChannel(channel)
         }
         val pi = PendingIntent.getActivity(
@@ -172,8 +172,8 @@ class GuardVpnService : VpnService() {
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
         return Notification.Builder(this, CHANNEL_ID)
-            .setContentTitle("CoreGuard Shield active")
-            .setContentText("Blocking known spyware infrastructure")
+            .setContentTitle("Privacy Shield active")
+            .setContentText("Protecting your private connections")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pi)
             .setOngoing(true)

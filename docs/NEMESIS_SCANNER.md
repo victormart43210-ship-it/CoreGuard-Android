@@ -10,6 +10,14 @@ scanner) and a **spyware-domain blocker**, inspired by Amnesty International's
 > than MVT run against a full forensic acquisition, so a `CLEAN` result is **not
 > a guarantee** the device is uncompromised.
 
+> **Design note — privacy-first, low-profile copy.** The user-facing wording is
+> intentionally framed around *defending the user's right to privacy* rather
+> than naming specific surveillance programs. On-device text reads "privacy
+> check", "Privacy Shield", and neutral "flagged" findings; specific threat
+> attribution (e.g. malware family) is shown only within an individual finding's
+> detail, not in ambient/at-a-glance UI. This keeps the tool discreet for
+> at-risk users while remaining fully honest about what it does.
+
 ## What it does
 
 ### 1. Nemesis forensic scanner (`mvt` package)

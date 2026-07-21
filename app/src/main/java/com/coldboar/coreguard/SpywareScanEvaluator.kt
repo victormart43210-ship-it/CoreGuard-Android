@@ -5,40 +5,42 @@ import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 
 /**
- * Surfaces the most recent Pegasus/MVT scan verdict as a Security Dashboard
- * check. Reports WARN when no scan has been run yet (the user should run one).
+ * Surfaces the most recent Nemesis privacy-integrity check as a Security
+ * Dashboard item. Reports WARN when no check has been run yet.
  */
 class SpywareScanEvaluator(
     private val lastReport: () -> ScanReport? = { LastScan.report }
 ) : SecurityCheckEvaluator {
 
+    private val name = "Privacy Integrity"
+
     override fun evaluate(): SecurityCheckResult {
         val report = lastReport()
             ?: return SecurityCheckResult(
                 id = "spyware_scan",
-                displayName = "Spyware Scan (MVT)",
+                displayName = name,
                 state = SecurityCheckState.WARN,
-                explanation = "No forensic scan has been run yet. Open the Nemesis Scanner to check for clandestine spyware."
+                explanation = "No privacy check has been run yet. Open the Nemesis Scanner to verify your device."
             )
 
         return when (report.verdict) {
             ScanVerdict.CLEAN -> SecurityCheckResult(
                 id = "spyware_scan",
-                displayName = "Spyware Scan (MVT)",
+                displayName = name,
                 state = SecurityCheckState.PASS,
-                explanation = "Last scan matched no spyware indicators across ${report.scannedArtifacts} artifacts."
+                explanation = "Last check found nothing flagged across ${report.scannedArtifacts} items."
             )
             ScanVerdict.SUSPICIOUS -> SecurityCheckResult(
                 id = "spyware_scan",
-                displayName = "Spyware Scan (MVT)",
+                displayName = name,
                 state = SecurityCheckState.WARN,
-                explanation = "Last scan found ${report.detections.size} suspicious artifact(s). Review the Nemesis Scanner."
+                explanation = "Last check flagged ${report.detections.size} item(s). Review the Nemesis Scanner."
             )
             ScanVerdict.INFECTED -> SecurityCheckResult(
                 id = "spyware_scan",
-                displayName = "Spyware Scan (MVT)",
+                displayName = name,
                 state = SecurityCheckState.FAIL,
-                explanation = "Last scan detected known spyware indicators. Review the Nemesis Scanner immediately."
+                explanation = "Last check found a serious privacy threat. Review the Nemesis Scanner."
             )
         }
     }
