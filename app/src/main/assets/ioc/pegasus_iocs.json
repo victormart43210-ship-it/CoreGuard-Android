@@ -1,0 +1,27 @@
+{
+  "name": "CoreGuard bundled mercenary-spyware indicators",
+  "source": "Amnesty International Security Lab / mvt-project (publicly released)",
+  "reference": "https://github.com/mvt-project/mvt-indicators",
+  "updated": "2026-07-21",
+  "indicators": [
+    { "type": "domain", "value": "free247downloads.com", "malware": "Pegasus (NSO Group)", "reference": "https://www.amnesty.org/en/latest/research/2021/07/forensic-methodology-report-how-to-catch-nso-groups-pegasus/" },
+    { "type": "domain", "value": "urlpush.net", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "opposedarrangea.com", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "get1tune.com", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "yrl.im", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "banorte-serguridad.com", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "3-3-3.co", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "ecommerce-ads.org", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "truxlist.com", "malware": "Pegasus (NSO Group)" },
+    { "type": "domain", "value": "smsverication.info", "malware": "Pegasus (NSO Group)" },
+
+    { "type": "process", "value": "bh", "malware": "Pegasus (NSO Group)" },
+    { "type": "process", "value": "roleaccountd", "malware": "Pegasus (NSO Group)" },
+    { "type": "process", "value": "com.network.android", "malware": "Chrysaor (Pegasus Android)" },
+    { "type": "package", "value": "com.network.android", "malware": "Chrysaor (Pegasus Android)" },
+
+    { "type": "package", "value": "com.coreguard.pegasus.sample", "malware": "EXAMPLE (test indicator)" },
+    { "type": "domain", "value": "pegasus-c2.example", "malware": "EXAMPLE (test indicator)" },
+    { "type": "process", "value": "pegasus-implant", "malware": "EXAMPLE (test indicator)" }
+  ]
+}

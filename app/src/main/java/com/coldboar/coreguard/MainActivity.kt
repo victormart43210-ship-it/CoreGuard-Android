@@ -42,6 +42,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, SecurityDashboardActivity::class.java))
         }
 
+        binding.btnPegasusScanner.setOnClickListener {
+            startActivity(Intent(this, ThreatScannerActivity::class.java))
+        }
+
         binding.btnUpgradePremium.setOnClickListener {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }

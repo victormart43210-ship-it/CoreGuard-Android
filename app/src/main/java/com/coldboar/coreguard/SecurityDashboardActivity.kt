@@ -27,6 +27,7 @@ class SecurityDashboardActivity : AppCompatActivity() {
         title = getString(R.string.security_dashboard_title)
 
         val evaluators: List<SecurityCheckEvaluator> = listOf(
+            SpywareScanEvaluator(),
             DebuggerCheckEvaluator(),
             EmulatorCheckEvaluator(),
             RootCheckEvaluator(),
