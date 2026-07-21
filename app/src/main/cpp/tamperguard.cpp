@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 #include <cstdint>
+#include <cerrno>
 #include <string>
 #include <vector>
 
@@ -76,33 +77,38 @@ std::string read_small_file(const char *path) {
     return out;
 }
 
-// Hashes the r-xp mapping(s) belonging to libtamperguard.so. This is the code
+// Anchor whose address is guaranteed to lie inside our own executable code
+// segment. Used to locate that segment in /proc/self/maps without relying on
+// the library's file path (which is the containing base.apk when native libs
+// are loaded uncompressed straight from the APK).
+extern "C" __attribute__((visibility("hidden"))) void tamperguard_code_anchor() {}
+
+// Hashes the executable (r-xp) mapping that contains our own code. This is what
 // we most care about protecting; inline hooks (e.g. Frida) rewrite these bytes.
 uint64_t compute_text_checksum() {
     FILE *maps = fopen("/proc/self/maps", "re");
     if (!maps) return 0;
 
-    uint64_t hash = 1469598103934665603ULL;
-    bool hashed_any = false;
+    const auto anchor = reinterpret_cast<uintptr_t>(&tamperguard_code_anchor);
+    uint64_t hash = 0;
     char line[512];
     while (fgets(line, sizeof(line), maps)) {
-        // Only executable, non-writable regions of our own library.
-        if (!strstr(line, "r-xp")) continue;
-        if (!strstr(line, "libtamperguard.so")) continue;
-
         uintptr_t start = 0, end = 0;
-        if (sscanf(line, "%lx-%lx", (unsigned long *) &start, (unsigned long *) &end) != 2) {
+        char perms[8] = {0};
+        if (sscanf(line, "%lx-%lx %7s", (unsigned long *) &start,
+                   (unsigned long *) &end, perms) != 3) {
             continue;
         }
+        if (perms[2] != 'x') continue;          // must be executable
+        if (anchor < start || anchor >= end) continue; // must contain our code
         if (end <= start) continue;
 
         const auto *region = reinterpret_cast<const uint8_t *>(start);
-        size_t len = end - start;
-        hash = fnv1a(region, len, hash);
-        hashed_any = true;
+        hash = fnv1a(region, end - start);
+        break;
     }
     fclose(maps);
-    return hashed_any ? hash : 0;
+    return hash;
 }
 
 bool contains_any(const std::string &haystack, const char *const *needles, size_t count) {
@@ -275,10 +281,12 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *, void *) {
     // Anti-debugging: self-attach with ptrace. Android permits only one tracer
     // per process, so this blocks a later gdb/lldb from attaching. It returns
     // -1 if a tracer is already present (e.g. an attached debugger).
-    if (ptrace(PTRACE_TRACEME, 0, 0, 0) == 0) {
+    long rc = ptrace(PTRACE_TRACEME, 0, 0, 0);
+    if (rc == 0) {
         g_ptrace_protected = true;
     } else {
         g_ptrace_protected = false;
+        LOGI("ptrace TRACEME failed rc=%ld errno=%d (%s)", rc, errno, strerror(errno));
     }
 
     // Capture the pristine checksum of our executable code for later integrity

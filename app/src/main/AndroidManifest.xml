@@ -4,6 +4,10 @@
     <uses-permission android:name="android.permission.READ_PHONE_STATE"
         android:maxSdkVersion="28" />
 
+    <!-- Required only to probe the loopback interface (127.0.0.1) for a Frida
+         server/gadget on its default ports. No data is sent off the device. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
     <application
         android:name=".CoreGuardApplication"
         android:allowBackup="true"
