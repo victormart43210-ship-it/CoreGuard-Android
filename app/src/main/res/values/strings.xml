@@ -5,8 +5,8 @@
     <!-- Monitoring labels -->
     <string name="label_ram_usage">RAM Usage</string>
     <string name="label_cpu_usage">CPU Usage</string>
-    <!-- CPU value is simulated – no real CPU measurement is performed -->
-    <string name="cpu_simulated_label">CPU: N/A (simulated – not measured)</string>
+    <string name="cpu_measuring_label">CPU: Measuring…</string>
+    <string name="cpu_usage_value">CPU: %1$d%%</string>
 
     <!-- Navigation -->
     <string name="btn_security_dashboard">View Security Dashboard</string>

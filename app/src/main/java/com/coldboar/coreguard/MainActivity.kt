@@ -10,7 +10,7 @@ import com.coldboar.coreguard.databinding.ActivityMainBinding
 /**
  * Main screen.
  *
- * Displays a summary of device health (RAM usage + simulated CPU) and provides
+ * Displays a summary of device health (RAM usage + sampled CPU) and provides
  * navigation to the Security Dashboard. A lifecycle-safe polling loop updates
  * the memory stats while the activity is visible.
  */
@@ -67,6 +67,7 @@ class MainActivity : AppCompatActivity() {
     private fun startPolling() {
         if (isPolling) return
         isPolling = true
+        CpuUsageCalculator.reset()
         pollingHandler.post(pollingRunnable)
     }
 
@@ -88,7 +89,11 @@ class MainActivity : AppCompatActivity() {
 
         binding.tvRamPercent.text = if (percent != null) "$percent%" else "–"
 
-        // CPU value is explicitly simulated – no real CPU measurement is performed.
-        binding.tvCpuUsage.text = getString(R.string.cpu_simulated_label)
+        val cpuPercent = CpuUsageCalculator.getUsagePercent()
+        binding.tvCpuUsage.text = if (cpuPercent != null) {
+            getString(R.string.cpu_usage_value, cpuPercent)
+        } else {
+            getString(R.string.cpu_measuring_label)
+        }
     }
 }

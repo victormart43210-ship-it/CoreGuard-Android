@@ -24,7 +24,7 @@
 
 | Feature | Status | Notes |
 |---------|--------|-------|
-| **CPU usage** | 🔴 SIMULATED | No real CPU reading. Labeled "simulated" in UI and code. Must be replaced with a real `ActivityManager` or `/proc/stat` implementation before claiming real metrics. |
+| **CPU usage** | 🟡 BASIC | Aggregate CPU usage is sampled from `/proc/stat` on-device. This is a coarse overall reading, not a per-process or security-specific signal. |
 | **Billing / premium** | 🔴 DEMO ONLY | `DemoBillingProvider` simulates a purchase instantly. No Google Play Billing library is integrated. Do not publish as a paid app until `BillingProvider` is implemented with the Play Billing Library. |
 | **Purchase verification** | 🔴 NOT IMPLEMENTED | Server-side purchase token verification against the Google Play Developer API is required before production. |
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
@@ -201,7 +201,7 @@ privacy policy URL. Host a simple policy stating no data is collected.
 - [ ] All unit tests pass: `./gradlew test`
 - [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
 - [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
-- [ ] CPU metric is no longer labeled "simulated" or is removed from release UI
+- [x] CPU metric is no longer labeled "simulated" or is removed from release UI
 - [ ] `DemoBillingProvider` replaced with `PlayBillingProvider`
 - [ ] Server-side purchase token verification implemented
 - [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash
