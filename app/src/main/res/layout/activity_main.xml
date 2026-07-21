@@ -88,7 +88,7 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textAppearance="?attr/textAppearanceBody2"
-                    tools:text="CPU: N/A (simulated)" />
+                    tools:text="CPU: 18%" />
 
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
