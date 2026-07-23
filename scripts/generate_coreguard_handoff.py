@@ -81,13 +81,13 @@ def main() -> None:
     parser.add_argument(
         "--out-dir",
         type=Path,
-        default=Path("/mnt/data"),
+        default=Path("build/handoff"),
         help="Output directory for generated artifacts.",
     )
     parser.add_argument(
         "--logo",
         type=Path,
-        default=Path("/mnt/data/coreguard_logo_with_sleek_gold_accents.png"),
+        default=None,
         help="Optional logo file to include in handoff zip.",
     )
     args = parser.parse_args()
@@ -108,14 +108,14 @@ def main() -> None:
     write_docx_from_markdown(markdown_text, docx_out)
 
     handoff_files = [md_out, docx_out]
-    if args.logo.exists():
+    if args.logo and args.logo.exists():
         handoff_files.append(args.logo)
     create_handoff_zip(zip_out, handoff_files)
 
     print(f"Generated: {md_out}")
     print(f"Generated: {docx_out}")
     print(f"Generated: {zip_out}")
-    if args.logo.exists():
+    if args.logo and args.logo.exists():
         print(f"Included logo: {args.logo}")
     else:
         print("Logo not found; zip created without logo.")

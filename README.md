@@ -5,8 +5,10 @@ Native Kotlin Android security and device-monitoring application.
 
 - SRD: `docs/CoreGuard_Elite_Copilot_SRD.md`
 - Artifact generator: `scripts/generate_coreguard_handoff.py`
-- Generate handoff files (`.md`, `.docx`, `.zip`) to `/mnt/data`:
+- Generate handoff files (`.md`, `.docx`, `.zip`) to `build/handoff`:
   - `python3 scripts/generate_coreguard_handoff.py`
+- Optional custom output and logo:
+  - `python3 scripts/generate_coreguard_handoff.py --out-dir /mnt/data --logo /path/to/logo.png`
 
 ## Contribution Guidelines
 
