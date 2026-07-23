@@ -11,7 +11,7 @@ import kotlin.math.roundToInt
  */
 object CpuUsageCalculator {
 
-    private data class CpuSnapshot(
+    internal data class CpuSnapshot(
         val totalTicks: Long,
         val idleTicks: Long
     )
@@ -20,7 +20,7 @@ object CpuUsageCalculator {
 
     @Synchronized
     fun getUsagePercent(procStatReader: () -> String = ::readProcStat): Int? {
-        val parsed = try {
+        val snapshot = try {
             parseSnapshot(procStatReader())
         } catch (_: Exception) {
             null
@@ -28,10 +28,6 @@ object CpuUsageCalculator {
             previousSnapshot = null
             return null
         }
-        val snapshot = CpuSnapshot(
-            totalTicks = parsed.first,
-            idleTicks = parsed.second
-        )
 
         val previous = previousSnapshot
         previousSnapshot = snapshot
@@ -48,7 +44,7 @@ object CpuUsageCalculator {
             .coerceIn(0, 100)
     }
 
-    internal fun parseSnapshot(procStatContents: String): Pair<Long, Long>? {
+    internal fun parseSnapshot(procStatContents: String): CpuSnapshot? {
         val cpuLine = procStatContents
             .lineSequence()
             .map(String::trim)
@@ -63,7 +59,7 @@ object CpuUsageCalculator {
 
         val totalTicks = values.sum()
         val idleTicks = values[3] + (values.getOrNull(4) ?: 0L)
-        return totalTicks to idleTicks
+        return CpuSnapshot(totalTicks = totalTicks, idleTicks = idleTicks)
     }
 
     @Synchronized

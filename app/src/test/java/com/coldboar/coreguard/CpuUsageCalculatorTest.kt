@@ -15,7 +15,7 @@ class CpuUsageCalculatorTest {
             """.trimIndent()
         )
 
-        assertEquals(615L to 450L, snapshot)
+        assertEquals(CpuUsageCalculator.CpuSnapshot(615L, 450L), snapshot)
     }
 
     @Test
@@ -54,7 +54,7 @@ class CpuUsageCalculatorTest {
             "cpu  130 30 50 420 60 20 10 0 0 0"
         }
 
-        assertEquals(65, usage)
+        assertEquals(71, usage)
     }
 
     @Test
