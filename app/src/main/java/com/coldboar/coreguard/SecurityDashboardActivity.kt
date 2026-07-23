@@ -1,19 +1,34 @@
 package com.coldboar.coreguard
 
-import android.content.pm.PackageManager
-import android.content.pm.Signature
+import android.content.res.ColorStateList
 import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.animation.AlphaAnimation
+import android.view.animation.AnimationSet
+import android.view.animation.DecelerateInterpolator
+import android.view.animation.TranslateAnimation
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivitySecurityDashboardBinding
-import java.security.MessageDigest
+import com.google.android.material.card.MaterialCardView
 
 /**
+<<<<<<< HEAD
  * Security Dashboard screen — View-based implementation.
  *
  * @deprecated This Activity's functionality has been migrated to [HomeScreen]
  *   within the Compose navigation graph. It is no longer launched by
  *   [MainActivity] and will be removed in a future cleanup phase.
  *   Use [HomeScreen] for all new work.
+=======
+ * The Sanctum – security dashboard screen.
+ *
+ * Shows a PASS / WARN / FAIL card for each security check, revealed with a
+ * staggered entrance animation. All checks are evaluated synchronously on the
+ * main thread – each check is designed to be fast (no I/O) so this is
+ * acceptable.
+>>>>>>> origin/main
  */
 @Deprecated("Superseded by HomeScreen in the Compose NavHost. Do not launch from new code.")
 class SecurityDashboardActivity : AppCompatActivity() {
@@ -25,40 +40,47 @@ class SecurityDashboardActivity : AppCompatActivity() {
         binding = ActivitySecurityDashboardBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        title = getString(R.string.security_dashboard_title)
+        binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-        val evaluators: List<SecurityCheckEvaluator> = listOf(
-            SpywareScanEvaluator(),
-            DebuggerCheckEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { getAppCertSha256() })
-        )
-
-        val results = evaluators.map { it.evaluate() }
+        val results = SecurityCheckRunner.run(this)
         renderResults(results)
     }
 
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
-    }
-
     private fun renderResults(results: List<SecurityCheckResult>) {
-        val sb = StringBuilder()
-        results.forEach { result ->
-            val icon = when (result.state) {
-                SecurityCheckState.PASS -> "✅"
-                SecurityCheckState.WARN -> "⚠️"
-                SecurityCheckState.FAIL -> "❌"
+        binding.checksContainer.removeAllViews()
+        val inflater = LayoutInflater.from(this)
+
+        results.forEachIndexed { index, result ->
+            val card = inflater.inflate(
+                R.layout.item_security_check, binding.checksContainer, false
+            ) as MaterialCardView
+
+            val (stateLabel, stateColor, stateDim) = when (result.state) {
+                SecurityCheckState.PASS -> Triple(
+                    R.string.check_state_pass, getColor(R.color.status_pass), getColor(R.color.status_pass_dim)
+                )
+                SecurityCheckState.WARN -> Triple(
+                    R.string.check_state_warn, getColor(R.color.status_warn), getColor(R.color.status_warn_dim)
+                )
+                SecurityCheckState.FAIL -> Triple(
+                    R.string.check_state_fail, getColor(R.color.status_fail), getColor(R.color.status_fail_dim)
+                )
             }
-            sb.appendLine("$icon ${result.displayName}")
-            sb.appendLine("   ${result.explanation}")
-            sb.appendLine()
+
+            card.findViewById<TextView>(R.id.tvCheckName).text = result.displayName
+            card.findViewById<TextView>(R.id.tvCheckExplanation).text = result.explanation
+            card.findViewById<ImageView>(R.id.ivCheckRune).imageTintList =
+                ColorStateList.valueOf(stateColor)
+            card.findViewById<TextView>(R.id.tvCheckState).apply {
+                text = getString(stateLabel)
+                setTextColor(stateColor)
+                setBackgroundResource(R.drawable.bg_state_chip)
+                backgroundTintList = ColorStateList.valueOf(stateDim)
+            }
+
+            binding.checksContainer.addView(card)
+            card.startAnimation(staggeredEntrance(index))
         }
-        binding.tvSecurityResults.text = sb.toString().trim()
 
         val overallState = when {
             results.any { it.state == SecurityCheckState.FAIL } -> SecurityCheckState.FAIL
@@ -83,25 +105,12 @@ class SecurityDashboardActivity : AppCompatActivity() {
         )
     }
 
-    /**
-     * Returns the SHA-256 fingerprint of the first signing certificate, or
-     * empty string on failure.
-     */
-    private fun getAppCertSha256(): String {
-        return try {
-            @Suppress("DEPRECATION")
-            val sig: Signature = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNING_CERTIFICATES)
-                    .signingInfo?.apkContentsSigners?.firstOrNull() ?: return ""
-            } else {
-                packageManager.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
-                    .signatures?.firstOrNull() ?: return ""
-            }
-            val md = MessageDigest.getInstance("SHA-256")
-            val digest = md.digest(sig.toByteArray())
-            digest.joinToString(":") { "%02X".format(it) }
-        } catch (_: Exception) {
-            ""
-        }
+    /** Fade + slide entrance, staggered by card position. */
+    private fun staggeredEntrance(index: Int) = AnimationSet(true).apply {
+        interpolator = DecelerateInterpolator(1.5f)
+        startOffset = 90L * index
+        duration = 450
+        addAnimation(AlphaAnimation(0f, 1f))
+        addAnimation(TranslateAnimation(0f, 0f, 60f, 0f))
     }
 }
