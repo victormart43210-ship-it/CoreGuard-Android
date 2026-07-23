@@ -2,7 +2,6 @@ package com.coldboar.coreguard.mvt
 
 import android.content.Context
 import android.content.pm.PackageManager
-import android.os.Environment
 import android.util.Log
 import java.io.File
 
@@ -67,8 +66,6 @@ object DeviceScanner {
     private fun accessibleFiles(context: Context): List<String> {
         val roots = buildList {
             context.getExternalFilesDir(null)?.let { add(it) }
-            runCatching { Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS) }
-                .getOrNull()?.let { add(it) }
             add(context.filesDir)
         }
         val out = mutableListOf<String>()

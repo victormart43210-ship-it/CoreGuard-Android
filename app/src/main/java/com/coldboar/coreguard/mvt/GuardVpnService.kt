@@ -11,6 +11,7 @@ import android.net.VpnService
 import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.util.Log
+import androidx.core.app.NotificationCompat
 import com.coldboar.coreguard.MainActivity
 import com.coldboar.coreguard.R
 import java.io.FileInputStream
@@ -171,7 +172,7 @@ class GuardVpnService : VpnService() {
             this, 0, Intent(this, MainActivity::class.java),
             PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
         )
-        return Notification.Builder(this, CHANNEL_ID)
+        return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Privacy Shield active")
             .setContentText("Protecting your private connections")
             .setSmallIcon(R.drawable.ic_launcher_foreground)

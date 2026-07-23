@@ -115,7 +115,7 @@ if [[ "$DRY_RUN" == "false" ]]; then
 fi
 
 log "1/6: Running Local Gradle Release Verification..."
-run_cmd ./gradlew clean cyclonedxBom assembleRelease --no-daemon
+run_cmd ./gradlew clean assembleRelease --no-daemon
 
 log "2/6: Configuring GitHub Repository Secret (NVD_API_KEY)..."
 if [[ "$DRY_RUN" == "true" ]]; then
