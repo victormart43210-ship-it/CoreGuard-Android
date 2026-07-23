@@ -1,6 +1,13 @@
 # CoreGuard-Android
 Native Kotlin Android security and device-monitoring application.
 
+## Implementation Handoff
+
+- SRD: `docs/CoreGuard_Elite_Copilot_SRD.md`
+- Artifact generator: `scripts/generate_coreguard_handoff.py`
+- Generate handoff files (`.md`, `.docx`, `.zip`) to `/mnt/data`:
+  - `python3 scripts/generate_coreguard_handoff.py`
+
 ## Contribution Guidelines
 
 CoreGuard-Android is a Kotlin-based Android security application focused on detecting risky patterns, improving device security posture, and helping users understand potential threat behavior.
