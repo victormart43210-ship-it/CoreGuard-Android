@@ -117,8 +117,10 @@ def main() -> None:
     print(f"Generated: {zip_out}")
     if args.logo and args.logo.exists():
         print(f"Included logo: {args.logo}")
+    elif args.logo:
+        print(f"Logo path not found ({args.logo}); zip created without logo.")
     else:
-        print("Logo not found; zip created without logo.")
+        print("No logo specified; zip created without logo.")
 
 
 if __name__ == "__main__":
