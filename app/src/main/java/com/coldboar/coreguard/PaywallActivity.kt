@@ -5,7 +5,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityPaywallBinding
 
 /**
- * Paywall screen.
+ * Paywall screen ("Forge Premium").
  *
  * **DEMO ONLY** – displays a simulated upgrade prompt. No real payment is
  * processed here. Replace the demo purchase flow with a real Google Play
@@ -27,8 +27,7 @@ class PaywallActivity : AppCompatActivity() {
         binding = ActivityPaywallBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        title = getString(R.string.paywall_title)
+        binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         binding.btnSubscribe.setOnClickListener {
             // DEMO: simulates a purchase – no real payment is made.
@@ -50,11 +49,6 @@ class PaywallActivity : AppCompatActivity() {
         }
 
         binding.btnClose.setOnClickListener { finish() }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
     }
 
     companion object {
