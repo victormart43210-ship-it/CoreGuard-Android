@@ -8,12 +8,14 @@ import com.coldboar.coreguard.databinding.ActivitySecurityDashboardBinding
 import java.security.MessageDigest
 
 /**
- * Security Dashboard screen.
+ * Security Dashboard screen — View-based implementation.
  *
- * Shows a PASS / WARN / FAIL status card for each security check.
- * All checks are evaluated synchronously on the main thread – each check
- * is designed to be fast (no I/O) so this is acceptable.
+ * @deprecated This Activity's functionality has been migrated to [HomeScreen]
+ *   within the Compose navigation graph. It is no longer launched by
+ *   [MainActivity] and will be removed in a future cleanup phase.
+ *   Use [HomeScreen] for all new work.
  */
+@Deprecated("Superseded by HomeScreen in the Compose NavHost. Do not launch from new code.")
 class SecurityDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySecurityDashboardBinding

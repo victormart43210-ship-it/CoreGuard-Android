@@ -23,11 +23,16 @@ import com.google.android.material.card.MaterialCardView
 import java.util.concurrent.Executors
 
 /**
- * The Nemesis Scanner screen.
+ * The Nemesis Scanner screen — View-based implementation.
  *
- * Runs a [DeviceScanner] forensic scan against Amnesty MVT-style indicators and
- * lets the user toggle the [GuardVpnService] spyware-domain blocker.
+ * @deprecated This Activity's functionality has been split between [ScannerScreen]
+ *   and [ShieldScreen] within the Compose navigation graph. It is no longer
+ *   launched by [MainActivity] and will be removed in a future cleanup phase.
+ *   Use [ScannerScreen] and [ShieldScreen] for all new work.
  */
+@Deprecated(
+    "Superseded by ScannerScreen and ShieldScreen in the Compose NavHost. Do not launch from new code."
+)
 class ThreatScannerActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityThreatScannerBinding
