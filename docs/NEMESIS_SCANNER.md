@@ -28,7 +28,7 @@ clandestine-spyware Indicators of Compromise (IOCs):
 |----------|--------|-----------------|
 | Installed apps | `PackageManager` | `package` |
 | Processes / threads | `/proc/*/cmdline`, `/proc/*/comm` (best-effort) | `process` |
-| Accessible files | app storage + Downloads | `filename`, `filepath` |
+| Accessible files | app-accessible storage roots | `filename`, `filepath` |
 
 Each match becomes a `Detection` with a severity, and the scan produces a
 verdict: `CLEAN`, `SUSPICIOUS`, or `INFECTED`. The latest verdict is also

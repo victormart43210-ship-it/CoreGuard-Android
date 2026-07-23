@@ -65,8 +65,8 @@ object DeviceScanner {
 
     private fun accessibleFiles(context: Context): List<String> {
         val roots = buildList {
-            context.getExternalFilesDir(null)?.let { add(it) }
-            add(context.filesDir)
+            context.getExternalFilesDir(null)?.takeIf(::isReadableDirectory)?.let { add(it) }
+            context.filesDir.takeIf(::isReadableDirectory)?.let { add(it) }
         }
         val out = mutableListOf<String>()
         roots.forEach { root ->
@@ -78,4 +78,6 @@ object DeviceScanner {
         }
         return out
     }
+
+    private fun isReadableDirectory(file: File): Boolean = file.exists() && file.isDirectory && file.canRead()
 }
