@@ -199,9 +199,9 @@ private fun DetectionRow(detection: Detection) {
                 )
             }
             Text(text = detection.detail, style = MaterialTheme.typography.bodySmall)
-            if (!detection.indicator.reference.isNullOrBlank()) {
+            detection.indicator.reference?.takeIf { it.isNotBlank() }?.let { ref ->
                 Text(
-                    text = detection.indicator.reference!!,
+                    text = ref,
                     style = MaterialTheme.typography.bodySmall
                 )
             }
