@@ -42,6 +42,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
+      - name: Validate Gradle wrapper
+        uses: gradle/wrapper-validation-action@v3
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v6
 
@@ -57,9 +60,37 @@ jobs:
       - name: Assemble debug APK
         run: ./gradlew assembleDebug --stacktrace
 
+      - name: Assemble release APK (unsigned)
+        run: ./gradlew assembleRelease --stacktrace
+
+      - name: Bundle release AAB (unsigned)
+        run: ./gradlew bundleRelease --stacktrace
+
       - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+      - name: Upload release APK (unsigned)
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-apk-unsigned
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
+
+      - name: Upload release AAB (unsigned)
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-aab-unsigned
+          path: app/build/outputs/bundle/release/*.aab
+          if-no-files-found: error
+
+      - name: Upload lint report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: lint-report
+          path: app/build/reports/lint-results-debug.*
+          if-no-files-found: ignore

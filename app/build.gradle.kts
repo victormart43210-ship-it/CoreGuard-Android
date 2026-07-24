@@ -1,15 +1,48 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    // Kotlin 2.x: Compose compiler is a Kotlin plugin; no separate composeCompiler version needed.
+    alias(libs.plugins.kotlin.compose)
+}
+
+// ---------------------------------------------------------------------------
+// Release signing helpers
+//
+// Credential priority (highest wins):
+//   1. keystore.properties file in the project root
+//   2. Gradle project properties  (-Pproperty=value or gradle.properties)
+//   3. Environment variables       (CI-friendly)
+//
+// To create a release keystore locally (one-time setup):
+//   keytool -genkeypair -v -keystore release.jks \
+//     -alias coreguard -keyalg RSA -keysize 4096 -validity 10000
+// Then fill in keystore.properties (add to .gitignore so it is NEVER committed):
+//   storeFile=<absolute or project-relative path to release.jks>
+//   storePassword=<keystore password>
+//   keyAlias=coreguard
+//   keyPassword=<key password>
+// ---------------------------------------------------------------------------
+private fun loadKeystoreProps(project: Project): Properties {
+    val props = Properties()
+    val propsFile = project.rootProject.file("keystore.properties")
+    if (propsFile.exists()) {
+        propsFile.inputStream().use { props.load(it) }
+    }
+    return props
 }
 
 android {
     namespace = "com.coldboar.coreguard"
-    compileSdk = 37
+    // API 35 = Android 15 (Vanilla Ice Cream) – latest stable.
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "com.coldboar.coreguard"
-        minSdk = 24
+        // API 26 = Android 8 (Oreo). Covers >99 % of active devices (2025).
+        minSdk = 26
+        // API 35 satisfies current Google Play target-SDK requirements.
         targetSdk = 35
         versionCode = 1
         versionName = "1.0.0"
@@ -17,22 +50,29 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Release signing: credentials are supplied via environment variables set by CI.
-    // Set SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, and
-    // SIGNING_KEY_PASSWORD in the build environment. If any variable is absent the
-    // release build will be unsigned (suitable for local development only).
-    val storeFile = System.getenv("SIGNING_STORE_FILE")
-    val storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    val keyAlias  = System.getenv("SIGNING_KEY_ALIAS")
-    val keyPass   = System.getenv("SIGNING_KEY_PASSWORD")
+    val ksp = loadKeystoreProps(project)
 
-    if (storeFile != null && storePass != null && keyAlias != null && keyPass != null) {
+    fun resolveSigningProp(keystoreKey: String, gradlePropKey: String, envKey: String): String? =
+        ksp.getProperty(keystoreKey)
+            ?: project.findProperty(gradlePropKey)?.toString()
+            ?: System.getenv(envKey)
+
+    val storeFilePath  = resolveSigningProp("storeFile",      "SIGNING_STORE_FILE",     "SIGNING_STORE_FILE")
+    val storePass      = resolveSigningProp("storePassword",  "SIGNING_STORE_PASSWORD", "SIGNING_STORE_PASSWORD")
+    val keyAliasValue  = resolveSigningProp("keyAlias",       "SIGNING_KEY_ALIAS",      "SIGNING_KEY_ALIAS")
+    val keyPassValue   = resolveSigningProp("keyPassword",    "SIGNING_KEY_PASSWORD",   "SIGNING_KEY_PASSWORD")
+
+    // Only create the release signing config when all four credentials are present.
+    // If any is missing the release build remains UNSIGNED – never fall back to the debug keystore.
+    val hasAllSigningCreds = listOf(storeFilePath, storePass, keyAliasValue, keyPassValue).all { !it.isNullOrBlank() }
+
+    if (hasAllSigningCreds) {
         signingConfigs {
             create("release") {
-                this.storeFile     = file(storeFile)
-                this.storePassword = storePass
-                this.keyAlias      = keyAlias
-                this.keyPassword   = keyPass
+                storeFile     = file(storeFilePath!!)
+                storePassword = storePass
+                keyAlias      = keyAliasValue
+                keyPassword   = keyPassValue
             }
         }
     }
@@ -45,9 +85,10 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            val releaseCfg = signingConfigs.findByName("release")
-            if (releaseCfg != null) {
-                signingConfig = releaseCfg
+            // Apply signing config only when credentials are available.
+            // IMPORTANT: do NOT add signingConfig = signingConfigs.getByName("debug") here.
+            if (hasAllSigningCreds) {
+                signingConfig = signingConfigs.getByName("release")
             }
         }
         debug {
@@ -62,9 +103,8 @@ android {
         compose = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
-    }
+    // composeOptions.kotlinCompilerExtensionVersion is not used with Kotlin 2.x –
+    // the Compose compiler is now bundled via the kotlin.plugin.compose Gradle plugin.
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
@@ -73,6 +113,16 @@ android {
 
     kotlinOptions {
         jvmTarget = "17"
+    }
+
+    lint {
+        // Fail the build on lint errors so CI catches regressions early.
+        abortOnError = true
+        // Keep warnings as warnings (non-fatal) to avoid noise on existing code.
+        warningsAsErrors = false
+        // Write a checkstyle-compatible XML report for CI artefact upload.
+        xmlReport = true
+        htmlReport = true
     }
 }
 

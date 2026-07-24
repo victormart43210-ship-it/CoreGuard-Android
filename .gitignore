@@ -15,4 +15,6 @@
 local.properties
 **/*.keystore
 **/*.jks
+# Release signing credentials – never commit these
+keystore.properties
 billing-server/
