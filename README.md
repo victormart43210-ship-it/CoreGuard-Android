@@ -2,6 +2,27 @@
 
 Native Kotlin Android security and device-monitoring prototype (`com.coldboar.coreguard`).
 
+## Official Distribution
+
+| Attribute | Value |
+|-----------|-------|
+| Package name | `com.coldboar.coreguard` |
+| Official releases | [GitHub Releases](https://github.com/victormart43210-ship-it/CoreGuard-Android/releases) |
+| Security policy | [SECURITY.md](SECURITY.md) |
+
+Release AABs and their SHA-256 checksums are published on the Releases page. Each release also
+carries a [GitHub artifact attestation](https://docs.github.com/en/actions/security-guides/using-artifact-attestations-to-establish-provenance-for-builds)
+that cryptographically links the binary to the source commit and CI workflow. Verify before installing:
+
+```bash
+gh attestation verify <path-to-aab> --repo victormart43210-ship-it/CoreGuard-Android
+```
+
+Only install APKs/AABs that match the published checksum and attestation. The Apache 2.0 license
+permits forks and redistribution — always verify origin before installing on a sensitive device.
+
+## Implementation Handoff
+
 ## Features
 
 | Area | Status |

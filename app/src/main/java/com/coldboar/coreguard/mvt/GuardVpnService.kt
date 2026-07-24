@@ -53,7 +53,15 @@ class GuardVpnService : VpnService() {
         if (running) return START_STICKY
 
         blocker = DomainBlocker(IocRepository.matcher(this))
-        startForeground(NOTIF_ID, buildNotification())
+        val notification = buildNotification()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            startForeground(
+                NOTIF_ID, notification,
+                android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_SPECIAL_USE
+            )
+        } else {
+            startForeground(NOTIF_ID, notification)
+        }
 
         val builder = Builder()
             .setSession("CoreGuard Shield")
