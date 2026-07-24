@@ -96,8 +96,5 @@ jobs:
             [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
             for full build logs and provenance details.
 
-            **Required secrets (configure in repository Settings → Secrets → Actions):**
-            - `RELEASE_KEYSTORE_BASE64` — Base64-encoded release keystore file
-            - `SIGNING_KEY_ALIAS` — Key alias within the keystore
-            - `SIGNING_KEY_PASSWORD` — Key password
-            - `SIGNING_STORE_PASSWORD` — Keystore password
+            See [SECURITY.md](https://github.com/${{ github.repository }}/blob/main/SECURITY.md)
+            for the official distribution and signing-key custody policy.
