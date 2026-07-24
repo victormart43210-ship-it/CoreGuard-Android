@@ -54,7 +54,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 | Requirement | Value |
 |---|---|
-| JDK | 17 for CI parity and supported local builds; some VMs may also have JDK 21 installed |
+| JDK | 17 for CI parity and supported local builds |
 | Gradle | 8.9 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
@@ -66,7 +66,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 ### One-time setup
 
-Use JDK 17 for CI parity and for both Gradle and Kotlin/Java compilation. Newer JDKs may be installed on some machines, but 17 is the documented baseline for this project.
+Use JDK 17 for CI parity and for both Gradle and Kotlin/Java compilation. If your machine has multiple JDKs installed, point `JAVA_HOME` at 17 before running `./gradlew`.
 
 macOS:
 
