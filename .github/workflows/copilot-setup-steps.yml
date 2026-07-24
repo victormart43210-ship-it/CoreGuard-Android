@@ -43,3 +43,6 @@ jobs:
 
       - name: Pre-download Gradle dependencies
         run: ./gradlew dependencies --no-daemon
+
+      - name: Add marketing-psychology skill
+        run: npx skills add https://github.com/coreyhaines31/marketingskills --skill marketing-psychology
