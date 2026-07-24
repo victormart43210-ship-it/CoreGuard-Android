@@ -207,6 +207,17 @@
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="@color/text_tertiary"
                         tools:text="N/A (simulated)" />
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/cpuProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:indicatorColor="@color/gold"
+                        app:trackColor="@color/azure_deep"
+                        app:trackCornerRadius="4dp"
+                        app:trackThickness="6dp"
+                        tools:progress="45" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 

@@ -172,6 +172,17 @@
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="18dp"
                 android:gravity="center"
+                android:text="@string/paywall_social_proof"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_secondary"
+                android:textStyle="italic" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:gravity="center"
                 android:text="@string/paywall_demo_disclaimer"
                 android:textAppearance="?attr/textAppearanceBodySmall"
                 android:textColor="@color/status_warn"
