@@ -55,7 +55,7 @@
 
     <!-- Security dashboard -->
     <string name="security_dashboard_title">The Sanctum</string>
-    <string name="security_dashboard_subtitle">Five wards stand between your device and harm</string>
+    <string name="security_dashboard_subtitle">Six wards stand between your device and harm</string>
     <string name="status_overall_pass">ALL WARDS HOLD</string>
     <string name="status_overall_warn">WARDS WEAKENED</string>
     <string name="status_overall_fail">WARD BROKEN</string>
