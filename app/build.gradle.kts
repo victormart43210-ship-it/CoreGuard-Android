@@ -19,13 +19,15 @@ android {
 
     signingConfigs {
         // Release signing is opt-in via env — never hardcode passwords or commit keystores.
-        val keystorePath = System.getenv("KEYSTORE_PATH")
+        // Set KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD in the build
+        // environment. If any variable is absent the release build will be unsigned.
+        val keystorePath = System.getenv("KEYSTORE_PATH") ?: System.getenv("SIGNING_STORE_FILE")
         if (!keystorePath.isNullOrBlank()) {
             create("release") {
                 storeFile = file(keystorePath)
-                storePassword = System.getenv("KEYSTORE_PASSWORD")
-                keyAlias = System.getenv("KEY_ALIAS") ?: "coreguard"
-                keyPassword = System.getenv("KEY_PASSWORD")
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS") ?: System.getenv("SIGNING_KEY_ALIAS") ?: "coreguard"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("SIGNING_KEY_PASSWORD")
             }
         }
     }
@@ -33,12 +35,14 @@ android {
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (signingConfigs.findByName("release") != null) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseCfg = signingConfigs.findByName("release")
+            if (releaseCfg != null) {
+                signingConfig = releaseCfg
             }
         }
         debug {

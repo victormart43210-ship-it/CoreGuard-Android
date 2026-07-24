@@ -206,6 +206,7 @@ URL and add it in Play Console (required for Data Safety / store listing).
 - [ ] All unit tests pass: `./gradlew test`
 - [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
 - [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
+- [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [x] CPU metric is no longer labeled "simulated" or is removed from release UI
 - [ ] `DemoBillingProvider` replaced with `PlayBillingProvider`
 - [ ] Server-side purchase token verification implemented
