@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Network security configuration for CoreGuard.
+
+    Cleartext (HTTP) traffic is explicitly disallowed for all connections.
+    The DNS-forwarding VPN uses a protected DatagramSocket (UDP) and is not
+    subject to this policy.  Any future backend integration must use HTTPS.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false" />
+</network-security-config>

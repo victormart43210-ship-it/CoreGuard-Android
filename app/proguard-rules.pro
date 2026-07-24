@@ -3,7 +3,7 @@
 # proguardFiles setting in build.gradle.kts.
 
 # Keep security check classes (they use reflection internally)
--keep class com.coldboar.coreguard.SecurityChecks { *; }
+-keep class com.coldboar.coreguard.SecurityCheckEvaluator { *; }
 -keep class com.coldboar.coreguard.SecurityCheckResult { *; }
 -keep class com.coldboar.coreguard.SecurityCheckState { *; }
 
