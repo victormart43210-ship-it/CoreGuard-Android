@@ -8,12 +8,7 @@
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
 .DS_Store
-<<<<<<< HEAD
-/build
 **/build/
-=======
-build/
->>>>>>> origin/main
 /captures
 .externalNativeBuild
 .cxx

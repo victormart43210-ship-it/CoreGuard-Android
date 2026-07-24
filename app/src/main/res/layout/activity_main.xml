@@ -208,22 +208,6 @@
                         android:textColor="@color/text_tertiary"
                         tools:text="N/A (simulated)" />
 
-<<<<<<< HEAD
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnNetworkDefenseLab"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_network_defense_lab"
-            android:layout_marginBottom="12dp"
-            style="@style/Widget.Material3.Button.TonalButton" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnUpgradePremium"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_upgrade_premium"
-            style="@style/Widget.Material3.Button.OutlinedButton" />
-=======
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/cpuProgress"
                         android:layout_width="match_parent"
@@ -236,8 +220,6 @@
                         tools:progress="45" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
->>>>>>> origin/main
-
             <!-- Action Buttons -->
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnSecurityDashboard"
@@ -257,6 +239,16 @@
                 android:layout_height="56dp"
                 android:layout_marginBottom="12dp"
                 android:text="@string/btn_nemesis_scanner"
+                app:icon="@drawable/ic_unicursal_hexagram"
+                app:iconTint="@color/azure_deep"
+                app:iconGravity="textStart" />
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNetworkDefenseLab"
+                style="@style/Widget.CoreGuard.Button.Gold"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/btn_network_defense_lab"
                 app:icon="@drawable/ic_unicursal_hexagram"
                 app:iconTint="@color/azure_deep"
                 app:iconGravity="textStart" />

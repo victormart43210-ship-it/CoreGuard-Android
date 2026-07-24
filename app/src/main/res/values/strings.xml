@@ -19,12 +19,8 @@
     <string name="cpu_usage_value">CPU: %1$d%%</string>
 
     <!-- Navigation -->
-<<<<<<< HEAD
-    <string name="btn_security_dashboard">View Security Dashboard</string>
-    <string name="btn_network_defense_lab">Open Network Defense Lab</string>
-    <string name="btn_upgrade_premium">Upgrade to Premium (Demo)</string>
-=======
     <string name="btn_security_dashboard">Enter the Sanctum</string>
+    <string name="btn_network_defense_lab">Open Network Defense Lab</string>
     <string name="btn_nemesis_scanner">Nemesis Scanner</string>
     <string name="btn_upgrade_premium">Forge Premium (Demo)</string>
     <string name="btn_back">Back</string>
@@ -57,8 +53,6 @@
 
     <!-- Security dashboard (privacy summary) -->
     <string name="check_spyware">Privacy Integrity</string>
->>>>>>> origin/main
-
     <!-- Network Defense Lab (educational simulation) -->
     <string name="lab_title">Network Defense Lab</string>
     <string name="lab_disclaimer">Prototype teaching simulation — not live network monitoring or IPS.</string>
