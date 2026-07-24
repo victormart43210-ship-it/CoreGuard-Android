@@ -79,7 +79,7 @@ class ThreatScannerActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
-        executor.shutdownNow()
+        executor.shutdown()
         super.onDestroy()
     }
 
