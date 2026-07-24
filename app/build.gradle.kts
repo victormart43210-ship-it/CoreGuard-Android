@@ -27,7 +27,6 @@ android {
         }
     }
 
-<<<<<<< HEAD
     externalNativeBuild {
         cmake {
             path = file("src/main/cpp/CMakeLists.txt")
@@ -37,7 +36,6 @@ android {
 
     ndkVersion = "26.1.10909125"
 
-=======
     // Release signing: credentials are supplied via environment variables set by CI.
     // Set SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, and
     // SIGNING_KEY_PASSWORD in the build environment. If any variable is absent the
@@ -58,7 +56,7 @@ android {
         }
     }
 
->>>>>>> origin/main
+
     buildTypes {
         release {
             isMinifyEnabled = true

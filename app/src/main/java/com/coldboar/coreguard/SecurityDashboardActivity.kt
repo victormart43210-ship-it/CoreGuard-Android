@@ -32,27 +32,8 @@ class SecurityDashboardActivity : AppCompatActivity() {
 
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
-<<<<<<< HEAD
-        val keyLevel = { CoreGuardApplication.get()?.keyManager?.securityLevel ?: KeySecurityLevel.SOFTWARE }
-
-        val evaluators: List<SecurityCheckEvaluator> = listOf(
-            DebuggerCheckEvaluator(),
-            NativeDebuggerEvaluator(),
-            FridaDetectionEvaluator(),
-            HookDetectionEvaluator(),
-            MemoryIntegrityEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            MountIntegrityEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { getAppCertSha256() }),
-            StrongBoxCheckEvaluator(level = keyLevel)
-        )
-
-        val results = evaluators.map { it.evaluate() }
-=======
         val results = SecurityCheckRunner.run(this)
->>>>>>> origin/main
+
         renderResults(results)
     }
 

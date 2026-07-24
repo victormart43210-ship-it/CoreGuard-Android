@@ -18,13 +18,22 @@ object SecurityCheckRunner {
     fun run(context: Context): List<SecurityCheckResult> =
         evaluators(context).map { it.evaluate() }
 
-    fun evaluators(context: Context): List<SecurityCheckEvaluator> = listOf(
-        DebuggerCheckEvaluator(),
-        EmulatorCheckEvaluator(),
-        RootCheckEvaluator(),
-        BuildTypeCheckEvaluator(),
-        SignatureCheckEvaluator(actualSha256 = { certSha256(context) })
-    )
+    fun evaluators(context: Context): List<SecurityCheckEvaluator> {
+        val keyLevel = { CoreGuardApplication.get()?.keyManager?.securityLevel ?: KeySecurityLevel.SOFTWARE }
+        return listOf(
+            DebuggerCheckEvaluator(),
+            NativeDebuggerEvaluator(),
+            FridaDetectionEvaluator(),
+            HookDetectionEvaluator(),
+            MemoryIntegrityEvaluator(),
+            EmulatorCheckEvaluator(),
+            RootCheckEvaluator(),
+            MountIntegrityEvaluator(),
+            BuildTypeCheckEvaluator(),
+            SignatureCheckEvaluator(actualSha256 = { certSha256(context) }),
+            StrongBoxCheckEvaluator(level = keyLevel)
+        )
+    }
 
     /**
      * Returns the SHA-256 fingerprint of the first signing certificate, or
