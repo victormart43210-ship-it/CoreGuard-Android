@@ -55,15 +55,15 @@ object IocFeedFetcher {
     }
 
     private fun fetch(context: Context, url: String): FetchResult {
+        // HttpURLConnection on Android uses the system SSL context, which enforces
+        // hostname verification and certificate chain validation by default.
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            connectTimeout = CONNECT_TIMEOUT_MS
+            readTimeout = READ_TIMEOUT_MS
+            setRequestProperty("Accept", "application/json, */*")
+        }
         return try {
-            // HttpURLConnection on Android uses the system SSL context, which enforces
-            // hostname verification and certificate chain validation by default.
-            val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-                connectTimeout = CONNECT_TIMEOUT_MS
-                readTimeout = READ_TIMEOUT_MS
-                setRequestProperty("Accept", "application/json, */*")
-                connect()
-            }
+            connection.connect()
 
             val status = connection.responseCode
             if (status !in 200..299) {
@@ -73,12 +73,13 @@ object IocFeedFetcher {
             // Check Content-Length first to avoid buffering a large feed unnecessarily.
             val contentLength = connection.contentLength
             if (contentLength > MAX_BYTES) {
-                connection.disconnect()
                 return FetchResult.Failure("Feed too large ($contentLength bytes)")
             }
 
-            // Buffer the body. A second size check below handles servers that
-            // omit Content-Length or misreport it.
+            // Buffer the body (2 MB cap). A second size check handles servers that
+            // omit or misreport Content-Length. For feeds much larger than 2 MB,
+            // streaming directly to disk would reduce peak memory use; the cap makes
+            // this safe for all known MVT-style indicator feeds.
             val bytes = connection.inputStream.use { it.readBytes() }
             if (bytes.size > MAX_BYTES) {
                 return FetchResult.Failure("Feed too large (${bytes.size} bytes)")
@@ -101,6 +102,8 @@ object IocFeedFetcher {
         } catch (e: Exception) {
             Log.w(TAG, "Feed fetch failed: ${e.message}")
             FetchResult.Failure(e.message ?: "Unknown error")
+        } finally {
+            connection.disconnect()
         }
     }
 }

@@ -70,7 +70,7 @@
     <string name="paywall_benefit_1">Automated daily security scans</string>
     <string name="paywall_benefit_2">Threat report export — share findings with your team</string>
     <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
-    <string name="paywall_social_proof">Trusted by privacy-conscious defenders worldwide</string>
+    <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
     <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
     <string name="paywall_btn_subscribe">Take the Oath (Demo)</string>
     <string name="paywall_btn_close">Not now</string>
