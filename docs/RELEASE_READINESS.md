@@ -213,7 +213,9 @@ export COREGUARD_VERIFY_MODE=google
 - [ ] CI security-gate green (no keystores/secrets in tree)
 - [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
 - [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
+- [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [ ] CPU metric is no longer labeled "simulated" or is removed from release UI
+- [ ] `DemoBillingProvider` replaced with `PlayBillingProvider` for release builds only
 - [ ] Play Console subscription `coreguard_premium_monthly` created and tested on Internal Testing (see `docs/PLAY_CONSOLE_BILLING.md`)
 - [ ] `billing-server` deployed with Play service account; release built with `COREGUARD_VERIFY_URL` (HTTPS)
 - [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash

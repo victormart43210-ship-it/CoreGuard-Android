@@ -23,7 +23,8 @@ object SecurityCheckRunner {
         EmulatorCheckEvaluator(),
         RootCheckEvaluator(),
         BuildTypeCheckEvaluator(),
-        SignatureCheckEvaluator(actualSha256 = { certSha256(context) })
+        SignatureCheckEvaluator(actualSha256 = { certSha256(context) }),
+        SpywareScanEvaluator()
     )
 
     /**

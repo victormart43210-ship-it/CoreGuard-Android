@@ -4,8 +4,37 @@ Native Kotlin Android security and device-monitoring **prototype**
 (`com.coldboar.coreguard`).
 
 This repository is a production-honest scaffold for Play Store preparation.
-It is **not** a claim of Play approval, production billing, or guaranteed
-security against advanced attacks.
+It is **not** a claim of Play approval, guaranteed security, or premium unlock
+without Google Play plus server verification.
+
+## Official Distribution
+
+| Attribute | Value |
+|-----------|-------|
+| Package name | `com.coldboar.coreguard` |
+| Official releases | [GitHub Releases](https://github.com/victormart43210-ship-it/CoreGuard-Android/releases) |
+| Security policy | [SECURITY.md](SECURITY.md) |
+
+Release AABs and their SHA-256 checksums are published on the Releases page.
+Each release also carries a GitHub artifact attestation that links the binary to
+its source commit and workflow:
+
+```bash
+gh attestation verify <path-to-aab> --repo victormart43210-ship-it/CoreGuard-Android
+```
+
+Only install artifacts that match the published checksum and attestation.
+
+## Features
+
+| Area | Status |
+|------|--------|
+| Device RAM monitoring | Real `ActivityManager` readings |
+| CPU usage | **Simulated** and labeled as such |
+| Security dashboard | Local heuristic checks (debugger / root / emulator / signature / build type / spyware) |
+| Network Defense Lab | Educational simulation in app + companion CLI |
+| Premium unlock (debug) | `DemoBillingProvider` — not a purchase |
+| Premium unlock (release) | Play Billing + `billing-server` verification gate |
 
 ## Implementation Handoff
 
@@ -16,30 +45,24 @@ security against advanced attacks.
 - Optional custom output and logo:
   - `python3 scripts/generate_coreguard_handoff.py --out-dir /mnt/data --logo /path/to/logo.png`
 
-## What works today
-
-- Security Status dashboard with PASS / WARN / FAIL for:
-  - debugger attached
-  - emulator indicators
-  - root indicators (heuristic)
-  - app signature integrity (WARN until expected hash is configured)
-  - build type (debug / release)
-- Lifecycle-safe RAM polling with null-safe memory helpers
-- Explicitly **simulated** CPU label (not measured)
-- Demo entitlement path clearly separated from future Play Billing
-- Play Billing path guarded by server verification before premium unlock
-- Nemesis Scanner and on-device privacy shield flows from `main`
-- Unit tests for memory math, entitlements, and security evaluators
-
 ## What is simulated / incomplete
 
 | Area | Status |
 |------|--------|
 | CPU usage | Simulated — labeled in UI |
 | Premium unlock (debug) | `DemoBillingProvider` — not a purchase |
-| Premium unlock (release) | Play Billing + `billing-server` token verification |
 | Signature pinning | Evaluator present; expected hash not configured |
 | Play Store approval | Not claimed |
+
+## Network Defense Lab
+
+Interactive topology with live attack/defense/rollback, Prim MST overlay, and a
+protanopia-friendly palette. See
+[`docs/NETWORK_DEFENSE_LAB.md`](docs/NETWORK_DEFENSE_LAB.md) and
+[`cli/README.md`](cli/README.md).
+
+> **Honesty:** The lab is a teaching simulation. It is not live network
+> monitoring, intrusion prevention, or a Play-approved security product claim.
 
 ## billing-server
 
@@ -63,6 +86,7 @@ Requirements: JDK 17+, Android SDK (compile/target SDK 34).
 ./gradlew test
 ./gradlew assembleDebug
 ./gradlew lint   # optional when SDK is available
+cd cli && go test -race ./... && go vet ./... && go build -o /tmp/coreguard-cli ./cmd/coreguard
 ```
 
 Release AAB (requires your own keystore — never commit it):
@@ -71,8 +95,8 @@ Release AAB (requires your own keystore — never commit it):
 ./gradlew bundleRelease
 ```
 
-CI runs `./gradlew test`, `./gradlew :app:lintDebug`, and
-`./gradlew assembleDebug` (see [.github/workflows/android.yml](.github/workflows/android.yml)).
+CI runs the CLI checks, `./gradlew test`, `./gradlew :app:lintDebug`, and
+`./gradlew assembleDebug`.
 
 ## Contribution Guidelines
 
@@ -88,4 +112,4 @@ available, and update `README.md` when adding or changing user-visible features.
 ## Secrets
 
 Never commit keystores, API keys, or `local.properties`.
-`.gitignore` excludes `*.jks`, `*.keystore`, and related secrets.
+`.gitignore` excludes `*.jks`, `*.keystore`, and related secret-like files.

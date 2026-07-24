@@ -87,15 +87,15 @@ verification is required before treating Play purchases as premium grants.
 
 | Threat | Mitigation | Status |
 |--------|-----------|--------|
-| T-1 Debugger | `DebuggerCheckEvaluator` + RestrictedMode on FAIL | ✅ Prototype |
-| T-2 Repackaging | `SignatureCheckEvaluator` (expected hash) | ⚠️ Hash not pinned in demo |
-| T-3 Root | `RootCheckEvaluator` + RestrictedMode on FAIL | ✅ Heuristic only |
-| T-4 Emulator | `EmulatorCheckEvaluator` (WARN; does not force RestrictedMode) | ✅ Heuristic |
-| T-5 Entitlement bypass | R8 minify + server verify gate on Play path | 🟡 Client still patchable |
-| T-6 Billing spoofing | Play Billing + billing-server before `isPremium=true` | 🟢 Code complete; deploy required |
-| T-7 Cache abuse | `SecureStore` labels only; no tokens; live grant required | ✅ Design rule |
-| T-8 MITM | Cleartext disabled; HTTPS verify URL required for release | 🟡 No cert pinning yet |
-| Backup extraction | `allowBackup=false` + extraction/backup rules | ✅ |
+| T-1 Debugger | `DebuggerCheckEvaluator` detects JDWP attachment and RestrictedMode tightens local features on FAIL | ✅ Prototype |
+| T-2 Repackaging | `SignatureCheckEvaluator` compares APK cert hash (requires configuring expected hash) | ⚠️ Implemented but hash not pinned in demo build |
+| T-3 Root | `RootCheckEvaluator` checks su binary paths and RestrictedMode tightens local features on FAIL | ✅ Heuristic only |
+| T-4 Emulator | `EmulatorCheckEvaluator` checks build properties and surfaces WARN without forcing RestrictedMode | ✅ Heuristic |
+| T-5 Entitlement bypass | Release build enables ProGuard/R8 and gated premium checks use live billing state | 🟡 Client still patchable |
+| T-6 Billing spoofing | Play Billing + `billing-server` verification before release `isPremium=true` | 🟢 Code complete; deployment still required |
+| T-7 Cache abuse | `SecureStore` stores labels only; no tokens; live purchase state remains authoritative | ✅ Design rule |
+| T-8 MITM | Release manifest and network security config reject cleartext HTTP traffic; HTTPS verify URL required | 🟡 No cert pinning yet |
+| App data extraction | `allowBackup=false` plus backup/data-extraction rules | ✅ Configured |
 | Secrets in repo | CI security-gate blocks keystores / private keys | ✅ |
 
 ---

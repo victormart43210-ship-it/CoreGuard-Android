@@ -16,11 +16,11 @@ import com.google.android.material.card.MaterialCardView
 /**
  * The Sanctum – security dashboard screen.
  *
- * Shows a PASS / WARN / FAIL card for each security check, revealed with a
- * staggered entrance animation. All checks are evaluated synchronously on the
- * main thread – each check is designed to be fast (no I/O) so this is
- * acceptable.
+ * View-based implementation retained while the Compose migration remains in
+ * progress. New navigation should still prefer the newer shared flows when they
+ * are fully wired.
  */
+@Deprecated("Superseded by HomeScreen in the Compose NavHost. Do not launch from new code.")
 class SecurityDashboardActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivitySecurityDashboardBinding

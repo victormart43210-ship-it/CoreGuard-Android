@@ -37,16 +37,38 @@ android {
         }
     }
 
+    // Release signing: credentials are supplied via environment variables set by CI.
+    // Set SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, and
+    // SIGNING_KEY_PASSWORD in the build environment. If any variable is absent the
+    // release build will be unsigned (suitable for local development only).
+    val storeFile = System.getenv("SIGNING_STORE_FILE")
+    val storePass = System.getenv("SIGNING_STORE_PASSWORD")
+    val keyAlias = System.getenv("SIGNING_KEY_ALIAS")
+    val keyPass = System.getenv("SIGNING_KEY_PASSWORD")
+
+    if (storeFile != null && storePass != null && keyAlias != null && keyPass != null) {
+        signingConfigs {
+            create("release") {
+                this.storeFile = file(storeFile)
+                this.storePassword = storePass
+                this.keyAlias = keyAlias
+                this.keyPassword = keyPass
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
+            isShrinkResources = true
             buildConfigField("boolean", "USE_DEMO_BILLING", "false")
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            if (signingConfigs.findByName("release") != null) {
-                signingConfig = signingConfigs.getByName("release")
+            val releaseCfg = signingConfigs.findByName("release")
+            if (releaseCfg != null) {
+                signingConfig = releaseCfg
             }
         }
         debug {
@@ -59,6 +81,11 @@ android {
     buildFeatures {
         buildConfig = true
         viewBinding = true
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.composeCompiler.get()
     }
 
     compileOptions {
@@ -79,6 +106,18 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.security.crypto)
     implementation(libs.billing.ktx)
+
+    // Jetpack Compose
+    implementation(platform(libs.compose.bom))
+    implementation(libs.compose.ui)
+    implementation(libs.compose.ui.graphics)
+    implementation(libs.compose.ui.tooling.preview)
+    implementation(libs.compose.material3)
+    implementation(libs.compose.material.icons.extended)
+    implementation(libs.activity.compose)
+    implementation(libs.navigation.compose)
+
+    debugImplementation(libs.compose.ui.tooling)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

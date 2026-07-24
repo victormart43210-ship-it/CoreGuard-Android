@@ -55,6 +55,18 @@ class DnsFilterTest {
     }
 
     @Test
+    fun `nxdomain response preserves opcode from query`() {
+        // Construct a query with a non-zero OPCODE (e.g. OPCODE=1, inverse query).
+        // Standard query flag byte: QR=0, OPCODE=0001, AA=0, TC=0, RD=1 → 0b00001001 = 0x09
+        val q = query("example.com", id = 0x0001).also { it[2] = 0x09.toByte() }
+        val resp = DnsMessage.buildNxDomainResponse(q)
+        // QR=1, OPCODE=0001 preserved, RD=1 → 0b10001001 = 0x89
+        assertEquals(0x89.toByte(), resp[2])
+        // RA=1, RCODE=3 → 0x83
+        assertEquals(0x83.toByte(), resp[3])
+    }
+
+    @Test
     fun `domain blocker uses matcher`() {
         val blocker = DomainBlocker(
             IocMatcher(listOf(Indicator(IndicatorType.DOMAIN, "evil.com", "Pegasus")))

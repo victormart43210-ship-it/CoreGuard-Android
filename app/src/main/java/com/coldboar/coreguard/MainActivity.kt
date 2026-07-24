@@ -9,6 +9,7 @@ import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityMainBinding
+import com.coldboar.coreguard.lab.NetworkDefenseLabActivity
 
 /**
  * Main screen.
@@ -56,6 +57,10 @@ class MainActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             startActivity(Intent(this, ThreatScannerActivity::class.java))
+        }
+
+        binding.btnNetworkDefenseLab.setOnClickListener {
+            startActivity(Intent(this, NetworkDefenseLabActivity::class.java))
         }
 
         binding.btnUpgradePremium.setOnClickListener {
