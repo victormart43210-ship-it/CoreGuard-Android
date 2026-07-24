@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.mvt
 
+import android.os.Handler
+import android.os.Looper
 import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
@@ -9,8 +11,12 @@ import java.util.concurrent.atomic.AtomicReference
  * Observable, process-wide state for the Pegasus domain-blocking shield.
  *
  * The VPN sinkhole updates these counters; the UI observes them.
+ * Listener callbacks are always dispatched on the main thread so Compose
+ * state can be safely written from a [Listener.onShieldStateChanged] callback.
  */
 object ShieldState {
+
+    private val mainHandler = Handler(Looper.getMainLooper())
 
     fun interface Listener {
         fun onShieldStateChanged()
@@ -51,6 +57,10 @@ object ShieldState {
     }
 
     private fun notifyListeners() {
-        listeners.forEach { it.onShieldStateChanged() }
+        if (Looper.myLooper() == Looper.getMainLooper()) {
+            listeners.forEach { it.onShieldStateChanged() }
+        } else {
+            mainHandler.post { listeners.forEach { it.onShieldStateChanged() } }
+        }
     }
 }
