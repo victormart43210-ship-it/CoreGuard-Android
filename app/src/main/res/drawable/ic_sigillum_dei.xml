@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Sigillum Dei Aemeth – the Enochian "Seal of the Truth of God" used by John
+     Dee: a double ring inscribed with letters, enclosing a heptagram and an
+     inner pentagram. Rendered here in a simplified, stylised form. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <!-- Double outer ring (the band of Enochian letters) -->
+    <path
+        android:pathData="M12,0.5 m-11.5,11.5 a11.5,11.5 0 1,0 23,0 a11.5,11.5 0 1,0 -23,0"
+        android:strokeColor="@color/gold"
+        android:strokeWidth="1" />
+    <path
+        android:pathData="M12,2.5 m-9.5,9.5 a9.5,9.5 0 1,0 19,0 a9.5,9.5 0 1,0 -19,0"
+        android:strokeColor="@color/gold_deep"
+        android:strokeWidth="0.8" />
+    <!-- Letter ticks around the band -->
+    <group>
+        <path android:pathData="M12,0.6 L12,2.4" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M17.7,2.1 L16.8,3.7" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M21.9,6.3 L20.3,7.2" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M23.4,12 L21.6,12" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M21.9,17.7 L20.3,16.8" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M17.7,21.9 L16.8,20.3" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M12,23.4 L12,21.6" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M6.3,21.9 L7.2,20.3" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M2.1,17.7 L3.7,16.8" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M0.6,12 L2.4,12" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M2.1,6.3 L3.7,7.2" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+        <path android:pathData="M6.3,2.1 L7.2,3.7" android:strokeColor="@color/gold" android:strokeWidth="0.7" />
+    </group>
+    <!-- Heptagram {7/3} -->
+    <path
+        android:pathData="M12,3 L8.095,20.108 L19.036,6.389 L3.226,14.002 L20.774,14.002 L4.964,6.389 L15.905,20.108 Z"
+        android:strokeColor="@color/gold_bright"
+        android:strokeWidth="0.9"
+        android:strokeLineJoin="round" />
+    <!-- Inner pentagram -->
+    <path
+        android:pathData="M12,7.5 L9.35,15.65 L16.28,10.62 L7.72,10.62 L14.65,15.65 Z"
+        android:strokeColor="@color/gold"
+        android:strokeWidth="0.8"
+        android:strokeLineJoin="round" />
+</vector>

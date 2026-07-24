@@ -79,6 +79,8 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 | T-4 Emulator | `EmulatorCheckEvaluator` checks build properties | ✅ Implemented (heuristic) |
 | T-5 Entitlement bypass | Release build enables ProGuard/R8 obfuscation | ✅ Enabled in release |
 | T-6 Billing spoofing | Server-side receipt verification with Google Play Developer API | ❌ Not implemented — required before production |
+| App data extraction | Release manifest disables Auto Backup and Android 12+ device-transfer extraction | ✅ Configured |
+| Cleartext transport | Release manifest and network security config reject cleartext HTTP traffic | ✅ Configured |
 | Code tampering (general) | `isMinifyEnabled = true` in release, ProGuard rules applied | ✅ Configured |
 
 ---
@@ -95,7 +97,7 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 
 5. **No anti-tampering runtime integrity check beyond signature**: Binary instrumentation frameworks (Frida, etc.) can hook any method. Consider native checks or Play Integrity API in a later version.
 
-6. **CPU metric is simulated**: No real CPU usage is measured. This is clearly labeled in the UI but constitutes a feature gap relative to a security-monitoring app's expectations.
+6. **CPU metric is coarse**: Aggregate CPU usage is sampled from `/proc/stat`, which is enough for a basic dashboard but not for attributing suspicious activity to a specific app or service.
 
 ---
 
