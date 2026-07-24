@@ -84,7 +84,7 @@ object IocFeedFetcher {
             if (bytes.size > MAX_BYTES) {
                 return FetchResult.Failure("Feed too large (${bytes.size} bytes)")
             }
-            val body = bytes.toString(Charsets.UTF_8)
+            val body = String(bytes, Charsets.UTF_8)
 
             // Validate before saving – reject feeds we can't parse at all.
             val indicators = IocParser.parse(body)
