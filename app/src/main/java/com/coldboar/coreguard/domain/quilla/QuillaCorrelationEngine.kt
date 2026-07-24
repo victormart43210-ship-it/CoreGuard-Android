@@ -2,6 +2,7 @@ package com.coldboar.coreguard.domain.quilla
 
 import com.coldboar.coreguard.data.local.dao.QuillaLearningDao
 import com.coldboar.coreguard.data.local.entity.QuillaHypothesisEntity
+import org.json.JSONObject
 import java.util.UUID
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -44,11 +45,14 @@ class QuillaCorrelationEngine @Inject constructor(
         if (rasp?.isDynamicCodeLoaded == true && network?.isUntrustedNetwork == true) {
             dao.upsertHypothesis(
                 QuillaHypothesisEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = newHypothesisId(),
                     hypothesisType = "DYNAMIC_LOAD_UNTRUSTED_NET",
                     summary = "Package $packageName executed dynamic code loading while " +
                         "connected to an untrusted network environment.",
-                    evidenceJson = """{"dynamicCode":true,"untrustedNetwork":true}""",
+                    evidenceJson = buildEvidenceJson(
+                        "dynamicCode" to true,
+                        "untrustedNetwork" to true
+                    ),
                     confidence = 0.82f,
                     status = "ACTIVE"
                 )
@@ -58,14 +62,19 @@ class QuillaCorrelationEngine @Inject constructor(
         if (rasp?.isRootDetected == true) {
             dao.upsertHypothesis(
                 QuillaHypothesisEntity(
-                    id = UUID.randomUUID().toString(),
+                    id = newHypothesisId(),
                     hypothesisType = "ROOT_DETECTED",
                     summary = "Package $packageName was observed running on a rooted device.",
-                    evidenceJson = """{"rootDetected":true}""",
+                    evidenceJson = buildEvidenceJson("rootDetected" to true),
                     confidence = 0.95f,
                     status = "ACTIVE"
                 )
             )
         }
     }
+
+    private fun newHypothesisId(): String = UUID.randomUUID().toString()
+
+    private fun buildEvidenceJson(vararg pairs: Pair<String, Boolean>): String =
+        JSONObject(pairs.toMap<String, Boolean>()).toString()
 }

@@ -233,7 +233,9 @@ private fun JournalEntryCard(entry: QuillaLearningJournalEntity) {
             }
             Text(text = entry.summary, style = MaterialTheme.typography.bodySmall)
             Text(
-                text = "pkg: ${entry.packageName}  ·  confidence: ${"%.0f".format(entry.confidence * 100)}%",
+                text = "pkg: ${entry.packageName}  ·  confidence: %d%%".format(
+                    (entry.confidence * 100).toInt()
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
