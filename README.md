@@ -228,6 +228,7 @@ ls app/build/outputs/apk/debug/
 |---|---|
 | `Unsupported class file major version 61` | Use JDK 17 for Gradle and compilation. |
 | `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
+| `Plugin [id: 'com.android.application' ...] was not found` | Ensure `google()` is enabled in Gradle settings and that the machine can reach Google Maven / `dl.google.com`. |
 | `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |
 | `SDK platform android-34 not found` | Run `sdkmanager --install "platforms;android-34"`. |
 | Android SDK licenses not accepted | Run `yes \| sdkmanager --licenses`. |
