@@ -7,6 +7,8 @@
 
     <!-- Forwards allowed DNS queries to an upstream resolver from the blocker VPN. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Read active network link properties (DNS servers) for the sinkhole VPN upstream resolver. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Foreground service hosting the always-on spyware-domain blocker VPN. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
