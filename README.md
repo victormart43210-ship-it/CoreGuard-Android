@@ -7,6 +7,15 @@ This repository is a production-honest scaffold for Play Store preparation.
 It is **not** a claim of Play approval, production billing, or guaranteed
 security against advanced attacks.
 
+## Implementation Handoff
+
+- SRD: `docs/CoreGuard_Elite_Copilot_SRD.md`
+- Artifact generator: `scripts/generate_coreguard_handoff.py`
+- Generate handoff files (`.md`, `.docx`, `.zip`) to `build/handoff`:
+  - `python3 scripts/generate_coreguard_handoff.py`
+- Optional custom output and logo:
+  - `python3 scripts/generate_coreguard_handoff.py --out-dir /mnt/data --logo /path/to/logo.png`
+
 ## What works today
 
 - Security Status dashboard with PASS / WARN / FAIL for:
@@ -18,6 +27,8 @@ security against advanced attacks.
 - Lifecycle-safe RAM polling with null-safe memory helpers
 - Explicitly **simulated** CPU label (not measured)
 - Demo entitlement path clearly separated from future Play Billing
+- Play Billing path guarded by server verification before premium unlock
+- Nemesis Scanner and on-device privacy shield flows from `main`
 - Unit tests for memory math, entitlements, and security evaluators
 
 ## What is simulated / incomplete
@@ -51,7 +62,7 @@ Requirements: JDK 17+, Android SDK (compile/target SDK 34).
 ```bash
 ./gradlew test
 ./gradlew assembleDebug
-./gradlew lint   # optional
+./gradlew lint   # optional when SDK is available
 ```
 
 Release AAB (requires your own keystore — never commit it):
@@ -60,8 +71,14 @@ Release AAB (requires your own keystore — never commit it):
 ./gradlew bundleRelease
 ```
 
-CI runs `./gradlew test` and `./gradlew assembleDebug`
-(see [.github/workflows/android.yml](.github/workflows/android.yml)).
+CI runs `./gradlew test`, `./gradlew :app:lintDebug`, and
+`./gradlew assembleDebug` (see [.github/workflows/android.yml](.github/workflows/android.yml)).
+
+## Contribution Guidelines
+
+Before each commit, run `./gradlew test` and ensure the app still builds with
+`./gradlew assembleDebug`. Run `./gradlew lint` when the Android SDK is
+available, and update `README.md` when adding or changing user-visible features.
 
 ## Package
 

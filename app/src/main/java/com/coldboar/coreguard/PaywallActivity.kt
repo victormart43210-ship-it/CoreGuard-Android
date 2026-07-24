@@ -7,12 +7,8 @@ import com.coldboar.coreguard.databinding.ActivityPaywallBinding
 /**
  * Paywall screen.
  *
- * Behavior depends on the active [BillingProvider]:
- * - [DemoBillingProvider] (debug): simulated unlock — not a real purchase.
- * - [PlayBillingProvider] (release): Google Play purchase sheet for
- *   [PRODUCT_ID_PREMIUM]. Client-side success is not server verification.
- *
- * The [SubscriptionManager] prevents duplicate launches of this activity.
+ * Behavior depends on the active [BillingProvider]: demo unlocks are local only,
+ * while Play unlocks still require server verification before premium is granted.
  */
 class PaywallActivity : AppCompatActivity() {
 
@@ -26,8 +22,7 @@ class PaywallActivity : AppCompatActivity() {
         binding = ActivityPaywallBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        supportActionBar?.setDisplayHomeAsUpEnabled(true)
-        title = getString(R.string.paywall_title)
+        binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         val isDemo = billing.backend == BillingBackend.DEMO
         binding.tvPaywallDisclaimer.text = getString(
@@ -51,8 +46,7 @@ class PaywallActivity : AppCompatActivity() {
                         finish()
                     }
                     is PurchaseResult.Cancelled -> {
-                        binding.tvPaywallStatus.text =
-                            getString(R.string.paywall_purchase_cancelled)
+                        binding.tvPaywallStatus.text = getString(R.string.paywall_purchase_cancelled)
                     }
                     is PurchaseResult.Error -> {
                         binding.tvPaywallStatus.text =
@@ -63,11 +57,6 @@ class PaywallActivity : AppCompatActivity() {
         }
 
         binding.btnClose.setOnClickListener { finish() }
-    }
-
-    override fun onSupportNavigateUp(): Boolean {
-        onBackPressedDispatcher.onBackPressed()
-        return true
     }
 
     companion object {

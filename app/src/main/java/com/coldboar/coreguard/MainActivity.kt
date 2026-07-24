@@ -5,6 +5,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.View
+import android.view.animation.AnimationUtils
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityMainBinding
@@ -12,8 +13,8 @@ import com.coldboar.coreguard.databinding.ActivityMainBinding
 /**
  * Main screen.
  *
- * Displays device health (RAM + simulated CPU), entitlement honesty banners,
- * and restricted-mode state derived from local security checks.
+ * Shows the Guardian Score preview, device vitals, entitlement honesty labels,
+ * and restricted-mode banners while keeping CPU explicitly marked as simulated.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -43,8 +44,18 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        binding.btnSecurityDashboard.setOnClickListener {
+        val openSanctum = View.OnClickListener {
             startActivity(Intent(this, SecurityDashboardActivity::class.java))
+        }
+        binding.btnSecurityDashboard.setOnClickListener(openSanctum)
+        binding.scoreContainer.setOnClickListener(openSanctum)
+
+        binding.btnNemesisScanner.setOnClickListener {
+            if (restrictedActive) {
+                Toast.makeText(this, R.string.restricted_mode_scanner_blocked, Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            startActivity(Intent(this, ThreatScannerActivity::class.java))
         }
 
         binding.btnUpgradePremium.setOnClickListener {
@@ -55,14 +66,7 @@ class MainActivity : AppCompatActivity() {
             subscriptionManager.launchPaywallIfNotShowing(this)
         }
 
-        binding.btnUpgradePremium.setText(
-            if (app.billingProvider.backend == BillingBackend.DEMO) {
-                R.string.btn_upgrade_premium_demo
-            } else {
-                R.string.btn_upgrade_premium_play
-            }
-        )
-
+        playEntranceAnimations()
         updateMemoryStats()
         refreshSecurityAndEntitlementUi()
     }
@@ -85,6 +89,60 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         stopPolling()
+    }
+
+    private fun playEntranceAnimations() {
+        val fadeUp = AnimationUtils.loadAnimation(this, R.anim.fade_up)
+        binding.tvWordmark.startAnimation(fadeUp)
+        binding.tvSubtitle.startAnimation(AnimationUtils.loadAnimation(this, R.anim.fade_up_delayed))
+    }
+
+    private fun refreshSecurityAndEntitlementUi() {
+        val (results, decision) = SecuritySnapshot.capture(this)
+        restrictedActive = decision.active
+
+        binding.tvRestrictedBanner.visibility = if (decision.active) View.VISIBLE else View.GONE
+        if (decision.active) {
+            binding.tvRestrictedBanner.text = getString(R.string.restricted_mode_banner)
+        }
+
+        updateGuardianScore(results)
+
+        val billing = app.billingProvider
+        val isPremium = billing.isPremium()
+        binding.tvEntitlementBanner.text = when (billing.backend) {
+            BillingBackend.DEMO -> getString(
+                if (isPremium) R.string.entitlement_demo_premium else R.string.entitlement_demo_free
+            )
+            BillingBackend.PLAY -> getString(
+                if (isPremium) R.string.entitlement_play_premium else R.string.entitlement_play_free
+            )
+        }
+
+        binding.btnUpgradePremium.setText(
+            if (billing.backend == BillingBackend.DEMO) {
+                R.string.btn_upgrade_premium_demo
+            } else {
+                R.string.btn_upgrade_premium_play
+            }
+        )
+    }
+
+    /** Evaluates the security checks and animates the Guardian Score shield. */
+    private fun updateGuardianScore(results: List<SecurityCheckResult>) {
+        val score = GuardianScore.compute(results)
+        val rank = GuardianScore.rankFor(score)
+
+        val (rankLabel, rankColor) = when (rank) {
+            GuardianRank.AEGIS -> R.string.rank_aegis to getColor(R.color.gold)
+            GuardianRank.WARDED -> R.string.rank_warded to getColor(R.color.ward_teal)
+            GuardianRank.EXPOSED -> R.string.rank_exposed to getColor(R.color.status_warn)
+            GuardianRank.BREACHED -> R.string.rank_breached to getColor(R.color.status_fail)
+        }
+
+        binding.guardianScoreView.setScore(score, rankColor)
+        binding.tvRank.text = getString(rankLabel)
+        binding.tvRank.setTextColor(rankColor)
     }
 
     private fun startPolling() {
@@ -110,26 +168,9 @@ class MainActivity : AppCompatActivity() {
         }
 
         binding.tvRamPercent.text = if (percent != null) "$percent%" else "–"
+        binding.ramProgress.setProgressCompat(percent ?: 0, true)
+
         binding.tvCpuUsage.text = getString(R.string.cpu_simulated_label)
-    }
-
-    private fun refreshSecurityAndEntitlementUi() {
-        val (_, decision) = SecuritySnapshot.capture(this)
-        restrictedActive = decision.active
-        binding.tvRestrictedBanner.visibility = if (decision.active) View.VISIBLE else View.GONE
-        if (decision.active) {
-            binding.tvRestrictedBanner.text = getString(R.string.restricted_mode_banner)
-        }
-
-        val billing = app.billingProvider
-        val isPremium = billing.isPremium()
-        binding.tvEntitlementBanner.text = when (billing.backend) {
-            BillingBackend.DEMO -> getString(
-                if (isPremium) R.string.entitlement_demo_premium else R.string.entitlement_demo_free
-            )
-            BillingBackend.PLAY -> getString(
-                if (isPremium) R.string.entitlement_play_premium else R.string.entitlement_play_free
-            )
-        }
+        binding.cpuProgress.setProgressCompat(0, false)
     }
 }
