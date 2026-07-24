@@ -16,6 +16,7 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
+        android:name=".CoreGuardApplication"
         android:allowBackup="false"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -47,6 +48,11 @@
 
         <activity
             android:name=".ThreatScannerActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".presentation.quilla.QuillaActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 

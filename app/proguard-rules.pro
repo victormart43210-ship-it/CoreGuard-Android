@@ -10,6 +10,14 @@
 # Keep entitlement interfaces for future billing integration
 -keep interface com.coldboar.coreguard.BillingProvider { *; }
 
+# Keep Room entities and DAOs (accessed via reflection by Room's generated code)
+-keep class com.coldboar.coreguard.data.local.entity.** { *; }
+-keep class com.coldboar.coreguard.data.local.dao.** { *; }
+
+# Keep Quilla domain events (serialised to JSON strings stored in Room)
+-keep class com.coldboar.coreguard.domain.quilla.NetworkEvent { *; }
+-keep class com.coldboar.coreguard.domain.quilla.RaspEvent { *; }
+
 # Preserve line number information for debugging stack traces.
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
