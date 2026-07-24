@@ -1,106 +1,214 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@drawable/bg_azure_pewter"
     tools:context=".MainActivity">
 
-    <LinearLayout
+    <!-- Enochian / Thelemic seal, slowly turning behind the content -->
+    <com.coldboar.coreguard.ui.EnochianSealView
+        android:id="@+id/sigilBackground"
+        android:layout_width="420dp"
+        android:layout_height="420dp"
+        android:layout_gravity="center_horizontal|top"
+        android:layout_marginTop="-40dp"
+        app:sigilColor="@color/gold_sigil"
+        app:slowRotate="true" />
+
+    <!-- Floating gold particles -->
+    <com.coldboar.coreguard.ui.GoldParticlesView
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical"
-        android:padding="16dp">
+        android:layout_height="match_parent" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/app_name"
-            android:textAppearance="?attr/textAppearanceHeadline5"
-            android:layout_marginBottom="8dp" />
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/main_subtitle"
-            android:textAppearance="?attr/textAppearanceBody2"
-            android:layout_marginBottom="24dp" />
-
-        <!-- RAM Card -->
-        <com.google.android.material.card.MaterialCardView
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginBottom="16dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
+            android:orientation="vertical"
+            android:paddingStart="20dp"
+            android:paddingEnd="20dp"
+            android:paddingTop="28dp"
+            android:paddingBottom="28dp">
 
-            <LinearLayout
+            <!-- Wordmark -->
+            <TextView
+                android:id="@+id/tvWordmark"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.CoreGuard.Wordmark" />
+
+            <TextView
+                android:id="@+id/tvSubtitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="@string/main_subtitle"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="@color/text_secondary"
+                android:letterSpacing="0.08" />
+
+            <!-- Guardian score shield -->
+            <FrameLayout
+                android:id="@+id/scoreContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginTop="20dp"
+                android:foreground="?attr/selectableItemBackground">
 
-                <TextView
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/label_ram_usage"
-                    android:textAppearance="?attr/textAppearanceSubtitle1" />
+                <com.coldboar.coreguard.ui.GuardianScoreView
+                    android:id="@+id/guardianScoreView"
+                    android:layout_width="230dp"
+                    android:layout_height="230dp"
+                    android:layout_gravity="center_horizontal" />
+            </FrameLayout>
 
-                <TextView
-                    android:id="@+id/tvRamUsage"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceHeadline6"
-                    tools:text="1.2 GB / 4.0 GB" />
+            <TextView
+                android:id="@+id/tvRank"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="10dp"
+                android:textAppearance="@style/TextAppearance.CoreGuard.SectionRune"
+                android:textSize="18sp"
+                tools:text="WARDED" />
 
-                <TextView
-                    android:id="@+id/tvRamPercent"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    tools:text="30%" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="4dp"
+                android:text="@string/guardian_score_hint"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/text_tertiary" />
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
-
-        <!-- CPU Card -->
-        <com.google.android.material.card.MaterialCardView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginBottom="24dp"
-            app:cardCornerRadius="8dp"
-            app:cardElevation="2dp">
-
+            <!-- Vitals section -->
             <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:layout_marginBottom="10dp"
+                android:orientation="horizontal"
+                android:gravity="center_vertical">
+
+                <ImageView
+                    android:layout_width="20dp"
+                    android:layout_height="20dp"
+                    android:importantForAccessibility="no"
+                    android:src="@drawable/ic_pentacle" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:text="@string/section_vitals"
+                    android:textAppearance="@style/TextAppearance.CoreGuard.SectionRune" />
+            </LinearLayout>
+
+            <!-- RAM Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardRam"
+                style="@style/Widget.CoreGuard.Card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:padding="16dp">
+                android:layout_marginBottom="12dp">
 
-                <TextView
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_cpu_usage"
-                    android:textAppearance="?attr/textAppearanceSubtitle1" />
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-                <TextView
-                    android:id="@+id/tvCpuUsage"
-                    android:layout_width="wrap_content"
+                    <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:gravity="center_vertical">
+
+                        <TextView
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:text="@string/label_ram_usage"
+                            android:textAppearance="?attr/textAppearanceTitleSmall"
+                            android:textColor="@color/text_secondary"
+                            android:letterSpacing="0.1"
+                            android:textAllCaps="true" />
+
+                        <TextView
+                            android:id="@+id/tvRamPercent"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:textAppearance="?attr/textAppearanceTitleMedium"
+                            android:textColor="@color/ward_teal"
+                            android:textStyle="bold"
+                            tools:text="30%" />
+                    </LinearLayout>
+
+                    <TextView
+                        android:id="@+id/tvRamUsage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceHeadlineSmall"
+                        android:textColor="@color/text_primary"
+                        tools:text="1.2 GB / 4.0 GB" />
+
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/ramProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:indicatorColor="@color/ward_teal"
+                        app:trackColor="@color/azure_deep"
+                        app:trackCornerRadius="4dp"
+                        app:trackThickness="6dp"
+                        tools:progress="30" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+
+            <!-- CPU Card -->
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/cardCpu"
+                style="@style/Widget.CoreGuard.Card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="24dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:textAppearance="?attr/textAppearanceBody2"
-                    tools:text="CPU: N/A (simulated)" />
+                    android:orientation="vertical"
+                    android:padding="18dp">
 
-            </LinearLayout>
-        </com.google.android.material.card.MaterialCardView>
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/label_cpu_usage"
+                        android:textAppearance="?attr/textAppearanceTitleSmall"
+                        android:textColor="@color/text_secondary"
+                        android:letterSpacing="0.1"
+                        android:textAllCaps="true" />
 
-        <!-- Action Buttons -->
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/btnSecurityDashboard"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="@string/btn_security_dashboard"
-            android:layout_marginBottom="12dp" />
+                    <TextView
+                        android:id="@+id/tvCpuUsage"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="6dp"
+                        android:textAppearance="?attr/textAppearanceBodyMedium"
+                        android:textColor="@color/text_tertiary"
+                        tools:text="N/A (simulated)" />
 
+<<<<<<< HEAD
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnNetworkDefenseLab"
             android:layout_width="match_parent"
@@ -115,6 +223,51 @@
             android:layout_height="wrap_content"
             android:text="@string/btn_upgrade_premium"
             style="@style/Widget.Material3.Button.OutlinedButton" />
+=======
+                    <com.google.android.material.progressindicator.LinearProgressIndicator
+                        android:id="@+id/cpuProgress"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="12dp"
+                        app:indicatorColor="@color/gold"
+                        app:trackColor="@color/azure_deep"
+                        app:trackCornerRadius="4dp"
+                        app:trackThickness="6dp"
+                        tools:progress="45" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+>>>>>>> origin/main
 
-    </LinearLayout>
-</ScrollView>
+            <!-- Action Buttons -->
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnSecurityDashboard"
+                style="@style/Widget.CoreGuard.Button.Gold"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/btn_security_dashboard"
+                app:icon="@drawable/ic_unicursal_hexagram"
+                app:iconTint="@color/azure_deep"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNemesisScanner"
+                style="@style/Widget.CoreGuard.Button.Gold"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/btn_nemesis_scanner"
+                app:icon="@drawable/ic_unicursal_hexagram"
+                app:iconTint="@color/azure_deep"
+                app:iconGravity="textStart" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnUpgradePremium"
+                style="@style/Widget.CoreGuard.Button.Ghost"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:text="@string/btn_upgrade_premium" />
+
+        </LinearLayout>
+    </ScrollView>
+</FrameLayout>

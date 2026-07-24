@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Azure-to-pewter mystical backdrop: a cool pewter glow high-centre fading
+     into deep azure at the edges. -->
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <gradient
+        android:type="radial"
+        android:gradientRadius="130%p"
+        android:centerX="0.5"
+        android:centerY="0.18"
+        android:startColor="@color/pewter_glow"
+        android:centerColor="@color/azure"
+        android:endColor="@color/azure_deep" />
+</shape>
