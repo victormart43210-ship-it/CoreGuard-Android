@@ -54,7 +54,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 | Requirement | Value |
 |---|---|
-| JDK | 17 for CI parity and supported local builds |
+| JDK | 17 (matches the app's Java/Kotlin target level and CI setup) |
 | Gradle | 8.9 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
@@ -66,7 +66,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 ### One-time setup
 
-Use JDK 17 for CI parity and for both Gradle and Kotlin/Java compilation. If your machine has multiple JDKs installed, point `JAVA_HOME` at 17 before running `./gradlew`.
+Use JDK 17 for Gradle and Kotlin/Java compilation because the app module targets Java 17 and CI is configured with Java 17. If your machine or task VM has multiple JDKs installed, point `JAVA_HOME` at 17 before running `./gradlew`.
 
 macOS:
 
@@ -213,7 +213,7 @@ go build -o ../coreguard ./cmd/coreguard
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"   # macOS example
 export ANDROID_HOME="$HOME/Android/Sdk"              # adjust per OS
 sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
-git clone https://github.com/victormart43210-ship-it/CoreGuard-Android.git
+git clone <repository-url>
 cd CoreGuard-Android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
