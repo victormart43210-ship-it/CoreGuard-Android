@@ -245,6 +245,14 @@
                 app:iconGravity="textStart" />
 
             <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnNetworkDefenseLab"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginBottom="12dp"
+                android:text="@string/btn_network_defense_lab" />
+
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnUpgradePremium"
                 style="@style/Widget.CoreGuard.Button.Ghost"
                 android:layout_width="match_parent"

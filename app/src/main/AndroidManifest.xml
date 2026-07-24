@@ -2,11 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"
-        android:maxSdkVersion="28" />
+    <!-- No dangerous runtime permissions in this prototype.
+         Device RAM metrics use ActivityManager without READ_PHONE_STATE. -->
 
     <!-- Forwards allowed DNS queries to an upstream resolver from the blocker VPN. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Read active network link properties (DNS servers) for the sinkhole VPN upstream resolver. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Foreground service hosting the always-on spyware-domain blocker VPN. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
@@ -38,6 +40,11 @@
 
         <activity
             android:name=".SecurityDashboardActivity"
+            android:exported="false"
+            android:parentActivityName=".MainActivity" />
+
+        <activity
+            android:name=".lab.NetworkDefenseLabActivity"
             android:exported="false"
             android:parentActivityName=".MainActivity" />
 

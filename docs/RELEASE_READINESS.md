@@ -1,9 +1,12 @@
 # CoreGuard Release Readiness Guide
 
-> Version 1.0 — July 2026  
+> Version 1.1 — July 2026  
 > **Honest statement**: This document describes the steps needed to ship.
 > It does not claim guaranteed Play Store approval, completed billing, or
 > production-grade security guarantees where those are not yet implemented.
+
+Operator checklist mapped from the Play launch guide:
+[PLAY_STORE_LAUNCH.md](PLAY_STORE_LAUNCH.md) · listing assets in [store-listing/](store-listing/).
 
 ---
 
@@ -120,8 +123,10 @@ To build a debug APK for quick testing:
 ### Declarations Required
 
 - **Target audience**: Select appropriate age rating.
-- **Sensitive permissions**: `READ_PHONE_STATE` (used for device ID in older APIs) — justify in questionnaire.
+- **Permissions**: This prototype declares **no** dangerous runtime permissions
+  (`READ_PHONE_STATE` removed — RAM uses `ActivityManager`).
 - **Deceptive behavior**: Do not claim security guarantees the app cannot provide.
+  Do not present demo unlock as a real purchase.
 
 ---
 
@@ -140,8 +145,8 @@ In the Data Safety form on Play Console:
 > If a backend is added in a later version, revisit and update this section and
 > the Data Safety form before publishing that version.
 
-**Privacy Policy**: Even with no data collection, Google Play may require a
-privacy policy URL. Host a simple policy stating no data is collected.
+**Privacy Policy**: Host [PRIVACY_POLICY.md](PRIVACY_POLICY.md) at a public HTTPS
+URL and add it in Play Console (required for Data Safety / store listing).
 
 ---
 
@@ -207,13 +212,16 @@ privacy policy URL. Host a simple policy stating no data is collected.
 - [ ] Server-side purchase token verification implemented
 - [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash
 - [ ] ProGuard/R8 release build tested (check no critical classes stripped)
-- [ ] App icon (512×512 px) created and set
-- [ ] Play Console store listing completed
-- [ ] Privacy policy URL added to Play Console
+- [ ] App icon (512×512 px) uploaded (`docs/store-listing/app_icon_512.png`)
+- [ ] Feature graphic uploaded (`docs/store-listing/feature_graphic_1024x500.png`)
+- [ ] Real device screenshots replace placeholder PNGs in `docs/store-listing/`
+- [ ] Play Console store listing completed (see `docs/store-listing/README.md`)
+- [ ] Privacy policy URL hosted (`docs/PRIVACY_POLICY.md`) and added in Play Console
 - [ ] Data Safety form completed
 - [ ] Target audience / content rating questionnaire completed
 - [ ] App tested on at least one physical device (not only emulator)
 - [ ] Security Dashboard shows expected PASS/WARN states on a non-rooted device
+- [ ] Follow [PLAY_STORE_LAUNCH.md](PLAY_STORE_LAUNCH.md) operator checklist
 
 ---
 

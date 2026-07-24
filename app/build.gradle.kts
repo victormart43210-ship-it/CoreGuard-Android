@@ -17,22 +17,17 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    // Release signing: credentials are supplied via environment variables set by CI.
-    // Set SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, and
-    // SIGNING_KEY_PASSWORD in the build environment. If any variable is absent the
-    // release build will be unsigned (suitable for local development only).
-    val storeFile = System.getenv("SIGNING_STORE_FILE")
-    val storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    val keyAlias  = System.getenv("SIGNING_KEY_ALIAS")
-    val keyPass   = System.getenv("SIGNING_KEY_PASSWORD")
-
-    if (storeFile != null && storePass != null && keyAlias != null && keyPass != null) {
-        signingConfigs {
+    signingConfigs {
+        // Release signing is opt-in via env — never hardcode passwords or commit keystores.
+        // Set KEYSTORE_PATH, KEYSTORE_PASSWORD, KEY_ALIAS, and KEY_PASSWORD in the build
+        // environment. If any variable is absent the release build will be unsigned.
+        val keystorePath = System.getenv("KEYSTORE_PATH") ?: System.getenv("SIGNING_STORE_FILE")
+        if (!keystorePath.isNullOrBlank()) {
             create("release") {
-                this.storeFile     = file(storeFile)
-                this.storePassword = storePass
-                this.keyAlias      = keyAlias
-                this.keyPassword   = keyPass
+                storeFile = file(keystorePath)
+                storePassword = System.getenv("KEYSTORE_PASSWORD") ?: System.getenv("SIGNING_STORE_PASSWORD")
+                keyAlias = System.getenv("KEY_ALIAS") ?: System.getenv("SIGNING_KEY_ALIAS") ?: "coreguard"
+                keyPassword = System.getenv("KEY_PASSWORD") ?: System.getenv("SIGNING_KEY_PASSWORD")
             }
         }
     }
