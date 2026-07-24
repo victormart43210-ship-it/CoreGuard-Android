@@ -54,7 +54,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 | Requirement | Value |
 |---|---|
-| JDK | 17 |
+| JDK | 17 for CI parity and local builds |
 | Gradle | 8.9 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
@@ -66,7 +66,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 ### One-time setup
 
-Use JDK 17 for both Gradle and Kotlin/Java compilation.
+Use JDK 17 for CI parity and for both Gradle and Kotlin/Java compilation. Newer JDKs may be installed on some machines, but 17 is the documented baseline for this project.
 
 macOS:
 
@@ -231,7 +231,7 @@ ls app/build/outputs/apk/debug/
 | `Plugin [id: 'com.android.application' ...] was not found` | Ensure `google()` is enabled in Gradle settings and that the machine can reach Google Maven / `dl.google.com`. |
 | `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |
 | `SDK platform android-34 not found` | Run `sdkmanager --install "platforms;android-34"`. |
-| Android SDK licenses not accepted | Run `yes \| sdkmanager --licenses`. |
+| Android SDK licenses not accepted | Run `yes | sdkmanager --licenses`. |
 | Compose compiler / Kotlin mismatch | Keep Kotlin `1.9.25` aligned with Compose Compiler `1.5.15` unless both are upgraded together. |
 | `gradlew: Permission denied` | Run `chmod +x ./gradlew`. |
 | Release build stays unsigned | Ensure all `SIGNING_*` environment variables are set. |
