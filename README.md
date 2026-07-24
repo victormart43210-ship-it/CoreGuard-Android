@@ -54,7 +54,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 | Requirement | Value |
 |---|---|
-| JDK | 17 for CI parity and local builds |
+| JDK | 17 for CI parity and supported local builds; some VMs may also have JDK 21 installed |
 | Gradle | 8.9 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
