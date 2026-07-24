@@ -56,6 +56,8 @@ object IocFeedFetcher {
 
     private fun fetch(context: Context, url: String): FetchResult {
         return try {
+            // HttpURLConnection on Android uses the system SSL context, which enforces
+            // hostname verification and certificate chain validation by default.
             val connection = (URL(url).openConnection() as HttpURLConnection).apply {
                 connectTimeout = CONNECT_TIMEOUT_MS
                 readTimeout = READ_TIMEOUT_MS
@@ -68,6 +70,15 @@ object IocFeedFetcher {
                 return FetchResult.Failure("HTTP $status from server")
             }
 
+            // Check Content-Length first to avoid buffering a large feed unnecessarily.
+            val contentLength = connection.contentLength
+            if (contentLength > MAX_BYTES) {
+                connection.disconnect()
+                return FetchResult.Failure("Feed too large ($contentLength bytes)")
+            }
+
+            // Buffer the body. A second size check below handles servers that
+            // omit Content-Length or misreport it.
             val bytes = connection.inputStream.use { it.readBytes() }
             if (bytes.size > MAX_BYTES) {
                 return FetchResult.Failure("Feed too large (${bytes.size} bytes)")
