@@ -79,6 +79,8 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 | T-4 Emulator | `EmulatorCheckEvaluator` checks build properties | ✅ Implemented (heuristic) |
 | T-5 Entitlement bypass | Release build enables ProGuard/R8 obfuscation | ✅ Enabled in release |
 | T-6 Billing spoofing | Server-side receipt verification with Google Play Developer API | ❌ Not implemented — required before production |
+| App data extraction | Release manifest disables Auto Backup and Android 12+ device-transfer extraction | ✅ Configured |
+| Cleartext transport | Release manifest and network security config reject cleartext HTTP traffic | ✅ Configured |
 | Code tampering (general) | `isMinifyEnabled = true` in release, ProGuard rules applied | ✅ Configured |
 
 ---
