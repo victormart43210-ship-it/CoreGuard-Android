@@ -1,43 +1,44 @@
 package com.coldboar.coreguard
 
-import android.content.Intent
 import android.os.Bundle
+<<<<<<< HEAD
+import androidx.activity.compose.setContent
+=======
 import android.os.Handler
 import android.os.Looper
 import android.view.View
 import android.view.animation.AnimationUtils
+>>>>>>> origin/main
 import androidx.appcompat.app.AppCompatActivity
-import com.coldboar.coreguard.databinding.ActivityMainBinding
+import com.coldboar.coreguard.ui.CoreGuardApp
+import com.coldboar.coreguard.ui.theme.CoreGuardTheme
 
 /**
- * Main screen.
+ * Single launcher Activity for the entire app.
  *
+<<<<<<< HEAD
+ * Sets up the Compose content tree:
+ *   MainActivity → CoreGuardTheme → CoreGuardApp → one NavHost
+ *
+ * All screen navigation is handled inside [CoreGuardApp]. This Activity
+ * contains no polling logic, no ViewBinding, and no direct navigation calls.
+=======
  * Shows the animated Guardian Score shield (derived from the security checks),
  * device vitals (RAM usage + simulated CPU) and navigation to the Sanctum
  * (Security Dashboard). A lifecycle-safe polling loop updates the memory stats
  * while the activity is visible.
+>>>>>>> origin/main
  */
 class MainActivity : AppCompatActivity() {
 
-    private lateinit var binding: ActivityMainBinding
-
-    private val pollingHandler = Handler(Looper.getMainLooper())
-    private val pollingIntervalMs = 2_000L
-    private var isPolling = false
-
-    private val billingProvider: BillingProvider = DemoBillingProvider()
-    private val subscriptionManager = SubscriptionManager(billingProvider)
-
-    private val pollingRunnable = object : Runnable {
-        override fun run() {
-            if (!isPolling) return
-            updateMemoryStats()
-            pollingHandler.postDelayed(this, pollingIntervalMs)
-        }
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+<<<<<<< HEAD
+        setContent {
+            CoreGuardTheme {
+                CoreGuardApp()
+            }
+=======
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
@@ -130,6 +131,7 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.cpu_usage_value, cpuPercent)
         } else {
             getString(R.string.cpu_measuring_label)
+>>>>>>> origin/main
         }
         binding.cpuProgress.setProgressCompat(cpuPercent ?: 0, cpuPercent != null)
     }
