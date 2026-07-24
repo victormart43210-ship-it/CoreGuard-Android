@@ -127,5 +127,6 @@ class MainActivity : AppCompatActivity() {
         } else {
             getString(R.string.cpu_measuring_label)
         }
+        binding.cpuProgress.setProgressCompat(cpuPercent ?: 0, cpuPercent != null)
     }
 }

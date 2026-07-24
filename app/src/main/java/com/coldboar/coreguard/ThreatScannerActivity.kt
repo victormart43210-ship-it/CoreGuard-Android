@@ -13,6 +13,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityThreatScannerBinding
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
+import com.coldboar.coreguard.mvt.IocFeedFetcher
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ScanReport
@@ -57,6 +58,7 @@ class ThreatScannerActivity : AppCompatActivity() {
         title = getString(R.string.scanner_title)
 
         binding.btnRunScan.setOnClickListener { runScan() }
+        binding.btnRefreshSignatures.setOnClickListener { refreshSignatures() }
         binding.switchShield.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked && !ShieldState.isActive) enableShield()
             else if (!isChecked && ShieldState.isActive) NemesisShield.stop(this)
@@ -98,6 +100,35 @@ class ThreatScannerActivity : AppCompatActivity() {
         } else {
             getString(R.string.shield_off)
         }
+    }
+
+    private fun refreshSignatures() {
+        binding.btnRefreshSignatures.isEnabled = false
+        binding.tvFeedStatus.visibility = android.view.View.VISIBLE
+        binding.tvFeedStatus.text = getString(R.string.feed_refreshing)
+        binding.tvFeedStatus.setTextColor(getColor(R.color.text_secondary))
+
+        IocFeedFetcher.fetchAsync(
+            context = this,
+            executor = executor,
+            onResult = { result ->
+                mainHandler.post {
+                    binding.btnRefreshSignatures.isEnabled = true
+                    when (result) {
+                        is IocFeedFetcher.FetchResult.Success -> {
+                            binding.tvFeedStatus.text =
+                                getString(R.string.feed_refresh_success, result.indicatorsLoaded)
+                            binding.tvFeedStatus.setTextColor(getColor(R.color.ward_teal))
+                        }
+                        is IocFeedFetcher.FetchResult.Failure -> {
+                            binding.tvFeedStatus.text =
+                                getString(R.string.feed_refresh_failed, result.message)
+                            binding.tvFeedStatus.setTextColor(getColor(R.color.status_warn))
+                        }
+                    }
+                }
+            }
+        )
     }
 
     private fun runScan() {

@@ -24,6 +24,12 @@
     <string name="btn_upgrade_premium">Forge Premium (Demo)</string>
     <string name="btn_back">Back</string>
 
+    <!-- IOC feed refresh -->
+    <string name="btn_refresh_signatures">Refresh signatures</string>
+    <string name="feed_refreshing">Fetching latest threat signatures…</string>
+    <string name="feed_refresh_success">✓ %1$d signatures loaded — tap Run Privacy Check to rescan</string>
+    <string name="feed_refresh_failed">Refresh failed: %1$s</string>
+
     <!-- Nemesis scanner (privacy integrity check) -->
     <string name="scanner_title">Nemesis Scanner</string>
     <string name="scanner_subtitle">A privacy integrity check for your device — defending your right to private communication.</string>
@@ -60,10 +66,11 @@
     <!-- Paywall -->
     <string name="paywall_title">Forge Premium</string>
     <string name="paywall_headline">CoreGuard Premium</string>
-    <string name="paywall_description">Bind stronger wards to your device.</string>
-    <string name="paywall_benefit_1">Advanced monitoring rituals</string>
-    <string name="paywall_benefit_2">Threat scroll export</string>
-    <string name="paywall_benefit_3">Priority counsel from the keepers</string>
+    <string name="paywall_description">Stay ahead of spyware. Private. Always guarded.</string>
+    <string name="paywall_benefit_1">Automated daily security scans</string>
+    <string name="paywall_benefit_2">Threat report export — share findings with your team</string>
+    <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
+    <string name="paywall_social_proof">Trusted by privacy-conscious defenders worldwide</string>
     <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
     <string name="paywall_btn_subscribe">Take the Oath (Demo)</string>
     <string name="paywall_btn_close">Not now</string>
