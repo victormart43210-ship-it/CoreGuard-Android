@@ -174,8 +174,14 @@ private fun androidx.compose.ui.graphics.drawscope.DrawScope.drawSigil(
 }
 
 @Composable
-fun NeonCircularGauge(percent: Float, sizeDp: Dp = 220.dp) {
-    val animated by animateFloatAsState(targetValue = percent / 100f, label = "gauge")
+fun NeonCircularGauge(
+    percent: Float,
+    sizeDp: Dp = 220.dp,
+    label: String = "Memory In Use",
+    valueText: String = ""
+) {
+    val clamped = percent.coerceIn(0f, 100f)
+    val animated by animateFloatAsState(targetValue = clamped / 100f, label = "gauge")
     Box(Modifier.size(sizeDp), contentAlignment = Alignment.Center) {
         Canvas(Modifier.fillMaxSize()) {
             val s = this.size
@@ -218,25 +224,27 @@ fun NeonCircularGauge(percent: Float, sizeDp: Dp = 220.dp) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                "${percent.toInt()}%",
+                "${clamped.toInt()}%",
                 color = TextHigh, fontSize = 56.sp, fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Memory In Use",
+                label,
                 color = TextMid, fontSize = 11.sp, fontWeight = FontWeight.Medium
             )
-            Text(
-                "4.2 / 6.0 GB",
-                color = CyanPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold
-            )
+            if (valueText.isNotEmpty()) {
+                Text(
+                    valueText,
+                    color = CyanPrimary, fontSize = 13.sp, fontWeight = FontWeight.SemiBold
+                )
+            }
         }
     }
 }
 
 @Composable
 fun CpuBar(value: Int) {
-    val pct = value / 100f
+    val pct = value.coerceIn(0, 100) / 100f
     Column {
         Row(
             Modifier.fillMaxWidth(),

@@ -12,7 +12,9 @@ import androidx.core.view.WindowCompat
 
 @Composable
 fun CoreGuardTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
+    // CoreGuard is dark-only; this parameter is kept for API compatibility and
+    // to allow callers to opt-in to system-theme changes in a future light variant.
+    @Suppress("UNUSED_PARAMETER") darkTheme: Boolean = isSystemInDarkTheme(),
     content: @Composable () -> Unit
 ) {
     val colors = darkColorScheme(
@@ -35,7 +37,7 @@ fun CoreGuardTheme(
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
-            val window = (view.context as Activity).window
+            val window = (view.context as? Activity)?.window ?: return@SideEffect
             window.statusBarColor = AbyssBlack.toArgb()
             WindowCompat.getInsetsController(window, view)
                 .isAppearanceLightStatusBars = false
