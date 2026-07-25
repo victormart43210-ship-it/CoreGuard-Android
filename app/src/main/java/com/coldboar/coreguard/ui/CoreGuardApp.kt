@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.ui
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Home
@@ -14,10 +16,12 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.foundation.layout.padding
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -28,6 +32,7 @@ import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.HomeScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
+import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
@@ -54,45 +59,57 @@ private val bottomNavItems = listOf(
  *
  * Contains exactly one [NavHost] and one bottom navigation bar. All screens
  * are reachable through this single navigation graph.
+ *
+ * @param secretPortalVisible Shared toggle state controlled by the host Activity.
+ *   When `true`, the [SecretPortalScreen] overlay is rendered above all content,
+ *   mirroring the Shift+Alt+S secret-portal toggle from the web layer.
  */
 @Composable
-fun CoreGuardApp() {
+fun CoreGuardApp(
+    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) }
+) {
     val navController = rememberNavController()
 
-    Scaffold(
-        bottomBar = { CoreGuardBottomBar(navController) },
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
-        NavHost(
-            navController = navController,
-            startDestination = CoreGuardRoute.Home.route,
-            modifier = Modifier.padding(paddingValues)
-        ) {
-            composable(CoreGuardRoute.Home.route) {
-                HomeScreen(
-                    onNavigateToScanner = {
-                        navController.navigate(CoreGuardRoute.Scanner.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
+    Box {
+        Scaffold(
+            bottomBar = { CoreGuardBottomBar(navController) },
+            containerColor = MaterialTheme.colorScheme.background
+        ) { paddingValues ->
+            NavHost(
+                navController = navController,
+                startDestination = CoreGuardRoute.Home.route,
+                modifier = Modifier.padding(paddingValues)
+            ) {
+                composable(CoreGuardRoute.Home.route) {
+                    HomeScreen(
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
                             }
-                            launchSingleTop = true
-                            restoreState = true
                         }
-                    }
-                )
+                    )
+                }
+                composable(CoreGuardRoute.Scanner.route) {
+                    ScannerScreen()
+                }
+                composable(CoreGuardRoute.Timeline.route) {
+                    TimelineScreen()
+                }
+                composable(CoreGuardRoute.Shield.route) {
+                    ShieldScreen()
+                }
+                composable(CoreGuardRoute.Settings.route) {
+                    SettingsScreen()
+                }
             }
-            composable(CoreGuardRoute.Scanner.route) {
-                ScannerScreen()
-            }
-            composable(CoreGuardRoute.Timeline.route) {
-                TimelineScreen()
-            }
-            composable(CoreGuardRoute.Shield.route) {
-                ShieldScreen()
-            }
-            composable(CoreGuardRoute.Settings.route) {
-                SettingsScreen()
-            }
+        }
+
+        if (secretPortalVisible.value) {
+            SecretPortalScreen(onDismiss = { secretPortalVisible.value = false })
         }
     }
 }
