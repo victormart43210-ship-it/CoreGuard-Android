@@ -37,6 +37,7 @@ class CoreGuardApplication : Application() {
             }
             try {
                 CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
+                Log.i(TAG, "Quilla cyber knowledge ready")
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
             }

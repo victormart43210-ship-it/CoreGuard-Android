@@ -69,5 +69,7 @@ data class QuillaAgentAnswer(
     val intent: QuillaIntent,
     val modulesUsed: List<QuillaModule>,
     val moduleStatuses: List<QuillaModuleStatus>,
-    val actions: List<QuillaActionSuggestion>
+    val actions: List<QuillaActionSuggestion>,
+    val suggestPremium: Boolean = false,
+    val premiumPitch: String? = null
 )

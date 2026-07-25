@@ -20,6 +20,7 @@ import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,16 +34,29 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ShieldState
+import com.coldboar.coreguard.quilla.QuillaInsight
+import com.coldboar.coreguard.ui.components.QuillaInsightCard
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
-fun ShieldScreen() {
+fun ShieldScreen(
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToQuilla: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     var shieldActive by remember { mutableStateOf(ShieldState.isActive) }
     var totalBlocked by remember { mutableStateOf(ShieldState.totalBlocked) }
+    var quillaCard by remember { mutableStateOf<QuillaInsight.Card?>(null) }
+
+    LaunchedEffect(shieldActive, totalBlocked) {
+        quillaCard = withContext(Dispatchers.IO) { QuillaInsight.shieldCard(context) }
+    }
 
     DisposableEffect(Unit) {
         val listener = ShieldState.Listener {
@@ -75,8 +89,9 @@ fun ShieldScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "Blocks connections to servers known to track or surveil, using a private on-device VPN.",
-            style = MaterialTheme.typography.bodyMedium
+            text = "One flip: local DNS defense against known surveillance / tracker domains. Quilla will tell you when it matters most.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedText
         )
 
         Spacer(Modifier.height(20.dp))
@@ -130,6 +145,21 @@ fun ShieldScreen() {
         }
 
         Spacer(Modifier.height(16.dp))
+
+        quillaCard?.let { card ->
+            QuillaInsightCard(
+                card = card,
+                onAction = { action ->
+                    when (action) {
+                        QuillaInsight.Action.RUN_SCAN -> onNavigateToScanner()
+                        QuillaInsight.Action.ASK_QUILLA,
+                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
+                        else -> Unit
+                    }
+                }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+        }
 
         Card(
             modifier = Modifier.fillMaxWidth(),

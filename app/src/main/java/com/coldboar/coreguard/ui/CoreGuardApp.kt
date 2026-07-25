@@ -73,6 +73,18 @@ fun CoreGuardApp(
     billingProvider: BillingProvider = remember { DemoBillingProvider() }
 ) {
     val navController = rememberNavController()
+    val openQuillaInSettings = remember { mutableStateOf(false) }
+
+    fun navigateToQuilla() {
+        openQuillaInSettings.value = true
+        navController.navigate(CoreGuardRoute.Settings.route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Box {
         Scaffold(
@@ -97,7 +109,17 @@ fun CoreGuardApp(
                         },
                         onNavigateToTimeline = {
                             navController.navigate(CoreGuardRoute.Timeline.route)
-                        }
+                        },
+                        onNavigateToShield = {
+                            navController.navigate(CoreGuardRoute.Shield.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onNavigateToQuilla = { navigateToQuilla() }
                     )
                 }
                 composable(CoreGuardRoute.Scanner.route) {
@@ -111,11 +133,35 @@ fun CoreGuardApp(
                                 launchSingleTop = true
                                 restoreState = true
                             }
-                        }
+                        },
+                        onNavigateToShield = {
+                            navController.navigate(CoreGuardRoute.Shield.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onNavigateToTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
+                        },
+                        onNavigateToQuilla = { navigateToQuilla() }
                     )
                 }
                 composable(CoreGuardRoute.Shield.route) {
-                    ShieldScreen()
+                    ShieldScreen(
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onNavigateToQuilla = { navigateToQuilla() }
+                    )
                 }
                 composable(CoreGuardRoute.Compliance.route) {
                     ComplianceScreen(
@@ -150,7 +196,30 @@ fun CoreGuardApp(
                         billingProvider = billingProvider,
                         onNavigateToPrivacyPolicy = {
                             navController.navigate(CoreGuardRoute.PrivacyPolicy.route)
-                        }
+                        },
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onNavigateToShield = {
+                            navController.navigate(CoreGuardRoute.Shield.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        onNavigateToTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
+                        },
+                        initiallyOpenQuilla = openQuillaInSettings.value,
+                        onQuillaOpened = { openQuillaInSettings.value = false }
                     )
                 }
                 composable(CoreGuardRoute.PrivacyPolicy.route) {
@@ -202,4 +271,3 @@ private fun CoreGuardBottomBar(navController: NavController) {
         }
     }
 }
-

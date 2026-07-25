@@ -45,7 +45,9 @@ import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
+import com.coldboar.coreguard.quilla.QuillaInsight
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
+import com.coldboar.coreguard.ui.components.QuillaInsightCard
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -60,7 +62,10 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ScannerScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
-    onUpgrade: () -> Unit = {}
+    onUpgrade: () -> Unit = {},
+    onNavigateToShield: () -> Unit = {},
+    onNavigateToTimeline: () -> Unit = {},
+    onNavigateToQuilla: () -> Unit = {}
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -73,6 +78,7 @@ fun ScannerScreen(
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var scanReport by remember { mutableStateOf(LastScan.report) }
     var showUpsell by remember { mutableStateOf(false) }
+    var quillaCoach by remember { mutableStateOf<QuillaInsight.Card?>(null) }
 
     Column(
         modifier = Modifier
@@ -86,7 +92,7 @@ fun ScannerScreen(
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "In the next minute, know more about this device's privacy posture — then decide your next move.",
+            text = "In the next minute, know more about this phone's privacy posture — then Quilla coaches your next move.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
@@ -111,6 +117,7 @@ fun ScannerScreen(
         Button(
             onClick = {
                 isScanning = true
+                quillaCoach = null
                 scope.launch {
                     val report = withContext(Dispatchers.IO) {
                         val result = DeviceScanner.scan(context)
@@ -119,6 +126,7 @@ fun ScannerScreen(
                     }
                     LastScan.report = report
                     scanReport = report
+                    quillaCoach = QuillaInsight.postScanCard(report)
                     isScanning = false
                 }
             },
@@ -183,6 +191,20 @@ fun ScannerScreen(
         scanReport?.let { report ->
             Spacer(modifier = Modifier.height(20.dp))
             ScanResultCard(report)
+            val coach = quillaCoach ?: QuillaInsight.postScanCard(report)
+            Spacer(modifier = Modifier.height(12.dp))
+            QuillaInsightCard(
+                card = coach,
+                onAction = { action ->
+                    when (action) {
+                        QuillaInsight.Action.OPEN_SHIELD -> onNavigateToShield()
+                        QuillaInsight.Action.OPEN_TIMELINE -> onNavigateToTimeline()
+                        QuillaInsight.Action.ASK_QUILLA,
+                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
+                        QuillaInsight.Action.RUN_SCAN -> Unit
+                    }
+                }
+            )
         }
 
         Spacer(modifier = Modifier.height(16.dp))

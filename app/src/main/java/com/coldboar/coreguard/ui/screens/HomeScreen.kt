@@ -76,21 +76,30 @@ import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import com.coldboar.coreguard.quilla.QuillaInsight
+import com.coldboar.coreguard.ui.components.QuillaInsightCard
 import com.coldboar.coreguard.ui.theme.SurfacePewter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
-fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit = {}) {
+fun HomeScreen(
+    onNavigateToScanner: () -> Unit,
+    onNavigateToTimeline: () -> Unit = {},
+    onNavigateToShield: () -> Unit = {},
+    onNavigateToQuilla: () -> Unit = {}
+) {
     val context = LocalContext.current
 
     var ramText by remember { mutableStateOf("–") }
     var cpuText by remember { mutableStateOf("Measuring…") }
     var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
     var scoreTarget by remember { mutableFloatStateOf(0f) }
+    var quillaCard by remember { mutableStateOf<QuillaInsight.Card?>(null) }
 
     LaunchedEffect(Unit) {
+        quillaCard = withContext(Dispatchers.IO) { QuillaInsight.homeCard(context) }
         val certSha256 = withContext(Dispatchers.IO) { SecurityUtils.getAppCertSha256(context) }
         val evaluators = listOf(
             SpywareScanEvaluator(),
@@ -149,7 +158,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "Mobile Security Intelligence",
+                    text = "Know your phone's risk — then let Quilla coach the next move",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
@@ -311,6 +320,56 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             Spacer(Modifier.height(16.dp))
         }
 
+        quillaCard?.let { card ->
+            QuillaInsightCard(
+                card = card,
+                onAction = { action ->
+                    when (action) {
+                        QuillaInsight.Action.RUN_SCAN -> onNavigateToScanner()
+                        QuillaInsight.Action.OPEN_SHIELD -> onNavigateToShield()
+                        QuillaInsight.Action.OPEN_TIMELINE -> onNavigateToTimeline()
+                        QuillaInsight.Action.ASK_QUILLA,
+                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
+                    }
+                },
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+            Spacer(Modifier.height(16.dp))
+        }
+
+        val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+        val needsAttention = securityResults.any {
+            it.state == SecurityCheckState.WARN || it.state == SecurityCheckState.FAIL
+        }
+        if (needsAttention && quillaCard == null) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "What to do next",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AttentionAmber
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = if (failCount > 0) {
+                            "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
+                        } else {
+                            "Review the warnings below. A privacy check can catch spyware indicators these checks miss."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
+                    )
+                }
+            }
+            Spacer(Modifier.height(16.dp))
+        }
+
         // ── System Health ─────────────────────────────────────────────────────
         Row(
             modifier = Modifier
@@ -389,7 +448,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
             Text(
-                "Run Nemesis Scanner",
+                "Check My Device Now",
                 color = BackgroundDeepBlack,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
@@ -406,6 +465,18 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             shape = RoundedCornerShape(14.dp)
         ) {
             Text("View Scan Timeline", color = ElectricTeal)
+        }
+
+        Spacer(Modifier.height(8.dp))
+
+        OutlinedButton(
+            onClick = onNavigateToQuilla,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp),
+            shape = RoundedCornerShape(14.dp)
+        ) {
+            Text("Ask Quilla - your on-device cyber coach", color = RestrainedGold)
         }
     }
 }

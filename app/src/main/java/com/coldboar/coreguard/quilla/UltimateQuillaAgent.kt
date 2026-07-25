@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.Entitlements
+import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -45,15 +47,46 @@ class UltimateQuillaAgent(
         val modulesUsed = modulesFor(intent)
         val statuses = moduleStatuses(memory, research)
         val actions = actionsFor(intent, memory)
-        val text = compose(trimmed, intent, memory, research, actions)
+        val sales = QuillaSalesCoach.answer(trimmed.ifBlank { "status" }, salesContext(memory))
+        val premiumAsk = isPremiumPrompt(trimmed)
+        val text = if (premiumAsk) {
+            "Quilla hears you: \"$trimmed\".\n\n${sales.text}\n\n" +
+                "Modules: Brain · Memory · Knowledge · Actions — honest Premium coaching, on-device."
+        } else {
+            val base = compose(trimmed, intent, memory, research, actions)
+            if (sales.suggestPremium && !sales.premiumPitch.isNullOrBlank() &&
+                intent in setOf(QuillaIntent.STATUS, QuillaIntent.TIMELINE, QuillaIntent.GENERAL)
+            ) {
+                "$base\n\n${sales.premiumPitch}"
+            } else {
+                base
+            }
+        }
         return QuillaAgentAnswer(
             text = text,
             intent = intent,
             modulesUsed = modulesUsed,
             moduleStatuses = statuses,
-            actions = actions
+            actions = actions,
+            suggestPremium = sales.suggestPremium && !Entitlements.isPremium(),
+            premiumPitch = sales.premiumPitch
         )
     }
+
+    private fun isPremiumPrompt(prompt: String): Boolean {
+        val p = prompt.lowercase()
+        return p.contains("premium") || p.contains("upgrade") || p.contains("subscribe") ||
+            p.contains("worth it") || (p.contains("pay") && p.contains("premium"))
+    }
+
+    private fun salesContext(memory: QuillaMemorySnapshot): QuillaSalesCoach.DeviceContext =
+        QuillaSalesCoach.DeviceContext(
+            isPremium = Entitlements.isPremium(),
+            lastScan = LastScan.report,
+            timelineCount = memory.historyCount,
+            shieldActive = memory.shieldActive,
+            shieldBlocked = memory.shieldBlocked
+        )
 
     fun classify(prompt: String): QuillaIntent {
         val p = prompt.lowercase()

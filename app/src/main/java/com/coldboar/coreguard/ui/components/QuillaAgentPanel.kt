@@ -63,7 +63,8 @@ fun QuillaAgentPanel(
     modifier: Modifier = Modifier,
     onRunScan: (() -> Unit)? = null,
     onOpenShield: (() -> Unit)? = null,
-    onOpenTimeline: (() -> Unit)? = null
+    onOpenTimeline: (() -> Unit)? = null,
+    onUpgradePremium: (() -> Unit)? = null
 ) {
     val context = LocalContext.current
     var question by remember { mutableStateOf("") }
@@ -217,6 +218,16 @@ fun QuillaAgentPanel(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
+
+            val pitch = answer?.premiumPitch
+            if (answer?.suggestPremium == true && !pitch.isNullOrBlank() && onUpgradePremium != null) {
+                Spacer(modifier = Modifier.height(12.dp))
+                PremiumUpsellCard(
+                    title = "Quilla recommends Premium",
+                    body = pitch,
+                    onUpgrade = onUpgradePremium
+                )
+            }
 
             val actions = answer?.actions.orEmpty()
             if (actions.isNotEmpty()) {

@@ -29,6 +29,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -53,13 +54,25 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 @Composable
 fun SettingsScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
-    onNavigateToPrivacyPolicy: () -> Unit = {}
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToShield: () -> Unit = {},
+    onNavigateToTimeline: () -> Unit = {},
+    initiallyOpenQuilla: Boolean = false,
+    onQuillaOpened: () -> Unit = {}
 ) {
     var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
-    var quillaOpen by remember { mutableStateOf(false) }
+    var quillaOpen by remember { mutableStateOf(initiallyOpenQuilla) }
     val priceLabel = billingProvider.premiumPriceLabel()
     val subscribeLabel = if (priceLabel.isNotBlank()) "Subscribe · $priceLabel" else "Subscribe"
+
+    LaunchedEffect(initiallyOpenQuilla) {
+        if (initiallyOpenQuilla) {
+            quillaOpen = true
+            onQuillaOpened()
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -112,8 +125,10 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock live signature refresh, Compliance JSON export, a longer scan timeline, and deeper Quilla coaching. Core scan + shield stay free.",
-                        style = MaterialTheme.typography.bodyMedium
+                        "Quilla’s pick: live signature refresh, Compliance JSON export, and a longer " +
+                            "scan timeline — while Core scan + Shield stay free. Subscribe via Google Play; cancel anytime.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
                     )
 
                     purchaseStatus?.let { status ->
@@ -193,7 +208,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
+                        "On-device cyber coach: your scan evidence, Shield status, OWASP & MITRE knowledge — ask anything.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -201,7 +216,32 @@ fun SettingsScreen(
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaAgentPanel(modifier = Modifier.padding(top = 8.dp))
+            QuillaAgentPanel(
+                modifier = Modifier.padding(top = 8.dp),
+                onRunScan = onNavigateToScanner,
+                onOpenShield = onNavigateToShield,
+                onOpenTimeline = onNavigateToTimeline,
+                onUpgradePremium = if (!isPremium) {
+                    {
+                        billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+                            when (result) {
+                                is PurchaseResult.Success -> {
+                                    isPremium = true
+                                    purchaseStatus = "Premium unlocked — thank you!"
+                                }
+                                is PurchaseResult.Cancelled -> {
+                                    purchaseStatus = "Purchase cancelled — nothing was charged."
+                                }
+                                is PurchaseResult.Error -> {
+                                    purchaseStatus = result.message
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    null
+                }
+            )
         }
 
         Spacer(Modifier.height(16.dp))
