@@ -48,12 +48,199 @@ protanopia-friendly Okabe–Ito palette with shape markers. See
 The React Native/Expo project referenced in some delivery screenshots is **not**
 present in this repository. Missing tRPC context cannot be repaired here.
 
-## Build
+## Build and lint
+
+### Project versions
+
+| Requirement | Value |
+|---|---|
+| JDK | 17 (matches the app's Java/Kotlin target level and CI setup) |
+| Gradle | 8.9 via `./gradlew` |
+| Android Gradle Plugin | 8.5.2 |
+| Kotlin | 1.9.25 |
+| Compose Compiler | 1.5.15 |
+| Compose BOM | 2024.06.00 |
+| `compileSdk` / `targetSdk` | 34 |
+| `minSdk` | 24 |
+| Android SDK packages | `platforms;android-34`, `build-tools;34.0.0`, `platform-tools` |
+
+### One-time setup
+
+Use JDK 17 for Gradle and Kotlin/Java compilation because the app module targets Java 17 and CI is configured with Java 17. If your machine or task VM has multiple JDKs installed, point `JAVA_HOME` at 17 before running `./gradlew`.
+
+macOS:
 
 ```bash
-./gradlew test assembleDebug lintDebug
-cd cli && go test -race ./... && go vet ./...
+brew install --cask temurin@17
+brew install --cask android-commandlinetools
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
+export ANDROID_HOME="$HOME/Library/Android/sdk"
+export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin"
+yes | sdkmanager --licenses >/dev/null
+sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
 ```
+
+Ubuntu / Debian:
+
+```bash
+sudo apt-get update && sudo apt-get install -y openjdk-17-jdk
+export JAVA_HOME="/usr/lib/jvm/java-17-openjdk-amd64"
+export PATH="$JAVA_HOME/bin:$PATH"
+mkdir -p "$HOME/android-sdk/cmdline-tools"
+curl -L -o /tmp/cmdtools.zip "https://dl.google.com/android/repository/commandlinetools-linux-11076708_latest.zip"
+unzip -q /tmp/cmdtools.zip -d /tmp/cmdtools
+mv /tmp/cmdtools/cmdline-tools "$HOME/android-sdk/cmdline-tools/latest"
+export ANDROID_HOME="$HOME/android-sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
+export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
+yes | sdkmanager --licenses >/dev/null
+sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+```
+
+Windows (PowerShell):
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("JAVA_HOME", "C:\Program Files\Eclipse Adoptium\jdk-17", "User")
+$env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
+$env:PATH += ";$env:ANDROID_HOME\cmdline-tools\latest\bin;$env:ANDROID_HOME\platform-tools;$env:JAVA_HOME\bin"
+sdkmanager --licenses
+sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+```
+
+Persist `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT` in your shell profile after setup.
+
+### First sync
+
+```bash
+echo "sdk.dir=$ANDROID_HOME" > local.properties
+chmod +x ./gradlew
+./gradlew projects
+```
+
+Expected module layout:
+
+```text
+Root project 'CoreGuard'
++--- Project ':app'
+```
+
+### Lint
+
+Fastest first pass:
+
+```bash
+./gradlew :app:lintDebug
+```
+
+Full lint:
+
+```bash
+./gradlew :app:lint
+```
+
+Keep reports even when lint fails:
+
+```bash
+./gradlew :app:lintDebug -PcontinueOnError=true
+```
+
+Reports:
+
+- `app/build/reports/lint-results-index.html`
+- `app/build/reports/lint-results-debug.html`
+- `app/build/reports/lint-results-debug.xml`
+- `app/build/reports/lint-results-debug.txt`
+- `app/build/reports/lint-results-release.html`
+
+### Build
+
+Debug validation:
+
+```bash
+./gradlew :app:test :app:assembleDebug
+```
+
+Debug outputs:
+
+- `app/build/outputs/apk/debug/app-debug.apk`
+- `app/build/outputs/apk/debug/output-metadata.json`
+
+The debug build uses the package name `com.coldboar.coreguard.debug`.
+
+Release artifacts:
+
+```bash
+./gradlew :app:assembleRelease
+./gradlew :app:bundleRelease
+```
+
+Unsigned outputs:
+
+- `app/build/outputs/apk/release/app-release-unsigned.apk`
+- `app/build/outputs/bundle/release/app-release.aab`
+
+To sign a local release, export all four signing variables before running the release build:
+
+```bash
+export SIGNING_STORE_FILE=/secure/path/release.jks
+export SIGNING_STORE_PASSWORD='***'
+export SIGNING_KEY_ALIAS=upload
+export SIGNING_KEY_PASSWORD='***'
+./gradlew :app:assembleRelease
+```
+
+Never commit the keystore or signing environment variables.
+
+One-shot release verification:
+
+```bash
+./release.sh --version 1.0.0 --dry-run
+```
+
+### CLI companion
+
+```bash
+cd cli
+go test -race ./...
+go vet ./...
+go build -o ../coreguard ./cmd/coreguard
+./coreguard --help
+```
+
+### Minimal first-build checklist
+
+```bash
+export JAVA_HOME="$(/usr/libexec/java_home -v 17)"   # macOS example
+export ANDROID_HOME="$HOME/Android/Sdk"              # adjust per OS
+sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+git clone <repository-url>
+cd CoreGuard-Android
+echo "sdk.dir=$ANDROID_HOME" > local.properties
+chmod +x ./gradlew
+./gradlew :app:lint :app:test :app:assembleDebug
+ls app/build/reports/
+ls app/build/outputs/apk/debug/
+```
+
+### Troubleshooting
+
+| Symptom | Fix |
+|---|---|
+| `Unsupported class file major version 61` | Use JDK 17 for Gradle and compilation. |
+| `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
+| `Plugin [id: 'com.android.application' ...] was not found` | Ensure `google()` is enabled in Gradle settings and that the machine can reach Google Maven / `dl.google.com`. |
+| `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |
+| `SDK platform android-34 not found` | Run `sdkmanager --install "platforms;android-34"`. |
+| Android SDK licenses not accepted | Run `yes | sdkmanager --licenses`. |
+| Compose compiler / Kotlin mismatch | Keep Kotlin `1.9.25` aligned with Compose Compiler `1.5.15` unless both are upgraded together. |
+| `gradlew: Permission denied` | Run `chmod +x ./gradlew`. |
+| Release build stays unsigned | Ensure all `SIGNING_*` environment variables are set. |
+
+### Notes
+
+- No instrumentation tests are currently wired in under `app/src/androidTest/`.
+- The Play special-use justification for `FOREGROUND_SERVICE_SPECIAL_USE` must be documented separately.
+- `release.sh` is for release workflow automation and should only be run live when you intend to publish.
 
 ## License
 

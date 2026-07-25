@@ -14,21 +14,12 @@ import com.coldboar.coreguard.databinding.ActivitySecurityDashboardBinding
 import com.google.android.material.card.MaterialCardView
 
 /**
-<<<<<<< HEAD
  * Security Dashboard screen — View-based implementation.
  *
  * @deprecated This Activity's functionality has been migrated to [HomeScreen]
  *   within the Compose navigation graph. It is no longer launched by
  *   [MainActivity] and will be removed in a future cleanup phase.
  *   Use [HomeScreen] for all new work.
-=======
- * The Sanctum – security dashboard screen.
- *
- * Shows a PASS / WARN / FAIL card for each security check, revealed with a
- * staggered entrance animation. All checks are evaluated synchronously on the
- * main thread – each check is designed to be fast (no I/O) so this is
- * acceptable.
->>>>>>> origin/main
  */
 @Deprecated("Superseded by HomeScreen in the Compose NavHost. Do not launch from new code.")
 class SecurityDashboardActivity : AppCompatActivity() {
