@@ -26,13 +26,37 @@ class MainActivity : AppCompatActivity() {
     /** Shared toggle state for the secret-portal overlay. */
     private val secretPortalVisible = mutableStateOf(false)
 
+    /**
+     * Production billing provider, shared across the app.
+     * Attach/detach follows the Activity lifecycle to supply the billing UI with
+     * a valid [Activity] reference without leaking it beyond the Activity lifetime.
+     */
+    val billingProvider: PlayBillingProvider by lazy {
+        PlayBillingProvider(applicationContext)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             CoreGuardTheme {
-                CoreGuardApp(secretPortalVisible = secretPortalVisible)
+                CoreGuardApp(
+                    secretPortalVisible = secretPortalVisible,
+                    billingProvider = billingProvider
+                )
             }
         }
+        billingProvider.attach(this)
+    }
+
+    override fun onResume() {
+        super.onResume()
+        billingProvider.attach(this)
+    }
+
+    override fun onDestroy() {
+        billingProvider.detach()
+        if (isFinishing) billingProvider.destroy()
+        super.onDestroy()
     }
 
     /**

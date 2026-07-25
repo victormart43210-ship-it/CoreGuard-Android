@@ -3,10 +3,7 @@ package com.coldboar.coreguard.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AccountTree
 import androidx.compose.material.icons.filled.AssuredWorkload
-import androidx.compose.material.icons.filled.History
-import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ManageSearch
 import androidx.compose.material.icons.filled.Settings
@@ -32,16 +29,17 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
+import com.coldboar.coreguard.ui.screens.PrivacyPolicyScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
-import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
-import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
@@ -55,10 +53,7 @@ private data class NavItem(
 private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home, "Home"),
     NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch, "Scanner"),
-    NavItem(CoreGuardRoute.Timeline.route, "Timeline", Icons.Filled.History, "Timeline"),
-    NavItem(CoreGuardRoute.Tools.route, "Tools", Icons.Filled.Build, "Tools"),
     NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield, "Shield"),
-    NavItem(CoreGuardRoute.SupplyChain.route, "Supply", Icons.Filled.AccountTree, "Supply Chain"),
     NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload, "Compliance"),
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
 )
@@ -66,16 +61,16 @@ private val bottomNavItems = listOf(
 /**
  * Root composable for the entire app.
  *
- * Contains exactly one [NavHost] and one bottom navigation bar. All screens
- * are reachable through this single navigation graph.
+ * Contains exactly one [NavHost] and one bottom navigation bar with five
+ * primary destinations. All screens are reachable through this single graph.
  *
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- *   When `true`, the [SecretPortalScreen] overlay is rendered above all content,
- *   mirroring the Shift+Alt+S secret-portal toggle from the web layer.
+ * @param billingProvider The active [BillingProvider] instance. Defaults to demo mode.
  */
 @Composable
 fun CoreGuardApp(
-    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) }
+    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
+    billingProvider: BillingProvider = remember { DemoBillingProvider() }
 ) {
     val navController = rememberNavController()
 
@@ -99,29 +94,34 @@ fun CoreGuardApp(
                                 launchSingleTop = true
                                 restoreState = true
                             }
+                        },
+                        onNavigateToTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
                         }
                     )
                 }
                 composable(CoreGuardRoute.Scanner.route) {
                     ScannerScreen()
                 }
-                composable(CoreGuardRoute.Timeline.route) {
-                    TimelineScreen()
-                }
-                composable(CoreGuardRoute.Tools.route) {
-                    ToolsScreen()
-                }
                 composable(CoreGuardRoute.Shield.route) {
                     ShieldScreen()
-                }
-                composable(CoreGuardRoute.SupplyChain.route) {
-                    SupplyChainScreen()
                 }
                 composable(CoreGuardRoute.Compliance.route) {
                     ComplianceScreen()
                 }
+                composable(CoreGuardRoute.Timeline.route) {
+                    TimelineScreen()
+                }
                 composable(CoreGuardRoute.Settings.route) {
-                    SettingsScreen()
+                    SettingsScreen(
+                        billingProvider = billingProvider,
+                        onNavigateToPrivacyPolicy = {
+                            navController.navigate(CoreGuardRoute.PrivacyPolicy.route)
+                        }
+                    )
+                }
+                composable(CoreGuardRoute.PrivacyPolicy.route) {
+                    PrivacyPolicyScreen(onBack = { navController.popBackStack() })
                 }
             }
         }
@@ -169,3 +169,4 @@ private fun CoreGuardBottomBar(navController: NavController) {
         }
     }
 }
+
