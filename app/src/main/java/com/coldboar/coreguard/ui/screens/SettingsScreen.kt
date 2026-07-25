@@ -1,8 +1,6 @@
 package com.coldboar.coreguard.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -29,24 +27,17 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.liveRegion
-import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
@@ -54,17 +45,10 @@ import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.PurchaseResult
-import com.coldboar.coreguard.mvt.LastScan
-import com.coldboar.coreguard.mvt.ScanHistoryStore
-import com.coldboar.coreguard.mvt.ShieldState
-import com.coldboar.coreguard.quilla.QuillaSalesCoach
-import com.coldboar.coreguard.ui.components.PremiumUpsellCard
+import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsScreen(
@@ -209,7 +193,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Ask questions about threat signals and security intelligence.",
+                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -217,24 +201,7 @@ fun SettingsScreen(
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaPanel(
-                isPremium = isPremium,
-                onUpgrade = {
-                    billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
-                        when (result) {
-                            is PurchaseResult.Success -> {
-                                isPremium = true
-                                purchaseStatus = "Premium unlocked — thank you!"
-                            }
-                            is PurchaseResult.Cancelled -> Unit
-                            is PurchaseResult.Error -> {
-                                purchaseStatus = result.message
-                            }
-                        }
-                    }
-                },
-                modifier = Modifier.padding(top = 8.dp)
-            )
+            QuillaAgentPanel(modifier = Modifier.padding(top = 8.dp))
         }
 
         Spacer(Modifier.height(16.dp))
@@ -320,119 +287,5 @@ private fun SettingsRow(label: String, value: String) {
     Column {
         Text(text = label, style = MaterialTheme.typography.bodySmall, color = MutedText)
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
-    }
-}
-
-private const val QUILLA_RESPONSE_DELAY_MS = 900L
-
-@Composable
-private fun QuillaPanel(
-    isPremium: Boolean,
-    onUpgrade: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    val context = LocalContext.current
-    var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("Ask me about scan, shield, export, signatures, timeline, or Premium.") }
-    var premiumPitch by remember { mutableStateOf<String?>(null) }
-    var isAsking by remember { mutableStateOf(false) }
-    var pendingPrompt by remember { mutableStateOf<String?>(null) }
-    var timelineCount by remember { mutableStateOf(0) }
-    val hasQuestion = question.isNotBlank()
-
-    LaunchedEffect(Unit) {
-        timelineCount = withContext(Dispatchers.IO) { ScanHistoryStore.load(context).size }
-    }
-
-    LaunchedEffect(pendingPrompt, isPremium, timelineCount) {
-        val prompt = pendingPrompt ?: return@LaunchedEffect
-        isAsking = true
-        answer = "Quilla is listening…"
-        premiumPitch = null
-        delay(QUILLA_RESPONSE_DELAY_MS)
-        val coach = QuillaSalesCoach.answer(
-            prompt,
-            QuillaSalesCoach.DeviceContext(
-                isPremium = isPremium,
-                lastScan = LastScan.report,
-                timelineCount = timelineCount,
-                shieldActive = ShieldState.isActive,
-                shieldBlocked = ShieldState.totalBlocked
-            )
-        )
-        answer = coach.text
-        premiumPitch = if (coach.suggestPremium) coach.premiumPitch else null
-        isAsking = false
-        pendingPrompt = null
-    }
-
-    val faceScale by animateFloatAsState(
-        targetValue = if (isAsking) 1.3f else 1f,
-        animationSpec = tween(durationMillis = 450),
-        label = "quillaFaceScale"
-    )
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier.padding(16.dp)) {
-            Text(
-                text = "◉‿◉",
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .scale(faceScale)
-                    .semantics {
-                        contentDescription = if (isAsking) "Quilla is thinking" else "Quilla face"
-                    }
-            )
-
-            Spacer(modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = question,
-                onValueChange = { question = it },
-                label = { Text("Ask Quilla about this device's security…") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    val prompt = question.trim()
-                    if (prompt.isBlank()) return@Button
-                    question = ""
-                    pendingPrompt = prompt
-                },
-                enabled = !isAsking && hasQuestion,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
-            }
-
-            Spacer(modifier.height(8.dp))
-
-            Text(
-                text = answer,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
-            )
-
-            premiumPitch?.let { pitch ->
-                if (!isPremium) {
-                    Spacer(modifier.height(12.dp))
-                    PremiumUpsellCard(
-                        title = "Quilla recommends Premium",
-                        body = pitch,
-                        onUpgrade = onUpgrade
-                    )
-                }
-            }
-        }
     }
 }

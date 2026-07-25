@@ -1,0 +1,200 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "masvs-overview",
+      "title": "OWASP MASVS v2 \u2014 Mobile security baseline",
+      "category": "owasp-masvs",
+      "tags": [
+        "owasp",
+        "masvs",
+        "mobile",
+        "verification",
+        "standard",
+        "baseline"
+      ],
+      "summary": "Industry baseline for mobile app security controls across 8 categories.",
+      "body": "OWASP MASVS v2 organizes mobile app security into eight control categories: STORAGE, CRYPTO, AUTH, NETWORK, PLATFORM, CODE, RESILIENCE, and PRIVACY. Use it as the requirements layer; map tests with MASTG. CoreGuard Compliance scores against MASVS-inspired checks for this device's posture.",
+      "defense": "Run CoreGuard Compliance, remediate FAIL/WARN checks, then re-score. Prefer threat-model-driven profiles (L1/L2/R/P) over checkbox theater.",
+      "references": [
+        "https://mas.owasp.org/MASVS/"
+      ]
+    },
+    {
+      "id": "masvs-storage",
+      "title": "MASVS-STORAGE \u2014 Data at rest",
+      "category": "owasp-masvs",
+      "tags": [
+        "storage",
+        "data at rest",
+        "keystore",
+        "encrypted shared preferences",
+        "files",
+        "masvs-storage"
+      ],
+      "summary": "Protect sensitive data stored on the device.",
+      "body": "Sensitive tokens, PII, and secrets must not sit in plaintext app storage, backups, or world-readable paths. Prefer Android Keystore-backed keys, encrypted files/prefs, and minimal retention. Check logs and screenshots for accidental leakage.",
+      "defense": "Audit app data dirs, disable unnecessary backups for sensitive apps, and clear leftover exports after Compliance JSON use.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-STORAGE/"
+      ]
+    },
+    {
+      "id": "masvs-crypto",
+      "title": "MASVS-CRYPTO \u2014 Cryptography",
+      "category": "owasp-masvs",
+      "tags": [
+        "crypto",
+        "encryption",
+        "keystore",
+        "aes",
+        "tls",
+        "hash",
+        "masvs-crypto"
+      ],
+      "summary": "Use modern cryptography correctly; avoid homemade crypto.",
+      "body": "Use platform crypto APIs and vetted libraries. Prefer AEAD modes, reject weak ciphers/hashes, manage keys in Keystore/StrongBox when available, and never hardcode secrets. Randomness must come from secure generators.",
+      "defense": "Flag custom crypto, static keys in APKs, and outdated TLS stacks during supply-chain and code reviews.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-CRYPTO/"
+      ]
+    },
+    {
+      "id": "masvs-auth",
+      "title": "MASVS-AUTH \u2014 Authentication & authorization",
+      "category": "owasp-masvs",
+      "tags": [
+        "auth",
+        "authentication",
+        "authorization",
+        "session",
+        "biometric",
+        "oauth",
+        "masvs-auth"
+      ],
+      "summary": "Prove identity and enforce least privilege on sensitive operations.",
+      "body": "Secure login, token lifecycle, biometric step-up for high-risk actions, and server-side authorization. Local biometrics unlock keys; they are not a remote auth substitute. Invalidate sessions on logout and device change.",
+      "defense": "Review session storage, refresh-token handling, and whether critical actions require re-auth.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-AUTH/"
+      ]
+    },
+    {
+      "id": "masvs-network",
+      "title": "MASVS-NETWORK \u2014 Data in transit",
+      "category": "owasp-masvs",
+      "tags": [
+        "network",
+        "tls",
+        "certificate pinning",
+        "https",
+        "cleartext",
+        "masvs-network",
+        "mitm"
+      ],
+      "summary": "Encrypt and authenticate traffic to backends.",
+      "body": "Disable cleartext by default (network security config), use modern TLS, validate certificates properly, and consider pinning for high-risk apps. Watch for debug proxies left enabled in release builds.",
+      "defense": "CoreGuard Shield DNS filtering complements, but does not replace, TLS. Scan for cleartext and review Network Security Config.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-NETWORK/"
+      ]
+    },
+    {
+      "id": "masvs-platform",
+      "title": "MASVS-PLATFORM \u2014 Platform & IPC",
+      "category": "owasp-masvs",
+      "tags": [
+        "platform",
+        "ipc",
+        "intent",
+        "exported",
+        "deeplink",
+        "webview",
+        "masvs-platform"
+      ],
+      "summary": "Secure interaction with Android components and other apps.",
+      "body": "Exported activities/services/receivers/providers are attack surface. Validate intents and deep links, constrain WebViews, and treat inter-app data as untrusted. Permission requests must match least privilege.",
+      "defense": "Inventory exported components and deep-link handlers; remove unused exports.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-PLATFORM/"
+      ]
+    },
+    {
+      "id": "masvs-code",
+      "title": "MASVS-CODE \u2014 Secure coding & updates",
+      "category": "owasp-masvs",
+      "tags": [
+        "code",
+        "updates",
+        "input validation",
+        "dependencies",
+        "sbom",
+        "masvs-code"
+      ],
+      "summary": "Keep code, platform target, and dependencies healthy.",
+      "body": "Validate inputs, keep min/target SDK current, patch libraries, and ship update paths users can actually use. Third-party SDKs expand attack surface \u2014 track them with SBOM-style inventories.",
+      "defense": "Use CoreGuard supply-chain / SDK awareness where available; prefer Play updates and verified sources.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-CODE/"
+      ]
+    },
+    {
+      "id": "masvs-resilience",
+      "title": "MASVS-RESILIENCE \u2014 Anti-tamper & RE resistance",
+      "category": "owasp-masvs",
+      "tags": [
+        "resilience",
+        "tamper",
+        "root",
+        "frida",
+        "debugger",
+        "obfuscation",
+        "masvs-resilience"
+      ],
+      "summary": "Raise cost of reverse engineering and runtime abuse.",
+      "body": "Resilience includes integrity checks, anti-debug/anti-hook heuristics, and obfuscation \u2014 always layered with server trust, never as the only control. Rooted/emulated environments deserve elevated risk scores.",
+      "defense": "CoreGuard already probes debugger/emulator/root/Frida-style signals as posture inputs, not magic spyware detectors.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-RESILIENCE/"
+      ]
+    },
+    {
+      "id": "masvs-privacy",
+      "title": "MASVS-PRIVACY \u2014 User privacy controls",
+      "category": "owasp-masvs",
+      "tags": [
+        "privacy",
+        "pii",
+        "permissions",
+        "tracking",
+        "consent",
+        "masvs-privacy"
+      ],
+      "summary": "Minimize collection and make processing transparent.",
+      "body": "Collect least data, purpose-limit processing, disclose practices, and honor platform privacy features. Avoid fingerprinting beyond necessity. On-device processing is a privacy win when it replaces cloud telemetry.",
+      "defense": "CoreGuard scans run on-device; prefer that model for sensitive workflows.",
+      "references": [
+        "https://mas.owasp.org/MASVS/controls/MASVS-PRIVACY/"
+      ]
+    },
+    {
+      "id": "mastg-method",
+      "title": "OWASP MASTG \u2014 How mobile apps get tested",
+      "category": "owasp-mastg",
+      "tags": [
+        "mastg",
+        "testing",
+        "pentest",
+        "mobile app security testing",
+        "static",
+        "dynamic"
+      ],
+      "summary": "Testing guide that maps MASVS controls to practical test cases.",
+      "body": "MASTG covers static analysis (APK/IPA review), dynamic analysis (runtime instrumentation), network testing, and platform abuse cases. Profiles (L1/L2/R/P) help scope effort to risk. Ethical testing requires authorization.",
+      "defense": "For personal devices, use CoreGuard's on-device checks first; commissioned pentests need written scope and rules of engagement.",
+      "references": [
+        "https://mas.owasp.org/MASTG/"
+      ]
+    }
+  ]
+}

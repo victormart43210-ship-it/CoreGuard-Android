@@ -1,0 +1,85 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "ir-nist-phases",
+      "title": "Incident response phases (NIST-style)",
+      "category": "incident-response",
+      "tags": [
+        "incident response",
+        "nist",
+        "prepare",
+        "detect",
+        "analyze",
+        "contain",
+        "eradicate",
+        "recover",
+        "lessons"
+      ],
+      "summary": "Prepare \u2192 Detect/Analyze \u2192 Contain/Eradicate/Recover \u2192 Lessons learned.",
+      "body": "Preparation builds tooling and playbooks. Detection notices anomalies. Analysis confirms scope. Containment stops spread. Eradication removes cause. Recovery restores trust. Lessons update defenses. Mobile IR often starts with isolate-from-network and preserve evidence.",
+      "defense": "If Nemesis shows PRIVACY THREAT indicators: enable Shield, avoid sensitive logins, capture Compliance/scan notes, and consider factory reset only after evidence needs are met.",
+      "references": [
+        "https://csrc.nist.gov/publications/detail/sp/800-61/rev-2/final"
+      ]
+    },
+    {
+      "id": "ir-mobile-triage",
+      "title": "Mobile device triage checklist",
+      "category": "incident-response",
+      "tags": [
+        "triage",
+        "compromise",
+        "spyware",
+        "pegasus",
+        "isolate",
+        "evidence"
+      ],
+      "summary": "Fast steps when you suspect device compromise.",
+      "body": "1) Note symptoms and recent installs/links. 2) Run an on-device IOC/privacy scan. 3) Enable network filtering if available. 4) Change critical passwords from a clean device. 5) Revoke app sessions. 6) Preserve logs/exports before wipe. 7) Rebuild from clean backup if needed.",
+      "defense": "CoreGuard: Scanner \u2192 Shield \u2192 Compliance export (Premium) \u2192 Timeline. Quilla coaches next steps from local evidence.",
+      "references": [
+        "https://www.amnesty.org/en/tech/"
+      ]
+    },
+    {
+      "id": "ir-indicators",
+      "title": "Indicators of compromise (IOCs)",
+      "category": "incident-response",
+      "tags": [
+        "ioc",
+        "indicator",
+        "stix",
+        "hash",
+        "domain",
+        "package",
+        "threat intel"
+      ],
+      "summary": "Observable artifacts that suggest malicious activity.",
+      "body": "IOCs include package names, domains, IPs, file paths, and hashes. STIX packages share them between tools. IOCs go stale; combine with behavior. False positives happen \u2014 treat matches as leads.",
+      "defense": "Premium signature refresh pulls newer open-source IOCs before rescan. Bundled indicators cover offline triage.",
+      "references": [
+        "https://oasis-open.github.io/cti-documentation/"
+      ]
+    },
+    {
+      "id": "ir-containment-android",
+      "title": "Android containment options",
+      "category": "incident-response",
+      "tags": [
+        "containment",
+        "airplane mode",
+        "vpn",
+        "dns",
+        "revoke",
+        "wipe"
+      ],
+      "summary": "Limit attacker reach while you investigate.",
+      "body": "Airplane mode / disable Wi\u2011Fi & mobile data, revoke suspicious app permissions, force-stop/uninstall unknown apps, enable DNS sinkhole/VPN filter, remove unknown device admins, and escalate to wipe if persistence is likely and evidence is secured.",
+      "defense": "CoreGuard Shield is a local DNS sinkhole \u2014 useful containment assist, not a full EDR.",
+      "references": [
+        "https://support.google.com/android/"
+      ]
+    }
+  ]
+}

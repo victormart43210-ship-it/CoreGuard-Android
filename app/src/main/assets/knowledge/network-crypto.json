@@ -1,0 +1,41 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "tls-basics",
+      "title": "TLS for mobile defenders",
+      "category": "network-crypto",
+      "tags": [
+        "tls",
+        "https",
+        "certificate",
+        "pinning",
+        "mitm"
+      ],
+      "summary": "TLS authenticates servers and encrypts data in transit.",
+      "body": "Clients validate certificate chains to trusted CAs. Pinning tightens trust to specific keys/certs but needs a rotation story. User-installed CAs can enable interception on managed/debugging devices \u2014 a risk if unexpected.",
+      "defense": "Treat unexpected cert warnings as blockers. Prefer apps that refuse cleartext.",
+      "references": [
+        "https://developer.android.com/privacy-and-security/security-ssl"
+      ]
+    },
+    {
+      "id": "dns-security",
+      "title": "DNS filtering vs VPN privacy",
+      "category": "network-crypto",
+      "tags": [
+        "dns",
+        "sinkhole",
+        "vpn",
+        "filtering",
+        "privacy"
+      ],
+      "summary": "DNS sinkholes block name resolution to known-bad domains; VPNs encrypt tunnels.",
+      "body": "A local VPN-based DNS filter can sinkhole malicious domains without sending your traffic to a third-party VPN exit. It is not anonymity. Full-tunnel VPNs change path privacy/trust to the VPN operator.",
+      "defense": "CoreGuard Shield is a local DNS sinkhole style control \u2014 use it as a blocklist layer.",
+      "references": [
+        "https://www.cisa.gov/"
+      ]
+    }
+  ]
+}
