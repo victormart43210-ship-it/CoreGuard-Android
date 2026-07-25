@@ -16,10 +16,12 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 abstract class QuillaLearningDao {
     /**
-     * Inserts or replaces the given [hypothesis] in the persistent store.
-     * Room auto-generates the [QuillaHypothesisEntity.id] on insert when it is 0.
+     * Inserts the given [hypothesis] as a new row in the persistent store.
+     * Room auto-generates [QuillaHypothesisEntity.id] for each new record.
+     * Duplicate inserts (same content, different id) create separate rows,
+     * which is the intended behaviour for an append-only threat log.
      */
-    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     abstract fun upsertHypothesis(hypothesis: QuillaHypothesisEntity)
 
     /**

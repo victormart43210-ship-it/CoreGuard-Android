@@ -44,6 +44,10 @@ abstract class QuillaDatabase : RoomDatabase() {
          *   to avoid retaining Activity references across the process lifetime.
          */
         fun getInstance(context: Context): QuillaDatabase =
+            // Double-checked locking: the outer elvis is the fast-path read (no lock);
+            // the inner elvis inside synchronized is the authoritative second check that
+            // prevents two threads that both passed the outer check from each building
+            // a separate instance. @Volatile on `instance` guarantees write visibility.
             instance ?: synchronized(this) {
                 instance ?: Room.databaseBuilder(
                     context.applicationContext,
