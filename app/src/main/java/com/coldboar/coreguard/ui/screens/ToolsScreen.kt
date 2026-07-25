@@ -36,6 +36,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.lore.QuillaKnowledge
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import kotlinx.coroutines.delay
@@ -46,12 +47,10 @@ private const val EYE_PATTERN_TEXT = "👁   👁   👁   👁   👁"
 private const val EYE_PATTERN_ALPHA = 0.18f
 private const val QUILLA_FACE_SCALE_IDLE = 1f
 private const val QUILLA_FACE_SCALE_ASKING = 1.4f
-private const val QUILLA_INITIAL_PROMPT = "Ask Quilla a question to begin."
+private const val QUILLA_INITIAL_PROMPT =
+    "Ask Quilla about observation, calendars/cycles, archives, signal relays, " +
+        "or how to verify a threat before trusting it."
 private const val QUILLA_LISTENING_MESSAGE = "Quilla is listening…"
-
-private fun quillaResponse(prompt: String): String {
-    return "Quilla hears you: \"$prompt\". Threat correlation focus is active."
-}
 
 @Composable
 fun ToolsScreen() {
@@ -89,7 +88,8 @@ fun ToolsScreen() {
                 )
                 Spacer(Modifier.height(6.dp))
                 Text(
-                    text = "Ask Quilla questions about threat signals and intelligence context.",
+                    text = "Ask Quilla through the Observatory Codex — sky-watcher " +
+                        "discipline mapped onto threat signals and evidence.",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 if (!quillaOpen) {
@@ -126,7 +126,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
         isAsking = true
         answer = QUILLA_LISTENING_MESSAGE
         delay(QUILLA_RESPONSE_DELAY_MS)
-        answer = quillaResponse(prompt)
+        answer = QuillaKnowledge.answer(prompt)
         isAsking = false
         pendingPrompt = null
     }

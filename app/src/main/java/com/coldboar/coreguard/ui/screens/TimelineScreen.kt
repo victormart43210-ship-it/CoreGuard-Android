@@ -71,7 +71,7 @@ fun TimelineScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "Device integrity history — every scan, timestamped.",
+            text = "Observatory log — every integrity scan, timestamped like a sky-watcher's ledger.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
@@ -92,10 +92,15 @@ fun TimelineScreen() {
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("No scans yet", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                        Text(
+                            "No observatory entries yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ElectricTeal
+                        )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run a Nemesis scan to begin recording your device integrity timeline.",
+                            "Run a Nemesis scan to open the ledger. Cycles matter more than single readings — " +
+                                "correlate later scans against this baseline.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,

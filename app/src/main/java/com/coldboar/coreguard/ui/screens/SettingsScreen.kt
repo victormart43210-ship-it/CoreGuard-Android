@@ -53,6 +53,7 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.PurchaseResult
+import com.coldboar.coreguard.lore.QuillaKnowledge
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -193,7 +194,8 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Ask questions about threat signals and security intelligence.",
+                        "Ask Quilla through an Observatory Codex lens — sky-watchers, " +
+                            "cycles, relays, and recovered evidence mapped to device defense.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -292,13 +294,15 @@ private fun SettingsRow(label: String, value: String) {
 
 private const val QUILLA_RESPONSE_DELAY_MS = 900L
 
-private fun quillaResponse(prompt: String): String =
-    "Quilla hears you: \"$prompt\". Threat correlation focus is active."
-
 @Composable
 private fun QuillaPanel(modifier: Modifier = Modifier) {
     var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
+    var answer by remember {
+        mutableStateOf(
+            "Ask Quilla about observation, calendars/cycles, archives, signal relays, " +
+                "or how to verify a threat before trusting it."
+        )
+    }
     var isAsking by remember { mutableStateOf(false) }
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
     val hasQuestion = question.isNotBlank()
@@ -308,7 +312,7 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
         isAsking = true
         answer = "Quilla is listening…"
         delay(QUILLA_RESPONSE_DELAY_MS)
-        answer = quillaResponse(prompt)
+        answer = QuillaKnowledge.answer(prompt)
         isAsking = false
         pendingPrompt = null
     }
