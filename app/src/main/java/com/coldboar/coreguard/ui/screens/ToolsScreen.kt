@@ -104,7 +104,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
     var isAsking by remember { mutableStateOf(false) }
-    val canSubmit = question.isNotBlank()
+    val hasQuestionText = question.isNotBlank()
 
     val faceScale by animateFloatAsState(
         targetValue = if (isAsking) QUILLA_FACE_SCALE_ASKING else QUILLA_FACE_SCALE_IDLE,
@@ -172,8 +172,9 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        if (!canSubmit || isAsking) return@Button
+                        if (!hasQuestionText || isAsking) return@Button
                         val prompt = question.trim()
+                        question = ""
                         isAsking = true
                         answer = "Quilla is listening…"
                         scope.launch {
@@ -182,7 +183,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                             isAsking = false
                         }
                     },
-                    enabled = !isAsking && canSubmit,
+                    enabled = !isAsking && hasQuestionText,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
