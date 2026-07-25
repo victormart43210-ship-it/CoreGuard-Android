@@ -1,0 +1,178 @@
+package com.coldboar.coreguard.ui.screens
+
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.MutedText
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+
+@Composable
+fun ToolsScreen() {
+    var quillaOpen by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp)
+    ) {
+        Text(
+            text = "Tools",
+            style = MaterialTheme.typography.headlineLarge,
+            modifier = Modifier.semantics { heading() }
+        )
+        Text(
+            text = "Utilities and assistants available in CoreGuard.",
+            style = MaterialTheme.typography.bodyMedium
+        )
+
+        Spacer(Modifier.height(20.dp))
+
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { quillaOpen = true },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Quilla", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Ask Quilla questions about threat signals and intelligence context.",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                if (!quillaOpen) {
+                    Spacer(Modifier.height(10.dp))
+                    Text(
+                        text = "Tap to open Quilla",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = quillaOpen) {
+            QuillaAssistantPanel(modifier = Modifier.padding(top = 16.dp))
+        }
+    }
+}
+
+@Composable
+private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
+    val scope = rememberCoroutineScope()
+    var question by remember { mutableStateOf("") }
+    var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
+    var isAsking by remember { mutableStateOf(false) }
+
+    val faceScale by animateFloatAsState(
+        targetValue = if (isAsking) 1.4f else 1f,
+        label = "quillaFaceScale"
+    )
+
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            if (isAsking) {
+                Column(
+                    modifier = Modifier
+                        .matchParentSize()
+                        .alpha(0.18f),
+                    verticalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
+                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
+                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
+                }
+            }
+
+            Column {
+                Text(
+                    text = "Quilla",
+                    style = MaterialTheme.typography.titleLarge,
+                    color = ElectricTeal
+                )
+
+                Spacer(Modifier.height(10.dp))
+
+                Text(
+                    text = "◉‿◉",
+                    style = MaterialTheme.typography.displayMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.CenterHorizontally)
+                        .size(96.dp)
+                        .scale(faceScale)
+                )
+
+                Spacer(Modifier.height(12.dp))
+
+                OutlinedTextField(
+                    value = question,
+                    onValueChange = { question = it },
+                    label = { Text("Ask Quilla a question") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                Spacer(Modifier.height(8.dp))
+
+                Button(
+                    onClick = {
+                        val prompt = question.trim()
+                        if (prompt.isEmpty() || isAsking) return@Button
+                        isAsking = true
+                        answer = "Quilla is listening…"
+                        scope.launch {
+                            delay(900)
+                            answer = "Quilla hears you: \"$prompt\". Threat correlation focus is active."
+                            isAsking = false
+                        }
+                    },
+                    enabled = !isAsking && question.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
+                }
+
+                Spacer(Modifier.height(10.dp))
+                Text(answer, style = MaterialTheme.typography.bodyMedium)
+            }
+        }
+    }
+}
