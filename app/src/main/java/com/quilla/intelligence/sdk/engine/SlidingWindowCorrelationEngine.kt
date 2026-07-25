@@ -80,7 +80,7 @@ class SlidingWindowCorrelationEngine(
      */
     fun syncThreatFeeds() {
         val fetched = stixFetcher.fetchAllSources()
-        activeStixIndicators = fetched.toList()
+        activeStixIndicators = fetched
     }
 
     /**
@@ -146,7 +146,7 @@ class SlidingWindowCorrelationEngine(
         var confidence = 0.60f
         if (hasDcl) confidence += 0.20f
         if (hasRoot) confidence += 0.15f
-        confidence = confidence.coerceAtMost(1.0f)
+        confidence = confidence.clampConfidence()
 
         if (confidence < STIX_THRESHOLD) return false
 
@@ -195,13 +195,18 @@ class SlidingWindowCorrelationEngine(
         }.toString()
         val hypothesis = QuillaHypothesisEntity(
             hypothesisType = "BEHAVIORAL_ANOMALY",
-            confidence = confidence.coerceAtMost(1.0f),
+            confidence = confidence.clampConfidence(),
             summary = "Behavioral anomaly detected for package $packageName",
             evidenceJson = evidenceJson
         )
         dao.upsertHypothesis(hypothesis)
         _threatEvents.emit(hypothesis)
     }
+
+    /**
+     * Clamps [this] confidence value to the valid [0.0, 1.0] range.
+     */
+    private fun Float.clampConfidence() = coerceIn(0.0f, 1.0f)
 
     /**
      * Extracts the destination domain or IP from a NETWORK_OUTBOUND detail string.
