@@ -94,7 +94,12 @@ fun StatRow(label: String, value: String, valueColor: Color = MaterialTheme.colo
     }
 }
 
-/** Converts a [SecurityCheckState] to its representative UI colour. */
+/**
+ * Converts a [SecurityCheckState] to its representative UI colour:
+ * - [SecurityCheckState.PASS] → [SafeGreen]
+ * - [SecurityCheckState.WARN] → [AttentionAmber]
+ * - [SecurityCheckState.FAIL] → [HighRed]
+ */
 fun SecurityCheckState.toColor(): Color = when (this) {
     SecurityCheckState.PASS -> SafeGreen
     SecurityCheckState.WARN -> AttentionAmber

@@ -54,10 +54,10 @@ fun PerformanceScreen() {
         }
     }
 
-    val usedRamText = if (usedRam != null) MemoryUsageCalculator.formatBytes(usedRam!!) else "–"
-    val totalRamText = if (totalRam != null) MemoryUsageCalculator.formatBytes(totalRam!!) else "–"
-    val ramFraction: Float = if (usedRam != null && totalRam != null && totalRam!! > 0L) {
-        (usedRam!!.toFloat() / totalRam!!.toFloat()).coerceIn(0f, 1f)
+    val usedRamText = usedRam?.let { MemoryUsageCalculator.formatBytes(it) } ?: "–"
+    val totalRamText = totalRam?.let { MemoryUsageCalculator.formatBytes(it) } ?: "–"
+    val ramFraction: Float = if (usedRam != null && totalRam != null && totalRam > 0L) {
+        (usedRam.toFloat() / totalRam.toFloat()).coerceIn(0f, 1f)
     } else 0f
     val ramColor = when {
         ramFraction > 0.85f -> HighRed
