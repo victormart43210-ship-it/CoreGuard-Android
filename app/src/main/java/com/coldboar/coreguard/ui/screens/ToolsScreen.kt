@@ -48,7 +48,10 @@ private const val QUILLA_FACE_SCALE_IDLE = 1f
 private const val QUILLA_FACE_SCALE_ASKING = 1.4f
 private const val QUILLA_INITIAL_PROMPT = "Ask Quilla a question to begin."
 private const val QUILLA_LISTENING_MESSAGE = "Quilla is listening…"
-private const val QUILLA_RESPONSE_TEMPLATE = "Quilla hears you: \"%s\". Threat correlation focus is active."
+
+private fun quillaResponse(prompt: String): String {
+    return "Quilla hears you: \"$prompt\". Threat correlation focus is active."
+}
 
 @Composable
 fun ToolsScreen() {
@@ -112,7 +115,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
     var answer by remember { mutableStateOf("") }
     var isAsking by remember { mutableStateOf(false) }
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
-    val hasQuestionText = question.isNotBlank()
+    val hasQuestion = question.isNotBlank()
 
     LaunchedEffect(Unit) {
         answer = QUILLA_INITIAL_PROMPT
@@ -123,7 +126,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
         isAsking = true
         answer = QUILLA_LISTENING_MESSAGE
         delay(QUILLA_RESPONSE_DELAY_MS)
-        answer = QUILLA_RESPONSE_TEMPLATE.format(prompt)
+        answer = quillaResponse(prompt)
         isAsking = false
         pendingPrompt = null
     }
@@ -200,7 +203,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                         question = ""
                         pendingPrompt = prompt
                     },
-                    enabled = !isAsking && hasQuestionText,
+                    enabled = !isAsking && hasQuestion,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
