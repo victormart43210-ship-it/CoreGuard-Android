@@ -2,12 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_PHONE_STATE"
-        android:maxSdkVersion="28" />
-
     <!-- Required only to probe the loopback interface (127.0.0.1) for a Frida
-         server/gadget on its default ports, and to forward allowed DNS queries
-         from the blocker VPN. No data is sent off the device. -->
+         server/gadget on its default ports, to fetch optional public IOC feeds,
+         and to forward allowed DNS queries from the blocker VPN. -->
     <uses-permission android:name="android.permission.INTERNET" />
     <!-- Foreground service hosting the always-on spyware-domain blocker VPN. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />

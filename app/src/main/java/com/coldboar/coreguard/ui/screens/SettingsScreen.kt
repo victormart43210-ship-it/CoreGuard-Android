@@ -34,6 +34,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -63,7 +64,7 @@ fun SettingsScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
     onNavigateToPrivacyPolicy: () -> Unit = {}
 ) {
-    var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
+    val isPremium by billingProvider.premiumState.collectAsState()
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
 
@@ -76,6 +77,7 @@ fun SettingsScreen(
         Text(
             text = "Settings",
             style = MaterialTheme.typography.headlineLarge,
+            color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
 
@@ -112,48 +114,58 @@ fun SettingsScreen(
 
                 if (isPremium) {
                     Text(
-                        "✓ Premium active — thank you for your support.",
+                        "Premium active — thank you for your support.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RestrainedGold
                     )
                 } else {
                     Text(
-                        "Unlock automated daily scans, threat report export, live signature updates, and priority support.",
-                        style = MaterialTheme.typography.bodyMedium
+                        "Export compliance reports and refresh threat signatures sooner. " +
+                            "Subscribe through Google Play — you can cancel anytime in Play subscriptions.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
                     )
 
                     purchaseStatus?.let { status ->
                         Spacer(Modifier.height(4.dp))
-                        Text(status, style = MaterialTheme.typography.bodySmall, color = ElectricTeal)
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ElectricTeal,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        )
                     }
 
                     Spacer(Modifier.height(12.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = {
-                                billingProvider.launchPurchaseFlow("coreguard_premium_monthly") { result ->
-                                    when (result) {
-                                        is PurchaseResult.Success -> {
-                                            isPremium = true
-                                            purchaseStatus = "✅ Premium unlocked — thank you!"
-                                        }
-                                        is PurchaseResult.Cancelled -> {
-                                            purchaseStatus = null
-                                        }
-                                        is PurchaseResult.Error -> {
-                                            purchaseStatus = "⚠ ${result.message}"
-                                        }
+                    Button(
+                        onClick = {
+                            billingProvider.launchPurchaseFlow(
+                                com.coldboar.coreguard.PlayBillingProvider.PREMIUM_PRODUCT_ID
+                            ) { result ->
+                                when (result) {
+                                    is PurchaseResult.Success -> {
+                                        purchaseStatus = "Premium unlocked — thank you!"
+                                    }
+                                    is PurchaseResult.Cancelled -> {
+                                        purchaseStatus = "Purchase cancelled — nothing was charged."
+                                    }
+                                    is PurchaseResult.Error -> {
+                                        purchaseStatus =
+                                            "Google Play couldn’t complete the purchase. Try again later."
                                     }
                                 }
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = RestrainedGold)
-                        ) {
-                            Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
-                            Spacer(Modifier.size(6.dp))
-                            Text("Subscribe", color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RestrainedGold,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text("Subscribe with Google Play", fontWeight = FontWeight.Bold)
                     }
                 }
             }

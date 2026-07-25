@@ -15,14 +15,17 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,16 +36,21 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.SecurityCheckResult
+import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.compliance.ComplianceReportExporter
 import com.coldboar.coreguard.compliance.MasvsCategory
 import com.coldboar.coreguard.compliance.MasvsCategoryScore
 import com.coldboar.coreguard.compliance.MasvsComplianceReport
 import com.coldboar.coreguard.compliance.MasvsComplianceScorer
+import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.PrimaryTealButton
+import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.ScreenHeader
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -50,68 +58,134 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
-fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
+fun ComplianceScreen(
+    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    onNavigateToSettings: () -> Unit = {}
+) {
     val context = LocalContext.current
+    var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
+    var loading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var reloadToken by remember { mutableStateOf(0) }
+    val isPremium by billingProvider.premiumState.collectAsState()
     val report = remember(securityResults) { MasvsComplianceScorer.score(securityResults) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
 
-    Column(
+    LaunchedEffect(reloadToken) {
+        loading = true
+        loadError = null
+        try {
+            securityResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+        } catch (_: Throwable) {
+            securityResults = emptyList()
+            loadError = "We couldn’t run the compliance checks. Try again in a moment."
+        } finally {
+            loading = false
+        }
+    }
+
+    val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
+    val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
+    val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+    val checksReady = !loading && loadError == null && securityResults.isNotEmpty()
+
+    ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
     ) {
-        Text(
-            text = "Compliance",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
-        )
-        Text(
-            text = "OWASP MASVS v2 scoring and attack surface overview.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedText
+        ScreenHeader(
+            title = "Compliance",
+            subtitle = "A plain-language score of your device checks, mapped to OWASP MASVS security areas."
         )
 
         Spacer(Modifier.height(24.dp))
 
-        // Overall score banner
-        OverallScoreBanner(report.overallScore)
-
-        Spacer(Modifier.height(16.dp))
-
-        // Visual attack surface map
-        AttackSurfaceMap(report)
-
-        Spacer(Modifier.height(16.dp))
-
-        // Per-category breakdown
-        report.categoryScores.forEach { catScore ->
-            CategoryScoreCard(catScore)
-            Spacer(Modifier.height(8.dp))
+        if (loading) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.Center
+            ) {
+                CircularProgressIndicator(color = ElectricTeal)
+            }
+            Spacer(Modifier.height(16.dp))
+        } else if (loadError != null) {
+            CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
+                Text("Couldn’t run compliance checks", style = MaterialTheme.typography.titleMedium, color = HighRed)
+                Spacer(Modifier.height(6.dp))
+                Text(loadError!!, style = MaterialTheme.typography.bodyMedium, color = MutedText)
+                Spacer(Modifier.height(12.dp))
+                PrimaryTealButton(text = "Retry", onClick = { reloadToken++ })
+            }
+            Spacer(Modifier.height(16.dp))
+        } else if (securityResults.isEmpty()) {
+            CoreGuardCard {
+                Text("No checks available yet", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    "Security checks will appear here after the device evaluators finish.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+                Spacer(Modifier.height(12.dp))
+                PrimaryTealButton(text = "Retry", onClick = { reloadToken++ })
+            }
+            Spacer(Modifier.height(16.dp))
+        } else {
+            CoreGuardCard {
+                Text(
+                    text = "Your device passed $passCount of ${securityResults.size} checks.",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = when {
+                        failCount > 0 -> "$failCount need immediate review. Warnings: $warnCount."
+                        warnCount > 0 -> "$warnCount need a closer look below."
+                        else -> "No warnings right now — keep scanning periodically."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+            OverallScoreBanner(report.overallScore)
+            Spacer(Modifier.height(16.dp))
+            AttackSurfaceMap(report)
+            Spacer(Modifier.height(16.dp))
+            report.categoryScores.forEach { catScore ->
+                CategoryScoreCard(catScore)
+                Spacer(Modifier.height(8.dp))
+            }
+            Spacer(Modifier.height(16.dp))
         }
 
-        Spacer(Modifier.height(16.dp))
-
-        // Export controls
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Button(
-                modifier = Modifier.weight(1f),
+        if (isPremium) {
+            PrimaryTealButton(
+                text = "Export compliance report (JSON)",
+                enabled = checksReady,
                 onClick = {
                     val exporter = ComplianceReportExporter(context)
                     val file = exporter.exportToFile(report)
-                    exportMessage = if (file != null)
-                        "Exported: ${file.name}"
-                    else
-                        "Export failed: external storage unavailable"
-                },
-                colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
+                    exportMessage = if (file != null) {
+                        "Saved report: ${file.name}"
+                    } else {
+                        "Couldn’t save the report. Check storage permission and try again."
+                    }
+                }
+            )
+        } else {
+            OutlinedButton(
+                onClick = onNavigateToSettings,
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.outlinedButtonColors(contentColor = ElectricTeal)
             ) {
-                Text("Export JSON", color = Color.Black)
+                Text("Unlock report export in Settings")
             }
         }
 
@@ -155,7 +229,7 @@ private fun OverallScoreBanner(score: Int) {
             Spacer(Modifier.size(16.dp))
             Column {
                 Text(
-                    "MASVS Overall Score",
+                    "Overall security score",
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricTeal
                 )
@@ -165,7 +239,7 @@ private fun OverallScoreBanner(score: Int) {
                     color = color
                 )
                 Text(
-                    "OWASP MASVS v2 – ${MasvsCategory.entries.size} categories evaluated",
+                    "Based on ${MasvsCategory.entries.size} mobile security areas (OWASP MASVS)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
@@ -182,13 +256,13 @@ private fun AttackSurfaceMap(report: MasvsComplianceReport) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                "Attack Surface Map",
+                "Security areas at a glance",
                 style = MaterialTheme.typography.titleMedium,
                 color = ElectricTeal
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "Active risk level per MASVS domain (outer ring = higher risk)",
+                "Farther from center means stronger coverage in that area",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )
@@ -332,7 +406,11 @@ private fun CategoryScoreCard(cat: MasvsCategoryScore) {
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            check.state.name,
+                            when (check.state) {
+                                SecurityCheckState.PASS -> "OK"
+                                SecurityCheckState.WARN -> "Review"
+                                SecurityCheckState.FAIL -> "Risk"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = when (check.state) {
                                 SecurityCheckState.PASS -> SafeGreen

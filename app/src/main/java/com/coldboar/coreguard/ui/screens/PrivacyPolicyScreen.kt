@@ -121,9 +121,18 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
             PolicySection(
                 title = "Subscriptions & Billing",
-                body = "Premium subscriptions are processed entirely by Google Play. " +
-                    "CoreGuard does not receive or store your payment details. " +
-                    "Purchase receipts are verified through Google's secure infrastructure."
+                body = "Premium subscriptions are processed entirely by Google Play Billing. " +
+                    "CoreGuard does not receive or store your payment card details. " +
+                    "Entitlement is determined on-device from Play purchase state " +
+                    "(active acknowledged subscription). Server-side receipt verification " +
+                    "may be added in a future release."
+            )
+
+            PolicySection(
+                title = "Hosted Privacy Policy",
+                body = "The canonical web copy of this policy is published at:\n" +
+                    "https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html\n" +
+                    "Use that URL in the Google Play Console Data safety / Privacy policy fields."
             )
 
             PolicySection(

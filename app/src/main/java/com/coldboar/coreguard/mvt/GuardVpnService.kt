@@ -79,6 +79,12 @@ class GuardVpnService : VpnService() {
             return START_NOT_STICKY
         }
 
+        if (tunnel == null) {
+            Log.e(TAG, "VPN establish() returned null — not marking shield active")
+            stopShield()
+            return START_NOT_STICKY
+        }
+
         running = true
         ShieldState.setActive(true)
         worker = Thread({ pump() }, "coreguard-shield").apply { isDaemon = true; start() }

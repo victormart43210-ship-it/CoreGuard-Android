@@ -17,6 +17,9 @@ import com.android.billingclient.api.QueryPurchasesParams
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 
 /**
@@ -41,8 +44,9 @@ class PlayBillingProvider(
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
 
-    @Volatile
-    private var premiumCached: Boolean = false
+    private val premiumCached = MutableStateFlow(false)
+
+    override val premiumState: StateFlow<Boolean> = premiumCached.asStateFlow()
 
     @Volatile
     private var cachedProductDetails: ProductDetails? = null
@@ -136,7 +140,7 @@ class PlayBillingProvider(
                 purchase.products.contains(PREMIUM_PRODUCT_ID) &&
                     purchase.purchaseState == Purchase.PurchaseState.PURCHASED
             }
-            premiumCached = hasActive
+            premiumCached.value = hasActive
             Log.d(TAG, "Existing purchases queried – premium=$hasActive")
         }
     }
@@ -167,7 +171,7 @@ class PlayBillingProvider(
                 scope.launch {
                     billingClient.acknowledgePurchase(ackParams) { result ->
                         if (result.responseCode == BillingClient.BillingResponseCode.OK) {
-                            premiumCached = true
+                            premiumCached.value = true
                             pendingPurchaseCallback?.invoke(PurchaseResult.Success)
                             pendingPurchaseCallback = null
                             Log.d(TAG, "Purchase acknowledged – premium unlocked.")
@@ -180,7 +184,7 @@ class PlayBillingProvider(
                     }
                 }
             } else {
-                premiumCached = true
+                premiumCached.value = true
                 pendingPurchaseCallback?.invoke(PurchaseResult.Success)
                 pendingPurchaseCallback = null
             }
@@ -191,7 +195,7 @@ class PlayBillingProvider(
     // BillingProvider implementation
     // -----------------------------------------------------------------------
 
-    override fun isPremium(): Boolean = premiumCached
+    override fun isPremium(): Boolean = premiumCached.value
 
     override fun launchPurchaseFlow(productId: String, onResult: (PurchaseResult) -> Unit) {
         val activity = currentActivity

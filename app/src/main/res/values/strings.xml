@@ -4,8 +4,8 @@
     <string name="main_tagline">Your device, sealed beneath the Sigillum Dei</string>
 
     <!-- Play Store listing (keep escaping AAPT-safe: no raw apostrophes, use \\n for breaks) -->
-    <string name="store_short_description">Real-time mobile security: spyware scanner, VPN shield &amp; compliance scoring.</string>
-    <string name="store_full_description">CoreGuard puts enterprise-grade mobile security intelligence in your hands — designed for journalists, activists, privacy-conscious professionals, and anyone who refuses to be surveilled.\n\nGUARDIAN SCORE\nYour device gets a live 0–100 Guardian Score based on six security dimensions — root detection, debugger presence, emulator checks, build integrity, spyware signatures, and certificate pinning. Watch it animate on every launch.\n\nNEMESIS SCANNER\nPowered by threat intelligence from the Amnesty International Security Lab (mvt-project), the Nemesis Scanner checks your device against hundreds of known spyware, stalkerware, and surveillance campaign indicators. A clean result is reassuring; a flagged result could save your life.\n\nPRIVACY SHIELD\nAn on-device VPN that silently blocks connections to servers used by surveillance firms, trackers, and data brokers — without routing your traffic through any third-party server. Your data stays on your device.\n\nMASVS COMPLIANCE\nSee how your device scores against the OWASP Mobile Application Security Verification Standard (MASVS v2) across six security domains. Export a full JSON compliance report to share with your security team.\n\nSUPPLY CHAIN AUDIT\nEnumerate every installed package and audit third-party SDK network behavior. Know exactly what\'s calling home from your device.\n\nWHAT WE DON\'T DO:\n- We don\'t collect your data\n- We don\'t send scans to the cloud\n- We don\'t show ads\n- We don\'t track you\n\nCoreGuard is built on open-source threat intelligence. Source code available on GitHub.\n\nPrivacy signatures are sourced from the Amnesty International Security Lab / mvt-project. CoreGuard is an independent project and is not affiliated with Amnesty International.</string>
+    <string name="store_short_description">On-device spyware checks, privacy VPN shield, and MASVS compliance scoring.</string>
+    <string name="store_full_description">CoreGuard is an on-device Android security toolkit for people who want clear, honest visibility into device risk — journalists, activists, and privacy-conscious users.\n\nGUARDIAN SCORE\nA 0–100 score from local heuristic checks: debugger/root/emulator signals, build integrity, spyware package indicators, and signing-certificate verification when configured.\n\nNEMESIS SCANNER\nCompares installed packages and local indicators against open threat-intelligence lists sourced from the Amnesty International Security Lab / mvt-project. A clean result is reassuring but not a guarantee.\n\nPRIVACY SHIELD\nAn optional on-device VPN that filters DNS against known surveillance/tracker domains. Traffic is not routed through CoreGuard servers.\n\nMASVS COMPLIANCE\nSee how local checks map to OWASP MASVS v2 categories. Premium unlocks JSON report export for your own records or security team.\n\nWHAT WE DON\'T DO:\n- We don\'t collect personal data\n- We don\'t upload scan results to a CoreGuard cloud\n- We don\'t show ads\n- We don\'t track you across apps\n\nOptional anonymous HTTPS fetches may pull public IOC signature feeds. Source code is available on GitHub.\n\nCoreGuard is an independent project and is not affiliated with Amnesty International.</string>
 
     <!-- Guardian score -->
     <string name="guardian_score_title">Guardian Score</string>
@@ -87,17 +87,18 @@
     <!-- Paywall -->
     <string name="paywall_title">Upgrade to Premium</string>
     <string name="paywall_headline">CoreGuard Premium</string>
-    <string name="paywall_description">Stay ahead of spyware. Private. Always guarded.</string>
-    <string name="paywall_benefit_1">Automated daily security scans</string>
-    <string name="paywall_benefit_2">Threat report export — share findings with your team</string>
-    <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
+    <string name="paywall_description">Unlock report export and faster signature refresh. Billing is handled by Google Play.</string>
+    <string name="paywall_benefit_1">MASVS / threat report JSON export</string>
+    <string name="paywall_benefit_2">Priority signature feed refresh</string>
+    <string name="paywall_benefit_3">Support the independent CoreGuard project</string>
     <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
-    <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
-    <string name="paywall_btn_subscribe">Subscribe</string>
+    <string name="paywall_btn_subscribe">Subscribe with Google Play</string>
     <string name="paywall_btn_close">Not now</string>
-    <string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string>
+    <string name="paywall_purchase_success">Premium unlocked. Thank you for your support.</string>
     <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
     <string name="paywall_purchase_error">Error: %1$s</string>
+    <string name="paywall_export_requires_premium">Report export requires CoreGuard Premium.</string>
+    <string name="privacy_policy_url">https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html</string>
 
     <!-- Accessibility -->
     <string name="cd_sigil_background">Decorative Enochian protection seal</string>
