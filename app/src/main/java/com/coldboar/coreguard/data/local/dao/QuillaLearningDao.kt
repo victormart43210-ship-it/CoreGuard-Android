@@ -20,7 +20,7 @@ abstract class QuillaLearningDao {
     abstract fun observeAllHypotheses(): Flow<List<QuillaHypothesisEntity>>
 
     @Query("UPDATE quilla_hypotheses SET status = :status WHERE id = :id")
-    abstract suspend fun updateStatus(id: String, status: String)
+    abstract suspend fun updateHypothesisStatus(id: String, status: String)
 
     @Query("DELETE FROM quilla_hypotheses WHERE id = :id")
     abstract suspend fun deleteById(id: String)
