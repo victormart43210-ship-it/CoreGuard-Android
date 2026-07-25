@@ -18,7 +18,7 @@ import com.coldboar.coreguard.ui.theme.CoreGuardTheme
  * All screen navigation is handled inside [CoreGuardApp]. This Activity
  * contains no polling logic, no ViewBinding, and no direct navigation calls.
  *
- * Key combination: **Shift + Alt + S** toggles the hidden [SecretPortal] overlay,
+ * Key combination: **Shift + Alt + S** toggles the hidden [SecretPortalScreen] overlay,
  * mirroring the web-layer secret-portal toggle pattern.
  */
 class MainActivity : AppCompatActivity() {
@@ -45,8 +45,13 @@ class MainActivity : AppCompatActivity() {
      */
     override fun onKeyDown(keyCode: Int, event: KeyEvent): Boolean {
         if (keyCode == KeyEvent.KEYCODE_S && event.isShiftPressed && event.isAltPressed) {
-            secretPortalVisible.value = !secretPortalVisible.value
-            Log.d(TAG, "The ritual is complete. The vault has shifted.")
+            val opening = !secretPortalVisible.value
+            secretPortalVisible.value = opening
+            if (opening) {
+                Log.d(TAG, "The ritual is complete. The vault has shifted.")
+            } else {
+                Log.d(TAG, "The vault has been sealed.")
+            }
             return true
         }
         return super.onKeyDown(keyCode, event)

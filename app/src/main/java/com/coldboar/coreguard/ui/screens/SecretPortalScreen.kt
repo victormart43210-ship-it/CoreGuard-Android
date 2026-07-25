@@ -46,7 +46,7 @@ fun SecretPortalScreen(onDismiss: () -> Unit) {
         ) {
             Icon(
                 imageVector = Icons.Filled.Close,
-                contentDescription = "Close vault",
+                contentDescription = "Close secret portal",
                 tint = MutedText
             )
         }
