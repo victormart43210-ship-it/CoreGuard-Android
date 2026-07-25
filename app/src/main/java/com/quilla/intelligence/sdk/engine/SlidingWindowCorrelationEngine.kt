@@ -6,6 +6,8 @@ import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.model.StixIndicator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.json.JSONObject
 
 /**
@@ -57,9 +59,12 @@ class SlidingWindowCorrelationEngine(
         private const val STIX_THRESHOLD = 0.70f
     }
 
-    private val lock = Any()
+    private val mutex = Mutex()
     private val eventWindows = mutableMapOf<String, MutableList<RawEvent>>()
-    private val activeStixIndicators = mutableListOf<StixIndicator>()
+
+    /** Replaced atomically on each [syncThreatFeeds] call; reads never need a lock. */
+    @Volatile
+    private var activeStixIndicators: List<StixIndicator> = emptyList()
 
     private val _threatEvents = MutableSharedFlow<QuillaHypothesisEntity>()
 
@@ -75,10 +80,7 @@ class SlidingWindowCorrelationEngine(
      */
     fun syncThreatFeeds() {
         val fetched = stixFetcher.fetchAllSources()
-        synchronized(lock) {
-            activeStixIndicators.clear()
-            activeStixIndicators.addAll(fetched)
-        }
+        activeStixIndicators = fetched.toList()
     }
 
     /**
@@ -94,7 +96,7 @@ class SlidingWindowCorrelationEngine(
         val eventTime = event.timestamp
         val cutoff = eventTime - WINDOW_MS
 
-        synchronized(lock) {
+        mutex.withLock {
             val window = eventWindows.getOrPut(event.packageName) { mutableListOf() }
             window.removeAll { it.timestamp < cutoff }
             window.add(event)
@@ -111,7 +113,7 @@ class SlidingWindowCorrelationEngine(
     // ── Private helpers ───────────────────────────────────────────────────────
 
     private suspend fun evaluateWindow(packageName: String) {
-        val window = synchronized(lock) {
+        val window = mutex.withLock {
             eventWindows[packageName]?.toList() ?: return
         }
 
@@ -134,10 +136,8 @@ class SlidingWindowCorrelationEngine(
         val dest = parseDestination(networkEvent.detail)
         val now = System.currentTimeMillis()
 
-        val matched = synchronized(lock) {
-            activeStixIndicators.find {
-                it.patternValue.equals(dest, ignoreCase = true) && it.ttlTimestamp > now
-            }
+        val matched = activeStixIndicators.find {
+            it.patternValue.equals(dest, ignoreCase = true) && it.ttlTimestamp > now
         } ?: return false
 
         val hasDcl = window.any { it.type == "RASP_DCL" }
