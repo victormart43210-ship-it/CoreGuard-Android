@@ -53,6 +53,7 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.PurchaseResult
+import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -61,7 +62,10 @@ import kotlinx.coroutines.delay
 @Composable
 fun SettingsScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
-    onNavigateToPrivacyPolicy: () -> Unit = {}
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToScanner: () -> Unit = {},
+    onNavigateToShield: () -> Unit = {},
+    onNavigateToTimeline: () -> Unit = {}
 ) {
     var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
@@ -179,7 +183,7 @@ fun SettingsScreen(
                     )
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        "Quilla Intelligence",
+                        "Ultimate Quilla Agent",
                         style = MaterialTheme.typography.titleMedium,
                         color = ElectricTeal,
                         modifier = Modifier.weight(1f)
@@ -193,7 +197,8 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Ask questions about threat signals and security intelligence.",
+                        "Ultimate Quilla Agent — Brain, Memory, Research, Actions, and Tools " +
+                            "working together on-device.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -201,7 +206,12 @@ fun SettingsScreen(
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaPanel(modifier = Modifier.padding(top = 8.dp))
+            QuillaAgentPanel(
+                modifier = Modifier.padding(top = 8.dp),
+                onRunScan = onNavigateToScanner,
+                onOpenShield = onNavigateToShield,
+                onOpenTimeline = onNavigateToTimeline
+            )
         }
 
         Spacer(Modifier.height(16.dp))
@@ -289,87 +299,3 @@ private fun SettingsRow(label: String, value: String) {
         Text(text = value, style = MaterialTheme.typography.bodyMedium)
     }
 }
-
-private const val QUILLA_RESPONSE_DELAY_MS = 900L
-
-private fun quillaResponse(prompt: String): String =
-    "Quilla hears you: \"$prompt\". Threat correlation focus is active."
-
-@Composable
-private fun QuillaPanel(modifier: Modifier = Modifier) {
-    var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
-    var isAsking by remember { mutableStateOf(false) }
-    var pendingPrompt by remember { mutableStateOf<String?>(null) }
-    val hasQuestion = question.isNotBlank()
-
-    LaunchedEffect(pendingPrompt) {
-        val prompt = pendingPrompt ?: return@LaunchedEffect
-        isAsking = true
-        answer = "Quilla is listening…"
-        delay(QUILLA_RESPONSE_DELAY_MS)
-        answer = quillaResponse(prompt)
-        isAsking = false
-        pendingPrompt = null
-    }
-
-    val faceScale by animateFloatAsState(
-        targetValue = if (isAsking) 1.3f else 1f,
-        animationSpec = tween(durationMillis = 450),
-        label = "quillaFaceScale"
-    )
-
-    Card(
-        modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(Modifier.padding(16.dp)) {
-            Text(
-                text = "◉‿◉",
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .scale(faceScale)
-                    .semantics {
-                        contentDescription = if (isAsking) "Quilla is thinking" else "Quilla face"
-                    }
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            OutlinedTextField(
-                value = question,
-                onValueChange = { question = it },
-                label = { Text("Ask Quilla about this device's security…") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(Modifier.height(8.dp))
-
-            Button(
-                onClick = {
-                    val prompt = question.trim()
-                    if (prompt.isBlank()) return@Button
-                    question = ""
-                    pendingPrompt = prompt
-                },
-                enabled = !isAsking && hasQuestion,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
-            }
-
-            Spacer(Modifier.height(8.dp))
-
-            Text(
-                text = answer,
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
-            )
-        }
-    }
-}
-

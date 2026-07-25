@@ -40,6 +40,7 @@ import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
+import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
@@ -112,11 +113,41 @@ fun CoreGuardApp(
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen()
                 }
+                composable(CoreGuardRoute.Tools.route) {
+                    ToolsScreen(
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onNavigateToShield = {
+                            navController.navigate(CoreGuardRoute.Shield.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onNavigateToTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
+                        }
+                    )
+                }
                 composable(CoreGuardRoute.Settings.route) {
                     SettingsScreen(
                         billingProvider = billingProvider,
                         onNavigateToPrivacyPolicy = {
                             navController.navigate(CoreGuardRoute.PrivacyPolicy.route)
+                        },
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onNavigateToShield = {
+                            navController.navigate(CoreGuardRoute.Shield.route) {
+                                launchSingleTop = true
+                            }
+                        },
+                        onNavigateToTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
                         }
                     )
                 }
