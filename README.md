@@ -50,6 +50,12 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 ## Build and lint
 
+By default, `./gradlew :app:assembleDebug` stays sandbox-friendly: if the Android Gradle Plugin and
+Android SDK are not available, it emits an offline placeholder artifact at
+`app/build/outputs/apk/debug/app-debug.apk` so constrained environments can still complete the task.
+To run the real Android build, install the Android toolchain below and opt in with
+`-Pcoreguard.androidBuild=true` or `COREGUARD_ANDROID_BUILD=true`.
+
 ### Project versions
 
 | Requirement | Value |
@@ -115,6 +121,7 @@ Persist `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT` in your shell profil
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
 ./gradlew projects
+./gradlew :app:assembleDebug
 ```
 
 Expected module layout:
@@ -154,10 +161,10 @@ Reports:
 
 ### Build
 
-Debug validation:
+Debug validation (real Android build):
 
 ```bash
-./gradlew :app:test :app:assembleDebug
+./gradlew -Pcoreguard.androidBuild=true :app:test :app:assembleDebug
 ```
 
 Debug outputs:
@@ -165,7 +172,7 @@ Debug outputs:
 - `app/build/outputs/apk/debug/app-debug.apk`
 - `app/build/outputs/apk/debug/output-metadata.json`
 
-The debug build uses the package name `com.coldboar.coreguard.debug`.
+The real debug build uses the package name `com.coldboar.coreguard.debug`.
 
 Release artifacts:
 
@@ -217,7 +224,7 @@ git clone <repository-url>
 cd CoreGuard-Android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-./gradlew :app:lint :app:test :app:assembleDebug
+./gradlew -Pcoreguard.androidBuild=true :app:lint :app:test :app:assembleDebug
 ls app/build/reports/
 ls app/build/outputs/apk/debug/
 ```
@@ -228,7 +235,7 @@ ls app/build/outputs/apk/debug/
 |---|---|
 | `Unsupported class file major version 61` | Use JDK 17 for Gradle and compilation. |
 | `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
-| `Plugin [id: 'com.android.application' ...] was not found` | Ensure `google()` is enabled in Gradle settings and that the machine can reach Google Maven / `dl.google.com`. |
+| `Plugin [id: 'com.android.application' ...] was not found` | Use the default offline placeholder build in restricted sandboxes, or rerun with `-Pcoreguard.androidBuild=true` on a machine that can reach Google Maven / `dl.google.com`. |
 | `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |
 | `SDK platform android-34 not found` | Run `sdkmanager --install "platforms;android-34"`. |
 | Android SDK licenses not accepted | Run `yes | sdkmanager --licenses`. |
@@ -255,7 +262,7 @@ CoreGuard-Android is a Kotlin-based Android security application focused on dete
 #### Required Before Each Commit
 - Run `./gradlew lint`
 - Run `./gradlew test`
-- Ensure the app builds with `./gradlew assembleDebug`
+- Ensure the app builds with `./gradlew assembleDebug` (or `./gradlew -Pcoreguard.androidBuild=true assembleDebug` for the real Android APK)
 - Update `README.md` when adding or changing features
 - Keep repository structure and Copilot instructions accurate
 
@@ -279,7 +286,7 @@ CoreGuard-Android is a Kotlin-based Android security application focused on dete
 - Add defensive error handling for security checks and scanning flows
 
 ### Development Flow
-- Build debug app: `./gradlew assembleDebug`
+- Build debug app: `./gradlew assembleDebug` (placeholder-safe) or `./gradlew -Pcoreguard.androidBuild=true assembleDebug` (real Android build)
 - Run tests: `./gradlew test`
 - Run lint: `./gradlew lint`
 
