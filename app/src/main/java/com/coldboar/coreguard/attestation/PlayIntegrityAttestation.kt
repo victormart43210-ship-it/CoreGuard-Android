@@ -88,6 +88,11 @@ class LivePlayIntegrityAttestation(
     private suspend fun attestInternal(nonce: String): AttestationResult {
         // Attempt to load the Play Integrity API via reflection so that the
         // module compiles without the SDK in the offline sandbox.
+        //
+        // Class names used below belong to the Play Core library (com.google.android.play:core).
+        // The standalone Play Integrity library (com.google.android.play:integrity:1.x) exposes
+        // the same `IntegrityManagerFactory` + `IntegrityTokenRequest` classes at the same
+        // package path. Both APIs are intentionally supported by this reflection bridge.
         val managerClass = try {
             Class.forName("com.google.android.play.core.integrity.IntegrityManagerFactory")
         } catch (_: ClassNotFoundException) {

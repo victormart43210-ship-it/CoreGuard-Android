@@ -2,6 +2,7 @@ package com.coldboar.coreguard.compliance
 
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckState
+import kotlin.math.roundToInt
 
 /**
  * OWASP Mobile Application Security Verification Standard (MASVS) v2 control
@@ -109,6 +110,9 @@ object MasvsComplianceScorer {
             )
         }
 
+        // All MASVS categories are weighted equally in the overall score. MASVS v2 does not
+        // prescribe category weights, so equal weighting is the most standards-aligned default.
+        // Per-category scores can be used by integrators who need custom weighting.
         val overall = if (categoryScores.isEmpty()) 0
         else categoryScores.sumOf { it.score } / categoryScores.size
 
@@ -128,6 +132,6 @@ object MasvsComplianceScorer {
                 SecurityCheckState.FAIL -> 0.0
             }
         }
-        return Math.round(earned / checks.size * 100).toInt()
+        return (earned / checks.size * 100).roundToInt()
     }
 }

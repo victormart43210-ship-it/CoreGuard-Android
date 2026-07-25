@@ -46,6 +46,13 @@ object BehavioralAnomalyEngine {
     /** Default polling interval for continuous memory/hook sampling. */
     const val DEFAULT_INTERVAL_MS = 10_000L
 
+    /**
+     * Thread count above which the engine records a WARN anomaly. Mirrors the
+     * default [ProcessLineageEvaluator.threadWarnThreshold] so both checks use
+     * the same threshold policy.
+     */
+    const val THREAD_WARN_THRESHOLD = 100
+
     private val _anomalies = CopyOnWriteArrayList<BehavioralAnomaly>()
 
     /** Immutable snapshot of all anomalies detected since [start] was called. */
@@ -152,9 +159,9 @@ object BehavioralAnomalyEngine {
         }
 
         val threads = parseThreads(status) ?: return
-        // On a clean app the thread count is normally below 100; above that
+        // A clean app normally has well under THREAD_WARN_THRESHOLD threads; above that
         // threshold indicates possible injection of worker threads.
-        if (threads > 100) {
+        if (threads > THREAD_WARN_THRESHOLD) {
             record(
                 checkId = "process_lineage",
                 severity = SecurityCheckState.WARN,

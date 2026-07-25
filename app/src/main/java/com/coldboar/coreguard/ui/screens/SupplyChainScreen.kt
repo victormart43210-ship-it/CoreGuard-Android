@@ -44,10 +44,11 @@ fun SupplyChainScreen() {
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
-            // Count packages for SBOM
-            val sbom = SbomGenerator(context).generate()
-            // Quick count: number of "purl" entries in the JSON is the package count
-            val count = sbom.split("\"purl\"").size - 1
+            // Parse the CycloneDX JSON to count the components array length
+            val sbomJson = SbomGenerator(context).generate()
+            val count = try {
+                org.json.JSONObject(sbomJson).getJSONArray("components").length()
+            } catch (_: Exception) { 0 }
             packageCount = count
         }
         sdkSummaries = SdkBehaviorAuditor.summaries()
@@ -65,7 +66,7 @@ fun SupplyChainScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "SBOM generation and third-party SDK behaviour auditing.",
+            text = "SBOM generation and third-party SDK behavior auditing.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
@@ -110,7 +111,7 @@ fun SupplyChainScreen() {
         ) {
             Column(Modifier.padding(16.dp)) {
                 Text(
-                    "SDK Behaviour Audit",
+                    "SDK Behavior Audit",
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricTeal
                 )

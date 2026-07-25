@@ -13,7 +13,7 @@ import org.junit.Test
  * Only the JSON serialisation is tested here; file-write requires a real Context
  * and is covered by instrumented tests.
  */
-class ComplianceReportExporterJsonTest {
+class ComplianceReportExporterTest {
 
     private val sampleResults = listOf(
         SecurityCheckResult("debugger", "Debugger Attached", SecurityCheckState.PASS, "Clean"),
