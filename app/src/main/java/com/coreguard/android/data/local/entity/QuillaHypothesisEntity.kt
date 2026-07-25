@@ -15,6 +15,11 @@ import androidx.room.PrimaryKey
  */
 @Entity(tableName = "quilla_hypotheses")
 data class QuillaHypothesisEntity(
+    /**
+     * Auto-generated primary key. The default value of 0 is a placeholder that Room
+     * replaces with the actual database-generated ID on insertion; it is never
+     * persisted as-is.
+     */
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val hypothesisType: String,
     val confidence: Float,

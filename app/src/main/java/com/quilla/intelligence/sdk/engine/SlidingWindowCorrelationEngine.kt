@@ -166,7 +166,7 @@ class SlidingWindowCorrelationEngine(
             summary = "Package $packageName matched STIX threat indicator: ${matched.patternValue}",
             evidenceJson = evidenceJson
         )
-        dao.upsertHypothesis(hypothesis)
+        dao.insertHypothesis(hypothesis)
         _threatEvents.emit(hypothesis)
         return true
     }
@@ -202,7 +202,7 @@ class SlidingWindowCorrelationEngine(
             summary = "Behavioral anomaly detected for package $packageName",
             evidenceJson = evidenceJson
         )
-        dao.upsertHypothesis(hypothesis)
+        dao.insertHypothesis(hypothesis)
         _threatEvents.emit(hypothesis)
     }
 

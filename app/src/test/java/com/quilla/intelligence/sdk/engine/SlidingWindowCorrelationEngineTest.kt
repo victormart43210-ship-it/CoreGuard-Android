@@ -75,7 +75,7 @@ class SlidingWindowCorrelationEngineTest {
         )
 
         // Verify hypothesis was saved to persistent storage
-        verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
+        verify(mockDao).insertHypothesis(hypothesisCaptor.capture())
 
         val generatedHypothesis = hypothesisCaptor.value
         assertNotNull(generatedHypothesis)
@@ -121,7 +121,7 @@ class SlidingWindowCorrelationEngineTest {
             )
         )
 
-        verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
+        verify(mockDao).insertHypothesis(hypothesisCaptor.capture())
 
         val hypothesis = hypothesisCaptor.value
         assertEquals("STIX_THREAT_MATCH", hypothesis.hypothesisType)
@@ -155,7 +155,7 @@ class SlidingWindowCorrelationEngineTest {
         )
 
         // Verify no hypothesis was generated because old event was evicted
-        verify(mockDao, never()).upsertHypothesis(any())
+        verify(mockDao, never()).insertHypothesis(any())
     }
 
     @Test
