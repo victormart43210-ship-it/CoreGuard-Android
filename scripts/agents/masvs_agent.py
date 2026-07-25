@@ -113,6 +113,11 @@ _INSECURE_STORAGE_PATTERNS = [
     (re.compile(r'getSharedPreferences[^;]*\bMODE_WORLD_READABLE\b'), "World-readable SharedPreferences violates MASVS-STORAGE-2."),
 ]
 
+# Allowlist: lines matching these patterns are Android Keystore boilerplate, not secrets.
+_KEY_SCAN_ALLOWLIST = re.compile(
+    r'(?i)(keystore|key_?alias|ANDROID_KEYSTORE|KeyStore\.getInstance|keyStore\.getEntry)'
+)
+
 
 # ---------------------------------------------------------------------------
 # Scanner helpers
@@ -132,14 +137,12 @@ def _gradle_files(root: Path) -> List[Path]:
 def scan_hardcoded_keys(root: Path, report: AgentReport):
     """MASVS-CRYPTO-1: No hard-coded cryptographic keys or secrets."""
     # Exclude test sources (test files intentionally contain known-bad patterns as fixtures).
-    # Also skip lines that are clearly Android Keystore alias declarations or comments.
-    _ALLOWLIST = re.compile(r'(?i)(keystore|key_?alias|ANDROID_KEYSTORE|KeyStore\.getInstance|keyStore\.getEntry)')
     for src in _kotlin_java_files(root, exclude_test=True):
         for lineno, line in enumerate(src.read_text(errors="replace").splitlines(), 1):
             stripped = line.strip()
             if stripped.startswith("//") or stripped.startswith("*"):
                 continue
-            if _ALLOWLIST.search(line):
+            if _KEY_SCAN_ALLOWLIST.search(line):
                 continue
             for pat in _HARDCODED_KEY_PATTERNS:
                 if pat.search(line):

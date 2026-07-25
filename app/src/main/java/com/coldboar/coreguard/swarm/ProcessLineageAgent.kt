@@ -5,6 +5,7 @@ import com.coldboar.coreguard.NativeTamperGuard
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Swarm agent that monitors the process lineage and runtime environment for
@@ -47,6 +48,10 @@ class ProcessLineageAgent(
     @Volatile private var latestSignal: SwarmSignal? = null
     @Volatile private var scheduledTask: ScheduledFuture<*>? = null
 
+    // Guards rescheduling so concurrent onCoordinatorDirective calls don't create duplicate tasks.
+    private val scheduleLock = Any()
+    private val highAlert = AtomicBoolean(false)
+
     override fun start(coordinator: SwarmCoordinator) {
         this.coordinator = coordinator
         scheduledTask = executor.scheduleWithFixedDelay(
@@ -62,9 +67,14 @@ class ProcessLineageAgent(
 
     override fun onCoordinatorDirective(directive: SwarmSignal) {
         // Increase poll frequency when a critical event arrives from a peer agent.
+        // Use scheduleLock + AtomicBoolean to prevent duplicate tasks on concurrent calls.
         if (directive.severity == SwarmSeverity.CRITICAL) {
-            scheduledTask?.cancel(false)
-            schedulePolling(pollIntervalMs / 2)
+            synchronized(scheduleLock) {
+                if (!highAlert.getAndSet(true)) {
+                    scheduledTask?.cancel(false)
+                    schedulePolling(pollIntervalMs / 2)
+                }
+            }
         }
     }
 

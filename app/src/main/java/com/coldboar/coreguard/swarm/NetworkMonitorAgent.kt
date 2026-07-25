@@ -24,7 +24,7 @@ class NetworkMonitorAgent(
     override val agentId: String = "network-monitor",
     override val name: String = "Network Monitor Agent",
     private val suspiciousBytesThreshold: Long = 1_048_576L, // 1 MiB
-    private val pollIntervalMs: Long = 10_000L,
+    private val heartbeatIntervalMs: Long = 10_000L,
     private val executor: ScheduledExecutorService = defaultExecutor(),
 ) : SwarmAgent {
 
@@ -45,7 +45,7 @@ class NetworkMonitorAgent(
     override fun start(coordinator: SwarmCoordinator) {
         this.coordinator = coordinator
         scheduledTask = executor.scheduleWithFixedDelay(
-            ::heartbeat, 0L, pollIntervalMs, TimeUnit.MILLISECONDS
+            ::heartbeat, 0L, heartbeatIntervalMs, TimeUnit.MILLISECONDS
         )
     }
 

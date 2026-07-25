@@ -4,6 +4,7 @@ import com.coldboar.coreguard.NativeTamperGuard
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Swarm agent that monitors the integrity of the native code segment and the
@@ -44,8 +45,9 @@ class MemoryIntegrityAgent(
     @Volatile private var latestSignal: SwarmSignal? = null
     @Volatile private var scheduledTask: ScheduledFuture<*>? = null
 
-    // When the coordinator sends a directive, we increase poll frequency.
-    @Volatile private var highAlert: Boolean = false
+    // Guards the highAlert flag and task reschedule together.
+    private val alertLock = Any()
+    private val highAlert = AtomicBoolean(false)
 
     override fun start(coordinator: SwarmCoordinator) {
         this.coordinator = coordinator
@@ -60,10 +62,14 @@ class MemoryIntegrityAgent(
 
     override fun onCoordinatorDirective(directive: SwarmSignal) {
         // If another agent triggered a critical event, increase poll frequency.
-        if (directive.severity == SwarmSeverity.CRITICAL && !highAlert) {
-            highAlert = true
-            scheduledTask?.cancel(false)
-            schedulePolling(pollIntervalMs / 2)
+        // Use alertLock to prevent duplicate task creation from concurrent calls.
+        if (directive.severity == SwarmSeverity.CRITICAL) {
+            synchronized(alertLock) {
+                if (!highAlert.getAndSet(true)) {
+                    scheduledTask?.cancel(false)
+                    schedulePolling(pollIntervalMs / 2)
+                }
+            }
         }
     }
 

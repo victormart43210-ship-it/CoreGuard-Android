@@ -134,9 +134,9 @@ def check_native_strip(root: Path, report: AgentReport):
     text = _read(cmake)
     rel_path = str(cmake.relative_to(root))
 
-    # NDEBUG macro and strip flags are positive signals
+    # NDEBUG macro and visibility flag are positive signals
     has_ndebug = bool(re.search(r'NDEBUG', text))
-    has_strip = bool(re.search(r'-fvisibility=hidden|-fstack-protector-strong', text))
+    has_visibility_hidden = bool(re.search(r'-fvisibility=hidden', text))
 
     if has_ndebug:
         report.add("RASP-NATIVE", "INFO", rel_path, None, "NDEBUG macro present in CMake config. ✓")
@@ -144,9 +144,9 @@ def check_native_strip(root: Path, report: AgentReport):
         report.add("RASP-NATIVE", "WARN", rel_path, None,
                    "NDEBUG not explicitly referenced — confirm debug symbols are stripped in release.")
 
-    if has_strip:
+    if has_visibility_hidden:
         report.add("RASP-NATIVE", "INFO", rel_path, None,
-                   "-fvisibility=hidden / -fstack-protector-strong flags detected. ✓")
+                   "-fvisibility=hidden flag detected — unexported symbols are hidden from the dynamic linker. ✓")
     else:
         report.add("RASP-NATIVE", "WARN", rel_path, None,
                    "-fvisibility=hidden not found — exported symbols inflate the attack surface.")
