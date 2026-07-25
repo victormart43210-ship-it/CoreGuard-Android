@@ -29,8 +29,9 @@ if (enableAndroidBuild.getOrElse(false)) {
 
                     This sandbox cannot resolve the Android Gradle Plugin and SDK dependencies needed
                     for a real Android build. Run with -Pcoreguard.androidBuild=true (or
-                    COREGUARD_ANDROID_BUILD=true) in an Android-capable environment with JDK 17 and
-                    the Android SDK installed to produce a functional APK.
+                    COREGUARD_ANDROID_BUILD=true) in an Android-capable environment with a JDK
+                    compatible with the project's Java 17 target plus the Android SDK installed to
+                    produce a functional APK.
                 """.trimIndent()
                 zip.putNextEntry(ZipEntry("README.txt"))
                 zip.write(readme.toByteArray())

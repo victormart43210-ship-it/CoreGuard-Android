@@ -60,7 +60,7 @@ To run the real Android build, install the Android toolchain below and opt in wi
 
 | Requirement | Value |
 |---|---|
-| JDK | 17 (matches the app's Java/Kotlin target level and CI setup) |
+| JDK | Host JDK compatible with Java 17 bytecode (the task VM currently ships JDK 21) |
 | Gradle | 8.9 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
@@ -72,7 +72,7 @@ To run the real Android build, install the Android toolchain below and opt in wi
 
 ### One-time setup
 
-Use JDK 17 for Gradle and Kotlin/Java compilation because the app module targets Java 17 and CI is configured with Java 17. If your machine or task VM has multiple JDKs installed, point `JAVA_HOME` at 17 before running `./gradlew`.
+Use a host JDK that can run Gradle while targeting Java 17 bytecode; the task VM currently ships JDK 21, while CI remains pinned to Java 17 for the real Android build. If your machine or task VM has multiple JDKs installed, point `JAVA_HOME` at a compatible JDK before running `./gradlew`.
 
 macOS:
 
@@ -233,7 +233,7 @@ ls app/build/outputs/apk/debug/
 
 | Symptom | Fix |
 |---|---|
-| `Unsupported class file major version 61` | Use JDK 17 for Gradle and compilation. |
+| `Unsupported class file major version 61` | Use a host JDK compatible with the project's Java 17 target; JDK 21 works for the sandbox fallback build, while the real Android build path remains Java-17-targeted. |
 | `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
 | `Plugin [id: 'com.android.application' ...] was not found` | Use the default offline placeholder build in restricted sandboxes, or rerun with `-Pcoreguard.androidBuild=true` on a machine that can reach Google Maven / `dl.google.com`. |
 | `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |

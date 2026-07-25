@@ -71,6 +71,7 @@ android {
         kotlinCompilerExtensionVersion "1.5.15"
     }
 
+    // Keep app bytecode on Java 17 even when Gradle itself runs on a newer host JDK.
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
