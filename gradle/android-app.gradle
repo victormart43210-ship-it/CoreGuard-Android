@@ -28,16 +28,16 @@ android {
 
     def storeFile = System.getenv("SIGNING_STORE_FILE")
     def storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    def keyAlias = System.getenv("SIGNING_KEY_ALIAS")
-    def keyPass = System.getenv("SIGNING_KEY_PASSWORD")
+    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS")
+    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD")
 
-    if (storeFile != null && storePass != null && keyAlias != null && keyPass != null) {
+    if (storeFile != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
         signingConfigs {
             release {
                 storeFile file(storeFile)
                 storePassword storePass
-                keyAlias keyAlias
-                keyPassword keyPass
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPass
             }
         }
     }
