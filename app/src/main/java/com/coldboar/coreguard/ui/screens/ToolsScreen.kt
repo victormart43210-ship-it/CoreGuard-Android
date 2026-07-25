@@ -28,6 +28,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -36,6 +37,10 @@ import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+
+private const val QUILLA_RESPONSE_DELAY_MS = 900L
+private const val EYE_PATTERN_ROWS = 3
+private const val EYE_PATTERN_TEXT = "👁   👁   👁   👁   👁"
 
 @Composable
 fun ToolsScreen() {
@@ -116,9 +121,9 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                         .alpha(0.18f),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
-                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
-                    Text("👁   👁   👁   👁   👁", style = MaterialTheme.typography.headlineLarge)
+                    repeat(EYE_PATTERN_ROWS) {
+                        Text(EYE_PATTERN_TEXT, style = MaterialTheme.typography.headlineLarge)
+                    }
                 }
             }
 
@@ -139,6 +144,13 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                         .align(Alignment.CenterHorizontally)
                         .size(96.dp)
                         .scale(faceScale)
+                        .semantics {
+                            contentDescription = if (isAsking) {
+                                "Quilla is thinking"
+                            } else {
+                                "Quilla face"
+                            }
+                        }
                 )
 
                 Spacer(Modifier.height(12.dp))
@@ -159,7 +171,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                         isAsking = true
                         answer = "Quilla is listening…"
                         scope.launch {
-                            delay(900)
+                            delay(QUILLA_RESPONSE_DELAY_MS)
                             answer = "Quilla hears you: \"$prompt\". Threat correlation focus is active."
                             isAsking = false
                         }
