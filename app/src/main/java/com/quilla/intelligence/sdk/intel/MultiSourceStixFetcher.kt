@@ -12,6 +12,9 @@ interface MultiSourceStixFetcher {
     /**
      * Fetches and returns the merged list of [StixIndicator] records from all
      * configured sources. Must be called on a background thread.
+     *
+     * Implementations must handle network and parse errors internally and return
+     * an empty list rather than propagating exceptions to the caller.
      */
     fun fetchAllSources(): List<StixIndicator>
 }

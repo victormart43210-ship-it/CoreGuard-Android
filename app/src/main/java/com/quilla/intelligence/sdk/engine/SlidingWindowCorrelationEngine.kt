@@ -90,6 +90,9 @@ class SlidingWindowCorrelationEngine(
      * A [QuillaHypothesisEntity] is persisted via [dao] and emitted on [threatEvents]
      * when a detection threshold is crossed.
      *
+     * The function is marked `suspend` because [MutableSharedFlow.emit] is a
+     * suspend call that back-pressures the caller when no collectors are active.
+     *
      * @param event The telemetry event to ingest.
      */
     suspend fun pushEvent(event: RawEvent) {
