@@ -87,15 +87,18 @@
     <!-- Paywall -->
     <string name="paywall_title">Upgrade to Premium</string>
     <string name="paywall_headline">CoreGuard Premium</string>
-    <string name="paywall_description">Stay ahead of spyware. Private. Always guarded.</string>
-    <string name="paywall_benefit_1">Automated daily security scans</string>
-    <string name="paywall_benefit_2">Threat report export — share findings with your team</string>
-    <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
+    <string name="paywall_description">Core scan + shield stay free. Premium unlocks the full operating toolkit.</string>
+    <string name="paywall_benefit_1">Live threat signature refresh before you rescan</string>
+    <string name="paywall_benefit_2">Compliance JSON export for your notes or review</string>
+    <string name="paywall_benefit_3">Longer scan timeline + deeper Quilla coaching</string>
     <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
-    <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
+    <string name="paywall_demo_disclaimer">Payment and cancellation are handled by Google Play Billing.</string>
     <string name="paywall_btn_subscribe">Subscribe</string>
+    <string name="paywall_btn_subscribe_priced">Subscribe · %1$s</string>
     <string name="paywall_btn_close">Not now</string>
-    <string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string>
+    <string name="paywall_already_premium">Premium is already active on this account.</string>
+    <string name="paywall_purchase_success">Premium unlocked — thank you!</string>
+    <string name="paywall_purchase_success_demo">Demo purchase simulated. No real payment was made.</string>
     <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
     <string name="paywall_purchase_error">Error: %1$s</string>
 

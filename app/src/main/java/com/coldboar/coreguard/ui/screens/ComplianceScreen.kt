@@ -23,6 +23,7 @@ import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,13 +37,18 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.SecurityCheckResult
+import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.compliance.ComplianceReportExporter
 import com.coldboar.coreguard.compliance.MasvsCategory
 import com.coldboar.coreguard.compliance.MasvsCategoryScore
 import com.coldboar.coreguard.compliance.MasvsComplianceReport
 import com.coldboar.coreguard.compliance.MasvsComplianceScorer
+import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -50,12 +56,30 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
 @Composable
-fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
+fun ComplianceScreen(
+    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    onUpgrade: () -> Unit = {},
+    securityResults: List<SecurityCheckResult>? = null
+) {
     val context = LocalContext.current
-    val report = remember(securityResults) { MasvsComplianceScorer.score(securityResults) }
+    val policy = remember(billingProvider.isPremium()) { EntitlementPolicy(billingProvider) }
+    var loadedResults by remember { mutableStateOf(securityResults.orEmpty()) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
+    var showUpsell by remember { mutableStateOf(false) }
+
+    LaunchedEffect(securityResults) {
+        if (securityResults != null) {
+            loadedResults = securityResults
+        } else {
+            loadedResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+        }
+    }
+
+    val report = remember(loadedResults) { MasvsComplianceScorer.score(loadedResults) }
 
     Column(
         modifier = Modifier
@@ -69,24 +93,21 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "OWASP MASVS v2 scoring and attack surface overview.",
+            text = "OWASP MASVS v2 scoring and attack surface overview. Scores are free; JSON export is Premium.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
 
         Spacer(Modifier.height(24.dp))
 
-        // Overall score banner
         OverallScoreBanner(report.overallScore)
 
         Spacer(Modifier.height(16.dp))
 
-        // Visual attack surface map
         AttackSurfaceMap(report)
 
         Spacer(Modifier.height(16.dp))
 
-        // Per-category breakdown
         report.categoryScores.forEach { catScore ->
             CategoryScoreCard(catScore)
             Spacer(Modifier.height(8.dp))
@@ -94,7 +115,6 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
 
         Spacer(Modifier.height(16.dp))
 
-        // Export controls
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -102,6 +122,11 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    if (!policy.canExportReport()) {
+                        showUpsell = true
+                        exportMessage = "JSON export is a Premium unlock."
+                        return@Button
+                    }
                     val exporter = ComplianceReportExporter(context)
                     val file = exporter.exportToFile(report)
                     exportMessage = if (file != null)
@@ -111,7 +136,10 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
             ) {
-                Text("Export JSON", color = Color.Black)
+                Text(
+                    if (policy.canExportReport()) "Export JSON" else "Export JSON (Premium)",
+                    color = Color.Black
+                )
             }
         }
 
@@ -121,6 +149,15 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
                 text = msg,
                 style = MaterialTheme.typography.bodySmall,
                 color = if (msg.startsWith("Exported")) SafeGreen else AttentionAmber
+            )
+        }
+
+        if (showUpsell && !policy.isPremium()) {
+            Spacer(Modifier.height(12.dp))
+            PremiumUpsellCard(
+                title = "Export what you measured",
+                body = "Viewing scores stays free. Premium unlocks Compliance JSON export for your notes or review.",
+                onUpgrade = onUpgrade
             )
         }
 

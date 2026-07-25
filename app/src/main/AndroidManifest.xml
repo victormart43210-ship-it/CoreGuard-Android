@@ -9,6 +9,7 @@
          server/gadget on its default ports, and to forward allowed DNS queries
          from the blocker VPN. No data is sent off the device. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Foreground service hosting the always-on spyware-domain blocker VPN. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />

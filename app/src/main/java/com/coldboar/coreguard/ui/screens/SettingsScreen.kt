@@ -29,7 +29,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -47,16 +46,25 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.PurchaseResult
+import com.coldboar.coreguard.mvt.LastScan
+import com.coldboar.coreguard.mvt.ScanHistoryStore
+import com.coldboar.coreguard.mvt.ShieldState
+import com.coldboar.coreguard.quilla.QuillaSalesCoach
+import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 
 @Composable
 fun SettingsScreen(
@@ -66,6 +74,8 @@ fun SettingsScreen(
     var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
+    val priceLabel = billingProvider.premiumPriceLabel()
+    val subscribeLabel = if (priceLabel.isNotBlank()) "Subscribe · $priceLabel" else "Subscribe"
 
     Column(
         modifier = Modifier
@@ -118,7 +128,7 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock automated daily scans, threat report export, live signature updates, and priority support.",
+                        "Unlock live signature refresh, Compliance JSON export, a longer scan timeline, and deeper Quilla coaching. Core scan + shield stay free.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -132,17 +142,17 @@ fun SettingsScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = {
-                                billingProvider.launchPurchaseFlow("coreguard_premium_monthly") { result ->
+                                billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
                                     when (result) {
                                         is PurchaseResult.Success -> {
                                             isPremium = true
-                                            purchaseStatus = "✅ Premium unlocked — thank you!"
+                                            purchaseStatus = "Premium unlocked — thank you!"
                                         }
                                         is PurchaseResult.Cancelled -> {
                                             purchaseStatus = null
                                         }
                                         is PurchaseResult.Error -> {
-                                            purchaseStatus = "⚠ ${result.message}"
+                                            purchaseStatus = result.message
                                         }
                                     }
                                 }
@@ -152,9 +162,15 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
                             Spacer(Modifier.size(6.dp))
-                            Text("Subscribe", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text(subscribeLabel, color = Color.Black, fontWeight = FontWeight.Bold)
                         }
                     }
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        "Payment & cancellation are handled by Google Play.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
                 }
             }
         }
@@ -201,7 +217,24 @@ fun SettingsScreen(
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaPanel(modifier = Modifier.padding(top = 8.dp))
+            QuillaPanel(
+                isPremium = isPremium,
+                onUpgrade = {
+                    billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+                        when (result) {
+                            is PurchaseResult.Success -> {
+                                isPremium = true
+                                purchaseStatus = "Premium unlocked — thank you!"
+                            }
+                            is PurchaseResult.Cancelled -> Unit
+                            is PurchaseResult.Error -> {
+                                purchaseStatus = result.message
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.padding(top = 8.dp)
+            )
         }
 
         Spacer(Modifier.height(16.dp))
@@ -292,23 +325,43 @@ private fun SettingsRow(label: String, value: String) {
 
 private const val QUILLA_RESPONSE_DELAY_MS = 900L
 
-private fun quillaResponse(prompt: String): String =
-    "Quilla hears you: \"$prompt\". Threat correlation focus is active."
-
 @Composable
-private fun QuillaPanel(modifier: Modifier = Modifier) {
+private fun QuillaPanel(
+    isPremium: Boolean,
+    onUpgrade: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
     var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
+    var answer by remember { mutableStateOf("Ask me about scan, shield, export, signatures, timeline, or Premium.") }
+    var premiumPitch by remember { mutableStateOf<String?>(null) }
     var isAsking by remember { mutableStateOf(false) }
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
+    var timelineCount by remember { mutableStateOf(0) }
     val hasQuestion = question.isNotBlank()
 
-    LaunchedEffect(pendingPrompt) {
+    LaunchedEffect(Unit) {
+        timelineCount = withContext(Dispatchers.IO) { ScanHistoryStore.load(context).size }
+    }
+
+    LaunchedEffect(pendingPrompt, isPremium, timelineCount) {
         val prompt = pendingPrompt ?: return@LaunchedEffect
         isAsking = true
         answer = "Quilla is listening…"
+        premiumPitch = null
         delay(QUILLA_RESPONSE_DELAY_MS)
-        answer = quillaResponse(prompt)
+        val coach = QuillaSalesCoach.answer(
+            prompt,
+            QuillaSalesCoach.DeviceContext(
+                isPremium = isPremium,
+                lastScan = LastScan.report,
+                timelineCount = timelineCount,
+                shieldActive = ShieldState.isActive,
+                shieldBlocked = ShieldState.totalBlocked
+            )
+        )
+        answer = coach.text
+        premiumPitch = if (coach.suggestPremium) coach.premiumPitch else null
         isAsking = false
         pendingPrompt = null
     }
@@ -324,7 +377,7 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         shape = RoundedCornerShape(12.dp)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(modifier.padding(16.dp)) {
             Text(
                 text = "◉‿◉",
                 style = MaterialTheme.typography.displaySmall,
@@ -337,7 +390,7 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
                     }
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier.height(8.dp))
 
             OutlinedTextField(
                 value = question,
@@ -347,7 +400,7 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
                 singleLine = true
             )
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier.height(8.dp))
 
             Button(
                 onClick = {
@@ -362,14 +415,24 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
                 Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
             }
 
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier.height(8.dp))
 
             Text(
                 text = answer,
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
+
+            premiumPitch?.let { pitch ->
+                if (!isPremium) {
+                    Spacer(modifier.height(12.dp))
+                    PremiumUpsellCard(
+                        title = "Quilla recommends Premium",
+                        body = pitch,
+                        onUpgrade = onUpgrade
+                    )
+                }
+            }
         }
     }
 }
-
