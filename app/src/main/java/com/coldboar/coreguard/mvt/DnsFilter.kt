@@ -48,11 +48,13 @@ object DnsMessage {
         val questionEnd = findQuestionEnd(query)
         val len = questionEnd.coerceAtMost(query.size)
         val out = query.copyOf(len)
-        // Flags: QR=1 (response), keep opcode + RD from request, RA=1, RCODE=3.
-        val rd = (query.getOrElse(2) { 0 }.toInt() and 0x01)
-        out[2] = ((0x80) or (rd)).toByte()   // QR=1, RD copied
-        out[3] = ((0x80) or 0x03).toByte()   // RA=1, RCODE=3 (NXDOMAIN)
-        // ancount / nscount / arcount = 0; qdcount left as-is.
+        // Flags: QR=1 (response), echo OPCODE + RD from request, RA=1, RCODE=3 (NXDOMAIN).
+        val byte2 = query.getOrElse(2) { 0 }.toInt()
+        val opcode = byte2 and 0x78      // bits 6..3 of byte 2 carry the 4-bit OPCODE
+        val rd     = byte2 and 0x01      // bit 0 is the RD (recursion desired) flag
+        out[2] = (0x80 or opcode or rd).toByte()   // QR=1, OPCODE and RD preserved
+        out[3] = (0x80 or 0x03).toByte()           // RA=1, RCODE=3 (NXDOMAIN)
+        // Answer / authority / additional counts = 0; qdcount unchanged.
         out[6] = 0; out[7] = 0
         out[8] = 0; out[9] = 0
         out[10] = 0; out[11] = 0

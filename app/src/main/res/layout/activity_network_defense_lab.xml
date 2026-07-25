@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="12dp"
+    tools:context=".lab.NetworkDefenseLabActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/lab_title"
+        android:textAppearance="?attr/textAppearanceHeadline6" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:text="@string/lab_disclaimer"
+        android:textAppearance="?attr/textAppearanceCaption" />
+
+    <com.coldboar.coreguard.lab.TopologyView
+        android:id="@+id/topologyView"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:contentDescription="@string/lab_topology_cd" />
+
+    <TextView
+        android:id="@+id/tvLabMetrics"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:textAppearance="?attr/textAppearanceBody2"
+        tools:text="Healthy 16 · Compromised 0 · Defended 0" />
+
+    <TextView
+        android:id="@+id/tvSelectedNode"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBody2"
+        tools:text="Selected: N0" />
+
+    <TextView
+        android:id="@+id/tvLabEvent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="8dp"
+        android:maxLines="3"
+        android:textAppearance="?attr/textAppearanceCaption"
+        tools:text="Events: —" />
+
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAttackBfs"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_attack_bfs" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnAttackDfs"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_attack_dfs" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDefendDirect"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_defend_direct" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnDefendCascade"
+                style="@style/Widget.Material3.Button.TonalButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_defend_cascade" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnRollback"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_rollback" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleMst"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="6dp"
+                android:text="@string/lab_toggle_mst" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnToggleProtanopia"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/lab_toggle_protanopia" />
+        </LinearLayout>
+    </HorizontalScrollView>
+</LinearLayout>
