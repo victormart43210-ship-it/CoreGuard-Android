@@ -94,11 +94,14 @@ class PlayBillingProvider(
         billingClient.endConnection()
     }
 
+    private var reconnectDelayMs = 1_000L
+
     private fun connect() {
         billingClient.startConnection(object : BillingClientStateListener {
             override fun onBillingSetupFinished(result: BillingResult) {
                 if (result.responseCode == BillingClient.BillingResponseCode.OK) {
                     Log.d(TAG, "Billing client connected.")
+                    reconnectDelayMs = 1_000L // reset backoff on success
                     queryExistingPurchases()
                     queryProductDetails()
                 } else {
@@ -107,7 +110,15 @@ class PlayBillingProvider(
             }
 
             override fun onBillingServiceDisconnected() {
-                Log.w(TAG, "Billing service disconnected – will retry on next attach.")
+                Log.w(TAG, "Billing service disconnected – scheduling reconnect in ${reconnectDelayMs}ms.")
+                val delay = reconnectDelayMs
+                reconnectDelayMs = minOf(reconnectDelayMs * 2, 30_000L) // exponential backoff, max 30s
+                scope.launch {
+                    kotlinx.coroutines.delay(delay)
+                    if (!billingClient.isReady) {
+                        connect()
+                    }
+                }
             }
         })
     }
@@ -116,7 +127,11 @@ class PlayBillingProvider(
         val params = QueryPurchasesParams.newBuilder()
             .setProductType(BillingClient.ProductType.SUBS)
             .build()
-        billingClient.queryPurchasesAsync(params) { _, purchases ->
+        billingClient.queryPurchasesAsync(params) { billingResult, purchases ->
+            if (billingResult.responseCode != BillingClient.BillingResponseCode.OK) {
+                Log.w(TAG, "queryPurchasesAsync failed: ${billingResult.debugMessage}")
+                return@queryPurchasesAsync
+            }
             val hasActive = purchases.any { purchase ->
                 purchase.products.contains(PREMIUM_PRODUCT_ID) &&
                     purchase.purchaseState == Purchase.PurchaseState.PURCHASED
