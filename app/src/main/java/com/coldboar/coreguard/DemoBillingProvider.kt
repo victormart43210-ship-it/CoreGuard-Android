@@ -1,11 +1,10 @@
 package com.coldboar.coreguard
 
 /**
- * **DEMO ONLY** – simulates a billing backend for local development and testing.
+ * Test/preview [BillingProvider] that simulates purchases instantly.
  *
- * This implementation does not connect to Google Play Billing, does not verify
- * any real purchase token, and must not be shipped as a real billing gate.
- * Replace this with a real [BillingProvider] implementation before publishing.
+ * Production uses [PlayBillingProvider]. Keep this class for JVM unit tests and
+ * Compose previews only — never attach it as the shipped billing path.
  *
  * @param startAsPremium Initial simulated premium state. Defaults to false.
  */

@@ -3,16 +3,21 @@
 
 android {
     namespace "com.coldboar.coreguard"
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.coldboar.coreguard"
         minSdk 24
-        targetSdk 34
+        targetSdk 35
         versionCode 1
         versionName "1.0.0"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Set EXPECTED_CERT_SHA256 to the colon-hex SHA-256 of the upload/signing
+        // cert before production release (CI secret or local env). Empty = WARN.
+        def expectedCert = System.getenv("EXPECTED_CERT_SHA256") ?: ""
+        buildConfigField "String", "EXPECTED_CERT_SHA256", "\"${expectedCert}\""
 
         externalNativeBuild {
             cmake {

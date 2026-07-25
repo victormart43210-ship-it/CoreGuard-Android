@@ -118,7 +118,7 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock automated daily scans, threat report export, live signature updates, and priority support.",
+                        "Unlock MASVS / threat report export and priority signature feed refresh. Billing is handled by Google Play.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -132,7 +132,9 @@ fun SettingsScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             onClick = {
-                                billingProvider.launchPurchaseFlow("coreguard_premium_monthly") { result ->
+                                billingProvider.launchPurchaseFlow(
+                                    com.coldboar.coreguard.PlayBillingProvider.PREMIUM_PRODUCT_ID
+                                ) { result ->
                                     when (result) {
                                         is PurchaseResult.Success -> {
                                             isPremium = true

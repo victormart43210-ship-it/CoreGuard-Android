@@ -36,6 +36,10 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.EntitlementPolicy
+import com.coldboar.coreguard.R
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.compliance.ComplianceReportExporter
@@ -52,10 +56,14 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
+fun ComplianceScreen(
+    securityResults: List<SecurityCheckResult> = emptyList(),
+    billingProvider: BillingProvider = remember { DemoBillingProvider() }
+) {
     val context = LocalContext.current
     val report = remember(securityResults) { MasvsComplianceScorer.score(securityResults) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
+    val canExport = EntitlementPolicy(billingProvider).canExportReport()
 
     Column(
         modifier = Modifier
@@ -102,6 +110,10 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
             Button(
                 modifier = Modifier.weight(1f),
                 onClick = {
+                    if (!canExport) {
+                        exportMessage = context.getString(R.string.paywall_export_requires_premium)
+                        return@Button
+                    }
                     val exporter = ComplianceReportExporter(context)
                     val file = exporter.exportToFile(report)
                     exportMessage = if (file != null)
@@ -111,7 +123,10 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
                 },
                 colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
             ) {
-                Text("Export JSON", color = Color.Black)
+                Text(
+                    if (canExport) "Export JSON" else "Export JSON (Premium)",
+                    color = Color.Black
+                )
             }
         }
 

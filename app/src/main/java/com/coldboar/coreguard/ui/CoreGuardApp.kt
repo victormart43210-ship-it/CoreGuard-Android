@@ -65,7 +65,7 @@ private val bottomNavItems = listOf(
  * primary destinations. All screens are reachable through this single graph.
  *
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider The active [BillingProvider] instance. Defaults to demo mode.
+ * @param billingProvider Production [BillingProvider] from MainActivity. Demo default is for previews/tests only.
  */
 @Composable
 fun CoreGuardApp(
@@ -107,7 +107,7 @@ fun CoreGuardApp(
                     ShieldScreen()
                 }
                 composable(CoreGuardRoute.Compliance.route) {
-                    ComplianceScreen()
+                    ComplianceScreen(billingProvider = billingProvider)
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen()

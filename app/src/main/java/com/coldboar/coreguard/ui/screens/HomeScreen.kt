@@ -67,6 +67,7 @@ import com.coldboar.coreguard.RootCheckEvaluator
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.SecurityUtils
+import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.SignatureCheckEvaluator
 import com.coldboar.coreguard.SpywareScanEvaluator
 import com.coldboar.coreguard.ui.theme.AttentionAmber
@@ -98,7 +99,10 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             EmulatorCheckEvaluator(),
             RootCheckEvaluator(),
             BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { certSha256 })
+            SignatureCheckEvaluator(
+                actualSha256 = { certSha256 },
+                expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
+            )
         )
         securityResults = evaluators.map { it.evaluate() }
         scoreTarget = GuardianScore.compute(securityResults).toFloat()
