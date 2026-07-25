@@ -34,6 +34,7 @@ class SecurityDashboardActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         val results = SecurityCheckRunner.run(this)
+
         renderResults(results)
     }
 

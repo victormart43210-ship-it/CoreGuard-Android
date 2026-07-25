@@ -44,46 +44,45 @@ class SlidingWindowCorrelationEngineTest {
     }
 
     @Test
-    fun `pushEvent triggers high confidence threat hypothesis when multiple signals correlate`() =
-        runTest {
-            val targetPackage = "com.suspicious.app"
+    fun `pushEvent triggers high confidence threat hypothesis when multiple signals correlate`() = runTest {
+        val targetPackage = "com.suspicious.app"
 
-            // 1. Ingest initial dynamic code loading signal
-            engine.pushEvent(
-                RawEvent(
-                    packageName = targetPackage,
-                    type = "RASP_DCL",
-                    detail = "Loaded DEX file from /sdcard/payload.dex"
-                )
+        // 1. Ingest initial dynamic code loading signal
+        engine.pushEvent(
+            RawEvent(
+                packageName = targetPackage,
+                type = "RASP_DCL",
+                detail = "Loaded DEX file from /sdcard/payload.dex"
             )
+        )
 
-            // 2. Ingest root signal
-            engine.pushEvent(
-                RawEvent(
-                    packageName = targetPackage,
-                    type = "RASP_ROOT",
-                    detail = "su binary detected in /system/xbin"
-                )
+        // 2. Ingest root signal
+        engine.pushEvent(
+            RawEvent(
+                packageName = targetPackage,
+                type = "RASP_ROOT",
+                detail = "su binary detected in /system/xbin"
             )
+        )
 
-            // 3. Ingest network outbound signal (pushes confidence over 0.75 threshold)
-            engine.pushEvent(
-                RawEvent(
-                    packageName = targetPackage,
-                    type = "NETWORK_OUTBOUND",
-                    detail = "DEST:malicious-c2.com,UNTRUSTED_AP"
-                )
+        // 3. Ingest network outbound signal (pushes confidence over 0.75 threshold)
+        engine.pushEvent(
+            RawEvent(
+                packageName = targetPackage,
+                type = "NETWORK_OUTBOUND",
+                detail = "DEST:malicious-c2.com,UNTRUSTED_AP"
             )
+        )
 
-            // Verify hypothesis was saved to persistent storage
-            verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
+        // Verify hypothesis was saved to persistent storage
+        verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
 
-            val generatedHypothesis = hypothesisCaptor.value
-            assertNotNull(generatedHypothesis)
-            assertEquals("BEHAVIORAL_ANOMALY", generatedHypothesis.hypothesisType)
-            assertTrue(generatedHypothesis.confidence >= 0.75f)
-            assertTrue(generatedHypothesis.summary.contains(targetPackage))
-        }
+        val generatedHypothesis = hypothesisCaptor.value
+        assertNotNull(generatedHypothesis)
+        assertEquals("BEHAVIORAL_ANOMALY", generatedHypothesis.hypothesisType)
+        assertTrue(generatedHypothesis.confidence >= 0.75f)
+        assertTrue(generatedHypothesis.summary.contains(targetPackage))
+    }
 
     @Test
     fun `syncThreatFeeds matches outbound connection against STIX indicators`() = runTest {
@@ -131,34 +130,33 @@ class SlidingWindowCorrelationEngineTest {
     }
 
     @Test
-    fun `expired events outside the 5-minute window are evicted and do not trigger alert`() =
-        runTest {
-            val targetPackage = "com.innocent.app"
-            val oldTimestamp = System.currentTimeMillis() - (6 * 60 * 1000L) // 6 minutes ago
+    fun `expired events outside the 5-minute window are evicted and do not trigger alert`() = runTest {
+        val targetPackage = "com.innocent.app"
+        val oldTimestamp = System.currentTimeMillis() - (6 * 60 * 1000L) // 6 minutes ago
 
-            // Ingest stale event outside sliding window
-            engine.pushEvent(
-                RawEvent(
-                    packageName = targetPackage,
-                    type = "RASP_DCL",
-                    detail = "Old loading event",
-                    timestamp = oldTimestamp
-                )
+        // Ingest stale event outside sliding window
+        engine.pushEvent(
+            RawEvent(
+                packageName = targetPackage,
+                type = "RASP_DCL",
+                detail = "Old loading event",
+                timestamp = oldTimestamp
             )
+        )
 
-            // Ingest single fresh root event (Confidence: 0.40 + 0.20 = 0.60 < 0.75 threshold)
-            engine.pushEvent(
-                RawEvent(
-                    packageName = targetPackage,
-                    type = "RASP_ROOT",
-                    detail = "Root check",
-                    timestamp = System.currentTimeMillis()
-                )
+        // Ingest single fresh root event (Confidence: 0.40 + 0.20 = 0.60 < 0.75 threshold)
+        engine.pushEvent(
+            RawEvent(
+                packageName = targetPackage,
+                type = "RASP_ROOT",
+                detail = "Root check",
+                timestamp = System.currentTimeMillis()
             )
+        )
 
-            // Verify no hypothesis was generated because old event was evicted
-            verify(mockDao, never()).upsertHypothesis(any())
-        }
+        // Verify no hypothesis was generated because old event was evicted
+        verify(mockDao, never()).upsertHypothesis(any())
+    }
 
     @Test
     fun `threatEvents Flow emits hypothesis to active observers`() = runTest {
@@ -176,12 +174,9 @@ class SlidingWindowCorrelationEngineTest {
         engine.pushEvent(RawEvent(targetPackage, "NETWORK_OUTBOUND", "DEST:bad.com,UNTRUSTED_AP"))
 
         assertNotNull(emittedHypothesis)
-        assertEquals(
-            targetPackage,
-            emittedHypothesis?.summary?.let {
-                if (it.contains(targetPackage)) targetPackage else null
-            }
-        )
+        assertEquals(targetPackage, emittedHypothesis?.summary?.let {
+            if (it.contains(targetPackage)) targetPackage else null
+        })
 
         job.cancel()
     }
