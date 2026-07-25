@@ -48,7 +48,11 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 @Composable
-fun HomeScreen(onNavigateToScanner: () -> Unit) {
+fun HomeScreen(
+    onNavigateToScanner: () -> Unit = {},
+    onTab: (String) -> Unit = {},
+    onAction: (String) -> Unit = {}
+) {
     val context = LocalContext.current
 
     var ramText by remember { mutableStateOf("–") }

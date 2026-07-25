@@ -1,30 +1,46 @@
 package com.coldboar.coreguard.ui.theme
 
+import android.app.Activity
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
-
-private val CoreGuardColorScheme = darkColorScheme(
-    primary = ElectricTeal,
-    onPrimary = BackgroundDeepBlack,
-    secondary = ElectricCyan,
-    onSecondary = BackgroundDeepBlack,
-    tertiary = RestrainedGold,
-    background = BackgroundDeepBlack,
-    surface = SurfacePewter,
-    surfaceVariant = SurfaceMid,
-    onBackground = CoolWhite,
-    onSurface = CoolWhite,
-    onSurfaceVariant = MutedText,
-    error = HighRed,
-    onError = CoolWhite
-)
+import androidx.compose.runtime.SideEffect
+import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalView
+import androidx.core.view.WindowCompat
 
 @Composable
-fun CoreGuardTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = CoreGuardColorScheme,
-        typography = CoreGuardTypography,
-        content = content
+fun CoreGuardTheme(
+    darkTheme: Boolean = isSystemInDarkTheme(),
+    content: @Composable () -> Unit
+) {
+    val colors = darkColorScheme(
+        primary        = CyanPrimary,
+        onPrimary      = AbyssBlack,
+        secondary      = AcidGreen,
+        onSecondary    = AbyssBlack,
+        tertiary       = CyanVibrant,
+        background     = AbyssBlack,
+        onBackground   = TextHigh,
+        surface        = SurfaceNight,
+        onSurface      = TextHigh,
+        surfaceVariant = SurfaceGlassSo,
+        outline        = CyanGlow,
+        outlineVariant = SurfaceLine,
+        error          = CrimsonDanger,
+        onError        = TextHigh
     )
+
+    val view = LocalView.current
+    if (!view.isInEditMode) {
+        SideEffect {
+            val window = (view.context as Activity).window
+            window.statusBarColor = AbyssBlack.toArgb()
+            WindowCompat.getInsetsController(window, view)
+                .isAppearanceLightStatusBars = false
+        }
+    }
+
+    MaterialTheme(colorScheme = colors, typography = CoreGuardTypography, content = content)
 }

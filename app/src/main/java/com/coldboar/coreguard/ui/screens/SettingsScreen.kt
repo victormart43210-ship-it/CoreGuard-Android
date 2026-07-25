@@ -35,7 +35,7 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 
 @Composable
-fun SettingsScreen() {
+fun SettingsScreen(onTab: (String) -> Unit = {}) {
     val context = LocalContext.current
     val billing = remember { DemoBillingProvider() }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
