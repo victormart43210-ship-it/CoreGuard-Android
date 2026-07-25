@@ -2,6 +2,7 @@ package com.coldboar.coreguard.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -129,6 +130,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
 
     val faceScale by animateFloatAsState(
         targetValue = if (isAsking) QUILLA_FACE_SCALE_ASKING else QUILLA_FACE_SCALE_IDLE,
+        animationSpec = tween(durationMillis = 450),
         label = "quillaFaceScale"
     )
 
@@ -194,7 +196,6 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
-                        if (!hasQuestionText || isAsking) return@Button
                         val prompt = question.trim()
                         question = ""
                         pendingPrompt = prompt
