@@ -2,6 +2,7 @@ package com.coldboar.coreguard
 
 import android.app.Application
 import android.util.Log
+import com.coreguard.android.data.local.QuillaDatabase
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -16,6 +17,9 @@ class CoreGuardApplication : Application() {
 
     /** Lazily provisioned; exposed so security checks can report its backing. */
     val keyManager: HardwareKeyManager by lazy { HardwareKeyManager(this) }
+
+    /** Room database for Quilla Intelligence threat hypotheses. */
+    val quillaDatabase: QuillaDatabase by lazy { QuillaDatabase.getInstance(this) }
 
     override fun onCreate() {
         super.onCreate()
