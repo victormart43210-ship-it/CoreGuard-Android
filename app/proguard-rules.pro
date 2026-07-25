@@ -43,6 +43,12 @@
 -renamesourcefileattribute SourceFile
 
 # ---------------------------------------------------------------------------
+# Google Play Billing Library
+# ---------------------------------------------------------------------------
+-keep class com.android.billingclient.** { *; }
+-keepclassmembers class com.android.billingclient.** { *; }
+
+# ---------------------------------------------------------------------------
 # Kotlin metadata – needed by kotlin-reflect and some Compose internals.
 # ---------------------------------------------------------------------------
 -keep class kotlin.Metadata { *; }

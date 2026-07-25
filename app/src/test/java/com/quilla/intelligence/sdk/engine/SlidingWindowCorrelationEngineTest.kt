@@ -14,14 +14,13 @@ import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
-import org.mockito.ArgumentCaptor
-import org.mockito.Captor
 import org.mockito.Mock
 import org.mockito.Mockito.never
 import org.mockito.Mockito.`when`
-import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
 import org.mockito.kotlin.any
+import org.mockito.kotlin.argumentCaptor
+import org.mockito.kotlin.verify
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SlidingWindowCorrelationEngineTest {
@@ -31,9 +30,6 @@ class SlidingWindowCorrelationEngineTest {
 
     @Mock
     private lateinit var mockStixFetcher: MultiSourceStixFetcher
-
-    @Captor
-    private lateinit var hypothesisCaptor: ArgumentCaptor<QuillaHypothesisEntity>
 
     private lateinit var engine: SlidingWindowCorrelationEngine
 
@@ -46,6 +42,7 @@ class SlidingWindowCorrelationEngineTest {
     @Test
     fun `pushEvent triggers high confidence threat hypothesis when multiple signals correlate`() = runTest {
         val targetPackage = "com.suspicious.app"
+        val hypothesisCaptor = argumentCaptor<QuillaHypothesisEntity>()
 
         // 1. Ingest initial dynamic code loading signal
         engine.pushEvent(
@@ -77,7 +74,7 @@ class SlidingWindowCorrelationEngineTest {
         // Verify hypothesis was saved to persistent storage
         verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
 
-        val generatedHypothesis = hypothesisCaptor.value
+        val generatedHypothesis = hypothesisCaptor.firstValue
         assertNotNull(generatedHypothesis)
         assertEquals("BEHAVIORAL_ANOMALY", generatedHypothesis.hypothesisType)
         assertTrue(generatedHypothesis.confidence >= 0.75f)
@@ -89,6 +86,7 @@ class SlidingWindowCorrelationEngineTest {
         val targetPackage = "com.spyware.target"
         val c2Domain = "pegasus-c2-server.com"
         val now = System.currentTimeMillis()
+        val hypothesisCaptor = argumentCaptor<QuillaHypothesisEntity>()
 
         val mockIndicator = StixIndicator(
             id = "indicator--1234",
@@ -123,7 +121,7 @@ class SlidingWindowCorrelationEngineTest {
 
         verify(mockDao).upsertHypothesis(hypothesisCaptor.capture())
 
-        val hypothesis = hypothesisCaptor.value
+        val hypothesis = hypothesisCaptor.firstValue
         assertEquals("STIX_THREAT_MATCH", hypothesis.hypothesisType)
         assertTrue(hypothesis.confidence >= 0.70f)
         assertTrue(hypothesis.evidenceJson.contains(c2Domain))

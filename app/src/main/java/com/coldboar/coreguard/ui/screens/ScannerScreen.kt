@@ -33,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
 import com.coldboar.coreguard.mvt.LastScan
+import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
@@ -90,7 +91,11 @@ fun ScannerScreen() {
             onClick = {
                 isScanning = true
                 scope.launch {
-                    val report = withContext(Dispatchers.IO) { DeviceScanner.scan(context) }
+                    val report = withContext(Dispatchers.IO) {
+                        val result = DeviceScanner.scan(context)
+                        ScanHistoryStore.append(context, result)
+                        result
+                    }
                     LastScan.report = report
                     scanReport = report
                     isScanning = false

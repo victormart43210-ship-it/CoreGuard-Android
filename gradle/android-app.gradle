@@ -1,16 +1,5 @@
-buildscript {
-    repositories {
-        google()
-        mavenCentral()
-    }
-    dependencies {
-        classpath "com.android.tools.build:gradle:8.5.2"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
-    }
-}
-
-apply plugin: "com.android.application"
-apply plugin: "org.jetbrains.kotlin.android"
+// Plugin classpath + apply are owned by app/build.gradle so AGP resolves on the
+// project PluginManager. This script only configures the Android project.
 
 android {
     namespace "com.coldboar.coreguard"
@@ -99,6 +88,12 @@ android {
     kotlinOptions {
         jvmTarget = "17"
     }
+
+    // Unit tests run on the JVM without the Android framework. Stub Log/etc. and
+    // provide a real org.json implementation so JSONObject is usable in tests.
+    testOptions {
+        unitTests.returnDefaultValues = true
+    }
 }
 
 dependencies {
@@ -123,10 +118,15 @@ dependencies {
 
     implementation "androidx.biometric:biometric:1.1.0"
 
+    // Google Play Billing Library
+    implementation "com.android.billingclient:billing-ktx:7.1.1"
+
     testImplementation "junit:junit:4.13.2"
     testImplementation "org.jetbrains.kotlinx:kotlinx-coroutines-test:1.7.3"
     testImplementation "org.mockito:mockito-core:5.11.0"
     testImplementation "org.mockito.kotlin:mockito-kotlin:5.3.1"
+    // Real org.json for JVM unit tests (android.jar stubs throw by default).
+    testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
 }

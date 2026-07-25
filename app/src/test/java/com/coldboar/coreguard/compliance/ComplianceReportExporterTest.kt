@@ -52,9 +52,15 @@ class ComplianceReportExporterTest {
 
     @Test
     fun `overall score is correct`() {
+        // Overall averages every MASVS category equally — cover all of them.
         val allPassResults = listOf(
-            SecurityCheckResult("debugger", "Debugger", SecurityCheckState.PASS, ""),
-            SecurityCheckResult("strongbox", "StrongBox", SecurityCheckState.PASS, "")
+            SecurityCheckResult("strongbox", "StrongBox", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("memory_integrity", "Memory", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("play_integrity", "Play Integrity", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("spyware_scan", "Spyware", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("emulator", "Emulator", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("signature", "Signature", SecurityCheckState.PASS, ""),
+            SecurityCheckResult("debugger", "Debugger", SecurityCheckState.PASS, "")
         )
         val report = MasvsComplianceScorer.score(allPassResults)
         val json = ExporterHelper.toJson(report)
