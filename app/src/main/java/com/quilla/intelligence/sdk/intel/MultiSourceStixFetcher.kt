@@ -13,7 +13,8 @@ interface MultiSourceStixFetcher {
     /**
      * Fetches and merges indicators from all configured feeds.
      *
-     * Returns an empty list (without throwing) on any network or parse failure.
+     * Implementations must handle network and parse errors internally and return
+     * an empty list rather than propagating exceptions to the caller.
      */
     fun fetchAllSources(): List<StixIndicator>
 }

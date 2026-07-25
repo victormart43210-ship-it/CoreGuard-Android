@@ -17,9 +17,11 @@ import org.junit.Test
 import org.mockito.ArgumentCaptor
 import org.mockito.Captor
 import org.mockito.Mock
+import org.mockito.Mockito.never
 import org.mockito.Mockito.`when`
 import org.mockito.Mockito.verify
 import org.mockito.MockitoAnnotations
+import org.mockito.kotlin.any
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class SlidingWindowCorrelationEngineTest {
@@ -155,7 +157,7 @@ class SlidingWindowCorrelationEngineTest {
             )
 
             // Verify no hypothesis was generated because old event was evicted
-            verify(mockDao, org.mockito.Mockito.never()).upsertHypothesis(org.mockito.kotlin.any())
+            verify(mockDao, never()).upsertHypothesis(any())
         }
 
     @Test

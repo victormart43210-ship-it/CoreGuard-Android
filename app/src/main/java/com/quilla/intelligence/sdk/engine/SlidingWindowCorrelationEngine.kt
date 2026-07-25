@@ -53,6 +53,10 @@ class SlidingWindowCorrelationEngine(
 
     // ── Observable output ────────────────────────────────────────────────────
 
+    // extraBufferCapacity = 1 lets emit() complete immediately when there are
+    // no active collectors (fire-and-forget semantics).  Hypotheses emitted
+    // while no collector is subscribed are intentionally dropped; observers that
+    // need historical values should query the DAO directly.
     private val _threatEvents =
         MutableSharedFlow<QuillaHypothesisEntity>(extraBufferCapacity = 1)
 
@@ -89,6 +93,10 @@ class SlidingWindowCorrelationEngine(
      * Expired events (older than 5 minutes) are evicted before evaluation.
      * When a hypothesis is generated, the window for that package is cleared so
      * that subsequent events form a fresh accumulation window.
+     *
+     * The function is marked `suspend` because [MutableSharedFlow.emit] is a
+     * suspend call that may back-pressure the caller when the internal buffer is
+     * full.
      */
     suspend fun pushEvent(event: RawEvent) {
         val now = System.currentTimeMillis()
