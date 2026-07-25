@@ -41,6 +41,9 @@ import kotlinx.coroutines.launch
 private const val QUILLA_RESPONSE_DELAY_MS = 900L
 private const val EYE_PATTERN_ROWS = 3
 private const val EYE_PATTERN_TEXT = "👁   👁   👁   👁   👁"
+private const val EYE_PATTERN_ALPHA = 0.18f
+private const val QUILLA_FACE_SCALE_IDLE = 1f
+private const val QUILLA_FACE_SCALE_ASKING = 1.4f
 
 @Composable
 fun ToolsScreen() {
@@ -101,7 +104,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
     var isAsking by remember { mutableStateOf(false) }
 
     val faceScale by animateFloatAsState(
-        targetValue = if (isAsking) 1.4f else 1f,
+        targetValue = if (isAsking) QUILLA_FACE_SCALE_ASKING else QUILLA_FACE_SCALE_IDLE,
         label = "quillaFaceScale"
     )
 
@@ -118,7 +121,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                 Column(
                     modifier = Modifier
                         .matchParentSize()
-                        .alpha(0.18f),
+                        .alpha(EYE_PATTERN_ALPHA),
                     verticalArrangement = Arrangement.SpaceBetween
                 ) {
                     repeat(EYE_PATTERN_ROWS) {
