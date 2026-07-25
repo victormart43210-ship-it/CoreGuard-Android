@@ -3,6 +3,11 @@ package com.coldboar.coreguard.swarm
 /**
  * Orchestrates the on-device security agent swarm.
  *
+ * This is a **lightweight, non-LLM** coordinator for background analysis and
+ * peer handoff. Real-time RASP probes and execution-blocking checks stay in
+ * native C++ ([com.coldboar.coreguard.NativeTamperGuard] / `tamperguard.cpp`).
+ * See `docs/SWARM_ARCHITECTURE.md`.
+ *
  * Responsibilities:
  *  1. **Registration** — accepts any [SwarmAgent] implementation.
  *  2. **Broadcast routing** — when an agent emits a [SwarmSignal], the coordinator

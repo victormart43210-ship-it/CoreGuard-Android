@@ -1,5 +1,8 @@
 name: Security Swarm CI
 
+# Multi-agent CI swarm for code auditing (MASVS / vuln / RASP).
+# Architecture & use-case matrix: docs/SWARM_ARCHITECTURE.md
+#
 # ---------------------------------------------------------------------------
 # Trigger: same gates as the main Android CI, plus manual dispatch.
 # ---------------------------------------------------------------------------

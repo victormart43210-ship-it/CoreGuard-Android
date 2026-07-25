@@ -5,6 +5,11 @@
 // analyse dynamically and lets us call syscalls (ptrace) and read the process's
 // own /proc entries directly.
 //
+// Architecture note: real-time RASP belongs here — NOT in an LLM or heavy
+// on-device agent swarm. Kotlin swarm agents may poll these JNI results in the
+// background and coordinate handoff; they must not replace this hot path.
+// See docs/SWARM_ARCHITECTURE.md.
+//
 // Every function is defensive: on any error it returns a benign value so the
 // Kotlin layer degrades gracefully rather than crashing the app.
 

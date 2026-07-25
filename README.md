@@ -30,9 +30,21 @@ permits forks and redistribution — always verify origin before installing on a
 | Device RAM monitoring | Real `ActivityManager` readings |
 | CPU usage | **Simulated** (labeled in UI) |
 | Security dashboard | Local heuristic checks (debugger / root / emulator / signature) |
+| Security swarm (CI) | Python multi-agent MASVS / vuln / RASP gate — see [`docs/SWARM_ARCHITECTURE.md`](docs/SWARM_ARCHITECTURE.md) |
+| On-device RASP | Native C++ TamperGuard hot path; Kotlin swarm is background handoff only (no LLMs) |
 | Network Defense Lab | Educational 16-node BFS/DFS + defense simulation |
 | Premium unlock | **Demo only** on this branch — not Play Billing verification |
 | Companion CLI | Go/Cobra under [`cli/`](cli/) |
+
+## Security swarm architecture
+
+| Use case | Swarm? | CoreGuard approach |
+|----------|--------|--------------------|
+| Code auditing & security CI/CD | Highly recommended | Python agents in `scripts/agents/` + `security-swarm.yml` |
+| Server-side threat intelligence | Recommended | Backend correlation across installs (not in the APK hot path) |
+| Real-time on-device RASP | Not for LLM swarms | Native `tamperguard.cpp`; Kotlin agents = background analysis only |
+
+Full decision matrix and anti-patterns: [`docs/SWARM_ARCHITECTURE.md`](docs/SWARM_ARCHITECTURE.md).
 
 ## Network Defense Lab
 
