@@ -1,5 +1,7 @@
 package com.coldboar.coreguard
 
+import kotlinx.coroutines.flow.StateFlow
+
 /**
  * Contract for the app's billing/subscription backend.
  *
@@ -16,6 +18,12 @@ interface BillingProvider {
      * thread (e.g., return a cached value from a previous network call).
      */
     fun isPremium(): Boolean
+
+    /**
+     * Observable premium entitlement. UI should collect this so restore/purchase
+     * updates refresh Settings and Compliance without remounting.
+     */
+    val premiumState: StateFlow<Boolean>
 
     /**
      * Initiates the purchase flow for the given [productId].

@@ -1,5 +1,9 @@
 package com.coldboar.coreguard
 
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+
 /**
  * Test/preview [BillingProvider] that simulates purchases instantly.
  *
@@ -10,26 +14,19 @@ package com.coldboar.coreguard
  */
 class DemoBillingProvider(private var startAsPremium: Boolean = false) : BillingProvider {
 
-    private var premiumState: Boolean = startAsPremium
+    private val premium = MutableStateFlow(startAsPremium)
 
-    /**
-     * Returns the current simulated premium state.
-     * This is NOT backed by any real purchase or server verification.
-     */
-    override fun isPremium(): Boolean = premiumState
+    override val premiumState: StateFlow<Boolean> = premium.asStateFlow()
 
-    /**
-     * Simulates an instant successful purchase by flipping the internal flag.
-     * No real payment is processed.
-     */
+    override fun isPremium(): Boolean = premium.value
+
     override fun launchPurchaseFlow(productId: String, onResult: (PurchaseResult) -> Unit) {
-        // Demo: immediately "purchase" the product and report success.
-        premiumState = true
+        premium.value = true
         onResult(PurchaseResult.Success)
     }
 
     /** Resets the simulated state back to the initial value (useful in tests). */
     fun reset() {
-        premiumState = startAsPremium
+        premium.value = startAsPremium
     }
 }

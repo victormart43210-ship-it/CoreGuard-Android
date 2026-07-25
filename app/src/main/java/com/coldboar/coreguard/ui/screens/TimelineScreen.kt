@@ -16,8 +16,12 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,6 +40,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.ui.components.ScreenHeader
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -49,7 +54,7 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun TimelineScreen() {
+fun TimelineScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     var records by remember { mutableStateOf<List<ScanHistoryStore.ScanRecord>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -65,16 +70,20 @@ fun TimelineScreen() {
             .verticalScroll(rememberScrollState())
             .padding(16.dp)
     ) {
-        Text(
-            text = "Scan Timeline",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
-        )
-        Text(
-            text = "Device integrity history — every scan, timestamped.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedText
-        )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = onBack) {
+                Icon(
+                    Icons.AutoMirrored.Filled.ArrowBack,
+                    contentDescription = "Go back",
+                    tint = ElectricTeal
+                )
+            }
+            ScreenHeader(
+                title = "Scan Timeline",
+                subtitle = "Device integrity history — every scan, timestamped.",
+                modifier = Modifier.weight(1f)
+            )
+        }
 
         Spacer(Modifier.height(24.dp))
 

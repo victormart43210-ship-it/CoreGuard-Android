@@ -21,13 +21,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -72,6 +74,7 @@ import com.coldboar.coreguard.SignatureCheckEvaluator
 import com.coldboar.coreguard.SpywareScanEvaluator
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
+import com.coldboar.coreguard.ui.theme.BackgroundDeepTeal
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -90,32 +93,41 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     var cpuText by remember { mutableStateOf("Measuring…") }
     var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
     var scoreTarget by remember { mutableFloatStateOf(0f) }
+    var checksLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        val certSha256 = withContext(Dispatchers.IO) { SecurityUtils.getAppCertSha256(context) }
-        val evaluators = listOf(
-            SpywareScanEvaluator(),
-            DebuggerCheckEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(
-                actualSha256 = { certSha256 },
-                expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
+        val results = withContext(Dispatchers.IO) {
+            val certSha256 = SecurityUtils.getAppCertSha256(context)
+            val evaluators = listOf(
+                SpywareScanEvaluator(),
+                DebuggerCheckEvaluator(),
+                EmulatorCheckEvaluator(),
+                RootCheckEvaluator(),
+                BuildTypeCheckEvaluator(),
+                SignatureCheckEvaluator(
+                    actualSha256 = { certSha256 },
+                    expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
+                )
             )
-        )
-        securityResults = evaluators.map { it.evaluate() }
-        scoreTarget = GuardianScore.compute(securityResults).toFloat()
+            evaluators.map { it.evaluate() }
+        }
+        securityResults = results
+        scoreTarget = GuardianScore.compute(results).toFloat()
+        checksLoading = false
 
         CpuUsageCalculator.reset()
         while (true) {
-            val usedRam = MemoryUsageCalculator.getUsedRamBytes(context)
-            val totalRam = MemoryUsageCalculator.getTotalRamBytes(context)
-            ramText = if (usedRam != null && totalRam != null) {
-                "${MemoryUsageCalculator.formatBytes(usedRam)} / ${MemoryUsageCalculator.formatBytes(totalRam)}"
-            } else "–"
-            val cpu = CpuUsageCalculator.getUsagePercent()
-            cpuText = if (cpu != null) "$cpu%" else "Measuring…"
+            val sample = withContext(Dispatchers.IO) {
+                val usedRam = MemoryUsageCalculator.getUsedRamBytes(context)
+                val totalRam = MemoryUsageCalculator.getTotalRamBytes(context)
+                val ram = if (usedRam != null && totalRam != null) {
+                    "${MemoryUsageCalculator.formatBytes(usedRam)} / ${MemoryUsageCalculator.formatBytes(totalRam)}"
+                } else "–"
+                val cpu = CpuUsageCalculator.getUsagePercent()
+                ram to if (cpu != null) "$cpu%" else "Measuring…"
+            }
+            ramText = sample.first
+            cpuText = sample.second
             delay(2_000)
         }
     }
@@ -134,6 +146,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
+                            BackgroundDeepTeal.copy(alpha = 0.55f),
                             SurfacePewter,
                             BackgroundDeepBlack
                         )
@@ -171,7 +184,16 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     label = "scoreRing"
                 )
 
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.semantics {
+                        contentDescription = if (checksLoading) {
+                            "Guardian score loading"
+                        } else {
+                            "Guardian score $score, rank ${rank?.name ?: "unknown"}"
+                        }
+                    }
+                ) {
                     Canvas(modifier = Modifier.size(180.dp)) {
                         val strokeWidth = 14.dp.toPx()
                         val radius = (size.minDimension - strokeWidth) / 2f
@@ -181,7 +203,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                         val arcSize = Size(2 * radius, 2 * radius)
 
-                        // Track ring
                         drawArc(
                             color = Color.White.copy(alpha = 0.08f),
                             startAngle = -90f,
@@ -192,33 +213,18 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                         )
 
-                        // Score arc with glow effect
                         if (animatedProgress > 0f) {
-                            // Glow layer
                             drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0f),
-                                        ringColor.copy(alpha = 0.4f),
-                                        ringColor
-                                    )
-                                ),
+                                color = ringColor.copy(alpha = 0.25f),
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
                                 topLeft = topLeft,
                                 size = arcSize,
-                                style = Stroke(width = strokeWidth * 2.2f, cap = StrokeCap.Round)
+                                style = Stroke(width = strokeWidth * 2.1f, cap = StrokeCap.Round)
                             )
-                            // Main arc
                             drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0.3f),
-                                        ringColor.copy(alpha = 0.7f),
-                                        ringColor
-                                    )
-                                ),
+                                color = ringColor,
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
@@ -230,14 +236,22 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        Text(
-                            text = if (securityResults.isEmpty()) "–" else "$score",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 42.sp
-                            ),
-                            color = ringColor
-                        )
+                        if (checksLoading) {
+                            CircularProgressIndicator(
+                                color = ElectricTeal,
+                                modifier = Modifier.size(36.dp),
+                                strokeWidth = 3.dp
+                            )
+                        } else {
+                            Text(
+                                text = "$score",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 42.sp
+                                ),
+                                color = ringColor
+                            )
+                        }
                         Text(
                             text = "GUARDIAN",
                             style = MaterialTheme.typography.bodySmall.copy(
@@ -329,7 +343,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 modifier = Modifier.weight(1f)
             )
             HealthCard(
-                icon = { Icon(Icons.Filled.BatteryFull, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
+                icon = { Icon(Icons.Filled.Speed, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
                 label = "CPU",
                 value = cpuText,
                 modifier = Modifier.weight(1f)

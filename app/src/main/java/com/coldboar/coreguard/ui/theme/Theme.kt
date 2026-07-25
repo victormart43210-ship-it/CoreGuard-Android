@@ -25,6 +25,7 @@ fun CoreGuardTheme(content: @Composable () -> Unit) {
     MaterialTheme(
         colorScheme = CoreGuardColorScheme,
         typography = CoreGuardTypography,
+        shapes = CoreGuardShapes,
         content = content
     )
 }

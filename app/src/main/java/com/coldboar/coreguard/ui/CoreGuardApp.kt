@@ -1,6 +1,10 @@
 package com.coldboar.coreguard.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AssuredWorkload
@@ -22,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -58,6 +63,11 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
 )
 
+private val routesWithoutBottomBar = setOf(
+    CoreGuardRoute.PrivacyPolicy.route,
+    CoreGuardRoute.Timeline.route
+)
+
 /**
  * Root composable for the entire app.
  *
@@ -73,10 +83,17 @@ fun CoreGuardApp(
     billingProvider: BillingProvider = remember { DemoBillingProvider() }
 ) {
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val showBottomBar = currentRoute !in routesWithoutBottomBar
 
     Box {
         Scaffold(
-            bottomBar = { CoreGuardBottomBar(navController) },
+            bottomBar = {
+                if (showBottomBar) {
+                    CoreGuardBottomBar(navController)
+                }
+            },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             NavHost(
@@ -107,10 +124,21 @@ fun CoreGuardApp(
                     ShieldScreen()
                 }
                 composable(CoreGuardRoute.Compliance.route) {
-                    ComplianceScreen(billingProvider = billingProvider)
+                    ComplianceScreen(
+                        billingProvider = billingProvider,
+                        onNavigateToSettings = {
+                            navController.navigate(CoreGuardRoute.Settings.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(CoreGuardRoute.Timeline.route) {
-                    TimelineScreen()
+                    TimelineScreen(onBack = { navController.popBackStack() })
                 }
                 composable(CoreGuardRoute.Settings.route) {
                     SettingsScreen(
@@ -137,36 +165,48 @@ private fun CoreGuardBottomBar(navController: NavController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-        bottomNavItems.forEach { item ->
-            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.contentDescription
-                    )
-                },
-                label = { Text(item.label) },
-                selected = selected,
-                onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ElectricTeal.copy(alpha = 0.22f))
+        )
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp
+        ) {
+            bottomNavItems.forEach { item ->
+                val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = item.contentDescription
+                        )
+                    },
+                    label = {
+                        Text(item.label, style = MaterialTheme.typography.labelSmall)
+                    },
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = ElectricTeal,
-                    selectedTextColor = ElectricTeal,
-                    unselectedIconColor = MutedText,
-                    unselectedTextColor = MutedText,
-                    indicatorColor = ElectricTeal.copy(alpha = 0.15f)
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = ElectricTeal,
+                        selectedTextColor = ElectricTeal,
+                        unselectedIconColor = MutedText,
+                        unselectedTextColor = MutedText,
+                        indicatorColor = ElectricTeal.copy(alpha = 0.2f)
+                    )
                 )
-            )
+            }
         }
     }
 }
-
