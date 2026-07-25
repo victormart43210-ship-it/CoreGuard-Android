@@ -35,6 +35,11 @@ abstract class QuillaDatabase : RoomDatabase() {
         /**
          * Returns the singleton [QuillaDatabase], creating it on first access.
          *
+         * [fallbackToDestructiveMigration] is set so that any future schema version bump
+         * that lacks an explicit migration path drops and recreates the database instead of
+         * crashing. Because the threat-hypothesis data is ephemeral and can be regenerated
+         * by re-running the correlation engine, data loss on migration is acceptable.
+         *
          * @param context Any [Context]; the application context is used internally
          *   to avoid retaining Activity references across the process lifetime.
          */
@@ -44,7 +49,10 @@ abstract class QuillaDatabase : RoomDatabase() {
                     context.applicationContext,
                     QuillaDatabase::class.java,
                     DB_NAME
-                ).build().also { instance = it }
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                    .also { instance = it }
             }
     }
 }

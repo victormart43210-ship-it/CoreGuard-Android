@@ -5,6 +5,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import com.coreguard.android.data.local.entity.QuillaHypothesisEntity
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Data-access object for persisting [QuillaHypothesisEntity] records in the
@@ -22,10 +23,11 @@ abstract class QuillaLearningDao {
     abstract fun upsertHypothesis(hypothesis: QuillaHypothesisEntity)
 
     /**
-     * Returns all stored hypotheses ordered from most recent to oldest.
+     * Returns a [Flow] that emits all stored hypotheses ordered from most recent to oldest,
+     * and re-emits whenever the underlying table changes.
      */
     @Query("SELECT * FROM quilla_hypotheses ORDER BY id DESC")
-    abstract fun getAllHypotheses(): List<QuillaHypothesisEntity>
+    abstract fun getAllHypotheses(): Flow<List<QuillaHypothesisEntity>>
 
     /**
      * Removes all hypothesis records from the table.
