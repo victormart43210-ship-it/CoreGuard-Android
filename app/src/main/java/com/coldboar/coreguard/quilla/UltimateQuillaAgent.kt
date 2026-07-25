@@ -2,6 +2,7 @@ package com.coldboar.coreguard.quilla
 
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
+import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
 
 /**
  * Ultimate Quilla — a local multi-module security agent.
@@ -57,6 +58,12 @@ class UltimateQuillaAgent(
     fun classify(prompt: String): QuillaIntent {
         val p = prompt.lowercase()
         if (p.isBlank()) return QuillaIntent.CAPABILITIES
+
+        // Product-ready topics always route to Knowledge (MASVS-NETWORK, T1636, …).
+        if (QuillaReadyTopics.resolveEntryId(prompt) != null) {
+            return QuillaIntent.KNOWLEDGE
+        }
+
         return when {
             p.contains("what can you") || p.contains("capabilities") ||
                 p.contains("ultimate") || p.contains("modules") ||
@@ -73,7 +80,7 @@ class UltimateQuillaAgent(
             p.contains("timeline") || p.contains("history") || p.contains("ledger") ->
                 QuillaIntent.TIMELINE
             p.contains("nemesis") || (p.contains("scan") && !isKnowledgeHeavy(p)) ||
-                p.contains("pegasus") && p.contains("scan") ->
+                (p.contains("pegasus") && p.contains("scan")) ->
                 QuillaIntent.SCAN
             p.contains("safe") || p.contains("status") || p.contains("how am i") ||
                 p.contains("my risk") || p.contains("protect me") -> QuillaIntent.STATUS
@@ -248,16 +255,23 @@ class UltimateQuillaAgent(
             "• Actions — propose scan / shield / timeline / intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
             "I do not call ChatGPT/Claude/Zapier. I teach defense and correlate CoreGuard evidence.\n" +
-            "Ask me: \"MASVS-NETWORK\", \"T1636\", \"mobile incident triage\", \"pentest phases\"."
+            "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } + "."
     }
 
     private fun knowledgeBlurb(prompt: String, memory: QuillaMemorySnapshot): String {
         val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
         if (hits.isEmpty()) {
-            return "Knowledge found no strong codex match yet. Try a framework term " +
-                "(MASVS, MITRE technique id, phishing, TLS, incident triage) " +
-                "or ask about your device status.\n" +
+            return "Knowledge found no strong codex match yet. Try a ready prompt: " +
+                QuillaReadyTopics.suggestionPrompts().joinToString(", ") +
+                " — or ask about your device status.\n" +
                 statusBlurb(memory)
+        }
+        val primary = hits.first()
+        val readyId = QuillaReadyTopics.resolveEntryId(prompt)
+        val header = if (readyId != null && primary.entry.id == readyId) {
+            "Ready topic locked — Quilla Cyber Codex:\n\n"
+        } else {
+            "Pulling from Quilla Cyber Codex:\n\n"
         }
         val articles = hits.joinToString("\n\n—\n\n") { CyberKnowledgeBase.formatHit(it) }
         val deviceBridge = when {
@@ -268,7 +282,7 @@ class UltimateQuillaAgent(
                     (memory.lastScanDetections?.let { " ($it detections)" } ?: "") +
                     "; shield=${if (memory.shieldActive) "ON" else "OFF"}."
         }
-        return "Pulling from Quilla Cyber Codex:\n\n$articles$deviceBridge"
+        return "$header$articles$deviceBridge"
     }
 
     private fun statusBlurb(memory: QuillaMemorySnapshot): String {

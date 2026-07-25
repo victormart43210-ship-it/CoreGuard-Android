@@ -11,11 +11,14 @@
         "microphone",
         "location",
         "accessibility",
-        "notification listener"
+        "notification listener",
+        "permission hygiene",
+        "android permissions",
+        "dangerous permissions"
       ],
-      "summary": "Dangerous permissions and special access are high-value for spyware.",
-      "body": "Be skeptical of Accessibility, Notification Listener, Device Admin, and Accessibility-like overlay powers. Location, mic, camera, SMS, and contacts deserve periodic audits. Deny by default; grant temporarily.",
-      "defense": "Settings \u2192 Privacy/Permission manager. After denying, rescan with Nemesis.",
+      "summary": "Dangerous permissions and special access are high-value for spyware \u2014 audit them routinely.",
+      "body": "Android permission hygiene means least privilege in practice. High-risk special access: Accessibility (screen control/read), Notification Listener, Device Admin/owner, Display over other apps, Usage access, and VPN apps you did not intend. Dangerous runtime permissions (location, mic, camera, SMS, contacts, call log) should be temporary when possible. Review Permission manager monthly; revoke anything you do not recognize; uninstall first if an app demands Accessibility without a clear need. After denying risky access, rescan with Nemesis.",
+      "defense": "Settings \u2192 Privacy dashboard / Permission manager. Quilla tip: pair this audit with a fresh scan and Shield on hostile networks.",
       "references": [
         "https://developer.android.com/guide/topics/permissions/overview"
       ]

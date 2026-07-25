@@ -44,6 +44,7 @@ import com.coldboar.coreguard.quilla.QuillaMemoryFactory
 import com.coldboar.coreguard.quilla.QuillaModule
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
+import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -151,6 +152,38 @@ fun QuillaAgentPanel(
             Spacer(modifier = Modifier.height(8.dp))
 
             ModuleChipRow(answer)
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Text(
+                text = "Ready topics",
+                style = MaterialTheme.typography.labelLarge,
+                color = RestrainedGold
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                QuillaReadyTopics.suggestionChips().forEach { (label, prompt) ->
+                    SuggestionChip(
+                        onClick = {
+                            if (!isAsking) {
+                                question = ""
+                                pendingPrompt = prompt
+                            }
+                        },
+                        enabled = !isAsking,
+                        label = { Text(label, style = MaterialTheme.typography.labelLarge) },
+                        colors = SuggestionChipDefaults.suggestionChipColors(
+                            containerColor = RestrainedGold.copy(alpha = 0.16f),
+                            labelColor = RestrainedGold
+                        )
+                    )
+                }
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 

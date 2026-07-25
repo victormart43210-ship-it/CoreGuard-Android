@@ -33,11 +33,15 @@
         "spyware",
         "pegasus",
         "isolate",
-        "evidence"
+        "evidence",
+        "incident",
+        "mobile incident triage",
+        "incident triage",
+        "device triage"
       ],
-      "summary": "Fast steps when you suspect device compromise.",
-      "body": "1) Note symptoms and recent installs/links. 2) Run an on-device IOC/privacy scan. 3) Enable network filtering if available. 4) Change critical passwords from a clean device. 5) Revoke app sessions. 6) Preserve logs/exports before wipe. 7) Rebuild from clean backup if needed.",
-      "defense": "CoreGuard: Scanner \u2192 Shield \u2192 Compliance export (Premium) \u2192 Timeline. Quilla coaches next steps from local evidence.",
+      "summary": "Fast, ordered steps when you suspect Android device compromise.",
+      "body": "Mobile incident triage \u2014 do this in order: (1) Write down symptoms, recent installs, odd links/SMS, and when it started. (2) Isolate if needed (Airplane mode / disable Wi\u2011Fi & data) while you preserve notes. (3) Run an on-device IOC/privacy scan (CoreGuard Nemesis). (4) Enable DNS sinkhole/Shield if available. (5) From a second clean device, change critical passwords and revoke sessions. (6) Audit Accessibility, Notification Listener, Device Admin, and unknown admins. (7) Export Compliance/scan notes before any factory reset. (8) Rebuild only after evidence needs are met. CLEAN is encouraging, not a forever guarantee.",
+      "defense": "CoreGuard play: Scanner \u2192 Shield \u2192 Compliance export (Premium) \u2192 Timeline. Ask Quilla for MASVS or ATT&CK context after you have local evidence.",
       "references": [
         "https://www.amnesty.org/en/tech/"
       ]

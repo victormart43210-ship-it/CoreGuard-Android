@@ -29,10 +29,11 @@ object CyberKnowledgeBase {
         val score: Int
     )
 
-    private val state = AtomicReference(Index(emptyList(), emptyMap()))
+    private val state = AtomicReference(Index(emptyList(), emptyMap(), emptyMap()))
 
     private data class Index(
         val entries: List<Entry>,
+        val byId: Map<String, Entry>,
         val inverted: Map<String, IntArray>
     )
 
@@ -41,8 +42,10 @@ object CyberKnowledgeBase {
     fun size(): Int = state.get().entries.size
 
     fun clear() {
-        state.set(Index(emptyList(), emptyMap()))
+        state.set(Index(emptyList(), emptyMap(), emptyMap()))
     }
+
+    fun getById(id: String): Entry? = state.get().byId[id]
 
     /**
      * Parses one or more knowledge JSON documents shaped like:
@@ -96,10 +99,25 @@ object CyberKnowledgeBase {
     }
 
     fun search(query: String, limit: Int = 3): List<Hit> {
-        val qTokens = tokenize(query)
-        if (qTokens.isEmpty()) return emptyList()
         val index = state.get()
         if (index.entries.isEmpty()) return emptyList()
+
+        // Canonical ready topics always win (exact product promises).
+        QuillaReadyTopics.resolveEntryId(query)?.let { readyId ->
+            val ready = index.byId[readyId]
+            if (ready != null) {
+                val rest = rankedHits(query, index, excludeId = readyId)
+                    .take((limit - 1).coerceAtLeast(0))
+                return listOf(Hit(ready, 1_000)) + rest
+            }
+        }
+
+        return rankedHits(query, index, excludeId = null).take(limit.coerceAtLeast(1))
+    }
+
+    private fun rankedHits(query: String, index: Index, excludeId: String?): List<Hit> {
+        val qTokens = tokenize(query)
+        if (qTokens.isEmpty()) return emptyList()
 
         val scores = IntArray(index.entries.size)
         for (token in qTokens) {
@@ -108,22 +126,36 @@ object CyberKnowledgeBase {
                 scores[entryIdx] += 4
             }
         }
-        // Phrase / title boosts
-        val qLower = query.lowercase(Locale.US)
+
+        val qLower = query.trim().lowercase(Locale.US)
+        val mitreBare = Regex("^t\\d{4}$", RegexOption.IGNORE_CASE).matches(qLower)
         index.entries.forEachIndexed { i, entry ->
+            if (excludeId != null && entry.id == excludeId) {
+                scores[i] = Int.MIN_VALUE / 4
+                return@forEachIndexed
+            }
             if (entry.title.lowercase(Locale.US).contains(qLower) && qLower.length >= 4) {
                 scores[i] += 8
             }
-            if (entry.id.lowercase(Locale.US).contains(qLower.replace(" ", "-"))) {
+            val idNeedle = qLower.replace(' ', '-')
+            if (entry.id.lowercase(Locale.US).contains(idNeedle)) {
                 scores[i] += 6
             }
-            // MITRE technique id direct hit (t1636 etc.)
             for (token in qTokens) {
-                if (token.matches(Regex("t\\d{4}([a-z]|\\.\\d+)?"))) {
-                    if (entry.title.lowercase(Locale.US).startsWith(token) ||
-                        entry.id.contains(token.replace(".", "-"))
-                    ) {
+                if (token.matches(Regex("t\\d{4}(\\.\\d+)?"))) {
+                    val titleLower = entry.title.lowercase(Locale.US)
+                    if (titleLower.startsWith(token)) {
                         scores[i] += 20
+                    }
+                    if (entry.id.contains(token.replace(".", "-"))) {
+                        scores[i] += 12
+                    }
+                    // Prefer parent technique when user asks bare T1636 (not T1636.004).
+                    if (mitreBare && entry.id == "mitre-$token") {
+                        scores[i] += 40
+                    }
+                    if (mitreBare && entry.id.startsWith("mitre-$token-")) {
+                        scores[i] -= 10
                     }
                 }
             }
@@ -131,8 +163,10 @@ object CyberKnowledgeBase {
 
         return scores.withIndex()
             .filter { it.value > 0 }
-            .sortedByDescending { it.value }
-            .take(limit.coerceAtLeast(1))
+            .sortedWith(
+                compareByDescending<IndexedValue<Int>> { it.value }
+                    .thenBy { index.entries[it.index].id }
+            )
             .map { Hit(index.entries[it.index], it.value) }
     }
 
@@ -165,25 +199,39 @@ object CyberKnowledgeBase {
             tokens += entry.tags
             tokens += tokenize(entry.title)
             tokens += tokenize(entry.summary)
-            tokens += tokenize(entry.body).take(40)
+            tokens += tokenize(entry.body).take(60)
             tokens += tokenize(entry.category)
+            tokens += entry.id.lowercase(Locale.US)
             for (token in tokens) {
                 inverted.getOrPut(token) { mutableListOf() }.add(idx)
             }
         }
         return Index(
             entries = entries,
+            byId = entries.associateBy { it.id },
             inverted = inverted.mapValues { (_, v) -> v.toIntArray() }
         )
     }
 
     internal fun tokenize(text: String): List<String> {
         if (text.isBlank()) return emptyList()
-        return text.lowercase(Locale.US)
+        val cleaned = text.lowercase(Locale.US)
             .replace(Regex("[^a-z0-9.&+/\\- ]"), " ")
-            .split(Regex("\\s+"))
+        val raw = cleaned.split(Regex("\\s+"))
             .map { it.trim('-', '.', '/') }
             .filter { it.length >= 2 && it !in STOPWORDS }
+        val out = LinkedHashSet<String>()
+        for (token in raw) {
+            out += token
+            if (token.contains('-')) {
+                token.split('-').filter { it.length >= 2 && it !in STOPWORDS }.forEach { out += it }
+            }
+            if (token.contains('.')) {
+                // t1636.004 → t1636, 004 kept only if long enough
+                token.split('.').filter { it.length >= 2 && it !in STOPWORDS }.forEach { out += it }
+            }
+        }
+        return out.toList()
     }
 
     private val STOPWORDS = setOf(

@@ -198,18 +198,25 @@
       "title": "T1636 \u2014 Protected User Data",
       "category": "mitre-attack-mobile",
       "tags": [
+        "accounts",
         "att&ck",
         "attack",
+        "calendar",
+        "call log",
         "collection",
+        "contacts",
         "mitre",
+        "mitre t1636",
         "mobile",
+        "privacy",
         "protected user data",
+        "sms",
         "t1636",
         "technique"
       ],
-      "summary": "MITRE ATT&CK Mobile technique T1636: Protected User Data.",
+      "summary": "MITRE ATT&CK Mobile T1636 \u2014 adversary collection of protected user data on the device.",
       "body": "Adversaries may utilize standard operating system APIs to collect data from permission-backed data stores on a device, such as the calendar or contact list. These permissions need to be declared ahead of time. On Android, they must be included in the application\u2019s manifest. On iOS, they must be included in the application\u2019s `Info.plist` file. In almost all cases, the user is required to grant access to the data store that the application is trying to access. In recent OS versions, vendors have introduced additional privacy controls for users, such as the ability to grant permission to an application only while the application is being activel",
-      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636 is for classification \u2014 not a detection claim by itself.",
+      "defense": "T1636 is Collection of protected user data (calendar, call log, contacts, SMS, accounts, etc.). Defense: audit apps with SMS/contacts/call-log permissions, revoke unused access, run Nemesis after new installs, and treat unexpected data-access prompts as suspicious. Technique IDs classify adversary behavior \u2014 they are not a CoreGuard detection claim by themselves.",
       "references": [
         "https://attack.mitre.org/techniques/T1636"
       ]

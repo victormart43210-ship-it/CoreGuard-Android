@@ -90,11 +90,15 @@
         "https",
         "cleartext",
         "masvs-network",
-        "mitm"
+        "masvs",
+        "owasp",
+        "mitm",
+        "data in transit",
+        "network security config"
       ],
-      "summary": "Encrypt and authenticate traffic to backends.",
-      "body": "Disable cleartext by default (network security config), use modern TLS, validate certificates properly, and consider pinning for high-risk apps. Watch for debug proxies left enabled in release builds.",
-      "defense": "CoreGuard Shield DNS filtering complements, but does not replace, TLS. Scan for cleartext and review Network Security Config.",
+      "summary": "Encrypt and authenticate all app traffic to backends (data in transit).",
+      "body": "MASVS-NETWORK requires mobile apps to protect data in transit end-to-end. Practically: (1) disable cleartext HTTP via Android Network Security Config; (2) use modern TLS with proper certificate validation \u2014 never trust-all custom TrustManagers in production; (3) consider certificate/public-key pinning for high-risk apps with a safe rotation plan; (4) strip debug proxy / user-CA trust from release builds; (5) treat captive portals and hostile Wi\u2011Fi as expected adversary conditions. MASVS-NETWORK-1 covers securing traffic to current best practices; MASVS-NETWORK-2 covers verifying the identity of the remote endpoint.",
+      "defense": "CoreGuard Shield DNS filtering blocks known-bad domains but does not replace TLS. On this device: keep HTTPS-only habits, enable Shield on untrusted Wi\u2011Fi, and use Compliance to review network-related posture. If you develop apps, audit network_security_config.xml and remove cleartext/debug overrides before release.",
       "references": [
         "https://mas.owasp.org/MASVS/controls/MASVS-NETWORK/"
       ]
