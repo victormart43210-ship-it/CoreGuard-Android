@@ -75,7 +75,12 @@ fun ToolsScreen() {
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
         ) {
             Column(Modifier.padding(16.dp)) {
-                Text("Quilla", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                Text(
+                    text = "Quilla",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal,
+                    modifier = Modifier.semantics { heading() }
+                )
                 Spacer(Modifier.height(6.dp))
                 Text(
                     text = "Ask Quilla questions about threat signals and intelligence context.",
@@ -137,7 +142,8 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                 Text(
                     text = "Quilla",
                     style = MaterialTheme.typography.titleLarge,
-                    color = ElectricTeal
+                    color = ElectricTeal,
+                    modifier = Modifier.semantics { heading() }
                 )
 
                 Spacer(Modifier.height(10.dp))
