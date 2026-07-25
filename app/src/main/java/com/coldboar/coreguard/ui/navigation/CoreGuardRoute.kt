@@ -5,6 +5,7 @@ sealed class CoreGuardRoute(val route: String) {
     data object Home : CoreGuardRoute("home")
     data object Scanner : CoreGuardRoute("scanner")
     data object Timeline : CoreGuardRoute("timeline")
+    data object Tools : CoreGuardRoute("tools")
     data object Shield : CoreGuardRoute("shield")
     data object Settings : CoreGuardRoute("settings")
 }

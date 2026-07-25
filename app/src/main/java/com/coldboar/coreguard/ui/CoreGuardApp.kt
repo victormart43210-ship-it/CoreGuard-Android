@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.History
+import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.ManageSearch
 import androidx.compose.material.icons.filled.Settings
@@ -36,6 +37,7 @@ import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
+import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
@@ -50,6 +52,7 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home, "Home"),
     NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch, "Scanner"),
     NavItem(CoreGuardRoute.Timeline.route, "Timeline", Icons.Filled.History, "Timeline"),
+    NavItem(CoreGuardRoute.Tools.route, "Tools", Icons.Filled.Build, "Tools"),
     NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield, "Shield"),
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
 )
@@ -98,6 +101,9 @@ fun CoreGuardApp(
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen()
+                }
+                composable(CoreGuardRoute.Tools.route) {
+                    ToolsScreen()
                 }
                 composable(CoreGuardRoute.Shield.route) {
                     ShieldScreen()
