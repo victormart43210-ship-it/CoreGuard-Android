@@ -132,9 +132,25 @@ class PlayBillingProvider(
                 Log.w(TAG, "queryPurchasesAsync failed: ${billingResult.debugMessage}")
                 return@queryPurchasesAsync
             }
-            val hasActive = purchases.any { purchase ->
-                purchase.products.contains(PREMIUM_PRODUCT_ID) &&
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+            var hasActive = false
+            for (purchase in purchases) {
+                if (!purchase.products.contains(PREMIUM_PRODUCT_ID)) continue
+                if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) continue
+                hasActive = true
+                // Play requires acknowledgement within 3 days; catch up if a prior
+                // session purchased but never finished ack.
+                if (!purchase.isAcknowledged) {
+                    val ackParams = AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchase.purchaseToken)
+                        .build()
+                    billingClient.acknowledgePurchase(ackParams) { ackResult ->
+                        if (ackResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                            Log.d(TAG, "Backfilled purchase acknowledgement.")
+                        } else {
+                            Log.w(TAG, "Ack backfill failed: ${ackResult.debugMessage}")
+                        }
+                    }
+                }
             }
             premiumCached = hasActive
             Log.d(TAG, "Existing purchases queried – premium=$hasActive")

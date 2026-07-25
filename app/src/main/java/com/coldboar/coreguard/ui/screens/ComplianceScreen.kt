@@ -52,7 +52,10 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 @Composable
-fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
+fun ComplianceScreen(
+    securityResults: List<SecurityCheckResult> = emptyList(),
+    onNavigateToSupplyChain: () -> Unit = {}
+) {
     val context = LocalContext.current
     val report = remember(securityResults) { MasvsComplianceScorer.score(securityResults) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
@@ -73,6 +76,15 @@ fun ComplianceScreen(securityResults: List<SecurityCheckResult> = emptyList()) {
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
+
+        Spacer(Modifier.height(12.dp))
+
+        Button(
+            onClick = onNavigateToSupplyChain,
+            colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
+        ) {
+            Text("Open Supply Chain tools", color = MaterialTheme.colorScheme.onPrimary)
+        }
 
         Spacer(Modifier.height(24.dp))
 

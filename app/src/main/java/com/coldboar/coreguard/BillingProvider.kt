@@ -3,9 +3,8 @@ package com.coldboar.coreguard
 /**
  * Contract for the app's billing/subscription backend.
  *
- * Implement this interface with a real Google Play Billing implementation when
- * ready for production. The [DemoBillingProvider] is the only implementation
- * that ships in this repository; it must NOT be used as evidence of real billing.
+ * Production UI should use [PlayBillingProvider]. [DemoBillingProvider] exists
+ * only for local/unit-test flows and must never be presented as a real purchase.
  */
 interface BillingProvider {
 

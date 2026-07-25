@@ -39,6 +39,7 @@ import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
+import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -107,7 +108,14 @@ fun CoreGuardApp(
                     ShieldScreen()
                 }
                 composable(CoreGuardRoute.Compliance.route) {
-                    ComplianceScreen()
+                    ComplianceScreen(
+                        onNavigateToSupplyChain = {
+                            navController.navigate(CoreGuardRoute.SupplyChain.route)
+                        }
+                    )
+                }
+                composable(CoreGuardRoute.SupplyChain.route) {
+                    SupplyChainScreen()
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen()

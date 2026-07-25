@@ -118,7 +118,8 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock automated daily scans, threat report export, live signature updates, and priority support.",
+                        "Premium supports ongoing CoreGuard development. Current builds unlock " +
+                            "the premium badge in Settings; additional gated automations may roll out later.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
