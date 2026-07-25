@@ -3,6 +3,8 @@ package com.coldboar.coreguard.ui
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AccountTree
+import androidx.compose.material.icons.filled.AssuredWorkload
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Build
 import androidx.compose.material.icons.filled.Home
@@ -31,11 +33,13 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
+import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
+import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -54,6 +58,8 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Timeline.route, "Timeline", Icons.Filled.History, "Timeline"),
     NavItem(CoreGuardRoute.Tools.route, "Tools", Icons.Filled.Build, "Tools"),
     NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield, "Shield"),
+    NavItem(CoreGuardRoute.SupplyChain.route, "Supply", Icons.Filled.AccountTree, "Supply Chain"),
+    NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload, "Compliance"),
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
 )
 
@@ -107,6 +113,12 @@ fun CoreGuardApp(
                 }
                 composable(CoreGuardRoute.Shield.route) {
                     ShieldScreen()
+                }
+                composable(CoreGuardRoute.SupplyChain.route) {
+                    SupplyChainScreen()
+                }
+                composable(CoreGuardRoute.Compliance.route) {
+                    ComplianceScreen()
                 }
                 composable(CoreGuardRoute.Settings.route) {
                     SettingsScreen()
