@@ -21,15 +21,20 @@ class MasvsComplianceScorerTest {
 
     @Test
     fun `all PASS checks produce high score`() {
+        // Overall score averages every MASVS category equally, including empty ones.
+        // Cover all mapped categories so a full PASS suite yields a high overall.
         val checks = listOf(
+            check("strongbox", SecurityCheckState.PASS),
+            check("memory_integrity", SecurityCheckState.PASS),
+            check("play_integrity", SecurityCheckState.PASS),
+            check("spyware_scan", SecurityCheckState.PASS),
+            check("emulator", SecurityCheckState.PASS),
+            check("signature", SecurityCheckState.PASS),
             check("debugger", SecurityCheckState.PASS),
             check("frida", SecurityCheckState.PASS),
             check("hook_maps", SecurityCheckState.PASS),
             check("native_debugger", SecurityCheckState.PASS),
-            check("mount_integrity", SecurityCheckState.PASS),
-            check("memory_integrity", SecurityCheckState.PASS),
-            check("strongbox", SecurityCheckState.PASS),
-            check("signature", SecurityCheckState.PASS)
+            check("mount_integrity", SecurityCheckState.PASS)
         )
         val report = MasvsComplianceScorer.score(checks)
         assertTrue("Expected overall >= 90, got ${report.overallScore}", report.overallScore >= 90)

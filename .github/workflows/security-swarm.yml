@@ -154,6 +154,18 @@ jobs:
             /tmp/reports/masvs_report.json \
             /tmp/reports/vuln_report.json \
             /tmp/reports/rasp_report.json
+          # Persist a copy for the comment step. GITHUB_STEP_SUMMARY is
+          # per-step, so a later step cannot read this step's summary file.
+          if [ -n "${GITHUB_STEP_SUMMARY:-}" ] && [ -f "${GITHUB_STEP_SUMMARY}" ]; then
+            cp "${GITHUB_STEP_SUMMARY}" /tmp/gate_summary.md
+          fi
+          if [ ! -s /tmp/gate_summary.md ]; then
+            printf '%s\n' \
+              '## 🛡️ Security Swarm Gate' \
+              '' \
+              'No report summary available.' \
+              > /tmp/gate_summary.md
+          fi
         continue-on-error: true
 
       - name: Post PR comment with gate decision
@@ -164,14 +176,20 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+            const summaryFile = '/tmp/gate_summary.md';
             let body = '## 🛡️ Security Swarm Gate\n\nNo report summary available.';
-            if (summaryFile && fs.existsSync(summaryFile)) {
-              body = fs.readFileSync(summaryFile, 'utf8');
+            if (fs.existsSync(summaryFile)) {
+              const content = fs.readFileSync(summaryFile, 'utf8').trim();
+              if (content.length > 0) {
+                body = content;
+              }
             }
             // Truncate to GitHub comment limit (65536 chars)
             if (body.length > 65000) {
               body = body.slice(0, 65000) + '\n\n_[truncated]_';
+            }
+            if (!body || !body.trim()) {
+              body = '## 🛡️ Security Swarm Gate\n\nNo report summary available.';
             }
             await github.rest.issues.createComment({
               owner: context.repo.owner,

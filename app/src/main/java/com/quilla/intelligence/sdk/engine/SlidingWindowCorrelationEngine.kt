@@ -4,6 +4,7 @@ import com.coreguard.android.data.local.dao.QuillaLearningDao
 import com.coreguard.android.data.local.entity.QuillaHypothesisEntity
 import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.model.StixIndicator
+import kotlinx.coroutines.channels.BufferOverflow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.sync.Mutex
@@ -66,7 +67,12 @@ class SlidingWindowCorrelationEngine(
     @Volatile
     private var activeStixIndicators: List<StixIndicator> = emptyList()
 
-    private val _threatEvents = MutableSharedFlow<QuillaHypothesisEntity>()
+    // Buffer so emission never blocks the correlation pipeline when no UI
+    // collectors are subscribed (default SharedFlow suspends with 0 capacity).
+    private val _threatEvents = MutableSharedFlow<QuillaHypothesisEntity>(
+        extraBufferCapacity = 64,
+        onBufferOverflow = BufferOverflow.DROP_OLDEST
+    )
 
     /**
      * Hot flow that emits every [QuillaHypothesisEntity] at the moment it is persisted.
