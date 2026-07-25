@@ -42,7 +42,7 @@ data class AmnestyIndicator(
  *
  * @param id            STIX2 object id (e.g. "indicator--...").
  * @param sourceFeed    Human-readable feed label (e.g. "Amnesty International", "CISA KEV").
- * @param indicatorType Normalised type string: "DOMAIN", "IP", "HASH", or "GENERIC".
+ * @param indicatorType Normalized type string: "DOMAIN", "IP", "HASH", or "GENERIC".
  * @param patternValue  The extracted indicator value (domain name, IP, hash, etc.).
  * @param description   Human-readable description from the STIX2 bundle.
  * @param ttlTimestamp  Absolute epoch-ms timestamp after which this indicator should be

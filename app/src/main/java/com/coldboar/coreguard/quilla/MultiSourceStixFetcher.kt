@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.quilla
 
+import android.util.Log
 import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -22,6 +23,9 @@ class MultiSourceStixFetcher(
 ) {
 
     companion object {
+        /** Log tag for error reporting. */
+        private const val TAG = "MultiSourceStixFetcher"
+
         /** 30-day indicator TTL for rule-decay tracking. */
         private const val DEFAULT_TTL_MS = 30L * 24 * 60 * 60 * 1000
 
@@ -85,7 +89,7 @@ class MultiSourceStixFetcher(
 
             parseStixBundle(String(bytes, Charsets.UTF_8), sourceName, now)
         } catch (e: Exception) {
-            System.err.println("MultiSourceStixFetcher: fetch failed for $feedUrl: ${e.message}")
+            Log.e(TAG, "fetch failed for $feedUrl: ${e.message}", e)
             emptyList()
         } finally {
             connection.disconnect()

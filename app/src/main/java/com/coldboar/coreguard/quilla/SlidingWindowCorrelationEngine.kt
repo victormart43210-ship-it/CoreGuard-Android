@@ -138,45 +138,56 @@ class SlidingWindowCorrelationEngine(
         var matchedIoc: StixIndicator? = null
         var bytesTransferred = 0L
         var untrustedNetwork = false
+        var dynamicCodeSeen = false
+        var rootSeen = false
         val raspSignals = mutableListOf<String>()
 
         for (event in windowEvents) {
             when (event.type) {
                 "RASP_DCL" -> {
-                    score += SCORE_DYNAMIC_CODE
-                    val signal = "Dynamic Code Loading detected: ${event.detail}"
-                    reasons.add(signal)
-                    raspSignals.add(signal)
+                    if (!dynamicCodeSeen) {
+                        dynamicCodeSeen = true
+                        score += SCORE_DYNAMIC_CODE
+                        val signal = "Dynamic Code Loading detected: ${event.detail}"
+                        reasons.add(signal)
+                        raspSignals.add(signal)
+                    }
                 }
                 "RASP_ROOT" -> {
-                    score += SCORE_ROOT
-                    val signal = "Root/privilege escalation detected: ${event.detail}"
-                    reasons.add(signal)
-                    raspSignals.add(signal)
+                    if (!rootSeen) {
+                        rootSeen = true
+                        score += SCORE_ROOT
+                        val signal = "Root/privilege escalation detected: ${event.detail}"
+                        reasons.add(signal)
+                        raspSignals.add(signal)
+                    }
                 }
                 "NETWORK_OUTBOUND" -> {
-                    // Attempt to match the destination against active IOCs.
-                    val ioc = indicators.find {
-                        it.patternValue.equals(event.detail, ignoreCase = true)
-                    }
-                    if (ioc != null && matchedIoc == null) {
-                        score += SCORE_IOC_MATCH
-                        reasons.add(
-                            "Matched IOC [${ioc.sourceFeed}] ${ioc.indicatorType}: ${ioc.patternValue}"
-                        )
-                        matchedIoc = ioc
-                    }
-                    // Detail format: "<destination>|<bytes>" — bytes are optional.
+                    // Detail format: "<destination>|<bytes>" — bytes suffix is optional.
                     val parts = event.detail.split("|")
+                    val destination = parts[0]
                     if (parts.size >= 2) {
                         bytesTransferred += parts[1].toLongOrNull() ?: 0L
+                    }
+                    // Attempt to match the destination against active IOCs (one match scored).
+                    if (matchedIoc == null) {
+                        val ioc = indicators.find {
+                            it.patternValue.equals(destination, ignoreCase = true)
+                        }
+                        if (ioc != null) {
+                            score += SCORE_IOC_MATCH
+                            reasons.add(
+                                "Matched IOC [${ioc.sourceFeed}] ${ioc.indicatorType}: ${ioc.patternValue}"
+                            )
+                            matchedIoc = ioc
+                        }
                     }
                 }
                 "NETWORK_UNTRUSTED" -> {
                     if (!untrustedNetwork) {
+                        untrustedNetwork = true
                         score += SCORE_UNTRUSTED_NET
                         reasons.add("Untrusted network active: ${event.detail}")
-                        untrustedNetwork = true
                     }
                 }
             }
