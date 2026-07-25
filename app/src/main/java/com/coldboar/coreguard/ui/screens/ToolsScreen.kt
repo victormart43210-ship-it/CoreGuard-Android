@@ -200,6 +200,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                 Button(
                     onClick = {
                         val prompt = question.trim()
+                        if (prompt.isBlank()) return@Button
                         question = ""
                         pendingPrompt = prompt
                     },
