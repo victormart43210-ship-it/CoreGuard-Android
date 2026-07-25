@@ -1,0 +1,106 @@
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        classpath "com.android.tools.build:gradle:8.5.2"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
+    }
+}
+
+apply plugin: "com.android.application"
+apply plugin: "org.jetbrains.kotlin.android"
+
+android {
+    namespace "com.coldboar.coreguard"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "com.coldboar.coreguard"
+        minSdk 24
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    def storeFile = System.getenv("SIGNING_STORE_FILE")
+    def storePass = System.getenv("SIGNING_STORE_PASSWORD")
+    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS")
+    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD")
+
+    if (storeFile != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
+        signingConfigs {
+            release {
+                storeFile file(storeFile)
+                storePassword storePass
+                keyAlias signingKeyAlias
+                keyPassword signingKeyPass
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro"
+            )
+            def releaseCfg = signingConfigs.findByName("release")
+            if (releaseCfg != null) {
+                signingConfig releaseCfg
+            }
+        }
+        debug {
+            minifyEnabled false
+            applicationIdSuffix ".debug"
+        }
+    }
+
+    buildFeatures {
+        buildConfig true
+        viewBinding true
+        compose true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion "1.5.15"
+    }
+
+    // Keep app bytecode on Java 17 even when Gradle itself runs on a newer host JDK.
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = "17"
+    }
+}
+
+dependencies {
+    implementation "androidx.core:core-ktx:1.13.1"
+    implementation "androidx.appcompat:appcompat:1.7.0"
+    implementation "com.google.android.material:material:1.12.0"
+    implementation "androidx.constraintlayout:constraintlayout:2.1.4"
+    implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+
+    implementation platform("androidx.compose:compose-bom:2024.06.00")
+    implementation "androidx.compose.ui:ui"
+    implementation "androidx.compose.ui:ui-graphics"
+    implementation "androidx.compose.ui:ui-tooling-preview"
+    implementation "androidx.compose.material3:material3"
+    implementation "androidx.compose.material:material-icons-extended"
+    implementation "androidx.activity:activity-compose:1.8.2"
+    implementation "androidx.navigation:navigation-compose:2.7.7"
+
+    debugImplementation "androidx.compose.ui:ui-tooling"
+
+    testImplementation "junit:junit:4.13.2"
+    androidTestImplementation "androidx.test.ext:junit:1.2.1"
+    androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
+}

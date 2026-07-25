@@ -11,8 +11,7 @@ import java.util.concurrent.atomic.AtomicReference
  * Observable, process-wide state for the Pegasus domain-blocking shield.
  *
  * The VPN sinkhole updates these counters; the UI observes them.
- * Listener callbacks are always dispatched on the main thread so Compose
- * state can be safely written from a [Listener.onShieldStateChanged] callback.
+ * Listener callbacks are always dispatched on the main thread.
  */
 object ShieldState {
 
@@ -26,6 +25,7 @@ object ShieldState {
     private val blockedCount = AtomicInteger(0)
     private val lastBlocked = AtomicReference<String?>(null)
     private val listeners = CopyOnWriteArrayList<Listener>()
+    private val notificationPending = AtomicBoolean(false)
 
     val isActive: Boolean get() = active.get()
     val totalBlocked: Int get() = blockedCount.get()
@@ -58,9 +58,18 @@ object ShieldState {
 
     private fun notifyListeners() {
         if (Looper.myLooper() == Looper.getMainLooper()) {
+            notificationPending.set(false)
             listeners.forEach { it.onShieldStateChanged() }
-        } else {
-            mainHandler.post { listeners.forEach { it.onShieldStateChanged() } }
+            return
+        }
+
+        if (!notificationPending.compareAndSet(false, true)) {
+            return
+        }
+
+        mainHandler.post {
+            notificationPending.set(false)
+            listeners.forEach { it.onShieldStateChanged() }
         }
     }
 }
