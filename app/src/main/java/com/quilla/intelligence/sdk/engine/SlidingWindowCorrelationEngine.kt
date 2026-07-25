@@ -6,6 +6,7 @@ import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.model.StixIndicator
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import org.json.JSONObject
 
 /**
  * Real-time threat correlation engine that maintains a per-package sliding event window
@@ -149,15 +150,13 @@ class SlidingWindowCorrelationEngine(
 
         if (confidence < STIX_THRESHOLD) return false
 
-        val evidenceJson = buildString {
-            append("{")
-            append("\"packageName\":\"$packageName\"")
-            append(",\"stixMatch\":\"${matched.patternValue}\"")
-            append(",\"sourceFeed\":\"${matched.sourceFeed}\"")
-            append(",\"hasDcl\":$hasDcl")
-            append(",\"hasRoot\":$hasRoot")
-            append("}")
-        }
+        val evidenceJson = JSONObject().apply {
+            put("packageName", packageName)
+            put("stixMatch", matched.patternValue)
+            put("sourceFeed", matched.sourceFeed)
+            put("hasDcl", hasDcl)
+            put("hasRoot", hasRoot)
+        }.toString()
         val hypothesis = QuillaHypothesisEntity(
             hypothesisType = "STIX_THREAT_MATCH",
             confidence = confidence,
@@ -188,14 +187,12 @@ class SlidingWindowCorrelationEngine(
 
         if (confidence < BEHAVIORAL_THRESHOLD) return
 
-        val evidenceJson = buildString {
-            append("{")
-            append("\"packageName\":\"$packageName\"")
-            append(",\"hasDcl\":$hasDcl")
-            append(",\"hasRoot\":$hasRoot")
-            append(",\"hasUntrustedNet\":$hasUntrustedNet")
-            append("}")
-        }
+        val evidenceJson = JSONObject().apply {
+            put("packageName", packageName)
+            put("hasDcl", hasDcl)
+            put("hasRoot", hasRoot)
+            put("hasUntrustedNet", hasUntrustedNet)
+        }.toString()
         val hypothesis = QuillaHypothesisEntity(
             hypothesisType = "BEHAVIORAL_ANOMALY",
             confidence = confidence.coerceAtMost(1.0f),
