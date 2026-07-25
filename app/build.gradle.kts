@@ -12,38 +12,6 @@ fun configureAppBuild() {
     } else {
         apply(plugin = "base")
 
-<<<<<<< HEAD
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        externalNativeBuild {
-            cmake {
-                cppFlags += "-std=c++17"
-            }
-        }
-
-        ndk {
-            abiFilters += listOf("arm64-v8a", "armeabi-v7a", "x86", "x86_64")
-        }
-    }
-
-    externalNativeBuild {
-        cmake {
-            path = file("src/main/cpp/CMakeLists.txt")
-            version = "3.22.1"
-        }
-    }
-
-    ndkVersion = "26.1.10909125"
-
-    // Release signing: credentials are supplied via environment variables set by CI.
-    // Set SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, and
-    // SIGNING_KEY_PASSWORD in the build environment. If any variable is absent the
-    // release build will be unsigned (suitable for local development only).
-    val storeFile = System.getenv("SIGNING_STORE_FILE")
-    val storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    val keyAlias  = System.getenv("SIGNING_KEY_ALIAS")
-    val keyPass   = System.getenv("SIGNING_KEY_PASSWORD")
-=======
         val apkFile = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk")
         val metadataFile = layout.buildDirectory.file("outputs/apk/debug/output-metadata.json")
 
@@ -51,7 +19,6 @@ fun configureAppBuild() {
             group = BasePlugin.BUILD_GROUP
             description = "Creates an offline placeholder debug APK when Android build tooling is unavailable."
             outputs.files(apkFile, metadataFile)
->>>>>>> origin/main
 
             doLast {
                 val apk = apkFile.get().asFile
@@ -83,24 +50,8 @@ fun configureAppBuild() {
             }
         }
 
-<<<<<<< HEAD
-
-    buildTypes {
-        release {
-            isMinifyEnabled = true
-            isShrinkResources = true
-            proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
-            )
-            val releaseCfg = signingConfigs.findByName("release")
-            if (releaseCfg != null) {
-                signingConfig = releaseCfg
-            }
-=======
         tasks.named("assemble") {
             dependsOn(assembleDebug)
->>>>>>> origin/main
         }
     }
 }
