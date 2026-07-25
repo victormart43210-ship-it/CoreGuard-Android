@@ -347,7 +347,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
                 shape = RoundedCornerShape(16.dp)
             ) {
-                Column(modifier.padding(16.dp)) {
+                Column(Modifier.padding(16.dp)) {
                     Text(
                         "What to do next",
                         style = MaterialTheme.typography.titleMedium,
