@@ -1,140 +1,167 @@
 package com.coldboar.coreguard.ui.screens
 
-import android.content.Intent
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Explore
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.coldboar.coreguard.BuildConfig
-import com.coldboar.coreguard.DemoBillingProvider
-import com.coldboar.coreguard.PaywallActivity
-import com.coldboar.coreguard.PurchaseResult
-import com.coldboar.coreguard.ui.theme.ElectricTeal
-import com.coldboar.coreguard.ui.theme.MutedText
-import com.coldboar.coreguard.ui.theme.RestrainedGold
+import androidx.compose.ui.unit.sp
+import com.coldboar.coreguard.ui.components.BottomNavBar
+import com.coldboar.coreguard.ui.components.BoarEmblem
+import com.coldboar.coreguard.ui.components.CornerSigils
+import com.coldboar.coreguard.ui.components.GlassCard
+import com.coldboar.coreguard.ui.components.GlowActionButton
+import com.coldboar.coreguard.ui.components.NavTab
+import com.coldboar.coreguard.ui.components.SectionLabel
+import com.coldboar.coreguard.ui.components.StatusBar
+import com.coldboar.coreguard.ui.components.TogglePill
+import com.coldboar.coreguard.ui.nav.Routes
+import com.coldboar.coreguard.ui.theme.AbyssBlack
+import com.coldboar.coreguard.ui.theme.AcidGreen
+import com.coldboar.coreguard.ui.theme.CrimsonDanger
+import com.coldboar.coreguard.ui.theme.CrimsonGlow
+import com.coldboar.coreguard.ui.theme.CyanPrimary
+import com.coldboar.coreguard.ui.theme.CyanShadow
+import com.coldboar.coreguard.ui.theme.CyanVibrant
+import com.coldboar.coreguard.ui.theme.SurfaceGlass
+import com.coldboar.coreguard.ui.theme.TextHigh
+import com.coldboar.coreguard.ui.theme.TextLow
+import com.coldboar.coreguard.ui.theme.TextMid
 
 @Composable
-fun SettingsScreen() {
-    val context = LocalContext.current
-    val billing = remember { DemoBillingProvider() }
-    var purchaseStatus by remember { mutableStateOf<String?>(null) }
+fun SettingsScreen(onTab: (String) -> Unit) {
+    var network by remember { mutableStateOf(true) }
+    var storage by remember { mutableStateOf(true) }
+    var notifications by remember { mutableStateOf(true) }
+    var microphone by remember { mutableStateOf(false) }
+    var biometric by remember { mutableStateOf(true) }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
-        )
+    Box(Modifier.fillMaxSize().background(AbyssBlack)) {
+        CornerSigils()
+        Column(Modifier.fillMaxSize().padding(horizontal = 18.dp)) {
+            StatusBar()
+            Spacer(Modifier.height(8.dp))
+            Text("Settings", color = TextHigh, fontSize = 22.sp, fontWeight = FontWeight.Bold)
 
-        Spacer(Modifier.height(20.dp))
-
-        // Subscription section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("CoreGuard Premium", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "Unlock advanced monitoring, threat export, and priority support.",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    "⚠️ DEMO BUILD: No real payment is processed.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-
-                purchaseStatus?.let { status ->
-                    Spacer(Modifier.height(4.dp))
-                    Text(status, style = MaterialTheme.typography.bodySmall, color = ElectricTeal)
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                Button(
-                    onClick = {
-                        billing.launchPurchaseFlow("coreguard_premium_monthly") { result ->
-                            purchaseStatus = when (result) {
-                                is PurchaseResult.Success -> "✅ Demo purchase simulated. No real payment was made."
-                                is PurchaseResult.Cancelled -> "Purchase cancelled."
-                                is PurchaseResult.Error -> "Error: ${result.message}"
-                            }
+            Spacer(Modifier.height(12.dp))
+            GlassCard(accentTint = CyanPrimary) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    BoarEmblem(sizeDp = 64.dp, withRunes = false)
+                    Spacer(Modifier.width(14.dp))
+                    Column {
+                        Text(
+                            "Coldboar User", color = TextHigh,
+                            fontSize = 15.sp, fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        Box(
+                            Modifier
+                                .clip(RoundedCornerShape(8.dp))
+                                .background(SurfaceGlass)
+                                .border(0.6.dp, CyanShadow, RoundedCornerShape(8.dp))
+                                .padding(horizontal = 8.dp, vertical = 3.dp)
+                        ) {
+                            Text("Free Plan", color = TextMid, fontSize = 10.sp)
                         }
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = RestrainedGold)
-                ) {
-                    Text("Subscribe (Demo)", color = Color.Black)
-                }
-
-                Spacer(Modifier.height(8.dp))
-
-                OutlinedButton(
-                    onClick = { context.startActivity(Intent(context, PaywallActivity::class.java)) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("View Upgrade Screen")
+                    }
+                    Spacer(Modifier.weight(1f))
+                    Box(
+                        Modifier
+                            .clip(RoundedCornerShape(14.dp))
+                            .background(Brush.horizontalGradient(listOf(CyanVibrant, AcidGreen)))
+                            .clickable { onTab(Routes.PREMIUM) }
+                            .padding(horizontal = 12.dp, vertical = 6.dp)
+                    ) {
+                        Text("Upgrade", color = AbyssBlack, fontSize = 11.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
-        }
 
-        Spacer(Modifier.height(16.dp))
-
-        // About section
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-        ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("About", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                SettingsRow(label = "Version", value = BuildConfig.VERSION_NAME)
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                SettingsRow(label = "Build type", value = if (BuildConfig.DEBUG) "Debug" else "Release")
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
-                Text(
-                    text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
-                        "CoreGuard is an independent project and is not affiliated with Amnesty International.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MutedText
-                )
+            Spacer(Modifier.height(14.dp))
+            GlassCard(accentTint = CyanPrimary) {
+                SectionLabel("Permissions", color = CyanPrimary)
+                Spacer(Modifier.height(6.dp))
+                PermRow("Network access",  network)       { network = it }
+                PermRow("Storage access",  storage)       { storage = it }
+                PermRow("Notifications",   notifications) { notifications = it }
+                PermRow("Microphone",      microphone)    { microphone = it }
+                PermRow("Biometric lock",  biometric)     { biometric = it }
             }
+
+            Spacer(Modifier.height(14.dp))
+            GlassCard(accentTint = CyanPrimary) {
+                SectionLabel("About", color = CyanPrimary)
+                Spacer(Modifier.height(6.dp))
+                AboutRow("Version 1.0.0")
+                AboutRow("Privacy policy")
+                AboutRow("Open source licenses")
+            }
+
+            Spacer(Modifier.height(14.dp))
+            GlowActionButton(
+                "Sign Out",
+                accent = Brush.horizontalGradient(listOf(CrimsonDanger, CrimsonGlow))
+            ) { }
+
+            Spacer(Modifier.weight(1f))
+            BottomNavBar(
+                tabs = listOf(
+                    NavTab("Home",     Icons.Filled.Home),
+                    NavTab("Explore",  Icons.Filled.Explore),
+                    NavTab("Create",   Icons.Filled.Add),
+                    NavTab("Chats",    Icons.Filled.Chat),
+                    NavTab("Settings", Icons.Filled.Settings),
+                ),
+                selectedIndex = 4,
+                onSelect = { onTab(Routes.SETTINGS) }
+            )
         }
     }
 }
 
 @Composable
-private fun SettingsRow(label: String, value: String) {
-    Column {
-        Text(text = label, style = MaterialTheme.typography.bodySmall, color = MutedText)
-        Text(text = value, style = MaterialTheme.typography.bodyMedium)
+private fun PermRow(label: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(label, color = TextHigh, fontSize = 13.sp)
+        Spacer(Modifier.weight(1f))
+        TogglePill(checked = checked, onChange = onChange)
+    }
+}
+
+@Composable
+private fun AboutRow(text: String) {
+    Row(
+        Modifier.fillMaxWidth().padding(vertical = 10.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, color = TextHigh, fontSize = 13.sp)
+        Spacer(Modifier.weight(1f))
+        Icon(
+            Icons.Filled.ChevronRight, null, tint = TextLow,
+            modifier = Modifier.size(18.dp)
+        )
     }
 }

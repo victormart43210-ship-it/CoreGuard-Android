@@ -27,6 +27,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.HomeScreen
+import com.coldboar.coreguard.ui.screens.PremiumScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
@@ -49,6 +50,12 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
 )
 
+/** Routes that embed their own bottom navigation bar. */
+private val routesWithEmbeddedNav = setOf(
+    CoreGuardRoute.Settings.route,
+    CoreGuardRoute.Premium.route,
+)
+
 /**
  * Root composable for the entire app.
  *
@@ -58,9 +65,16 @@ private val bottomNavItems = listOf(
 @Composable
 fun CoreGuardApp() {
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
 
     Scaffold(
-        bottomBar = { CoreGuardBottomBar(navController) },
+        bottomBar = {
+            // Screens with embedded nav bars manage their own bottom navigation.
+            if (currentRoute !in routesWithEmbeddedNav) {
+                CoreGuardBottomBar(navController)
+            }
+        },
         containerColor = MaterialTheme.colorScheme.background
     ) { paddingValues ->
         NavHost(
@@ -91,7 +105,10 @@ fun CoreGuardApp() {
                 ShieldScreen()
             }
             composable(CoreGuardRoute.Settings.route) {
-                SettingsScreen()
+                SettingsScreen(onTab = { route -> navController.navigate(route) })
+            }
+            composable(CoreGuardRoute.Premium.route) {
+                PremiumScreen(onTab = { route -> navController.navigate(route) })
             }
         }
     }

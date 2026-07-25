@@ -7,4 +7,5 @@ sealed class CoreGuardRoute(val route: String) {
     data object Timeline : CoreGuardRoute("timeline")
     data object Shield : CoreGuardRoute("shield")
     data object Settings : CoreGuardRoute("settings")
+    data object Premium : CoreGuardRoute("premium")
 }
