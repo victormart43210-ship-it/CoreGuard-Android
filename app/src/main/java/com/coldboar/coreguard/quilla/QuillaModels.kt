@@ -13,7 +13,7 @@ data class NetworkEvent(
 
 /**
  * Runtime Application Self-Protection (RASP) telemetry event capturing
- * behavioural signals for a monitored package.
+ * behavioral signals for a monitored package.
  */
 data class RaspEvent(
     val packageName: String,

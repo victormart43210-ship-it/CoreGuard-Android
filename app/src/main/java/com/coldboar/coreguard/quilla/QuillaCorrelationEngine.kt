@@ -93,7 +93,7 @@ class QuillaCorrelationEngine(
             }
         }
 
-        // 2. Evaluate RASP behavioural indicators.
+        // 2. Evaluate RASP behavioral indicators.
         if (rasp?.isDynamicCodeLoaded == true) {
             confidenceScore += 0.25f
             evidenceList.add("Dynamic Code Loading (DCL) detected in package $packageName")
