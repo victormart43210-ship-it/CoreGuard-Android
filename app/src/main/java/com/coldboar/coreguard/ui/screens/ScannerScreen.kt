@@ -138,7 +138,7 @@ fun ScannerScreen() {
                 ScanResultCard(report)
             }
         } ?: lastHistory?.let { record ->
-            Spacer(modifier.height(20.dp))
+            Spacer(Modifier.height(20.dp))
             LastScanSummaryCard(record)
         }
 
