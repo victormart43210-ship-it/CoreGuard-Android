@@ -51,16 +51,15 @@ import com.coldboar.coreguard.ui.theme.MutedText
 private data class NavItem(
     val route: String,
     val label: String,
-    val icon: ImageVector,
-    val contentDescription: String
+    val icon: ImageVector
 )
 
 private val bottomNavItems = listOf(
-    NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home, "Home"),
-    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch, "Scanner"),
-    NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield, "Shield"),
-    NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload, "Compliance"),
-    NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
+    NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home),
+    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch),
+    NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield),
+    NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload),
+    NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
 )
 
 private val routesWithoutBottomBar = setOf(
@@ -138,7 +137,18 @@ fun CoreGuardApp(
                     )
                 }
                 composable(CoreGuardRoute.Timeline.route) {
-                    TimelineScreen(onBack = { navController.popBackStack() })
+                    TimelineScreen(
+                        onBack = { navController.popBackStack() },
+                        onNavigateToScanner = {
+                            navController.navigate(CoreGuardRoute.Scanner.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(CoreGuardRoute.Settings.route) {
                     SettingsScreen(
@@ -182,7 +192,7 @@ private fun CoreGuardBottomBar(navController: NavController) {
                     icon = {
                         Icon(
                             imageVector = item.icon,
-                            contentDescription = item.contentDescription
+                            contentDescription = null
                         )
                     },
                     label = {

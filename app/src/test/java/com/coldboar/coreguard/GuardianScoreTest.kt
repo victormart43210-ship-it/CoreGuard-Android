@@ -67,4 +67,12 @@ class GuardianScoreTest {
         assertEquals(GuardianRank.BREACHED, GuardianScore.rankFor(34))
         assertEquals(GuardianRank.BREACHED, GuardianScore.rankFor(0))
     }
+
+    @Test
+    fun `rank user labels are plain language`() {
+        assertEquals("Strong protection", GuardianRank.AEGIS.userLabel)
+        assertEquals("Mostly protected", GuardianRank.WARDED.userLabel)
+        assertEquals("Needs attention", GuardianRank.EXPOSED.userLabel)
+        assertEquals("High risk", GuardianRank.BREACHED.userLabel)
+    }
 }

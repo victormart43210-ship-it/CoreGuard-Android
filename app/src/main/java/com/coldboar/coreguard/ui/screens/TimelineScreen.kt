@@ -35,9 +35,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.ui.components.PrimaryTealButton
 import com.coldboar.coreguard.ui.components.ScreenHeader
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -52,7 +54,10 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun TimelineScreen(onBack: () -> Unit = {}) {
+fun TimelineScreen(
+    onBack: () -> Unit = {},
+    onNavigateToScanner: () -> Unit = {}
+) {
     val context = LocalContext.current
     var records by remember { mutableStateOf<List<ScanHistoryStore.ScanRecord>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
@@ -77,8 +82,8 @@ fun TimelineScreen(onBack: () -> Unit = {}) {
                 )
             }
             ScreenHeader(
-                title = "Scan Timeline",
-                subtitle = "Device integrity history — every scan, timestamped.",
+                title = "Scan history",
+                subtitle = "Every privacy check on this device, newest first.",
                 modifier = Modifier.weight(1f)
             )
         }
@@ -99,14 +104,23 @@ fun TimelineScreen(onBack: () -> Unit = {}) {
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("No scans yet", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                        Text(
+                            "No scans yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ElectricTeal
+                        )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run a Nemesis scan to begin recording your device integrity timeline.",
+                            "Run your first privacy check to start a history on this device.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
-                            textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                            textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
+                        )
+                        Spacer(Modifier.height(16.dp))
+                        PrimaryTealButton(
+                            text = "Run privacy check",
+                            onClick = onNavigateToScanner
                         )
                     }
                 }
@@ -131,15 +145,14 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (record.verdict) {
-        ScanVerdict.CLEAN -> "CLEAN"
-        ScanVerdict.SUSPICIOUS -> "SUSPICIOUS"
-        ScanVerdict.INFECTED -> "THREAT DETECTED"
+        ScanVerdict.CLEAN -> "Looked clean"
+        ScanVerdict.SUSPICIOUS -> "Possible risk"
+        ScanVerdict.INFECTED -> "Threat found"
     }
     val dateFormat = SimpleDateFormat("MMM d, yyyy · h:mm a", Locale.getDefault())
     val dateStr = dateFormat.format(Date(record.timestampMs))
 
     Row(modifier = Modifier.fillMaxWidth()) {
-        // Timeline indicator
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(end = 12.dp)
@@ -160,7 +173,6 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
             }
         }
 
-        // Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -181,7 +193,7 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "${record.durationMillis}ms",
+                        text = "${record.durationMillis} ms",
                         style = MaterialTheme.typography.bodySmall,
                         color = MutedText
                     )
@@ -199,11 +211,6 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
                         style = MaterialTheme.typography.bodySmall,
                         color = MutedText
                     )
-                    Text(
-                        text = "${record.indicatorCount} signatures",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
-                    )
                     if (record.detectionCount > 0) {
                         Text(
                             text = "${record.detectionCount} flagged",
@@ -217,4 +224,3 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
         }
     }
 }
-

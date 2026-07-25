@@ -60,6 +60,7 @@ fun ScannerScreen() {
 
     var isScanning by remember { mutableStateOf(false) }
     var scanError by remember { mutableStateOf<String?>(null) }
+    var justCompleted by remember { mutableStateOf(false) }
     var scanReport by remember { mutableStateOf(LastScan.report) }
     var lastHistory by remember { mutableStateOf<ScanHistoryStore.ScanRecord?>(null) }
 
@@ -71,43 +72,65 @@ fun ScannerScreen() {
         }
     }
 
+    val showEmptyState = !isScanning && scanReport == null && lastHistory == null && scanError == null
+
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
-            title = "Nemesis Scanner",
-            subtitle = "On-device privacy integrity check against open threat-intelligence signatures."
+            title = "Privacy check",
+            subtitle = "Looks for known spyware and suspicious signs on this device. Nothing leaves your phone."
         )
 
         Spacer(Modifier.height(20.dp))
+
+        if (showEmptyState) {
+            CoreGuardCard {
+                Text(
+                    text = "No scan yet",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+            }
+            Spacer(Modifier.height(16.dp))
+        }
 
         AnimatedVisibility(
             visible = isScanning,
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .semantics { liveRegion = LiveRegionMode.Polite },
-                horizontalArrangement = Arrangement.Center,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                CircularProgressIndicator(color = ElectricTeal)
-                Text(
-                    text = "Scanning…",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MutedText,
-                    modifier = Modifier.padding(start = 12.dp)
-                )
+            Column {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .semantics { liveRegion = LiveRegionMode.Polite },
+                    horizontalArrangement = Arrangement.Center,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    CircularProgressIndicator(color = ElectricTeal)
+                    Text(
+                        text = "Checking this device…",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText,
+                        modifier = Modifier.padding(start = 12.dp)
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
             }
-            Spacer(Modifier.height(16.dp))
         }
 
         PrimaryTealButton(
-            text = if (isScanning) "Scanning…" else "Run Privacy Check",
+            text = if (isScanning) "Checking…" else "Run privacy check",
             enabled = !isScanning,
             onClick = {
                 isScanning = true
                 scanError = null
+                justCompleted = false
                 scope.launch {
                     try {
                         val report = withContext(Dispatchers.IO) {
@@ -118,8 +141,10 @@ fun ScannerScreen() {
                         LastScan.report = report
                         scanReport = report
                         lastHistory = null
-                    } catch (t: Throwable) {
-                        scanError = t.message ?: "Scan failed"
+                        justCompleted = true
+                    } catch (_: Throwable) {
+                        scanError =
+                            "We couldn’t finish the check. Try again, or restart the app if this keeps happening."
                     } finally {
                         isScanning = false
                     }
@@ -129,13 +154,21 @@ fun ScannerScreen() {
 
         scanError?.let { err ->
             Spacer(Modifier.height(12.dp))
-            Text(text = err, style = MaterialTheme.typography.bodySmall, color = HighRed)
+            CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
+                Text(
+                    text = "Check couldn’t finish",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = HighRed
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(text = err, style = MaterialTheme.typography.bodySmall, color = MutedText)
+            }
         }
 
         scanReport?.let { report ->
             Spacer(Modifier.height(20.dp))
             AnimatedVisibility(visible = true, enter = fadeIn()) {
-                ScanResultCard(report)
+                ScanResultCard(report, showCompletedBanner = justCompleted)
             }
         } ?: lastHistory?.let { record ->
             Spacer(Modifier.height(20.dp))
@@ -160,21 +193,25 @@ private fun LastScanSummaryCard(record: ScanHistoryStore.ScanRecord) {
         ScanVerdict.SUSPICIOUS -> AttentionAmber
         ScanVerdict.INFECTED -> HighRed
     }
+    val verdictLabel = when (record.verdict) {
+        ScanVerdict.CLEAN -> "Looked clean"
+        ScanVerdict.SUSPICIOUS -> "Possible risk"
+        ScanVerdict.INFECTED -> "Threat found"
+    }
     CoreGuardCard {
         Text(
-            text = "Last scan on this device",
+            text = "Last check on this device",
             style = MaterialTheme.typography.titleMedium,
             color = MutedText
         )
         Spacer(Modifier.height(6.dp))
         Text(
-            text = record.verdict.name.replace('_', ' '),
+            text = verdictLabel,
             style = MaterialTheme.typography.headlineSmall,
             color = verdictColor
         )
         Text(
-            text = "${record.scannedArtifacts} items · ${record.indicatorCount} signatures · " +
-                "${record.detectionCount} findings · ${record.durationMillis} ms",
+            text = "${record.scannedArtifacts} items checked · ${record.detectionCount} findings",
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
@@ -188,19 +225,28 @@ private fun LastScanSummaryCard(record: ScanHistoryStore.ScanRecord) {
 }
 
 @Composable
-private fun ScanResultCard(report: ScanReport) {
+private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
     val verdictColor = when (report.verdict) {
         ScanVerdict.CLEAN -> SafeGreen
         ScanVerdict.SUSPICIOUS -> AttentionAmber
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "PRIVACY INTACT"
-        ScanVerdict.SUSPICIOUS -> "POSSIBLE PRIVACY RISK"
-        ScanVerdict.INFECTED -> "PRIVACY THREAT FOUND"
+        ScanVerdict.CLEAN -> "No spyware signs found"
+        ScanVerdict.SUSPICIOUS -> "Possible privacy risk"
+        ScanVerdict.INFECTED -> "Privacy threat found"
     }
 
     CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
+        if (showCompletedBanner) {
+            Text(
+                text = "Scan complete",
+                style = MaterialTheme.typography.labelLarge,
+                color = SafeGreen,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            )
+            Spacer(Modifier.height(4.dp))
+        }
         Text(
             text = verdictLabel,
             style = MaterialTheme.typography.headlineSmall,
@@ -208,9 +254,7 @@ private fun ScanResultCard(report: ScanReport) {
         )
         Spacer(Modifier.height(4.dp))
         Text(
-            text = "${report.scannedArtifacts} items checked · " +
-                "${report.indicatorCount} signatures · " +
-                "${report.durationMillis} ms",
+            text = "Checked ${report.scannedArtifacts} items in ${report.durationMillis} ms.",
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
@@ -219,7 +263,7 @@ private fun ScanResultCard(report: ScanReport) {
             Spacer(Modifier.height(12.dp))
             Text(
                 text = "Nothing flagged on this device. A clean result is reassuring but " +
-                    "not a guarantee — a full off-device analysis is more thorough.",
+                    "not a guarantee — keep Privacy Shield on and re-check after installing new apps.",
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
@@ -237,6 +281,21 @@ private fun ScanResultCard(report: ScanReport) {
                     }
                     DetectionRow(detection)
                 }
+            Spacer(Modifier.height(12.dp))
+            NestedSurface {
+                Text(
+                    text = "What to do next",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = AttentionAmber
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Don’t enter passwords or banking details until you understand the finding. " +
+                        "Update your device, remove unfamiliar apps, and consider a trusted security professional.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+            }
         }
     }
 }
@@ -248,6 +307,11 @@ private fun DetectionRow(detection: Detection) {
         ThreatSeverity.HIGH -> AttentionAmber
         ThreatSeverity.MEDIUM -> RestrainedGold
     }
+    val severityLabel = when (detection.severity) {
+        ThreatSeverity.CRITICAL -> "Critical"
+        ThreatSeverity.HIGH -> "High"
+        ThreatSeverity.MEDIUM -> "Medium"
+    }
     NestedSurface {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -256,7 +320,7 @@ private fun DetectionRow(detection: Detection) {
                 modifier = Modifier.weight(1f)
             )
             Text(
-                text = detection.severity.name,
+                text = severityLabel,
                 style = MaterialTheme.typography.labelLarge,
                 color = severityColor
             )

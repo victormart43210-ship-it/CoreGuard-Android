@@ -2,7 +2,6 @@ package com.coldboar.coreguard.ui.screens
 
 import android.app.Activity
 import android.net.VpnService
-import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.animateColorAsState
@@ -33,10 +32,12 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.PrimaryTealButton
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 
@@ -47,12 +48,16 @@ fun ShieldScreen() {
     var shieldActive by remember { mutableStateOf(ShieldState.isActive) }
     var totalBlocked by remember { mutableStateOf(ShieldState.totalBlocked) }
     var pendingConsent by remember { mutableStateOf(false) }
+    var permissionDenied by remember { mutableStateOf(false) }
 
     DisposableEffect(Unit) {
         val listener = ShieldState.Listener {
             shieldActive = ShieldState.isActive
             totalBlocked = ShieldState.totalBlocked
-            if (ShieldState.isActive) pendingConsent = false
+            if (ShieldState.isActive) {
+                pendingConsent = false
+                permissionDenied = false
+            }
         }
         ShieldState.addListener(listener)
         onDispose { ShieldState.removeListener(listener) }
@@ -63,15 +68,28 @@ fun ShieldScreen() {
     ) { result ->
         pendingConsent = false
         if (result.resultCode == Activity.RESULT_OK) {
+            permissionDenied = false
             NemesisShield.start(context)
         } else {
             shieldActive = false
-            Toast.makeText(context, "Privacy Shield needs VPN permission to run.", Toast.LENGTH_SHORT).show()
+            permissionDenied = true
+        }
+    }
+
+    fun requestShieldOn() {
+        permissionDenied = false
+        val prepare = VpnService.prepare(context)
+        if (prepare != null) {
+            pendingConsent = true
+            vpnConsentLauncher.launch(prepare)
+        } else {
+            NemesisShield.start(context)
         }
     }
 
     val statusColor by animateColorAsState(
         targetValue = when {
+            permissionDenied -> HighRed
             pendingConsent -> AttentionAmber
             shieldActive -> SafeGreen
             else -> MutedText
@@ -85,8 +103,8 @@ fun ShieldScreen() {
             .verticalScroll(rememberScrollState())
     ) {
         ScreenHeader(
-            title = "Privacy Shield",
-            subtitle = "On-device VPN that filters DNS against known surveillance and tracker domains."
+            title = "DNS protection",
+            subtitle = "Blocks known tracking and surveillance domains when apps look them up by name."
         )
 
         Spacer(Modifier.height(20.dp))
@@ -96,23 +114,24 @@ fun ShieldScreen() {
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(
-                    text = "Enable Privacy Shield",
-                    style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.weight(1f)
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Turn on DNS protection",
+                        style = MaterialTheme.typography.titleMedium
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = "Android will ask for VPN permission. CoreGuard uses it only on this device — traffic is not sent to us.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
+                }
                 Switch(
                     checked = shieldActive,
                     enabled = !pendingConsent,
                     onCheckedChange = { enabled ->
                         if (enabled && !ShieldState.isActive) {
-                            val prepare = VpnService.prepare(context)
-                            if (prepare != null) {
-                                pendingConsent = true
-                                vpnConsentLauncher.launch(prepare)
-                            } else {
-                                NemesisShield.start(context)
-                            }
+                            requestShieldOn()
                         } else if (!enabled && ShieldState.isActive) {
                             NemesisShield.stop(context)
                         }
@@ -122,7 +141,8 @@ fun ShieldScreen() {
                         checkedTrackColor = ElectricTeal.copy(alpha = 0.4f)
                     ),
                     modifier = Modifier.semantics {
-                        contentDescription = if (shieldActive) "Privacy Shield on" else "Privacy Shield off"
+                        contentDescription =
+                            if (shieldActive) "DNS protection on" else "DNS protection off"
                     }
                 )
             }
@@ -131,8 +151,9 @@ fun ShieldScreen() {
 
             Text(
                 text = when {
-                    pendingConsent -> "Waiting for VPN permission…"
-                    shieldActive -> "On · $totalBlocked blocked"
+                    permissionDenied -> "Permission denied — protection stays off"
+                    pendingConsent -> "Waiting for Android VPN permission…"
+                    shieldActive -> "On · $totalBlocked domains blocked"
                     else -> "Off"
                 },
                 style = MaterialTheme.typography.bodyMedium,
@@ -140,16 +161,38 @@ fun ShieldScreen() {
             )
         }
 
+        if (permissionDenied) {
+            Spacer(Modifier.height(12.dp))
+            CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
+                Text(
+                    text = "VPN permission needed",
+                    style = MaterialTheme.typography.titleSmall,
+                    color = HighRed
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = "Without Android’s VPN permission, DNS protection can’t run. You can try again anytime.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(Modifier.height(12.dp))
+                PrimaryTealButton(
+                    text = "Try again",
+                    onClick = { requestShieldOn() }
+                )
+            }
+        }
+
         Spacer(Modifier.height(16.dp))
 
         CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
-            Text("Limitations", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+            Text("What this protects", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
             Spacer(Modifier.height(8.dp))
             Text(
-                text = "• Only blocks domains with a matching IOC indicator.\n" +
-                    "• Cannot block traffic that uses a hardcoded IP address (no DNS lookup).\n" +
-                    "• Requires explicit VPN permission from the operating system.\n" +
-                    "• Full traffic routing is not yet implemented in this build.",
+                text = "• Blocks known tracking domains when apps look them up by name.\n" +
+                    "• Cannot block apps that connect with a fixed IP address (no name lookup).\n" +
+                    "• Needs your explicit VPN permission from Android.\n" +
+                    "• Filters DNS on this device only — it is not a full traffic VPN yet.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )

@@ -132,6 +132,11 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         }
     }
 
+    val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
+    val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
+    val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+    val needsAttention = warnCount + failCount > 0
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -166,14 +171,13 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "Mobile Security Intelligence",
+                    text = "On-device protection for this phone",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
 
                 Spacer(Modifier.height(28.dp))
 
-                // ── Guardian Score Ring ─────────────────────────────────────
                 val score = scoreTarget.toInt()
                 val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
                 val ringColor = rankColor(rank)
@@ -188,9 +192,9 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.semantics {
                         contentDescription = if (checksLoading) {
-                            "Guardian score loading"
+                            "Protection score loading"
                         } else {
-                            "Guardian score $score, rank ${rank?.name ?: "unknown"}"
+                            "Protection score $score out of 100, ${rank?.userLabel ?: "unknown"}"
                         }
                     }
                 ) {
@@ -253,9 +257,9 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             )
                         }
                         Text(
-                            text = "GUARDIAN",
+                            text = "PROTECTION",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
+                                letterSpacing = 2.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             color = MutedText
@@ -263,7 +267,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         Text(
                             text = "SCORE",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
+                                letterSpacing = 2.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             color = MutedText
@@ -273,7 +277,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
                 Spacer(Modifier.height(12.dp))
 
-                // Rank badge
                 if (rank != null) {
                     Box(
                         modifier = Modifier
@@ -282,50 +285,86 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             .padding(horizontal = 20.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = rank.name,
-                            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
+                            text = rank.userLabel,
+                            style = MaterialTheme.typography.labelLarge,
                             color = ringColor,
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = rank.userGuidance,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
                 }
             }
         }
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Quick Stats ──────────────────────────────────────────────────────
         if (securityResults.isNotEmpty()) {
-            val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
-            val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
-            val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .semantics {
+                        contentDescription =
+                            "$passCount checks passed, $warnCount need attention, $failCount failed"
+                    },
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatBadge(
-                    label = "PASS",
+                    label = "Passed",
                     value = "$passCount",
                     color = SafeGreen,
                     modifier = Modifier.weight(1f)
                 )
                 StatBadge(
-                    label = "WARN",
+                    label = "Attention",
                     value = "$warnCount",
                     color = AttentionAmber,
                     modifier = Modifier.weight(1f)
                 )
                 StatBadge(
-                    label = "FAIL",
+                    label = "Failed",
                     value = "$failCount",
                     color = HighRed,
                     modifier = Modifier.weight(1f)
                 )
             }
 
+            Spacer(Modifier.height(16.dp))
+        }
+
+        if (needsAttention) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier.padding(16.dp)) {
+                    Text(
+                        "What to do next",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AttentionAmber
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = if (failCount > 0) {
+                            "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
+                        } else {
+                            "Review the warnings below. A privacy check can catch spyware indicators these checks miss."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
+                    )
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
 
@@ -371,7 +410,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Security Checks",
+                            "Device checks",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
@@ -394,7 +433,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         Spacer(Modifier.height(20.dp))
 
-        // ── CTA ───────────────────────────────────────────────────────────────
         Button(
             onClick = onNavigateToScanner,
             modifier = Modifier
@@ -407,7 +445,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
             Text(
-                "Run Nemesis Scanner",
+                "Check for spyware risks",
                 color = BackgroundDeepBlack,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
@@ -423,7 +461,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(14.dp)
         ) {
-            Text("View Scan Timeline", color = ElectricTeal)
+            Text("View scan history", color = ElectricTeal)
         }
     }
 }
@@ -449,7 +487,7 @@ private fun StatBadge(label: String, value: String, color: Color, modifier: Modi
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodySmall.copy(letterSpacing = 1.sp),
+                style = MaterialTheme.typography.bodySmall,
                 color = color.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -487,8 +525,13 @@ private fun HealthCard(
 
 @Composable
 private fun SecurityCheckRow(result: SecurityCheckResult) {
+    val stateLabel = result.state.userLabel
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "${result.displayName}: $stateLabel. ${result.explanation}"
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -523,13 +566,20 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
                 .padding(horizontal = 8.dp, vertical = 2.dp)
         ) {
             Text(
-                text = result.state.name,
+                text = stateLabel,
                 style = MaterialTheme.typography.labelLarge,
                 color = result.state.toColor()
             )
         }
     }
 }
+
+private val SecurityCheckState.userLabel: String
+    get() = when (this) {
+        SecurityCheckState.PASS -> "OK"
+        SecurityCheckState.WARN -> "Review"
+        SecurityCheckState.FAIL -> "Risk"
+    }
 
 private fun SecurityCheckState.toColor(): Color = when (this) {
     SecurityCheckState.PASS -> SafeGreen
@@ -544,4 +594,3 @@ private fun rankColor(rank: GuardianRank?): Color = when (rank) {
     GuardianRank.BREACHED -> HighRed
     null -> RestrainedGold
 }
-

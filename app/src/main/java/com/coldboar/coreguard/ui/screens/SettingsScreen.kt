@@ -120,14 +120,20 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock MASVS / threat report export and priority signature feed refresh. Billing is handled by Google Play.",
+                        "Export compliance reports and refresh threat signatures sooner. " +
+                            "Subscribe through Google Play — you can cancel anytime in Play subscriptions.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText
                     )
 
                     purchaseStatus?.let { status ->
                         Spacer(Modifier.height(4.dp))
-                        Text(status, style = MaterialTheme.typography.bodySmall, color = ElectricTeal)
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ElectricTeal,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        )
                     }
 
                     Spacer(Modifier.height(12.dp))
@@ -142,10 +148,11 @@ fun SettingsScreen(
                                         purchaseStatus = "Premium unlocked — thank you!"
                                     }
                                     is PurchaseResult.Cancelled -> {
-                                        purchaseStatus = null
+                                        purchaseStatus = "Purchase cancelled — nothing was charged."
                                     }
                                     is PurchaseResult.Error -> {
-                                        purchaseStatus = result.message
+                                        purchaseStatus =
+                                            "Google Play couldn’t complete the purchase. Try again later."
                                     }
                                 }
                             }

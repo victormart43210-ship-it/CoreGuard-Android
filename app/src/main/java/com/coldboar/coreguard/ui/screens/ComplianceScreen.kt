@@ -69,14 +69,29 @@ fun ComplianceScreen(
     val context = LocalContext.current
     var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
+    var loadError by remember { mutableStateOf<String?>(null) }
+    var reloadToken by remember { mutableStateOf(0) }
     val isPremium by billingProvider.premiumState.collectAsState()
     val report = remember(securityResults) { MasvsComplianceScorer.score(securityResults) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
 
-    LaunchedEffect(Unit) {
-        securityResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
-        loading = false
+    LaunchedEffect(reloadToken) {
+        loading = true
+        loadError = null
+        try {
+            securityResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+        } catch (_: Throwable) {
+            securityResults = emptyList()
+            loadError = "We couldn’t run the compliance checks. Try again in a moment."
+        } finally {
+            loading = false
+        }
     }
+
+    val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
+    val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
+    val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+    val checksReady = !loading && loadError == null && securityResults.isNotEmpty()
 
     ScreenAtmosphere(
         modifier = Modifier
@@ -85,7 +100,7 @@ fun ComplianceScreen(
     ) {
         ScreenHeader(
             title = "Compliance",
-            subtitle = "OWASP MASVS v2 scoring from live on-device security checks."
+            subtitle = "A plain-language score of your device checks, mapped to OWASP MASVS security areas."
         )
 
         Spacer(Modifier.height(24.dp))
@@ -98,6 +113,15 @@ fun ComplianceScreen(
                 CircularProgressIndicator(color = ElectricTeal)
             }
             Spacer(Modifier.height(16.dp))
+        } else if (loadError != null) {
+            CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
+                Text("Couldn’t run compliance checks", style = MaterialTheme.typography.titleMedium, color = HighRed)
+                Spacer(Modifier.height(6.dp))
+                Text(loadError!!, style = MaterialTheme.typography.bodyMedium, color = MutedText)
+                Spacer(Modifier.height(12.dp))
+                PrimaryTealButton(text = "Retry", onClick = { reloadToken++ })
+            }
+            Spacer(Modifier.height(16.dp))
         } else if (securityResults.isEmpty()) {
             CoreGuardCard {
                 Text("No checks available yet", style = MaterialTheme.typography.titleMedium)
@@ -107,9 +131,29 @@ fun ComplianceScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
+                Spacer(Modifier.height(12.dp))
+                PrimaryTealButton(text = "Retry", onClick = { reloadToken++ })
             }
             Spacer(Modifier.height(16.dp))
         } else {
+            CoreGuardCard {
+                Text(
+                    text = "Your device passed $passCount of ${securityResults.size} checks.",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = when {
+                        failCount > 0 -> "$failCount need immediate review. Warnings: $warnCount."
+                        warnCount > 0 -> "$warnCount need a closer look below."
+                        else -> "No warnings right now — keep scanning periodically."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+            }
+            Spacer(Modifier.height(16.dp))
             OverallScoreBanner(report.overallScore)
             Spacer(Modifier.height(16.dp))
             AttackSurfaceMap(report)
@@ -123,14 +167,15 @@ fun ComplianceScreen(
 
         if (isPremium) {
             PrimaryTealButton(
-                text = "Export JSON",
+                text = "Export compliance report (JSON)",
+                enabled = checksReady,
                 onClick = {
                     val exporter = ComplianceReportExporter(context)
                     val file = exporter.exportToFile(report)
                     exportMessage = if (file != null) {
-                        "Exported: ${file.name}"
+                        "Saved report: ${file.name}"
                     } else {
-                        "Export failed: external storage unavailable"
+                        "Couldn’t save the report. Check storage permission and try again."
                     }
                 }
             )
@@ -140,7 +185,7 @@ fun ComplianceScreen(
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ElectricTeal)
             ) {
-                Text("Unlock JSON export in Settings")
+                Text("Unlock report export in Settings")
             }
         }
 
@@ -184,7 +229,7 @@ private fun OverallScoreBanner(score: Int) {
             Spacer(Modifier.size(16.dp))
             Column {
                 Text(
-                    "MASVS Overall Score",
+                    "Overall security score",
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricTeal
                 )
@@ -194,7 +239,7 @@ private fun OverallScoreBanner(score: Int) {
                     color = color
                 )
                 Text(
-                    "OWASP MASVS v2 – ${MasvsCategory.entries.size} categories evaluated",
+                    "Based on ${MasvsCategory.entries.size} mobile security areas (OWASP MASVS)",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
@@ -211,13 +256,13 @@ private fun AttackSurfaceMap(report: MasvsComplianceReport) {
     ) {
         Column(Modifier.padding(16.dp)) {
             Text(
-                "Attack Surface Map",
+                "Security areas at a glance",
                 style = MaterialTheme.typography.titleMedium,
                 color = ElectricTeal
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                "MASVS domain scores (outer ring = stronger compliance)",
+                "Farther from center means stronger coverage in that area",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )
@@ -361,7 +406,11 @@ private fun CategoryScoreCard(cat: MasvsCategoryScore) {
                             modifier = Modifier.weight(1f)
                         )
                         Text(
-                            check.state.name,
+                            when (check.state) {
+                                SecurityCheckState.PASS -> "OK"
+                                SecurityCheckState.WARN -> "Review"
+                                SecurityCheckState.FAIL -> "Risk"
+                            },
                             style = MaterialTheme.typography.bodySmall,
                             color = when (check.state) {
                                 SecurityCheckState.PASS -> SafeGreen
