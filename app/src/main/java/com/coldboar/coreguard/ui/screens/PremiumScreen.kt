@@ -118,14 +118,14 @@ fun PremiumScreen(onTab: (String) -> Unit) {
             Spacer(Modifier.weight(1f))
             BottomNavBar(
                 tabs = listOf(
-                    NavTab("Home",        Icons.Filled.Home),
-                    NavTab("Security",    Icons.Filled.Security),
-                    NavTab("Performance", Icons.Filled.BarChart),
-                    NavTab("Premium",     Icons.Filled.Star),
-                    NavTab("Profile",     Icons.Filled.Person),
+                    NavTab("Home",        Icons.Filled.Home,     Routes.HOME),
+                    NavTab("Security",    Icons.Filled.Security, Routes.SHIELD),
+                    NavTab("Performance", Icons.Filled.BarChart, Routes.SCANNER),
+                    NavTab("Premium",     Icons.Filled.Star,     Routes.PREMIUM),
+                    NavTab("Profile",     Icons.Filled.Person,   Routes.SETTINGS),
                 ),
                 selectedIndex = 3,
-                onSelect = { onTab(Routes.PREMIUM) }
+                onSelect = onTab
             )
         }
     }

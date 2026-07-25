@@ -27,13 +27,21 @@ import com.coldboar.coreguard.ui.theme.SurfaceGlass
 import com.coldboar.coreguard.ui.theme.TextLow
 import com.coldboar.coreguard.ui.theme.TextMid
 
-data class NavTab(val label: String, val icon: ImageVector)
+/**
+ * @param label Display label shown below the icon.
+ * @param icon  Vector icon for the tab.
+ * @param route Navigation route to invoke when this tab is selected.
+ */
+data class NavTab(val label: String, val icon: ImageVector, val route: String)
 
+/**
+ * @param onSelect Called with the [NavTab.route] of the tapped tab.
+ */
 @Composable
 fun BottomNavBar(
     tabs: List<NavTab>,
     selectedIndex: Int,
-    onSelect: (Int) -> Unit,
+    onSelect: (String) -> Unit,
 ) {
     Row(
         modifier = Modifier
@@ -53,7 +61,7 @@ fun BottomNavBar(
             val selected = index == selectedIndex
             Column(
                 modifier = Modifier
-                    .clickable { onSelect(index) }
+                    .clickable { onSelect(tab.route) }
                     .padding(horizontal = 8.dp, vertical = 4.dp),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {

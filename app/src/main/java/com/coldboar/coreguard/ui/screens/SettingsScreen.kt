@@ -126,14 +126,14 @@ fun SettingsScreen(onTab: (String) -> Unit) {
             Spacer(Modifier.weight(1f))
             BottomNavBar(
                 tabs = listOf(
-                    NavTab("Home",     Icons.Filled.Home),
-                    NavTab("Explore",  Icons.Filled.Explore),
-                    NavTab("Create",   Icons.Filled.Add),
-                    NavTab("Chats",    Icons.Filled.Chat),
-                    NavTab("Settings", Icons.Filled.Settings),
+                    NavTab("Home",     Icons.Filled.Home,     Routes.HOME),
+                    NavTab("Explore",  Icons.Filled.Explore,  Routes.SCANNER),
+                    NavTab("Create",   Icons.Filled.Add,      Routes.TIMELINE),
+                    NavTab("Chats",    Icons.Filled.Chat,     Routes.SHIELD),
+                    NavTab("Settings", Icons.Filled.Settings, Routes.SETTINGS),
                 ),
                 selectedIndex = 4,
-                onSelect = { onTab(Routes.SETTINGS) }
+                onSelect = onTab
             )
         }
     }
