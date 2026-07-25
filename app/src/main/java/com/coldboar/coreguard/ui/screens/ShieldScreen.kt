@@ -75,7 +75,7 @@ fun ShieldScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "Blocks connections to servers known to track or surveil, using a private on-device VPN.",
+            text = "Turn your shield on — block known surveillance / tracker domains while you keep control.",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -91,7 +91,7 @@ fun ShieldScreen() {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Enable Privacy Shield",
+                        text = "Activate My Privacy Shield",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )

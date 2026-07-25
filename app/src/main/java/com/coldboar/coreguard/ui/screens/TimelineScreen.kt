@@ -92,10 +92,10 @@ fun TimelineScreen() {
                         modifier = Modifier.padding(24.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        Text("No scans yet", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                        Text("Your story starts with one check", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run a Nemesis scan to begin recording your device integrity timeline.",
+                            "Run your first device check now — then watch your protection habit grow.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,

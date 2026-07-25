@@ -112,13 +112,14 @@ fun SettingsScreen(
 
                 if (isPremium) {
                     Text(
-                        "✓ Premium active — thank you for your support.",
+                        "✓ You're Premium — thank you for choosing to protect on purpose.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RestrainedGold
                     )
                 } else {
                     Text(
-                        "Unlock automated daily scans, threat report export, live signature updates, and priority support.",
+                        "You don't wait for a crisis to lock your door. Go Premium to fund stronger " +
+                            "signatures and scanner work — and wear the badge of someone who decided.",
                         style = MaterialTheme.typography.bodyMedium
                     )
 
@@ -136,10 +137,10 @@ fun SettingsScreen(
                                     when (result) {
                                         is PurchaseResult.Success -> {
                                             isPremium = true
-                                            purchaseStatus = "✅ Premium unlocked — thank you!"
+                                            purchaseStatus = "✅ You're in — welcome to Premium."
                                         }
                                         is PurchaseResult.Cancelled -> {
-                                            purchaseStatus = null
+                                            purchaseStatus = "Your free tools stay ready whenever you are."
                                         }
                                         is PurchaseResult.Error -> {
                                             purchaseStatus = "⚠ ${result.message}"
@@ -152,7 +153,7 @@ fun SettingsScreen(
                         ) {
                             Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
                             Spacer(Modifier.size(6.dp))
-                            Text("Subscribe", color = Color.Black, fontWeight = FontWeight.Bold)
+                            Text("Yes — Go Premium Now", color = Color.Black, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -193,7 +194,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Ask questions about threat signals and security intelligence.",
+                        "Ask Quilla how to raise your score and protect what matters most.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }

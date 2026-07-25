@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
@@ -66,7 +67,8 @@ fun ScannerScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "A privacy integrity check for your device — defending your right to private communication.",
+            text = "In the next minute, you can know more about this device's privacy posture " +
+                "than most people learn in a year. Start now.",
             style = MaterialTheme.typography.bodyMedium
         )
 
@@ -105,7 +107,7 @@ fun ScannerScreen() {
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
         ) {
-            Text("Run Privacy Check", color = Color.Black)
+            Text("Check My Device Now", color = Color.Black, fontWeight = FontWeight.Bold)
         }
 
         scanReport?.let { report ->

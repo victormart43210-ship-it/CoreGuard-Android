@@ -1,15 +1,15 @@
 <resources>
     <string name="app_name">CoreGuard</string>
-    <string name="main_subtitle">Occult wards. Modern defense.</string>
-    <string name="main_tagline">Your device, sealed beneath the Sigillum Dei</string>
+    <string name="main_subtitle">Your privacy. Your standards. Your move.</string>
+    <string name="main_tagline">See your device clearly — then choose to protect it</string>
 
     <!-- Play Store listing (keep escaping AAPT-safe: no raw apostrophes, use \\n for breaks) -->
-    <string name="store_short_description">Real-time mobile security: spyware scanner, VPN shield &amp; compliance scoring.</string>
-    <string name="store_full_description">CoreGuard puts enterprise-grade mobile security intelligence in your hands — designed for journalists, activists, privacy-conscious professionals, and anyone who refuses to be surveilled.\n\nGUARDIAN SCORE\nYour device gets a live 0–100 Guardian Score based on six security dimensions — root detection, debugger presence, emulator checks, build integrity, spyware signatures, and certificate pinning. Watch it animate on every launch.\n\nNEMESIS SCANNER\nPowered by threat intelligence from the Amnesty International Security Lab (mvt-project), the Nemesis Scanner checks your device against hundreds of known spyware, stalkerware, and surveillance campaign indicators. A clean result is reassuring; a flagged result could save your life.\n\nPRIVACY SHIELD\nAn on-device VPN that silently blocks connections to servers used by surveillance firms, trackers, and data brokers — without routing your traffic through any third-party server. Your data stays on your device.\n\nMASVS COMPLIANCE\nSee how your device scores against the OWASP Mobile Application Security Verification Standard (MASVS v2) across six security domains. Export a full JSON compliance report to share with your security team.\n\nSUPPLY CHAIN AUDIT\nEnumerate every installed package and audit third-party SDK network behavior. Know exactly what\'s calling home from your device.\n\nWHAT WE DON\'T DO:\n- We don\'t collect your data\n- We don\'t send scans to the cloud\n- We don\'t show ads\n- We don\'t track you\n\nCoreGuard is built on open-source threat intelligence. Source code available on GitHub.\n\nPrivacy signatures are sourced from the Amnesty International Security Lab / mvt-project. CoreGuard is an independent project and is not affiliated with Amnesty International.</string>
+    <string name="store_short_description">Know your device\'s risk in minutes — then protect what matters most.</string>
+    <string name="store_full_description">You already protect your money, your passwords, and your reputation.\nWhy leave the phone that holds all three to chance?\n\nCoreGuard helps you see what\'s going on — then act with confidence.\n\nGET CLARITY IN MINUTES\nYour Guardian Score turns complex device checks into one number you can understand: root heuristics, debugger signals, emulator clues, build integrity, spyware indicators, and certificate status.\n\nCHECK AGAINST KNOWN SPYWARE INDICATORS\nNemesis Scanner compares your device with open-source privacy / spyware indicators sourced from the Amnesty International Security Lab (mvt-project) and related feeds. A clean result is reassuring — not a magic guarantee — and a flagged result gives you something concrete to act on.\n\nTURN ON A PRIVACY SHIELD\nEnable an on-device DNS-filtering VPN that can block domains matching known surveillance / tracker indicators. Allowed DNS queries still go to your system or upstream resolver. You stay in control; CoreGuard does not route all traffic through our servers.\n\nMEASURE WHAT MATTERS\nReview an educational MASVS-oriented scorecard and export a local JSON report for your notes or security review.\n\nWHY PEOPLE CHOOSE COREGUARD\n- Built for journalists, activists, and privacy-minded professionals\n- Scans and reports stay on your device\n- No ads. No selling your personal data\n- Clear language, not fear theater\n\nSTART NOW\nInstall CoreGuard, run your first check, and decide — with evidence — how you want to protect your digital life today.\n\nCoreGuard is an independent project and is not affiliated with Amnesty International. Privacy signatures are sourced from the Amnesty International Security Lab / mvt-project.</string>
 
     <!-- Guardian score -->
-    <string name="guardian_score_title">Guardian Score</string>
-    <string name="guardian_score_hint">Tap the shield for the full ritual of checks</string>
+    <string name="guardian_score_title">Your Guardian Score</string>
+    <string name="guardian_score_hint">Tap the shield — see where you stand, then raise the standard</string>
     <string name="rank_aegis">AEGIS</string>
     <string name="rank_warded">WARDED</string>
     <string name="rank_exposed">EXPOSED</string>
@@ -23,37 +23,37 @@
     <string name="cpu_usage_value">CPU: %1$d%%</string>
 
     <!-- Navigation -->
-    <string name="btn_security_dashboard">Enter the Sanctum</string>
-    <string name="btn_network_defense_lab">Open Network Defense Lab</string>
-    <string name="btn_nemesis_scanner">Nemesis Scanner</string>
-    <string name="btn_upgrade_premium">Upgrade to Premium</string>
+    <string name="btn_security_dashboard">See My Security Score</string>
+    <string name="btn_network_defense_lab">Train in Network Defense Lab</string>
+    <string name="btn_nemesis_scanner">Check My Device Now</string>
+    <string name="btn_upgrade_premium">Go Premium — Protect What Matters</string>
     <string name="btn_back">Back</string>
 
     <!-- IOC feed refresh -->
-    <string name="btn_refresh_signatures">Refresh signatures</string>
-    <string name="feed_refreshing">Fetching latest threat signatures…</string>
-    <string name="feed_refresh_success">✓ %1$d signatures loaded — tap Run Privacy Check to rescan</string>
+    <string name="btn_refresh_signatures">Get latest signatures</string>
+    <string name="feed_refreshing">Pulling the newest threat signatures for you…</string>
+    <string name="feed_refresh_success">✓ %1$d signatures ready — run your Privacy Check now</string>
     <string name="feed_refresh_failed">Refresh failed: %1$s</string>
 
     <!-- Nemesis scanner (privacy integrity check) -->
     <string name="scanner_title">Nemesis Scanner</string>
-    <string name="scanner_subtitle">A privacy integrity check for your device — defending your right to private communication.</string>
-    <string name="scanner_run">Run Privacy Check</string>
-    <string name="scanner_scanning">Checking device against %1$d privacy signatures…</string>
-    <string name="scanner_verdict_clean">PRIVACY INTACT</string>
-    <string name="scanner_verdict_suspicious">POSSIBLE PRIVACY RISK</string>
-    <string name="scanner_verdict_infected">PRIVACY THREAT FOUND</string>
+    <string name="scanner_subtitle">In the next minute, you can know more about this device\'s privacy posture than most people learn in a year.</string>
+    <string name="scanner_run">Check My Device Now</string>
+    <string name="scanner_scanning">Checking your device against %1$d privacy signatures…</string>
+    <string name="scanner_verdict_clean">LOOKING GOOD</string>
+    <string name="scanner_verdict_suspicious">NEEDS YOUR ATTENTION</string>
+    <string name="scanner_verdict_infected">ACT ON THIS FINDING</string>
     <string name="scanner_summary">%1$d items checked · %2$d signatures · %3$d ms</string>
-    <string name="scanner_no_detections">Nothing flagged on this device. A clean result is reassuring but not a guarantee — a full off-device analysis is more thorough.</string>
-    <string name="scanner_detections_header">Findings</string>
+    <string name="scanner_no_detections">Nothing flagged on this pass. That\'s encouraging — keep checking over time, because one clean scan is a baseline, not a forever promise.</string>
+    <string name="scanner_detections_header">What we found for you</string>
     <string name="scanner_attribution">Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. CoreGuard is an independent project and is not affiliated with Amnesty International.</string>
 
     <!-- Privacy shield (domain blocker) -->
     <string name="shield_title">Privacy Shield</string>
-    <string name="shield_desc">Blocks connections to servers known to track or surveil, using a private on-device VPN.</string>
-    <string name="shield_off">Off</string>
-    <string name="shield_active">On · %1$d blocked</string>
-    <string name="shield_consent_denied">Privacy Shield needs VPN permission to run.</string>
+    <string name="shield_desc">Turn on your on-device DNS filter — block known surveillance / tracker domains while you keep control of your traffic path.</string>
+    <string name="shield_off">Off — your shield is waiting</string>
+    <string name="shield_active">On · %1$d blocked for you</string>
+    <string name="shield_consent_denied">Grant VPN permission to activate your Privacy Shield.</string>
 
     <!-- Security dashboard (privacy summary) -->
     <string name="check_spyware">Privacy Integrity</string>
@@ -75,29 +75,31 @@
     <string name="lab_event_fmt">Last: %1$s — %2$s</string>
 
     <!-- Security dashboard -->
-    <string name="security_dashboard_title">The Sanctum</string>
-    <string name="security_dashboard_subtitle">Six wards stand between your device and harm</string>
-    <string name="status_overall_pass">ALL WARDS HOLD</string>
-    <string name="status_overall_warn">WARDS WEAKENED</string>
-    <string name="status_overall_fail">WARD BROKEN</string>
+    <string name="security_dashboard_title">Your Security Sanctum</string>
+    <string name="security_dashboard_subtitle">Six checks. One clear picture of where you stand.</string>
+    <string name="status_overall_pass">YOU\'RE IN A STRONG POSITION</string>
+    <string name="status_overall_warn">YOU HAVE ROOM TO IMPROVE</string>
+    <string name="status_overall_fail">TAKE ACTION ON THIS</string>
     <string name="check_state_pass">PASS</string>
     <string name="check_state_warn">WARN</string>
     <string name="check_state_fail">FAIL</string>
 
-    <!-- Paywall -->
-    <string name="paywall_title">Upgrade to Premium</string>
-    <string name="paywall_headline">CoreGuard Premium</string>
-    <string name="paywall_description">Stay ahead of spyware. Private. Always guarded.</string>
-    <string name="paywall_benefit_1">Automated daily security scans</string>
-    <string name="paywall_benefit_2">Threat report export — share findings with your team</string>
-    <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
-    <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
-    <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
-    <string name="paywall_btn_subscribe">Subscribe</string>
-    <string name="paywall_btn_close">Not now</string>
-    <string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string>
-    <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
-    <string name="paywall_purchase_error">Error: %1$s</string>
+    <!-- Paywall — Ziglar you-attitude + Tracy FAB + Robbins identity/decisive close -->
+    <string name="paywall_title">Choose Premium</string>
+    <string name="paywall_headline">Become the person who protects their digital life on purpose</string>
+    <string name="paywall_description">You don\'t wait for a crisis to buy insurance for your car. Don\'t wait for a scare to invest in clarity for your phone.</string>
+    <string name="paywall_benefit_1">Stand with the people funding stronger privacy tools — your support accelerates CoreGuard</string>
+    <string name="paywall_benefit_2">Wear the Premium badge that marks you as someone who chose protection deliberately</string>
+    <string name="paywall_benefit_3">Help keep Nemesis signatures and scanner work moving forward for you and others like you</string>
+    <string name="paywall_social_proof">People who value privacy don\'t hope — they decide. Make your decision now.</string>
+    <string name="paywall_demo_disclaimer">Secure checkout through Google Play. CoreGuard never sees your card details.</string>
+    <string name="paywall_btn_subscribe">Yes — Go Premium Now</string>
+    <string name="paywall_btn_close">Not yet</string>
+    <string name="paywall_purchase_success_demo">✅ You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
+    <string name="paywall_purchase_cancelled">No problem — your free tools stay ready whenever you are.</string>
+    <string name="paywall_purchase_error">Something went wrong: %1$s. Try again when you\'re ready.</string>
+    <string name="paywall_purchase_success">✅ You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
+    <string name="paywall_already_premium">You\'re already Premium on this Google account. Thank you for leading with protection.</string>
 
     <!-- Accessibility -->
     <string name="cd_sigil_background">Decorative Enochian protection seal</string>
