@@ -30,6 +30,8 @@ import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -102,6 +104,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
     var isAsking by remember { mutableStateOf(false) }
+    val canSubmit = question.isNotBlank()
 
     val faceScale by animateFloatAsState(
         targetValue = if (isAsking) QUILLA_FACE_SCALE_ASKING else QUILLA_FACE_SCALE_IDLE,
@@ -169,8 +172,8 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
 
                 Button(
                     onClick = {
+                        if (!canSubmit || isAsking) return@Button
                         val prompt = question.trim()
-                        if (prompt.isEmpty() || isAsking) return@Button
                         isAsking = true
                         answer = "Quilla is listening…"
                         scope.launch {
@@ -179,14 +182,20 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                             isAsking = false
                         }
                     },
-                    enabled = !isAsking && question.isNotBlank(),
+                    enabled = !isAsking && canSubmit,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(if (isAsking) "Consulting Quilla…" else "Ask Quilla")
                 }
 
                 Spacer(Modifier.height(10.dp))
-                Text(answer, style = MaterialTheme.typography.bodyMedium)
+                Text(
+                    text = answer,
+                    style = MaterialTheme.typography.bodyMedium,
+                    modifier = Modifier.semantics {
+                        liveRegion = LiveRegionMode.Polite
+                    }
+                )
             }
         }
     }
