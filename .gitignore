@@ -18,3 +18,8 @@ local.properties
 # Release signing credentials – never commit these
 keystore.properties
 billing-server/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
