@@ -146,9 +146,10 @@ fun SupplyChainScreen() {
                 )
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "CoreGuard intercepts outbound network calls and attributes each request to the " +
-                        "originating SDK. Requests whose URLs contain device identifiers, location data, " +
-                        "credentials, or biometric signals are flagged as potentially sensitive.",
+                    "SDK auditing records outbound request metadata that CoreGuard itself observes " +
+                        "through instrumented call sites — it does not silently intercept all app traffic. " +
+                        "Requests whose URLs contain device identifiers, location hints, credentials, or " +
+                        "biometric signals can be flagged as potentially sensitive.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )

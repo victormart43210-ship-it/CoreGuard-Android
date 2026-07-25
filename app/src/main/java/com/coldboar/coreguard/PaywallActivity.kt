@@ -24,6 +24,11 @@ class PaywallActivity : AppCompatActivity() {
 
         billing.attach(this)
 
+        if (billing.isPremium()) {
+            binding.tvPaywallStatus.text = getString(R.string.paywall_already_premium)
+            binding.btnSubscribe.isEnabled = false
+        }
+
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         binding.btnSubscribe.setOnClickListener {

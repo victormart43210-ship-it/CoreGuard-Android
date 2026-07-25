@@ -4,8 +4,8 @@
     <string name="main_tagline">Your device, sealed beneath the Sigillum Dei</string>
 
     <!-- Play Store listing (keep escaping AAPT-safe: no raw apostrophes, use \\n for breaks) -->
-    <string name="store_short_description">On-device spyware checks, privacy VPN shield, and MASVS compliance scoring.</string>
-    <string name="store_full_description">CoreGuard is an on-device Android security toolkit for people who want clear, honest visibility into device risk — journalists, activists, and privacy-conscious users.\n\nGUARDIAN SCORE\nA 0–100 score from local heuristic checks: debugger/root/emulator signals, build integrity, spyware package indicators, and signing-certificate verification when configured.\n\nNEMESIS SCANNER\nCompares installed packages and local indicators against open threat-intelligence lists sourced from the Amnesty International Security Lab / mvt-project. A clean result is reassuring but not a guarantee.\n\nPRIVACY SHIELD\nAn optional on-device VPN that filters DNS against known surveillance/tracker domains. Traffic is not routed through CoreGuard servers.\n\nMASVS COMPLIANCE\nSee how local checks map to OWASP MASVS v2 categories. Premium unlocks JSON report export for your own records or security team.\n\nWHAT WE DON\'T DO:\n- We don\'t collect personal data\n- We don\'t upload scan results to a CoreGuard cloud\n- We don\'t show ads\n- We don\'t track you across apps\n\nOptional anonymous HTTPS fetches may pull public IOC signature feeds. Source code is available on GitHub.\n\nCoreGuard is an independent project and is not affiliated with Amnesty International.</string>
+    <string name="store_short_description">On-device spyware checks, DNS privacy shield, and mobile security scoring.</string>
+    <string name="store_full_description">CoreGuard is an on-device mobile security assistant for people who want clearer visibility into device integrity and known spyware indicators.\n\nGUARDIAN SCORE\nSee a 0–100 Guardian Score based on checks such as root heuristics, debugger presence, emulator signals, build integrity, spyware signatures, and certificate status.\n\nNEMESIS SCANNER\nChecks your device against open-source privacy / spyware indicators sourced from the Amnesty International Security Lab (mvt-project) and related feeds. A clean result is reassuring but not a guarantee — offline forensic analysis can be more thorough.\n\nPRIVACY SHIELD\nAn on-device DNS-filtering VPN that can block domains matching known surveillance / tracker indicators. Allowed DNS queries are forwarded to your system or upstream resolver. This is not a full traffic-inspecting VPN and does not claim to stop every threat.\n\nMASVS COMPLIANCE\nView an educational MASVS-oriented scorecard and export a local JSON report for your notes or security review.\n\nSUPPLY CHAIN TOOLS\nInspect installed packages and review SDK behavior events that the app records when instrumented. This is not silent third-party traffic interception.\n\nWHAT WE DON\'T DO:\n- We don\'t sell your personal data\n- We don\'t show ads\n- We don\'t claim magical or guaranteed spyware removal\n- We don\'t route all of your traffic through CoreGuard servers\n\nCoreGuard is an independent project and is not affiliated with Amnesty International. Privacy signatures are sourced from the Amnesty International Security Lab / mvt-project.</string>
 
     <!-- Guardian score -->
     <string name="guardian_score_title">Guardian Score</string>
@@ -50,7 +50,7 @@
 
     <!-- Privacy shield (domain blocker) -->
     <string name="shield_title">Privacy Shield</string>
-    <string name="shield_desc">Blocks connections to servers known to track or surveil, using a private on-device VPN.</string>
+    <string name="shield_desc">On-device DNS filter VPN that can block domains matching known surveillance / tracker indicators.</string>
     <string name="shield_off">Off</string>
     <string name="shield_active">On · %1$d blocked</string>
     <string name="shield_consent_denied">Privacy Shield needs VPN permission to run.</string>
@@ -92,13 +92,17 @@
     <string name="paywall_benefit_2">Priority signature feed refresh</string>
     <string name="paywall_benefit_3">Support the independent CoreGuard project</string>
     <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
+    <string name="paywall_demo_disclaimer">Purchases are processed by Google Play Billing. CoreGuard never sees your card details.</string>
     <string name="paywall_btn_subscribe">Subscribe with Google Play</string>
     <string name="paywall_btn_close">Not now</string>
     <string name="paywall_purchase_success">Premium unlocked. Thank you for your support.</string>
+    <string name="paywall_purchase_success_demo">Premium unlocked. Thank you for your support.</string>
     <string name="paywall_purchase_cancelled">Purchase cancelled.</string>
     <string name="paywall_purchase_error">Error: %1$s</string>
     <string name="paywall_export_requires_premium">Report export requires CoreGuard Premium.</string>
     <string name="privacy_policy_url">https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html</string>
+
+    <string name="paywall_already_premium">Premium is already active on this Google account.</string>
 
     <!-- Accessibility -->
     <string name="cd_sigil_background">Decorative Enochian protection seal</string>

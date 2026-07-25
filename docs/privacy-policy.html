@@ -36,7 +36,7 @@
   <p>CoreGuard may optionally fetch public threat-signature lists (IOC feeds) over HTTPS from open sources such as the Amnesty International Security Lab / mvt-project. These requests are anonymous and do not include account identifiers.</p>
 
   <h2>Privacy Shield (VPN)</h2>
-  <p>Privacy Shield uses Android’s VPN API on-device to filter DNS against a blocklist of known surveillance/tracker domains. Traffic is not routed through CoreGuard servers. No traffic content is stored by CoreGuard.</p>
+  <p>Privacy Shield uses Android’s VPN API on-device to filter DNS against a blocklist of known surveillance/tracker domains. Blocked domains receive a local NXDOMAIN-style response. Allowed DNS queries are forwarded to your device’s system resolver (or a public upstream resolver such as 8.8.8.8 if none is available). This is DNS filtering, not full traffic inspection. App traffic payloads are not routed through CoreGuard servers, and CoreGuard does not store traffic content.</p>
 
   <h2>Permissions</h2>
   <ul>

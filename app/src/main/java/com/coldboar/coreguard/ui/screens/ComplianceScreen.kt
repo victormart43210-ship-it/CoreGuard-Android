@@ -64,7 +64,8 @@ import kotlinx.coroutines.withContext
 @Composable
 fun ComplianceScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
-    onNavigateToSettings: () -> Unit = {}
+    onNavigateToSettings: () -> Unit = {},
+    onNavigateToSupplyChain: () -> Unit = {}
 ) {
     val context = LocalContext.current
     var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
@@ -102,6 +103,15 @@ fun ComplianceScreen(
             title = "Compliance",
             subtitle = "A plain-language score of your device checks, mapped to OWASP MASVS security areas."
         )
+
+        Spacer(Modifier.height(12.dp))
+
+        Button(
+            onClick = onNavigateToSupplyChain,
+            colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
+        ) {
+            Text("Open Supply Chain tools", color = MaterialTheme.colorScheme.onPrimary)
+        }
 
         Spacer(Modifier.height(24.dp))
 

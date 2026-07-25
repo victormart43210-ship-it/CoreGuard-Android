@@ -2,15 +2,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Required only to probe the loopback interface (127.0.0.1) for a Frida
-         server/gadget on its default ports, to fetch optional public IOC feeds,
-         and to forward allowed DNS queries from the blocker VPN. -->
+    <!-- Loopback Frida-port probes, optional threat-intel downloads, and
+         forwarding of *allowed* Privacy Shield DNS queries to the system /
+         upstream resolver (fallback 8.8.8.8). Scan artifacts stay on-device. -->
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Google Play Billing Library for CoreGuard Premium subscriptions. -->
+    <uses-permission android:name="com.android.vending.BILLING" />
     <!-- Foreground service hosting the always-on spyware-domain blocker VPN. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
-    <!-- Enumerate installed apps to check them against spyware package indicators. -->
+    <!-- Enumerate installed apps to check them against spyware package indicators.
+         Declared for Play Console as a core antivirus / device-security feature. -->
     <uses-permission android:name="android.permission.QUERY_ALL_PACKAGES"
         tools:ignore="QueryAllPackagesPermission" />
 

@@ -25,8 +25,8 @@
 | Feature | Status | Notes |
 |---------|--------|-------|
 | **CPU usage** | 🟡 BASIC | Aggregate CPU usage is sampled from `/proc/stat` on-device. This is a coarse overall reading, not a per-process or security-specific signal. |
-| **Billing / premium** | 🟢 PLAY BILLING | `PlayBillingProvider` uses Google Play Billing Library (`coreguard_premium_monthly`). Create the subscription product in Play Console and test with license testers before production rollout. |
-| **Purchase verification** | 🟡 ON-DEVICE | Entitlement uses Play purchase state on-device. Server-side Google Play Developer API verification is recommended before charging at scale. |
+| **Billing / premium** | 🟢 PLAY BILLING | `PlayBillingProvider` is the production path (Settings + Paywall). `DemoBillingProvider` is tests-only. Create Play Console product `coreguard_premium_monthly` and test with license testers before production. |
+| **Purchase verification** | 🟡 CLIENT ACK ONLY | Purchases are acknowledged on-device. Server-side Google Play Developer API verification is recommended before high-trust entitlement gating. |
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
 | **Root / emulator detection** | 🟡 HEURISTIC | Heuristic checks only. Advanced root frameworks may not be detected. |
 | **Play Store approval** | ⬛ NOT GUARANTEED | Submitting this app does not guarantee approval. Google reviews apps for policy compliance independently. |
