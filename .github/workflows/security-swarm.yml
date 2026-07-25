@@ -1,0 +1,188 @@
+name: Security Swarm CI
+
+# ---------------------------------------------------------------------------
+# Trigger: same gates as the main Android CI, plus manual dispatch.
+# ---------------------------------------------------------------------------
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+# Least-privilege permissions: agents only read code; gatekeeper writes a
+# PR comment via the built-in GITHUB_TOKEN.
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Agent 1 — MASVS Compliance
+  # Audits source code against OWASP MASVS rules (storage, crypto, network,
+  # code quality, and resilience requirements).
+  # ─────────────────────────────────────────────────────────────────────────
+  agent-masvs:
+    name: "🔍 Agent 1 · MASVS Compliance"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run MASVS compliance agent
+        run: |
+          python scripts/agents/masvs_agent.py . \
+            --json-out /tmp/masvs_report.json
+
+      - name: Upload MASVS report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: masvs-report
+          path: /tmp/masvs_report.json
+          if-no-files-found: warn
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Agent 2 — Static Vulnerability Scanner
+  # Searches for hard-coded credentials, weak crypto, dangerous WebView
+  # settings, SQL injection patterns, and path traversal risks.
+  # ─────────────────────────────────────────────────────────────────────────
+  agent-vuln-scan:
+    name: "🔎 Agent 2 · Static Vulnerability Scan"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run static vulnerability scanner
+        run: |
+          python scripts/agents/vuln_scan_agent.py . \
+            --json-out /tmp/vuln_report.json
+
+      - name: Upload vulnerability report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vuln-report
+          path: /tmp/vuln_report.json
+          if-no-files-found: warn
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Agent 3 — RASP / ASM Auditor
+  # Verifies ProGuard/R8 configuration, native library hardening flags,
+  # NativeTamperGuard JNI bridge completeness, backup policy, and network
+  # security configuration.
+  # ─────────────────────────────────────────────────────────────────────────
+  agent-rasp-audit:
+    name: "🛡️  Agent 3 · RASP / ASM Audit"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Run RASP / ASM auditor
+        run: |
+          python scripts/agents/rasp_audit_agent.py . \
+            --json-out /tmp/rasp_report.json
+
+      - name: Upload RASP audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rasp-report
+          path: /tmp/rasp_report.json
+          if-no-files-found: warn
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # Agent 4 — PR Gatekeeper
+  # Downloads all agent reports, aggregates findings into a single Markdown
+  # summary, posts it to the PR (on pull_request events), and fails the
+  # overall workflow if any agent raised a FAIL severity finding.
+  # ─────────────────────────────────────────────────────────────────────────
+  agent-pr-gatekeeper:
+    name: "🚦 Agent 4 · PR Gatekeeper"
+    runs-on: ubuntu-latest
+    # Always run so the summary is produced even when an agent job fails.
+    if: always()
+    needs:
+      - agent-masvs
+      - agent-vuln-scan
+      - agent-rasp-audit
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Download MASVS report
+        uses: actions/download-artifact@v4
+        with:
+          name: masvs-report
+          path: /tmp/reports
+        continue-on-error: true
+
+      - name: Download vulnerability report
+        uses: actions/download-artifact@v4
+        with:
+          name: vuln-report
+          path: /tmp/reports
+        continue-on-error: true
+
+      - name: Download RASP audit report
+        uses: actions/download-artifact@v4
+        with:
+          name: rasp-report
+          path: /tmp/reports
+        continue-on-error: true
+
+      - name: Aggregate findings and write step summary
+        id: gate
+        run: |
+          python scripts/agents/pr_gatekeeper.py \
+            /tmp/reports/masvs_report.json \
+            /tmp/reports/vuln_report.json \
+            /tmp/reports/rasp_report.json
+        continue-on-error: true
+
+      - name: Post PR comment with gate decision
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        env:
+          GATE_EXIT: ${{ steps.gate.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+            const summaryFile = process.env.GITHUB_STEP_SUMMARY;
+            let body = '## 🛡️ Security Swarm Gate\n\nNo report summary available.';
+            if (summaryFile && fs.existsSync(summaryFile)) {
+              body = fs.readFileSync(summaryFile, 'utf8');
+            }
+            // Truncate to GitHub comment limit (65536 chars)
+            if (body.length > 65000) {
+              body = body.slice(0, 65000) + '\n\n_[truncated]_';
+            }
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+      - name: Enforce gate decision
+        # Fail this job (and the workflow) if the gatekeeper script exited non-zero.
+        if: steps.gate.outcome == 'failure'
+        run: |
+          echo "::error::Security Swarm gate FAILED — see step summary for details."
+          exit 1
