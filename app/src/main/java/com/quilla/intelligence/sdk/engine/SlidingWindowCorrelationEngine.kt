@@ -6,6 +6,8 @@ import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.model.StixIndicator
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import org.json.JSONArray
+import org.json.JSONObject
 import java.util.UUID
 
 /**
@@ -183,13 +185,10 @@ class SlidingWindowCorrelationEngine(
         confidence: Float,
         evidence: List<String>,
         matchedDomain: String?
-    ): String = buildString {
-        append("{")
-        append("\"packageName\":\"$packageName\",")
-        append("\"confidence\":$confidence,")
-        if (matchedDomain != null) append("\"matchedDomain\":\"$matchedDomain\",")
-        append("\"reasons\":[")
-        append(evidence.joinToString(",") { "\"${it.replace("\"", "\\\"")}\"" })
-        append("]}")
-    }
+    ): String = JSONObject().apply {
+        put("packageName", packageName)
+        put("confidence", confidence)
+        if (matchedDomain != null) put("matchedDomain", matchedDomain)
+        put("reasons", JSONArray(evidence))
+    }.toString()
 }
