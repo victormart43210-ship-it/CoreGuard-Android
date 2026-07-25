@@ -1,6 +1,8 @@
 package com.coldboar.coreguard.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -8,191 +10,123 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.MaterialTheme
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Bolt
+import androidx.compose.material.icons.filled.Build
+import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Lock
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Security
+import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.semantics.heading
-import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.coldboar.coreguard.BuildTypeCheckEvaluator
-import com.coldboar.coreguard.CpuUsageCalculator
-import com.coldboar.coreguard.DebuggerCheckEvaluator
-import com.coldboar.coreguard.EmulatorCheckEvaluator
-import com.coldboar.coreguard.MemoryUsageCalculator
-import com.coldboar.coreguard.RootCheckEvaluator
-import com.coldboar.coreguard.SecurityCheckResult
-import com.coldboar.coreguard.SecurityCheckState
-import com.coldboar.coreguard.SecurityUtils
-import com.coldboar.coreguard.SignatureCheckEvaluator
-import com.coldboar.coreguard.SpywareScanEvaluator
-import com.coldboar.coreguard.ui.theme.AttentionAmber
-import com.coldboar.coreguard.ui.theme.ElectricTeal
-import com.coldboar.coreguard.ui.theme.HighRed
-import com.coldboar.coreguard.ui.theme.SafeGreen
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.withContext
+import androidx.compose.ui.unit.sp
+import com.coldboar.coreguard.ui.components.BottomNavBar
+import com.coldboar.coreguard.ui.components.CornerSigils
+import com.coldboar.coreguard.ui.components.CpuBar
+import com.coldboar.coreguard.ui.components.GlassCard
+import com.coldboar.coreguard.ui.components.NavTab
+import com.coldboar.coreguard.ui.components.NeonCircularGauge
+import com.coldboar.coreguard.ui.components.QuickActionPill
+import com.coldboar.coreguard.ui.components.SectionLabel
+import com.coldboar.coreguard.ui.components.TogglePill
+import com.coldboar.coreguard.ui.nav.Routes
+import com.coldboar.coreguard.ui.theme.AcidGreen
+import com.coldboar.coreguard.ui.theme.AbyssBlack
+import com.coldboar.coreguard.ui.theme.TextHigh
 
 @Composable
-fun HomeScreen(onNavigateToScanner: () -> Unit) {
-    val context = LocalContext.current
-
-    var ramText by remember { mutableStateOf("–") }
-    var cpuText by remember { mutableStateOf("CPU: Measuring…") }
-    var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
-
-    LaunchedEffect(Unit) {
-        // One-time: evaluate security checks (fast, no network I/O)
-        val certSha256 = withContext(Dispatchers.IO) { SecurityUtils.getAppCertSha256(context) }
-        val evaluators = listOf(
-            SpywareScanEvaluator(),
-            DebuggerCheckEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { certSha256 })
-        )
-        securityResults = evaluators.map { it.evaluate() }
-
-        // Continuous: poll RAM / CPU every 2 s
-        CpuUsageCalculator.reset()
-        while (true) {
-            val usedRam = MemoryUsageCalculator.getUsedRamBytes(context)
-            val totalRam = MemoryUsageCalculator.getTotalRamBytes(context)
-            ramText = if (usedRam != null && totalRam != null) {
-                "${MemoryUsageCalculator.formatBytes(usedRam)} / ${MemoryUsageCalculator.formatBytes(totalRam)}"
-            } else "–"
-
-            val cpu = CpuUsageCalculator.getUsagePercent()
-            cpuText = if (cpu != null) "CPU: $cpu%" else "CPU: Measuring…"
-
-            delay(2_000)
-        }
-    }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
-    ) {
-        Text(
-            text = "CoreGuard",
-            style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
-        )
-        Text(
-            text = "Security & device monitoring",
-            style = MaterialTheme.typography.bodyMedium
-        )
-
-        Spacer(Modifier.height(20.dp))
-
-        // System health card
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+fun HomeScreen(
+    onTab: (String) -> Unit,
+    onAction: (String) -> Unit
+) {
+    Box(Modifier.fillMaxSize().background(AbyssBlack)) {
+        CornerSigils()
+        Column(
+            Modifier
+                .fillMaxSize()
+                .padding(horizontal = 18.dp)
+                .verticalScroll(rememberScrollState())
         ) {
-            Column(Modifier.padding(16.dp)) {
-                Text("System Health", style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(8.dp))
-                Text("RAM: $ramText", style = MaterialTheme.typography.bodyMedium)
-                Text(cpuText, style = MaterialTheme.typography.bodyMedium)
-            }
-        }
+            Spacer(Modifier.height(8.dp))
+            Text(
+                "CoreGuard",
+                color = TextHigh, fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold
+            )
 
-        Spacer(Modifier.height(16.dp))
-
-        // Security status card
-        if (securityResults.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text("Security Status", style = MaterialTheme.typography.titleMedium)
-                    Spacer(Modifier.height(8.dp))
-
-                    val overallState = when {
-                        securityResults.any { it.state == SecurityCheckState.FAIL } -> SecurityCheckState.FAIL
-                        securityResults.any { it.state == SecurityCheckState.WARN } -> SecurityCheckState.WARN
-                        else -> SecurityCheckState.PASS
-                    }
-                    val overallLabel = when (overallState) {
-                        SecurityCheckState.PASS -> "OVERALL: PASS"
-                        SecurityCheckState.WARN -> "OVERALL: WARN"
-                        SecurityCheckState.FAIL -> "OVERALL: FAIL"
-                    }
-                    Text(
-                        text = overallLabel,
-                        style = MaterialTheme.typography.titleLarge,
-                        color = overallState.toColor()
-                    )
-
-                    Spacer(Modifier.height(8.dp))
-
-                    securityResults.forEach { result ->
-                        SecurityCheckRow(result)
-                    }
+            Spacer(Modifier.height(16.dp))
+            GlassCard {
+                Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    NeonCircularGauge(percent = 67f)
                 }
             }
+
+            Spacer(Modifier.height(16.dp))
+            GlassCard(accentTint = AcidGreen) {
+                CpuBar(value = 45)
+            }
+
+            Spacer(Modifier.height(16.dp))
+            GlassCard(accentTint = AcidGreen) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(Modifier.size(10.dp).background(AcidGreen, CircleShape))
+                    Spacer(Modifier.width(10.dp))
+                    Column {
+                        Text(
+                            "Real-time Protection",
+                            color = TextHigh, fontSize = 13.sp,
+                            fontWeight = FontWeight.Medium
+                        )
+                        Text(
+                            "ACTIVE",
+                            color = AcidGreen, fontSize = 11.sp,
+                            fontWeight = FontWeight.SemiBold, letterSpacing = 2.sp
+                        )
+                    }
+                    Spacer(Modifier.weight(1f))
+                    TogglePill(checked = true, onChange = { })
+                }
+            }
+
+            Spacer(Modifier.height(20.dp))
+            SectionLabel("Quick Actions")
+            Spacer(Modifier.height(12.dp))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                QuickActionPill("Scan",        Icons.Filled.Search,  modifier = Modifier.weight(1f)) { onAction("Scan") }
+                QuickActionPill("Reports",     Icons.Filled.Shield,  modifier = Modifier.weight(1f)) { onAction("Reports") }
+                QuickActionPill("Permissions", Icons.Filled.Lock,    modifier = Modifier.weight(1f)) { onAction("Permissions") }
+                QuickActionPill("Optimize",    Icons.Filled.Bolt,    modifier = Modifier.weight(1f)) { onAction("Optimize") }
+            }
+
+            Spacer(Modifier.height(40.dp))
         }
 
-        Spacer(Modifier.height(24.dp))
-
-        Button(
-            onClick = onNavigateToScanner,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
-        ) {
-            Text("Open Nemesis Scanner", color = Color.Black)
-        }
-    }
-}
-
-@Composable
-private fun SecurityCheckRow(result: SecurityCheckResult) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        val icon = when (result.state) {
-            SecurityCheckState.PASS -> "✅"
-            SecurityCheckState.WARN -> "⚠️"
-            SecurityCheckState.FAIL -> "❌"
-        }
-        Text(
-            text = "$icon ${result.displayName}",
-            style = MaterialTheme.typography.bodyMedium,
-            color = result.state.toColor(),
-            modifier = Modifier.weight(1f)
+        BottomNavBar(
+            tabs = listOf(
+                NavTab("Home",     Icons.Filled.Home),
+                NavTab("Security", Icons.Filled.Security),
+                NavTab("Alerts",   Icons.Filled.Notifications),
+                NavTab("Tools",    Icons.Filled.Build),
+                NavTab("Profile",  Icons.Filled.Person),
+            ),
+            selectedIndex = 0,
+            onSelect = { onTab(Routes.HOME) },
+            modifier = Modifier.align(Alignment.BottomCenter)
         )
     }
-    Text(
-        text = result.explanation,
-        style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(start = 28.dp, bottom = 4.dp)
-    )
-}
-
-private fun SecurityCheckState.toColor(): Color = when (this) {
-    SecurityCheckState.PASS -> SafeGreen
-    SecurityCheckState.WARN -> AttentionAmber
-    SecurityCheckState.FAIL -> HighRed
 }
