@@ -19,9 +19,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
+import androidx.compose.material.icons.filled.Bolt
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Policy
 import androidx.compose.material.icons.filled.Star
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -53,9 +55,13 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.PurchaseResult
+import com.coldboar.coreguard.hardening.DeviceHardeningGuide
+import com.coldboar.coreguard.hardening.HardeningSettingsIntents
+import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
+import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlinx.coroutines.delay
 
 @Composable
@@ -66,6 +72,7 @@ fun SettingsScreen(
     var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
+    var hardeningOpen by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -205,6 +212,52 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        // ── Device Hardening Guide ────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { hardeningOpen = !hardeningOpen },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Bolt,
+                        contentDescription = null,
+                        tint = ElectricTeal,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        "Device Hardening",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = ElectricTeal,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        if (hardeningOpen) "Close" else "Open",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
+                }
+                if (!hardeningOpen) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Android-safe speed, battery, storage, and lock-screen tips — " +
+                            "adapted from advanced tweak checklists without Windows-only hacks.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = hardeningOpen) {
+            DeviceHardeningPanel(modifier = Modifier.padding(top = 8.dp))
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ── Privacy & Legal ──────────────────────────────────────────────────
         Card(
@@ -370,6 +423,87 @@ private fun QuillaPanel(modifier: Modifier = Modifier) {
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
         }
+    }
+}
+
+@Composable
+private fun DeviceHardeningPanel(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+            Text(
+                text = DeviceHardeningGuide.SAFETY_BANNER,
+                style = MaterialTheme.typography.bodySmall,
+                color = AttentionAmber
+            )
+            DeviceHardeningGuide.tips.forEach { tip ->
+                HardeningTipCard(
+                    tip = tip,
+                    onOpenSettings = {
+                        HardeningSettingsIntents.open(context, tip.deepLink)
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun HardeningTipCard(
+    tip: DeviceHardeningGuide.Tip,
+    onOpenSettings: () -> Unit
+) {
+    val impactColor = when (tip.impact) {
+        DeviceHardeningGuide.Impact.SPEED -> ElectricTeal
+        DeviceHardeningGuide.Impact.BATTERY -> SafeGreen
+        DeviceHardeningGuide.Impact.STORAGE -> RestrainedGold
+        DeviceHardeningGuide.Impact.SECURITY -> AttentionAmber
+        DeviceHardeningGuide.Impact.SAFETY -> MutedText
+    }
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                text = tip.title,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = if (tip.isSecurityGuardrail) AttentionAmber else ElectricTeal,
+                modifier = Modifier
+                    .weight(1f)
+                    .semantics { heading() }
+            )
+            Text(
+                text = tip.impact.name,
+                style = MaterialTheme.typography.labelLarge,
+                color = impactColor
+            )
+        }
+        Text(tip.summary, style = MaterialTheme.typography.bodyMedium, color = MutedText)
+        tip.steps.forEachIndexed { index, step ->
+            Text(
+                text = "${index + 1}. $step",
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
+            )
+        }
+        if (tip.deepLink != DeviceHardeningGuide.SettingsDeepLink.NONE) {
+            OutlinedButton(
+                onClick = onOpenSettings,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(
+                    if (tip.deepLink == DeviceHardeningGuide.SettingsDeepLink.DEVELOPER_OPTIONS_HINT)
+                        "Open About phone"
+                    else
+                        "Open system settings",
+                    color = ElectricTeal
+                )
+            }
+        }
+        HorizontalDivider(modifier = Modifier.padding(top = 8.dp))
     }
 }
 
