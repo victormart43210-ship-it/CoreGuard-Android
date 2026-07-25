@@ -19,6 +19,15 @@ object Routes {
     const val SETTINGS    = "settings"
 }
 
+/**
+ * Lightweight state-based nav graph for the neon/glass UI layer.
+ *
+ * Note: this uses a local [androidx.compose.runtime.mutableStateOf] for
+ * navigation state, which is sufficient for simple linear flows.  It does
+ * not support system back-press, deep linking, or state restoration across
+ * process death.  A future iteration should migrate to Jetpack Navigation
+ * Compose (NavHost/NavController) to gain those capabilities.
+ */
 @Composable
 fun CoreGuardNavGraph() {
     var route by remember { mutableStateOf(Routes.HOME) }

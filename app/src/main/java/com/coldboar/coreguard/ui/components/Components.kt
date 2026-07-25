@@ -61,6 +61,13 @@ fun GlassCard(
     }
 }
 
+/**
+ * Decorative status bar overlay used for screenshots and design previews.
+ * It displays fixed placeholder values ("9:41", "100%") that match the
+ * industry-standard mockup convention.  It is not intended to show live
+ * device information — the real system status bar remains visible above
+ * this composable in normal app usage.
+ */
 @Composable
 fun StatusBar() {
     Row(
@@ -319,7 +326,7 @@ fun QuickActionPill(label: String, icon: ImageVector, onClick: () -> Unit) {
                 .border(1.dp, CyanPrimary, CircleShape),
             contentAlignment = Alignment.Center
         ) {
-            Icon(icon, null, tint = CyanPrimary, modifier = Modifier.size(20.dp))
+            Icon(icon, contentDescription = label, tint = CyanPrimary, modifier = Modifier.size(20.dp))
         }
         Spacer(Modifier.height(8.dp))
         Text(label, color = TextHigh, fontSize = 11.sp, textAlign = TextAlign.Center)
