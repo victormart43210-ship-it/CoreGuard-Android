@@ -19,10 +19,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,7 +38,6 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 private const val QUILLA_RESPONSE_DELAY_MS = 900L
 private const val EYE_PATTERN_ROWS = 3
@@ -46,6 +45,9 @@ private const val EYE_PATTERN_TEXT = "👁   👁   👁   👁   👁"
 private const val EYE_PATTERN_ALPHA = 0.18f
 private const val QUILLA_FACE_SCALE_IDLE = 1f
 private const val QUILLA_FACE_SCALE_ASKING = 1.4f
+private const val QUILLA_INITIAL_PROMPT = "Ask Quilla a question to begin."
+private const val QUILLA_LISTENING_MESSAGE = "Quilla is listening…"
+private const val QUILLA_RESPONSE_TEMPLATE = "Quilla hears you: \"%s\". Threat correlation focus is active."
 
 @Composable
 fun ToolsScreen() {
@@ -105,11 +107,25 @@ fun ToolsScreen() {
 
 @Composable
 private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
-    val scope = rememberCoroutineScope()
     var question by remember { mutableStateOf("") }
-    var answer by remember { mutableStateOf("Ask Quilla a question to begin.") }
+    var answer by remember { mutableStateOf("") }
     var isAsking by remember { mutableStateOf(false) }
+    var pendingPrompt by remember { mutableStateOf<String?>(null) }
     val hasQuestionText = question.isNotBlank()
+
+    LaunchedEffect(Unit) {
+        answer = QUILLA_INITIAL_PROMPT
+    }
+
+    LaunchedEffect(pendingPrompt) {
+        val prompt = pendingPrompt ?: return@LaunchedEffect
+        isAsking = true
+        answer = QUILLA_LISTENING_MESSAGE
+        delay(QUILLA_RESPONSE_DELAY_MS)
+        answer = QUILLA_RESPONSE_TEMPLATE.format(prompt)
+        isAsking = false
+        pendingPrompt = null
+    }
 
     val faceScale by animateFloatAsState(
         targetValue = if (isAsking) QUILLA_FACE_SCALE_ASKING else QUILLA_FACE_SCALE_IDLE,
@@ -181,13 +197,7 @@ private fun QuillaAssistantPanel(modifier: Modifier = Modifier) {
                         if (!hasQuestionText || isAsking) return@Button
                         val prompt = question.trim()
                         question = ""
-                        isAsking = true
-                        answer = "Quilla is listening…"
-                        scope.launch {
-                            delay(QUILLA_RESPONSE_DELAY_MS)
-                            answer = "Quilla hears you: \"$prompt\". Threat correlation focus is active."
-                            isAsking = false
-                        }
+                        pendingPrompt = prompt
                     },
                     enabled = !isAsking && hasQuestionText,
                     modifier = Modifier.fillMaxWidth()
