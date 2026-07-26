@@ -185,4 +185,27 @@ Signed AAB / physical / Play billing still **not run**.
 | Shield presence | Same freeze; copy calmed (ON/OFF, indicator-domain wording) |
 | Home metrics | Shield chip `ARMED`/`IDLE` → `ON`/`OFF` |
 
+### Phase 3 validation (actually run)
+
+```bash
+./gradlew -Pcoreguard.androidBuild=true :app:compileDebugKotlin :app:testDebugUnitTest
+# BUILD SUCCESSFUL — 333 unit tests, 0 failures
+```
+
 Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
+
+---
+
+## Current release gate
+
+| Gate | Status |
+|------|--------|
+| Debug APK + unit + lint | PASS (evidence above) |
+| Emulator Quilla / smoke | PASS (Phase 0 + Phase 1 rechecks) |
+| Claims honesty (CPU / scanner / Shield) | Improved this PR |
+| `EXPECTED_CERT_SHA256` for Play | **Operator action required** |
+| Signed AAB | NOT RUN |
+| Physical device + Play billing | NOT RUN |
+
+**Verdict: GO FOR INTERNAL TESTING ONLY** (debug automated gates green).  
+**Not GO** for production Play until signing hash, signed AAB, physical smoke, and billing license-tester paths are evidenced.
