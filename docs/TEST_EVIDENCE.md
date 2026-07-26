@@ -61,11 +61,9 @@ Version: **1.0.14** (`versionCode` 15)
 | Merge PR #72 | **DONE** (`bf29ac3` on `main`) |
 | Notification Listener disclosure (privacy policy + Play checklist) | **DONE** in-repo |
 | `:app:testDebugUnitTest` (release prep) | **PASS** — **318** tests, 0 failures |
-| Signed release AAB (`versionCode` 15) | **PASS** — `app/build/outputs/bundle/release/app-release.aab` (~6.8 MB); SHA-256 `7ef305932c8ea63f317f6b5c61e1abd1d02d8226b89e9474ec3131a2858cd7c1` |
-| GitHub tag `v1.0.14` → Release workflow | Triggered on push of annotated tag |
-| Upload AAB to Play **Internal testing** | **Human** — Play Console (use Play App Signing / existing upload key if already enrolled) |
-| Privacy policy URL on Play listing | **Human** |
+| Signed release AAB (`versionCode` 15) | **PASS** — GitHub Release [v1.0.14](https://github.com/victormart43210-ship-it/CoreGuard-Android/releases/tag/v1.0.14) (`app-release.aab`); CI SHA-256 in release `checksums-sha256.txt` |
+| GitHub tag `v1.0.14` → Release workflow | **PASS** — [Actions run 30195123549](https://github.com/victormart43210-ship-it/CoreGuard-Android/actions/runs/30195123549) |
+| Upload AAB to Play **Internal testing** | **Human** — download AAB from the GitHub Release and upload in Play Console |
+| Privacy policy URL on Play listing | **Human** (raw GitHub URL works; Pages workflow may need repo Pages permissions) |
 | VPN + `QUERY_ALL_PACKAGES` + Notification Listener declarations | **Human** — see `PLAY_CONSOLE_CHECKLIST.md` |
 | `coreguard_premium_monthly` + license tester | **Human** |
-
-> Signing note: cloud agent built the AAB with a freshly generated upload keystore under `~/coreguard-secrets` (gitignored). If Play already has an upload certificate, rebuild with that keystore before uploading.
