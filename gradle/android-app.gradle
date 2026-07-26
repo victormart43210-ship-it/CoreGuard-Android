@@ -1,5 +1,6 @@
 // Plugin classpath + apply are owned by app/build.gradle so AGP resolves on the
 // project PluginManager. This script only configures the Android project.
+// kotlin-kapt is applied from app/build.gradle for Room annotation processing.
 
 android {
     namespace "com.coldboar.coreguard"
@@ -134,4 +135,8 @@ dependencies {
     testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
+
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    kapt "androidx.room:room-compiler:2.6.1"
 }

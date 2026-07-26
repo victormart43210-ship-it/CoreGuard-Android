@@ -3,6 +3,7 @@ package com.coldboar.coreguard
 import android.app.Application
 import android.util.Log
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
+import com.coreguard.android.data.local.QuillaDatabase
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -24,6 +25,9 @@ class CoreGuardApplication : Application() {
      * around their lifecycle; purchase UI requires an attached Activity.
      */
     val billingProvider: PlayBillingProvider by lazy { PlayBillingProvider(this) }
+
+    /** Room database for Quilla Intelligence threat hypotheses. */
+    val quillaDatabase: QuillaDatabase by lazy { QuillaDatabase.getInstance(this) }
 
     override fun onCreate() {
         super.onCreate()

@@ -96,9 +96,9 @@ fun TimelineScreen(
             ScreenHeader(
                 title = "Scan history",
                 subtitle = if (policy.isPremium()) {
-                    "Your full integrity ledger — up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} scans."
+                    "Observatory ledger — up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} integrity scans, timestamped."
                 } else {
-                    "Free shows your last ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans. Premium keeps the longer ledger."
+                    "Observatory ledger — free keeps ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans; Premium keeps the longer history."
                 },
                 modifier = Modifier.weight(1f)
             )

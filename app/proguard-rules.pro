@@ -52,3 +52,8 @@
 # Kotlin metadata – needed by kotlin-reflect and some Compose internals.
 # ---------------------------------------------------------------------------
 -keep class kotlin.Metadata { *; }
+
+# ---------------------------------------------------------------------------
+# Room – preserve entity and DAO classes from R8 stripping.
+# ---------------------------------------------------------------------------
+-keep class com.coreguard.android.data.local.** { *; }
