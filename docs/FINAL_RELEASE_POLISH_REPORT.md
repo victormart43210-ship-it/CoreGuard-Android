@@ -265,6 +265,41 @@ Validation: `:app:testDebugUnitTest` → **354** tests, 0 failures (includes tim
 | Merge vs `main` | 0 behind / ahead only (no rebase conflicts) |
 | GitHub CI (PR #80) | **SUCCESS** — Android validation, Instrumentation ATD, Security Swarm (MASVS+vuln+RASP+gatekeeper), Dependency review, Go CLI |
 
+### Second full re-gate (flawless pass)
+
+Date: 2026-07-26. Branch tip before this section: `7191649`. Synced with `origin/main` (`626962f`) — already up to date.
+
+```bash
+git merge origin/main   # Already up to date
+./gradlew clean \
+  :app:lintDebug :app:testDebugUnitTest \
+  :app:assembleDebug :app:assembleRelease \
+  :app:verifyNoPlaceholderApk --no-daemon
+# BUILD SUCCESSFUL — unit_tests=354 failures=0 errors=0 skipped=0
+# lintDebug: 0 Error/Fatal; 70 Warning, 3 Information
+
+./gradlew :app:lintRelease :app:bundleRelease --no-daemon
+# BUILD SUCCESSFUL — lintRelease: 0 Error/Fatal; 66 Warning, 3 Information
+# AAB + release APK present
+
+python3 scripts/agents/masvs_agent.py . --json-out /tmp/masvs_report.json
+# Total: 5 finding(s) — 0 FAIL, 0 WARN
+
+./scripts/quilla-emulator-tests.sh
+# QuillaQuantumOnDeviceTest OK (2); MainActivityLaunchTest OK (1); smoke PASS
+```
+
+Smoke hardening in this pass: `scripts/smoke-adb.sh` no longer uses `am start -W` (soft hosts reported `Status: timeout` / `LaunchState: UNKNOWN` while the process was still starting). It now starts async and polls `pidof` up to 60s before settle + fatal checks.
+
+| Gate | Result |
+|------|--------|
+| Merge vs `origin/main` | Already up to date (0 behind) |
+| Clean CI-equivalent Gradle | PASS |
+| lintRelease + bundleRelease | PASS |
+| MASVS | 0 FAIL |
+| Quilla emu + smoke | PASS |
+| GitHub CI on prior tip | All 8 checks SUCCESS |
+
 ### Changed files (this PR branch)
 
 - `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`
