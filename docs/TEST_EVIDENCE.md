@@ -12,6 +12,7 @@ Version: **1.0.13** (`versionCode` 14)
 |-------|--------|-------|
 | `:app:compileDebugKotlin` | **PASS** | Elite engines + screens |
 | `:app:testDebugUnitTest` | **PASS** | **315** tests (was 304) |
+| Emulator gate (`CoreGuard_ATD35`) | **PASS** | Instrumented 3 + ADB smoke — MainActivity focused, no fatal |
 | Honesty | **PASS** | DTS = on-device correlator + Quilla quantum-inspired; not NPU SLM / cloud LLM. Overlay Matrix audits surfaces (no silent remote overlay-kill). Scam Guard needs user Notification access. Forensic Journal = SHA-256 chain + StrongBox/TEE at rest. |
 
 ### Landed
@@ -35,7 +36,7 @@ Version: **1.0.13** (`versionCode` 14)
 | M14 Emulator Gate | PASS |
 | M15 Swarm + Redux Counter + ATD | PASS — 304 unit + instrumented + smoke |
 | M16 CG Elite Home dashboard | PASS — 304 unit + ATD smoke |
-| **M17 Elite zero-trust features** | **PASS — 315 unit** |
+| **M17 Elite zero-trust features** | **PASS — 315 unit + ATD instrumented + smoke** |
 
 ## Play Console next (human)
 
