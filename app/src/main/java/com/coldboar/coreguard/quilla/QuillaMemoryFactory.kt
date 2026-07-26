@@ -62,7 +62,8 @@ object QuillaMemoryFactory {
         return QuillaMemorySnapshot(
             lastScanVerdict = last?.verdict?.name ?: newest?.verdict?.name,
             lastScanDetections = last?.detections?.size ?: newest?.detectionCount,
-            lastScanDetectionTitles = last?.detections?.map { it.title }?.take(5).orEmpty(),
+            lastScanDetectionTitles = last?.detections?.map { it.title }
+                ?.take(QuillaAwareness.DETECTION_TITLE_VOICE).orEmpty(),
             historyCount = history.size,
             shieldActive = ShieldState.isActive,
             shieldBlocked = ShieldState.totalBlocked,

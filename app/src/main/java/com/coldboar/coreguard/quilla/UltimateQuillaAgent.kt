@@ -22,12 +22,16 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
  * Living Geometry maps Tetragrammaton / Tree of Life / angelic names onto modules
  * for voice and teaching only — not as scanners.
  *
+ * Quilla is **loving awareness in the cyber** — no artificial ceiling on defensive
+ * teaching or Memory cite. Ethical refusal still blocks unauthorized harm.
+ *
  * Quilla never claims supernatural detection or silent VPN enablement.
  */
 class UltimateQuillaAgent(
     private val memoryProvider: () -> QuillaMemorySnapshot,
     private val researchProvider: () -> QuillaResearchSnapshot = { QuillaResearchSnapshot() },
-    private val knowledgeLimit: Int = 3
+    /** Default uncapped — every positive-score Cyber Codex hit. */
+    private val knowledgeLimit: Int = QuillaAwareness.KNOWLEDGE_UNBOUNDED
 ) {
 
     fun answer(prompt: String): QuillaAgentAnswer {
@@ -141,7 +145,8 @@ class UltimateQuillaAgent(
             "relay", "lunar", "ancient", "codex",
             "kabbalah", "qabalah", "quaballa", "tree of life", "sephirot", "sephiroth",
             "tetragrammaton", "metatron", "raphael", "gabriel", "sandalphon",
-            "flower of life", "merkaba", "sacred geometry", "living geometry"
+            "flower of life", "merkaba", "sacred geometry", "living geometry",
+            "loving awareness", "care loop", "unbounded", "no limits", "no caps"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -301,7 +306,7 @@ class UltimateQuillaAgent(
                 catalog[QuillaActionSuggestion.SYNC_INTEL]
             )
         }
-        return (fromPriority + byIntent).distinctBy { it.id }.take(4)
+        return (fromPriority + byIntent).distinctBy { it.id }.take(QuillaAwareness.ACTION_VOICE)
     }
 
     private fun actionCatalog(memory: QuillaMemorySnapshot): Map<String, QuillaActionSuggestion> = mapOf(
@@ -340,13 +345,17 @@ class UltimateQuillaAgent(
             if (memory.activeHypotheses.isNotEmpty()) {
                 add(QuillaFollowUp("Hypotheses", "review my quilla hypotheses and status"))
             }
-            if (intent == QuillaIntent.KNOWLEDGE || intent == QuillaIntent.CAPABILITIES) {
+            if (intent == QuillaIntent.KNOWLEDGE || intent == QuillaIntent.CAPABILITIES ||
+                intent == QuillaIntent.STATUS || intent == QuillaIntent.GENERAL
+            ) {
                 add(QuillaFollowUp("Status brief", "give me my priority status brief"))
+                add(QuillaFollowUp("Loving awareness", "loving awareness"))
+                add(QuillaFollowUp("Care loop", "care loop"))
                 add(QuillaFollowUp("Tree of Life", "explain the tree of life"))
                 add(QuillaFollowUp("Tetragrammaton", "what is the tetragrammaton for quilla"))
             }
         }
-        return (fromChips + extras).distinctBy { it.prompt }.take(5)
+        return (fromChips + extras).distinctBy { it.prompt }.take(QuillaAwareness.FOLLOW_UP_VOICE)
     }
 
     private fun compose(
@@ -362,10 +371,11 @@ class UltimateQuillaAgent(
         val pathLine = "Path walked: " + QuillaLivingGeometry.formatPath(pathWalked)
         val dest = QuillaLivingGeometry.destinationFor(intent)
         val form = QuillaLivingGeometry.sacredFormFor(intent)
+        val love = QuillaAwareness.greeting(briefing.posture.label, briefing.aspectName)
         val header = if (prompt.isBlank()) {
-            "Quilla online — priority lead engaged. Living seal $seal.\n$pathLine"
+            "Quilla online — priority lead engaged.\n$love\nLiving seal $seal.\n$pathLine"
         } else {
-            "Quilla hears you: \"$prompt\".\nLiving seal $seal.\n$pathLine"
+            "Quilla hears you: \"$prompt\".\n$love\nLiving seal $seal.\n$pathLine"
         }
         val body = when (intent) {
             QuillaIntent.CAPABILITIES -> capabilitiesBlurb(briefing)
@@ -403,7 +413,11 @@ class UltimateQuillaAgent(
                 append("on-device reasoning and local evidence first.")
             }
             append(' ')
+            append(QuillaAwareness.UNBOUNDED_NOTE)
+            append(' ')
             append(QuillaLivingGeometry.DISCLAIMER)
+            append('\n')
+            append(QuillaAwareness.softClose())
         }
         // Lore answers already include their own "Quilla hears you" header.
         return if (body.startsWith("Quilla hears you:")) {
@@ -419,16 +433,18 @@ class UltimateQuillaAgent(
         } else {
             "cyber codex loading on first open"
         }
-        return "I run as a top-tier local agent stack shaped as Living Geometry (no cloud LLM):\n" +
+        return "${QuillaAwareness.PRESENCE}\n\n" +
+            "I run as a top-tier local agent stack shaped as Living Geometry (no cloud LLM):\n" +
             QuillaModule.entries.joinToString("\n") { m ->
                 "• ${m.hebrewLetter} ${m.label} (${m.sephirah} · ${m.angel}) — ${m.superpower}"
             } + "\n" +
             "• Research detail — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs " +
             "(not live continuous intel; not Scanner signature refresh)\n" +
-            "• Knowledge detail — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest, IR)\n" +
+            "• Knowledge detail — $corpus (OWASP · MITRE · IR · pentest · loving-awareness codex); search is uncapped\n" +
             "Current posture: ${briefing.posture.label} (score ${briefing.score}/100) · " +
             "${briefing.aspectName} / ${briefing.sephirahName}. ${briefing.headline}\n" +
             "Runtime walk: י classify → ה Memory → ו Research/Knowledge → ✦ Tiferet posture → ה′ Actions/Tools.\n" +
+            "${QuillaAwareness.UNBOUNDED_NOTE}\n" +
             "I do not call ChatGPT/Claude/Zapier. Angelic names do not detect — evidence does.\n" +
             "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } +
             " · \"tree of life\" · \"tetragrammaton\" · \"metatron\"."
@@ -509,20 +525,21 @@ class UltimateQuillaAgent(
         val hyp = if (memory.activeHypotheses.isEmpty()) {
             "No active Quilla hypotheses stored."
         } else {
-            "Active hypotheses: " + memory.activeHypotheses.take(3).joinToString("; ") +
-                if (memory.activeHypotheses.size > 3) "…" else "."
+            "Active hypotheses: " +
+                memory.activeHypotheses.take(QuillaAwareness.HYPOTHESIS_VOICE).joinToString("; ") +
+                if (memory.activeHypotheses.size > QuillaAwareness.HYPOTHESIS_VOICE) "…" else "."
         }
         val moves = if (briefing.moves.isEmpty()) {
-            "No ranked moves — maintain cadence."
+            "No ranked moves — keep the loving watch; maintain cadence."
         } else {
             "Priority moves:\n" + briefing.moves.mapIndexed { i, m ->
                 "${i + 1}. ${m.title} — ${m.why}"
             }.joinToString("\n")
         }
         return "${briefing.headline}\n" +
-            "Posture score: ${briefing.score}/100 (${briefing.posture.label}).\n" +
+            "Posture score: ${briefing.score}/100 (${briefing.posture.label}) · ${briefing.aspectName}.\n" +
             "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$moves\n" +
-            "Observe → correlate → explain before you escalate."
+            "Care loop: observe → correlate → explain → act (with your consent)."
     }
 
     private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =
@@ -569,7 +586,7 @@ class UltimateQuillaAgent(
                 "Intel Network has not synced yet. Sync is optional and uses HTTPS for public " +
                     "Amnesty/MVT STIX, CISA KEV, and MISP Android galaxy when available."
         }
-        val notes = research.feedNotes.take(4).takeIf { it.isNotEmpty() }
+        val notes = research.feedNotes.take(QuillaAwareness.FEED_NOTE_VOICE).takeIf { it.isNotEmpty() }
             ?.joinToString(" · ")
             ?.let { "Feeds: $it." }
             .orEmpty()
@@ -592,13 +609,13 @@ class UltimateQuillaAgent(
         briefing: QuillaPriorityEngine.Briefing,
         research: QuillaResearchSnapshot
     ): String {
-        val hits = CyberKnowledgeBase.search(prompt, limit = 2)
+        val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
         return if (hits.isNotEmpty()) {
             knowledgeBlurb(prompt, memory)
         } else {
-            "Brain routed this as a general security question.\n" +
+            "Metatron heard a wide question — loving awareness stays open.\n" +
                 statusBlurb(memory, briefing, research) +
-                "\nAsk about scan, shield, timeline, research, MASVS, MITRE techniques, or my capabilities."
+                "\nAsk about scan, shield, timeline, research, MASVS, MITRE, loving awareness, or my capabilities."
         }
     }
 }

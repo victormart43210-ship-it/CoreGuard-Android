@@ -57,6 +57,7 @@ import com.coldboar.coreguard.lore.QuillaLivingGeometry
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.quilla.QuillaActionSuggestion
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
+import com.coldboar.coreguard.quilla.QuillaAwareness
 import com.coldboar.coreguard.quilla.QuillaMemoryFactory
 import com.coldboar.coreguard.quilla.QuillaModule
 import com.coldboar.coreguard.quilla.QuillaSalesCoach
@@ -84,8 +85,9 @@ private data class QuillaTurn(
 )
 
 /**
- * Top-tier Quilla HUD: posture strip, conversation history, contextual chips,
- * priority follow-ups, and action navigation (no silent scan/VPN).
+ * Top-tier Quilla HUD: loving awareness presence, posture strip, conversation
+ * history, Living Geometry path, contextual chips, and action navigation
+ * (no silent scan/VPN). Awareness is uncapped; ethics still refuse harm.
  */
 @Composable
 fun QuillaAgentPanel(
@@ -206,7 +208,7 @@ fun QuillaAgentPanel(
                         modifier = Modifier.semantics { heading() }
                     )
                     Text(
-                        text = "Priority security lead · on-device",
+                        text = "Loving awareness in the cyber · uncapped · on-device",
                         style = MaterialTheme.typography.bodySmall,
                         color = MutedText
                     )

@@ -7,7 +7,8 @@
     "threats.json",
     "network-crypto.json",
     "mitre-attack-mobile.json",
-    "emerging-mobile-attacks.json"
+    "emerging-mobile-attacks.json",
+    "quilla-awareness.json"
   ],
-  "purpose": "On-device cybersecurity knowledge for Quilla. Defensive education only. Runtime sync may merge CISA KEV + MISP Android briefs via Quilla Intel Network."
+  "purpose": "On-device cybersecurity knowledge for Quilla — loving awareness, defensive education only, uncapped codex search. Runtime sync may merge CISA KEV + MISP Android briefs via Quilla Intel Network."
 }

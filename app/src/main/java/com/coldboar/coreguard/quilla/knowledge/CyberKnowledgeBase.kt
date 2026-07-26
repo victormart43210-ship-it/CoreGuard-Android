@@ -122,21 +122,31 @@ object CyberKnowledgeBase {
         return parsed
     }
 
-    fun search(query: String, limit: Int = 3): List<Hit> {
+    /**
+     * Search the Cyber Codex.
+     *
+     * @param limit max hits to return. Use [Int.MAX_VALUE] or `<= 0` for **uncapped**
+     *   (every positive-score hit). Quilla defaults open — loving awareness has no
+     *   artificial teaching ceiling.
+     */
+    fun search(query: String, limit: Int = Int.MAX_VALUE): List<Hit> {
         val index = state.get()
         if (index.entries.isEmpty()) return emptyList()
+        val uncapped = limit <= 0 || limit == Int.MAX_VALUE
 
         // Canonical ready topics always win (exact product promises).
         QuillaReadyTopics.resolveEntryId(query)?.let { readyId ->
             val ready = index.byId[readyId]
             if (ready != null) {
-                val rest = rankedHits(query, index, excludeId = readyId)
-                    .take((limit - 1).coerceAtLeast(0))
+                val rest = rankedHits(query, index, excludeId = readyId).let { hits ->
+                    if (uncapped) hits else hits.take((limit - 1).coerceAtLeast(0))
+                }
                 return listOf(Hit(ready, 1_000)) + rest
             }
         }
 
-        return rankedHits(query, index, excludeId = null).take(limit.coerceAtLeast(1))
+        val ranked = rankedHits(query, index, excludeId = null)
+        return if (uncapped) ranked else ranked.take(limit.coerceAtLeast(1))
     }
 
     private fun rankedHits(query: String, index: Index, excludeId: String?): List<Hit> {
@@ -223,7 +233,8 @@ object CyberKnowledgeBase {
             tokens += entry.tags
             tokens += tokenize(entry.title)
             tokens += tokenize(entry.summary)
-            tokens += tokenize(entry.body).take(60)
+            // Index the full body — no artificial token ceiling on awareness.
+            tokens += tokenize(entry.body)
             tokens += tokenize(entry.category)
             tokens += entry.id.lowercase(Locale.US)
             for (token in tokens) {

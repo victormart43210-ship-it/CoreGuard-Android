@@ -102,6 +102,8 @@ class UltimateQuillaAgentTest {
         assertEquals(QuillaIntent.CAPABILITIES, answer.intent)
         assertTrue(answer.text.contains("posture", ignoreCase = true))
         assertEquals("CRITICAL", answer.postureLabel)
+        assertTrue(answer.text.contains("loving awareness", ignoreCase = true))
+        assertTrue(answer.text.contains("uncapped", ignoreCase = true))
     }
 
     @Test

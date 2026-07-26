@@ -129,7 +129,7 @@ object QuillaPriorityEngine {
             else -> Posture.STEADY
         }
 
-        val ranked = moves.distinctBy { it.id }.take(4)
+        val ranked = moves.distinctBy { it.id }.take(QuillaAwareness.ACTION_VOICE)
         val aspect = QuillaLivingGeometry.aspectForPosture(posture.label)
         val seph = QuillaLivingGeometry.sephirah(aspect.sephirahId)
         val seal = QuillaLivingGeometry.livingSeal(posture.label)
@@ -165,7 +165,9 @@ object QuillaPriorityEngine {
             if (!memory.shieldActive) add("Shield" to "how do I open privacy shield")
             add("MASVS-NETWORK" to "MASVS-NETWORK")
             add("Tree" to "explain the tree of life")
-        }.distinctBy { it.second }.take(6)
+            add("Loving awareness" to "loving awareness")
+            add("Care loop" to "care loop")
+        }.distinctBy { it.second }.take(QuillaAwareness.CHIP_VOICE)
 
         return Briefing(
             posture = posture,

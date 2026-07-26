@@ -99,6 +99,41 @@ object QuillaReadyTopics {
                 "modded apk risk"
             ),
             chipLabel = "Sideload dropper"
+        ),
+        Topic(
+            prompt = "loving awareness",
+            entryId = "quilla-loving-awareness",
+            aliases = setOf(
+                "quilla awareness",
+                "loving awareness in the cyber",
+                "who is quilla really",
+                "unbounded quilla",
+                "no limits quilla",
+                "no caps quilla"
+            ),
+            chipLabel = "Loving awareness"
+        ),
+        Topic(
+            prompt = "care loop",
+            entryId = "quilla-care-loop",
+            aliases = setOf(
+                "observe correlate explain act",
+                "quilla care loop",
+                "loving watch loop",
+                "tetractys care"
+            ),
+            chipLabel = "Care loop"
+        ),
+        Topic(
+            prompt = "unbounded defense",
+            entryId = "quilla-unbounded-defense",
+            aliases = setOf(
+                "unbounded defensive learning",
+                "no caps on knowledge",
+                "uncapped codex",
+                "no limits on quilla"
+            ),
+            chipLabel = "Unbounded defense"
         )
     )
 
