@@ -1,6 +1,7 @@
 package com.coldboar.coreguard.quilla
 
 import com.coldboar.coreguard.lore.QuillaKnowledge
+import com.coldboar.coreguard.lore.QuillaLivingGeometry
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -13,10 +14,13 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
  * - **Memory** — last scan, timeline size, shield state, hypotheses, telemetry
  * - **Research** — Amnesty / MVT STIX indicator sync + on-device IOC correlation
  * - **Knowledge** — on-device cyber codex (OWASP, MITRE ATT&CK Mobile, pentest, IR)
- *   plus optional Observatory Codex metaphors (never treated as detection)
+ *   plus Observatory Codex + Living Geometry metaphors (never treated as detection)
  * - **Actions** — suggested automations (scan, shield, timeline, intel sync)
  * - **Tools** — Nemesis Scanner, Privacy Shield, Scan Timeline
  * - **Priority** — [QuillaPriorityEngine] ranks posture and next moves
+ *
+ * Living Geometry maps Tetragrammaton / Tree of Life / angelic names onto modules
+ * for voice and teaching only — not as scanners.
  *
  * Quilla never claims supernatural detection or silent VPN enablement.
  */
@@ -96,7 +100,7 @@ class UltimateQuillaAgent(
                 p.contains("how am i") || p.contains("my risk") || p.contains("protect me") ->
                 QuillaIntent.STATUS
 
-            QuillaKnowledge.matchFragment(p) != null ||
+            QuillaKnowledge.matchLivingOrObservatory(p) ||
                 isKnowledgeHeavy(p) ||
                 CyberKnowledgeBase.search(p, limit = 1).isNotEmpty() ->
                 QuillaIntent.KNOWLEDGE
@@ -115,7 +119,10 @@ class UltimateQuillaAgent(
             "zero day", "rules of engagement", "kill chain", "t16", "t14", "t15",
             "masvs-", "explain ", "what is ", "how does ", "define ",
             "observatory", "sky-watcher", "sky watcher", "maya", "calendar cycle",
-            "relay", "lunar", "ancient", "codex"
+            "relay", "lunar", "ancient", "codex",
+            "kabbalah", "qabalah", "quaballa", "tree of life", "sephirot", "sephiroth",
+            "tetragrammaton", "metatron", "raphael", "gabriel", "sandalphon",
+            "flower of life", "merkaba", "sacred geometry", "living geometry"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -297,6 +304,8 @@ class UltimateQuillaAgent(
             }
             if (intent == QuillaIntent.KNOWLEDGE || intent == QuillaIntent.CAPABILITIES) {
                 add(QuillaFollowUp("Status brief", "give me my priority status brief"))
+                add(QuillaFollowUp("Tree of Life", "explain the tree of life"))
+                add(QuillaFollowUp("Tetragrammaton", "what is the tetragrammaton for quilla"))
             }
         }
         return (fromChips + extras).distinctBy { it.prompt }.take(5)
@@ -310,10 +319,11 @@ class UltimateQuillaAgent(
         actions: List<QuillaActionSuggestion>,
         briefing: QuillaPriorityEngine.Briefing
     ): String {
+        val seal = QuillaLivingGeometry.livingSeal(briefing.posture.label)
         val header = if (prompt.isBlank()) {
-            "Quilla online — priority lead engaged."
+            "Quilla online — priority lead engaged. Living seal $seal."
         } else {
-            "Quilla hears you: \"$prompt\"."
+            "Quilla hears you: \"$prompt\".\nLiving seal $seal."
         }
         val body = when (intent) {
             QuillaIntent.CAPABILITIES -> capabilitiesBlurb(briefing)
@@ -364,20 +374,22 @@ class UltimateQuillaAgent(
             "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
             "Current posture: ${briefing.posture.label} (score ${briefing.score}/100). ${briefing.headline}\n" +
+            "Living Geometry (metaphor): Tetragrammaton י־ה־ו־ה maps Brain→Memory→Research/Knowledge→Actions/Tools; " +
+            "Tree of Life angels name my aspects — never my detectors.\n" +
             "I do not call ChatGPT/Claude/Zapier. I teach defense and cite CoreGuard evidence.\n" +
-            "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } + "."
+            "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } +
+            " · \"tree of life\" · \"tetragrammaton\" · \"metatron\"."
     }
 
     private fun knowledgeBlurb(prompt: String, memory: QuillaMemorySnapshot): String {
         val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
         if (hits.isEmpty()) {
-            val loreHit = QuillaKnowledge.matchFragment(prompt.lowercase())
-            if (loreHit != null) {
+            if (QuillaKnowledge.matchLivingOrObservatory(prompt.lowercase())) {
                 return QuillaKnowledge.answer(prompt)
             }
             return "Knowledge found no strong codex match yet. Try a ready prompt: " +
                 QuillaReadyTopics.suggestionPrompts().joinToString(", ") +
-                " — or ask about Observatory cycles / relays in the Secret Portal.\n" +
+                " — or ask about the Tree of Life, Tetragrammaton, Metatron, or Observatory cycles in the Secret Portal.\n" +
                 statusBlurb(memory, QuillaPriorityEngine.brief(memory), QuillaResearchSnapshot())
         }
         val primary = hits.first()

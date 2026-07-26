@@ -2,33 +2,35 @@
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
 Date: 2026-07-26  
-Version: **1.0.3** (`versionCode` 4)
+Version: **1.0.4** (`versionCode` 5)
 
 > Milestone results are posted as PR comments on [#70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
 > (GitHub Milestone API returns 403 for the agent token).
 
-## Milestone M7 · Quilla top-tier upgrade
+## Milestone M8 · Quilla Living Geometry
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **261** tests (priority engine + agent follow-ups) |
+| `:app:testDebugUnitTest` | **PASS** | **268** tests (Tree of Life / Tetragrammaton / angels) |
 | `:app:assembleDebug` | **PASS** | Debug APK |
-| Honesty | **PASS** | No silent scan/VPN; Research ≠ Scanner signature refresh; no cloud LLM |
+| Honesty | **PASS** | Living Geometry is metaphor only — does not power detection |
 
 ### Landed
 
-- `QuillaPriorityEngine` — CRITICAL→STEADY posture, ranked moves, contextual chips
-- Memory cites correlator IOC count + signed telemetry ring (HIGH/CRITICAL flag)
-- `UltimateQuillaAgent` — priority status brief, posture score, follow-ups, research-aware status
-- `QuillaAgentPanel` — posture strip, transcript history, context/follow-up chips, priority actions
+- `QuillaLivingGeometry` — Tree of Life (10 Sephirot + angels), Tetragrammaton pillars, sacred forms
+- `QuillaKnowledge` routes Kabbalah / angel / geometry prompts with disclaimers
+- Agent living seal + Secret Portal Living Geometry vault section
+- Panel shows angelic aspect by posture (metaphor)
 
 ## Prior milestones
 
 | Milestone | Result |
 |-----------|--------|
-| M1–M4 | PASS (unit/lint, Quilla IOC, CI, Intel Network) |
-| M5 Play repairs | PASS (billing, legacy manifest, privacy URL, cert pin) |
-| M6 Signed telemetry | PASS (ECDSA ring + Quilla evaluator) |
+| M1–M4 | PASS |
+| M5 Play repairs | PASS |
+| M6 Signed telemetry | PASS |
+| M7 Quilla top-tier | PASS |
+| **M8 Living Geometry** | **PASS — 268 tests** |
 
 ## Play Console next (human)
 

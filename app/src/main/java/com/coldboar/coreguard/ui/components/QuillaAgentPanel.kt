@@ -53,6 +53,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.lore.QuillaLivingGeometry
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.quilla.QuillaActionSuggestion
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
@@ -208,6 +209,11 @@ fun QuillaAgentPanel(
                         text = "Priority security lead · on-device",
                         style = MaterialTheme.typography.bodySmall,
                         color = MutedText
+                    )
+                    Text(
+                        text = QuillaLivingGeometry.livingSeal(answer?.postureLabel),
+                        style = MaterialTheme.typography.labelMedium,
+                        color = RestrainedGold
                     )
                 }
                 Text(
@@ -467,6 +473,7 @@ private fun PostureStrip(answer: QuillaAgentAnswer?) {
                 .background(color)
         )
         Spacer(modifier = Modifier.width(10.dp))
+        val aspect = QuillaLivingGeometry.aspectForPosture(label)
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = "Posture $label",
@@ -475,8 +482,9 @@ private fun PostureStrip(answer: QuillaAgentAnswer?) {
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = score?.let { "Priority score $it/100 · evidence-ranked moves" }
-                    ?: "Ask for a priority status brief",
+                text = score?.let {
+                    "Priority score $it/100 · ${aspect.name} aspect (metaphor)"
+                } ?: "Ask for a priority status brief",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )

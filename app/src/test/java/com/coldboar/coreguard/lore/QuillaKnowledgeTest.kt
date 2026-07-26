@@ -23,7 +23,7 @@ class QuillaKnowledgeTest {
 
     @Test
     fun `answer includes disclaimer and security mapping`() {
-        val answer = QuillaKnowledge.answer("Show me the recovered archives lens for IOC evidence")
+        val answer = QuillaKnowledge.answer("Show me the recovered archives for IOC evidence")
         assertTrue(answer.contains("Observatory lens"))
         assertTrue(answer.contains("Security mapping:"))
         assertTrue(answer.contains(ObservatoryCodex.DISCLAIMER))
