@@ -209,3 +209,24 @@ Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
 
 **Verdict: GO FOR INTERNAL TESTING ONLY** (debug automated gates green).  
 **Not GO** for production Play until signing hash, signed AAB, physical smoke, and billing license-tester paths are evidenced.
+
+---
+
+## Work remaining (later phases)
+
+| Phase | Remaining |
+|-------|-----------|
+| 4 A11y | TalkBack full path, 200% font scale matrix, automated Compose a11y checks (reduced-motion started) |
+| 5 Perf | Measure cold start on device; consider deferring BAE until after first frame; baseline profile optional |
+| 6 Billing | License-tester purchase / restore / cancel / offline entitlement on Play |
+| 7 Notify/bg | Rate-limit audit with device evidence |
+| 8 Store | Console declarations + screenshots (human) |
+| 9 Hardening | Signed release mapping file + R8 consumer rules spot-check |
+| 10 Final | Promote only after external evidence |
+
+### Changed files (this PR branch)
+
+- `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`
+- `scripts/run-emulator.sh`, `scripts/smoke-adb.sh`
+- `gradle/libs.versions.toml`, `build.gradle.kts`, `core/model/build.gradle.kts`
+- Telemetry signer/bridge; Scanner/Shield/Home UI; `Motion.kt`; layout tools text
