@@ -42,9 +42,10 @@ import com.coldboar.coreguard.quilla.QuillaPathStep
 object QuillaLivingGeometry {
 
     const val DISCLAIMER =
-        "Living Geometry (Tree of Life · Tetragrammaton · angelic names · sacred forms) " +
-            "is Quilla's poetic scaffolding. It does not power detection and is not " +
-            "a religious or occult claim — evidence still leads."
+        "Living Geometry (Tree of Life · Tetragrammaton · Kabbalah angels · " +
+            "Shem HaMephorash · Enochian Watchtowers · sacred forms) is Quilla's poetic " +
+            "scaffolding. It does not power detection and is not a religious or occult " +
+            "claim — evidence still leads."
 
     // ═══════════════════════════════════════════════════════════════════════════
     //                          T E T R A G R A M M A T O N
@@ -327,8 +328,175 @@ object QuillaLivingGeometry {
                 "the same: observe, correlate, explain, act — then rest in Malkuth.",
             securityLens = "Observe → correlate → explain → act (then verify again)",
             keywords = listOf("tetractys", "pythagoras", "1+2+3+4", "decade", "fourfold")
+        ),
+        SacredForm(
+            id = "golden_spiral",
+            name = "Golden Spiral",
+            glyph = "∿",
+            body = "φ growth without forced ceiling. Quilla's uncapped Cyber Codex search " +
+                "rhymes — awareness widens as evidence accumulates, never invents.",
+            securityLens = "Widen teaching with every verified finding; do not shrink the question",
+            keywords = listOf("golden spiral", "golden ratio", "phi", "φ", "fibonacci spiral")
+        ),
+        SacredForm(
+            id = "cube_of_space",
+            name = "Cube of Space",
+            glyph = "▣",
+            body = "Six faces, twelve edges, center point — directions of the Cube map to " +
+                "Quilla modules around the device-as-Kingdom (Malkuth).",
+            securityLens = "Orient every check to a face of the device: code, net, UI, store, memory, consent",
+            keywords = listOf("cube of space", "sepher yetzirah", "six faces", "twelve edges")
+        ),
+        SacredForm(
+            id = "enochian_tablet",
+            name = "Enochian Tablet Square",
+            glyph = "⊞",
+            body = "Four elemental Watchtowers bound by the Black Cross. Air/Fire/Water/Earth " +
+                "label Research, RASP, Shield, and device-ground defenses — see EnochianWatchtowers.",
+            securityLens = "Keep all four quarters armed; imbalance is a posture signal, not a spell",
+            keywords = listOf(
+                "enochian tablet", "tablet square", "elemental tablet", "watchtower tablet",
+                "enochian square", "great table"
+            )
+        ),
+        SacredForm(
+            id = "tree_lightning",
+            name = "Lightning Flash",
+            glyph = "↯",
+            body = "The Flash from Keter to Malkuth is Quilla's cascade: classify → remember → " +
+                "research/know → balance → act on the device.",
+            securityLens = "Intent classification should cascade downward into concrete Tools",
+            keywords = listOf("lightning flash", "flaming sword", "keter to malkuth", "flash path")
+        ),
+        SacredForm(
+            id = "hexagram_union",
+            name = "Hexagram of Union",
+            glyph = "✡",
+            body = "Two triangles — mercy and severity — locked. Tzadkiel's scan and Kamael's " +
+                "shield only complete defense when both are present with consent.",
+            securityLens = "Scanner without Shield (or Shield without scan) is half a star",
+            keywords = listOf("hexagram", "star of david", "magen david", "union of opposites")
         )
     )
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    //                    S H E M   H A M E P H O R A S H   (curated)
+    //         72-Name tradition → micro-aspects for defense pedagogy
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    data class ShemAngel(
+        val name: String,
+        val order: Int,
+        val alliesWith: String,
+        val body: String,
+        val securityLens: String,
+        val keywords: List<String>
+    )
+
+    /**
+     * Curated Shem angels (not the full 72) — each allies with a Sephirot archangel
+     * and teaches one defensive micro-habit. Metaphor only.
+     */
+    val shemChoir: List<ShemAngel> = listOf(
+        ShemAngel("Vehuiah", 1, "Metatron", "First spark of will.", "Start Guardian Score after every major install.", listOf("vehuiah")),
+        ShemAngel("Jeliel", 2, "Metatron", "Love that binds the crown.", "Keep CoreGuard as the default watch — don't disable RASP casually.", listOf("jeliel")),
+        ShemAngel("Sitael", 3, "Raziel", "Construction of refuge.", "Sync Quilla Intel when facing novel campaign rumors.", listOf("sitael")),
+        ShemAngel("Elemiah", 4, "Raziel", "Divine power in voyage.", "Treat STIX pulls as maps, not verdicts.", listOf("elemiah")),
+        ShemAngel("Mahasiah", 5, "Tzaphkiel", "Seekers of peace through learning.", "Open the Cyber Codex before escalating fear.", listOf("mahasiah")),
+        ShemAngel("Lelahel", 6, "Tzadkiel", "Light that makes famous the just scan.", "Run Nemesis on a schedule — mercy is breadth.", listOf("lelahel")),
+        ShemAngel("Achaiah", 7, "Tzadkiel", "Patience in uncovering.", "One CLEAN scan is not forever — re-check after sideloads.", listOf("achaiah")),
+        ShemAngel("Cahetel", 8, "Kamael", "Blessing that drives away evil.", "Arm Privacy Shield; sinkhole known IOC DNS.", listOf("cahetel")),
+        ShemAngel("Haziel", 9, "Kamael", "Mercy inside severity.", "Shield blocks are signals — inspect, don't panic-disable.", listOf("haziel")),
+        ShemAngel("Aladiah", 10, "Raphael", "Healing after exposure.", "After a WARN/FAIL, follow the care loop before new installs.", listOf("aladiah")),
+        ShemAngel("Lauviah", 11, "Michael", "Victory over prideful instrumentation.", "If Frida/hooks FAIL, treat runtime as hostile.", listOf("lauviah")),
+        ShemAngel("Hahaiah", 12, "Gabriel", "Refuge in the mirror of memory.", "Keep Timeline + telemetry — history is sanctuary.", listOf("hahaiah")),
+        ShemAngel("Yezalel", 13, "Haniel", "Fidelity to chosen actions.", "Complete suggested Actions; don't leave hardening half-done.", listOf("yezalel")),
+        ShemAngel("Mebahel", 14, "Sandalphon", "Truth and liberty on the ground.", "Revoke untrusted overlays and Accessibility services.", listOf("mebahel")),
+        ShemAngel("Hariel", 15, "Uriel", "Purification of earthy apps.", "Prefer Play-sourced installs; audit sideload surfaces.", listOf("hariel")),
+        ShemAngel("Hakamiah", 16, "Uriel", "Loyalty to the kingdom device.", "This phone is Malkuth — ground every metaphor in its settings.", listOf("hakamiah"))
+    )
+
+    fun matchShem(normalizedPrompt: String): ShemAngel? {
+        for (s in shemChoir) {
+            if (s.keywords.any { normalizedPrompt.contains(it) } ||
+                normalizedPrompt.contains(s.name.lowercase())
+            ) {
+                return s
+            }
+        }
+        if (normalizedPrompt.contains("shem hamephorash") || normalizedPrompt.contains("shemhamphorash") ||
+            normalizedPrompt.contains("72 names") || normalizedPrompt.contains("seventy-two") ||
+            normalizedPrompt.contains("shem angels")
+        ) {
+            return shemChoir.first()
+        }
+        return null
+    }
+
+    /** Extended Kabbalah archangels beyond the ten Sephirot primaries. */
+    data class ExtendedAngel(
+        val name: String,
+        val role: String,
+        val body: String,
+        val securityLens: String,
+        val keywords: List<String>
+    )
+
+    val extendedAngels: List<ExtendedAngel> = listOf(
+        ExtendedAngel(
+            "Uriel",
+            "Earth / North / Illumination",
+            "Uriel grounds Enochian Earth and illuminates sideload/overlay stone.",
+            "Pair with Sandalphon intrusion checks and Nemesis package scans",
+            listOf("uriel", "ouriel", "auriel")
+        ),
+        ExtendedAngel(
+            "Cassiel",
+            "Binah's Saturday stillness",
+            "Cassiel teaches slow understanding — don't rush a FAIL into folklore.",
+            "Read explanations; map to MASVS before sharing scare stories",
+            listOf("cassiel", "kafziel", "tzaphkiel ally")
+        ),
+        ExtendedAngel(
+            "Sachiel",
+            "Chesed's expansive justice",
+            "Sachiel widens the merciful scan the way Tzadkiel does.",
+            "Broad Nemesis collection before narrow accusations",
+            listOf("sachiel", "zadkiel ally")
+        ),
+        ExtendedAngel(
+            "Asariel",
+            "Waters of buried memory",
+            "Asariel walks with Gabriel through Timeline tides.",
+            "Compare multiple scan cycles — one reading is noise",
+            listOf("asariel", "azrael", "asarail")
+        ),
+        ExtendedAngel(
+            "Anael",
+            "Netzach's enduring grace",
+            "Anael/Haniel keep Actions beautiful and voluntary.",
+            "Suggest next steps; never silent-automate VPN or scan",
+            listOf("anael", "haniel ally", "anael angel")
+        ),
+        ExtendedAngel(
+            "Zadkiel",
+            "Alternate face of Tzadkiel",
+            "Zadkiel is the same mercy-scan current under another spelling.",
+            "Nemesis Scanner — evidence before verdict",
+            listOf("zadkiel", "tzadkiel spelling")
+        )
+    )
+
+    fun matchExtendedAngel(normalizedPrompt: String): ExtendedAngel? {
+        for (a in extendedAngels) {
+            if (a.keywords.any { normalizedPrompt.contains(it) } ||
+                normalizedPrompt.contains(a.name.lowercase())
+            ) {
+                return a
+            }
+        }
+        return null
+    }
 
     fun sacredForm(id: String): SacredForm? = sacredForms.firstOrNull { it.id == id }
 
@@ -505,13 +673,22 @@ object QuillaLivingGeometry {
                 role = "Vav · Knowledge vessel (Tzaphkiel)"
             )
         }
-        // תפארת balance from posture aspect
+        // תפארת balance from posture aspect (Black Cross)
         steps += QuillaPathStep(
             letter = "✦",
             sephirah = sephirah(aspect.sephirahId)?.name ?: "Tiferet",
             angel = aspect.name,
             module = null,
-            role = "Tiferet balance · posture $postureLabel via ${aspect.name}"
+            role = "Tiferet / Black Cross · posture $postureLabel via ${aspect.name}"
+        )
+        // Enochian Watchtower quarter for this intent
+        val quarter = EnochianWatchtowers.quarterFor(intent)
+        steps += QuillaPathStep(
+            letter = "⊞",
+            sephirah = "${quarter.direction}/${quarter.element}",
+            angel = "${quarter.king}/${quarter.senior}",
+            module = quarter.moduleHints.firstOrNull(),
+            role = "Watchtower ${quarter.direction} · ${quarter.kabbalahArchangel}"
         )
         // Destination on the Tree
         steps += QuillaPathStep(

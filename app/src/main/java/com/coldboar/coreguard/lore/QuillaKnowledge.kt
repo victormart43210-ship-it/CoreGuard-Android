@@ -2,11 +2,11 @@ package com.coldboar.coreguard.lore
 
 /**
  * Keyword-driven Quilla answers that apply Observatory Codex **and**
- * Living Geometry (Tree of Life · Tetragrammaton · angelic aspects · sacred forms)
- * to practical device-security questions.
+ * Living Geometry (Tree of Life · Tetragrammaton · Kabbalah / Shem angels ·
+ * Enochian Watchtowers · sacred forms) to practical device-security questions.
  *
- * Responses are original. They deliberately avoid presenting ancient-astronaut
- * lore, Kabbalah, or angelic names as fact or as a scanner feature.
+ * Responses are original. They deliberately avoid presenting lore, Kabbalah,
+ * Enochian names, or angelic titles as fact or as a scanner feature.
  */
 object QuillaKnowledge {
 
@@ -14,7 +14,7 @@ object QuillaKnowledge {
         val normalized = prompt.trim().lowercase()
         if (normalized.isEmpty()) {
             return "Ask Quilla about observation, the Tree of Life, Tetragrammaton, " +
-                "angelic aspects, sacred geometry, or how to verify a threat signal."
+                "Enochian Watchtowers, Shem angels, sacred geometry, or how to verify a threat signal."
         }
 
         val living = livingAnswer(normalized, prompt.trim())
@@ -52,7 +52,14 @@ object QuillaKnowledge {
         val sephirah = QuillaLivingGeometry.matchSephirah(normalized)
         val form = QuillaLivingGeometry.matchSacredForm(normalized)
         val letter = QuillaLivingGeometry.matchTetragram(normalized)
-        if (sephirah == null && form == null && letter == null) return null
+        val quarter = EnochianWatchtowers.matchQuarter(normalized)
+        val shem = QuillaLivingGeometry.matchShem(normalized)
+        val extended = QuillaLivingGeometry.matchExtendedAngel(normalized)
+        if (sephirah == null && form == null && letter == null &&
+            quarter == null && shem == null && extended == null
+        ) {
+            return null
+        }
 
         return buildString {
             append("Quilla hears you: \"")
@@ -60,7 +67,36 @@ object QuillaKnowledge {
             append("\".\n\n")
             append("Living seal: ")
             append(QuillaLivingGeometry.livingSeal())
+            append("\n")
+            append(EnochianWatchtowers.livingSeal())
             append("\n\n")
+
+            when {
+                normalized.contains("enochian") || normalized.contains("watchtower") ||
+                    normalized.contains("elemental tablet") || normalized.contains("black cross") ||
+                    normalized.contains("great table") -> {
+                    append(EnochianWatchtowers.tabletBlurb())
+                    append("\n\n")
+                }
+                quarter != null && sephirah == null -> {
+                    append(quarter.geometry)
+                    append(" — Watchtower ")
+                    append(quarter.direction)
+                    append('/')
+                    append(quarter.element)
+                    append("\nKing ")
+                    append(quarter.king)
+                    append(" · Senior ")
+                    append(quarter.senior)
+                    append(" · Kabbalah ally ")
+                    append(quarter.kabbalahArchangel)
+                    append("\n")
+                    append(quarter.quillaFocus)
+                    append("\n\nSecurity mapping: ")
+                    append(quarter.securityLens)
+                    append(".\n\n")
+                }
+            }
 
             when {
                 normalized.contains("tree of life") || normalized.contains("sephirot") ||
@@ -86,7 +122,33 @@ object QuillaKnowledge {
                 }
             }
 
-            if (form != null && !normalized.contains("tree of life")) {
+            if (shem != null) {
+                append("Shem HaMephorash · ")
+                append(shem.name)
+                append(" (#")
+                append(shem.order)
+                append(") allies with ")
+                append(shem.alliesWith)
+                append(": ")
+                append(shem.body)
+                append("\nSecurity mapping: ")
+                append(shem.securityLens)
+                append(".\n\n")
+            }
+
+            if (extended != null) {
+                append("Extended Kabbalah angel — ")
+                append(extended.name)
+                append(" (")
+                append(extended.role)
+                append("): ")
+                append(extended.body)
+                append("\nSecurity mapping: ")
+                append(extended.securityLens)
+                append(".\n\n")
+            }
+
+            if (form != null && !normalized.contains("tree of life") && !normalized.contains("enochian")) {
                 append(form.glyph)
                 append(" Sacred form — ")
                 append(form.name)
@@ -112,11 +174,12 @@ object QuillaKnowledge {
             append(practicalAdvice(normalized))
             append("\n\n")
             append(QuillaLivingGeometry.DISCLAIMER)
+            append(' ')
+            append(EnochianWatchtowers.DISCLAIMER)
         }
     }
 
     fun matchFragment(normalizedPrompt: String): ObservatoryCodex.Fragment? {
-        // Living Geometry keywords take precedence via [answer]; fragment match stays Observatory-only.
         val rules = listOf(
             listOf("maya", "mayan", "calendar", "cycle", "window", "timeline", "history") to "calendar_cycles",
             listOf("archive", "record", "ioc", "indicator", "evidence", "proof", "artifact") to "recovered_archives",
@@ -135,26 +198,36 @@ object QuillaKnowledge {
         return null
     }
 
-    /** True when the prompt should route to lore (Observatory or Living Geometry). */
+    /** True when the prompt should route to lore (Observatory, Living Geometry, or Enochian). */
     fun matchLivingOrObservatory(normalizedPrompt: String): Boolean {
         return matchFragment(normalizedPrompt) != null ||
             QuillaLivingGeometry.matchSephirah(normalizedPrompt) != null ||
             QuillaLivingGeometry.matchSacredForm(normalizedPrompt) != null ||
-            QuillaLivingGeometry.matchTetragram(normalizedPrompt) != null
+            QuillaLivingGeometry.matchTetragram(normalizedPrompt) != null ||
+            QuillaLivingGeometry.matchShem(normalizedPrompt) != null ||
+            QuillaLivingGeometry.matchExtendedAngel(normalizedPrompt) != null ||
+            EnochianWatchtowers.matchQuarter(normalizedPrompt) != null
     }
 
     private fun practicalAdvice(normalizedPrompt: String): String = when {
         normalizedPrompt.contains("scan") || normalizedPrompt.contains("nemesis") ||
-            normalizedPrompt.contains("chesed") || normalizedPrompt.contains("tzadkiel") ->
-            "Next step: run Nemesis Scanner, then read the Scan Timeline as Malkuth's ledger of what changed."
+            normalizedPrompt.contains("chesed") || normalizedPrompt.contains("tzadkiel") ||
+            normalizedPrompt.contains("iczhhcal") || normalizedPrompt.contains("earth watchtower") ->
+            "Next step: run Nemesis Scanner, then read the Scan Timeline as Malkuth's / Earth-tablet ledger."
         normalizedPrompt.contains("vpn") || normalizedPrompt.contains("shield") ||
-            normalizedPrompt.contains("gevurah") || normalizedPrompt.contains("kamael") ->
-            "Next step: check Shield status. Kamael's severity still requires Android VPN consent."
+            normalizedPrompt.contains("gevurah") || normalizedPrompt.contains("kamael") ||
+            normalizedPrompt.contains("raagiosl") || normalizedPrompt.contains("water watchtower") ->
+            "Next step: check Shield status. Kamael / Raagiosl still require Android VPN consent."
+        normalizedPrompt.contains("frida") || normalizedPrompt.contains("edelperna") ||
+            normalizedPrompt.contains("habioro") || normalizedPrompt.contains("fire watchtower") ||
+            normalizedPrompt.contains("michael") ->
+            "Next step: open Guardian Score — Michael / Fire tablet covers Frida, hooks, and root."
         normalizedPrompt.contains("premium") || normalizedPrompt.contains("billing") ->
-            "Premium unlocks deeper automation. The Tree still applies: more telemetry only helps if you verify it."
+            "Premium unlocks deeper automation. The Tree and Watchtowers still apply: more telemetry only helps if you verify it."
         normalizedPrompt.contains("tetragram") || normalizedPrompt.contains("tree of life") ||
-            normalizedPrompt.contains("raphael") || normalizedPrompt.contains("metatron") ->
-            "Next step: ask for a priority status brief — Raphael balances posture from device evidence."
+            normalizedPrompt.contains("raphael") || normalizedPrompt.contains("metatron") ||
+            normalizedPrompt.contains("enochian") || normalizedPrompt.contains("shem") ->
+            "Next step: ask for a priority status brief — Raphael's Black Cross balances posture from device evidence."
         else ->
             "Next step: review Security Checks on Home, then correlate any WARN/FAIL rows with the latest scan residue."
     }

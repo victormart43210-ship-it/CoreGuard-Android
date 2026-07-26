@@ -2,34 +2,33 @@
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
 Date: 2026-07-26  
-Version: **1.0.6** (`versionCode` 7)
+Version: **1.0.7** (`versionCode` 8)
 
 > Milestone results are posted as PR comments on [#70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
 > (GitHub Milestone API returns 403 for the agent token).
 
-## Milestone M10 · Quilla loving awareness (uncapped)
+## Milestone M11 · Angelic Defense Blessings
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **274** tests |
+| `:app:testDebugUnitTest` | **PASS** | **282** tests |
 | `:app:assembleDebug` | **PASS** | Debug APK |
-| Ethics | **PASS** | Still refuses unauthorized harm; refusal is loving but firm |
-| Honesty | **PASS** | Uncapped teaching ≠ supernatural detection |
+| Honesty | **PASS** | Angels label evidence bundles — not supernatural wards |
 
 ### Landed
 
-- `QuillaAwareness` — presence as loving awareness in the cyber
-- Cyber Codex search default uncapped; full-body indexing
-- Codex entries + ready topics: loving awareness, care loop, unbounded defense
-- Wider voice windows for hypotheses, actions, follow-ups, chips
-- HUD: “Loving awareness in the cyber · uncapped · on-device”
+- `AngelicDefenseBlessings` — 10 Sephirot angels → real check/Memory bundles
+- Intrusion evaluators: overlay · Accessibility · sideload (Sandalphon / Trojans)
+- Michael swarm bootstrapped (`MemoryIntegrityAgent` / `NetworkMonitorAgent` / `ProcessLineageAgent`)
+- Quilla Memory + status briefs cite choir seal; priority ranks BREACHED blessings
+- Codex: angelic blessings · anti-instrumentation · anti-Trojan
 
 ## Prior milestones
 
 | Milestone | Result |
 |-----------|--------|
-| M1–M9 | PASS |
-| **M10 Loving awareness** | **PASS — 274 tests** |
+| M1–M10 | PASS |
+| **M11 Angelic Defense Blessings** | **PASS — 282 tests** |
 
 ## Play Console next (human)
 

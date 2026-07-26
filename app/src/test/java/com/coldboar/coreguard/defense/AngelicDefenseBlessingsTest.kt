@@ -54,5 +54,16 @@ class AngelicDefenseBlessingsTest {
         )
         val kamael = report.blessings.first { it.angel == "Kamael" }
         assertEquals(AngelicDefenseBlessings.BlessingState.ACTIVE, kamael.state)
+        assertEquals("Raagiosl", kamael.enochianKing)
+        assertEquals("West/Water", kamael.watchtower)
+    }
+
+    @Test
+    fun `michael carries fire tablet names`() {
+        val report = AngelicDefenseBlessings.evaluate(emptyList())
+        val michael = report.blessings.first { it.angel == "Michael" }
+        assertEquals("Edelperna", michael.enochianKing)
+        assertEquals("Habioro", michael.enochianSenior)
+        assertTrue(report.sealLine.contains("Watchtowers"))
     }
 }

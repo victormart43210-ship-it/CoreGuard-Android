@@ -2,16 +2,17 @@ package com.coldboar.coreguard.defense
 
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckState
+import com.coldboar.coreguard.lore.EnochianWatchtowers
 import com.coldboar.coreguard.quilla.QuillaMemorySnapshot
 import com.coldboar.coreguard.quilla.QuillaResearchSnapshot
 
 /**
- * Angelic Defense Blessings — Sephirot angels as **labels for evidence-backed
- * defense bundles** against unauthorized pentest / red-team tooling, intrusive
- * Trojans, overlay phishing, and sideload droppers.
+ * Angelic Defense Blessings — Sephirot + Enochian Watchtower names as **labels
+ * for evidence-backed defense bundles** against unauthorized pentest / red-team
+ * tooling, intrusive Trojans, overlay phishing, and sideload droppers.
  *
  * Honesty (non-negotiable):
- * - Angels do not detect, block, or divine threats by themselves.
+ * - Angels / Enochian kings do not detect, block, or divine threats by themselves.
  * - Each blessing is PASS/WARN/FAIL only from real [SecurityCheckResult]s,
  *   Shield/scan Memory, and optional Research cache.
  * - This is loving awareness naming the watch — not a supernatural ward.
@@ -28,7 +29,10 @@ object AngelicDefenseBlessings {
         val checkIds: List<String>,
         val state: BlessingState,
         val detail: String,
-        val nextStep: String
+        val nextStep: String,
+        val enochianKing: String? = null,
+        val enochianSenior: String? = null,
+        val watchtower: String? = null
     )
 
     data class ChoirReport(
@@ -46,8 +50,14 @@ object AngelicDefenseBlessings {
         val against: String,
         val checkIds: List<String>,
         val nextStep: String,
+        val watchtower: EnochianWatchtowers.Quarter? = null,
         val memoryHint: ((QuillaMemorySnapshot, QuillaResearchSnapshot) -> Pair<BlessingState, String>?)? = null
     )
+
+    private val air = EnochianWatchtowers.Quarter.AIR_EAST
+    private val fire = EnochianWatchtowers.Quarter.FIRE_SOUTH
+    private val water = EnochianWatchtowers.Quarter.WATER_WEST
+    private val earth = EnochianWatchtowers.Quarter.EARTH_NORTH
 
     private val specs: List<Spec> = listOf(
         Spec(
@@ -56,7 +66,8 @@ object AngelicDefenseBlessings {
             title = "Crown Lattice",
             against = "Unauthorized instrumentation of the whole defense stack",
             checkIds = listOf("debugger", "native_debugger", "signature", "build_type"),
-            nextStep = "Keep CoreGuard as the crown observer — re-run Guardian Score after any new install."
+            nextStep = "Keep CoreGuard as the crown observer — re-run Guardian Score after any new install.",
+            watchtower = air
         ),
         Spec(
             angel = "Raziel",
@@ -65,6 +76,7 @@ object AngelicDefenseBlessings {
             against = "Unknown campaign IOCs and novel red-team C2 patterns",
             checkIds = emptyList(),
             nextStep = "Sync Quilla Intel Network (Amnesty/MVT/CISA/MISP) — does not refresh Scanner signatures.",
+            watchtower = air,
             memoryHint = { _, research ->
                 when {
                     research.syncFailed -> BlessingState.WATCHING to "Intel sync failed — prior cache may be stale."
@@ -81,8 +93,9 @@ object AngelicDefenseBlessings {
             against = "Untrained response to Trojan / pentest methodology abuse",
             checkIds = emptyList(),
             nextStep = "Ask Quilla: overlay phishing, sideload dropper, MASVS-NETWORK, or care loop.",
+            watchtower = air,
             memoryHint = { _, _ ->
-                BlessingState.ACTIVE to "Cyber Codex + Living Geometry teach defense without enabling unauthorized attacks."
+                BlessingState.ACTIVE to "Cyber Codex + Living Geometry + Enochian lattice teach defense without enabling unauthorized attacks."
             }
         ),
         Spec(
@@ -91,7 +104,8 @@ object AngelicDefenseBlessings {
             title = "Mercy Scan",
             against = "Trojan packages, process IOCs, and file residue from intrusive implants",
             checkIds = listOf("spyware_scan"),
-            nextStep = "Open Nemesis Scanner and establish or refresh a baseline."
+            nextStep = "Open Nemesis Scanner and establish or refresh a baseline.",
+            watchtower = earth
         ),
         Spec(
             angel = "Kamael",
@@ -100,6 +114,7 @@ object AngelicDefenseBlessings {
             against = "DNS/C2 echoes and tracker callbacks from malware and red-team relays",
             checkIds = emptyList(),
             nextStep = "Arm Privacy Shield with VPN consent — Quilla will not bypass that.",
+            watchtower = water,
             memoryHint = { memory, _ ->
                 when {
                     memory.shieldActive && memory.shieldBlocked > 0 ->
@@ -115,10 +130,11 @@ object AngelicDefenseBlessings {
         Spec(
             angel = "Raphael",
             sephirah = "Tiferet",
-            title = "Heart Balance",
+            title = "Heart Balance · Black Cross",
             against = "Panic escalation and missed correlation of multi-signal intrusion",
             checkIds = emptyList(),
-            nextStep = "Ask for a priority status brief — posture is evidence-ranked.",
+            nextStep = "Ask for a priority status brief — posture is evidence-ranked across four Watchtowers.",
+            watchtower = air,
             memoryHint = { memory, _ ->
                 val hyp = memory.activeHypotheses.size
                 when {
@@ -129,7 +145,7 @@ object AngelicDefenseBlessings {
                     memory.lastScanVerdict == null ->
                         BlessingState.IDLE to "No Nemesis baseline — Raphael cannot balance without evidence."
                     else ->
-                        BlessingState.ACTIVE to "Posture heart steady enough to teach — keep the care loop."
+                        BlessingState.ACTIVE to "Black Cross steady — four quarters can be taught from evidence."
                 }
             }
         ),
@@ -140,6 +156,7 @@ object AngelicDefenseBlessings {
             against = "Silent automation abuse; unfinished hardening after a finding",
             checkIds = emptyList(),
             nextStep = "Use Quilla Actions — open Scanner / Shield / Timeline / intel sync deliberately.",
+            watchtower = earth,
             memoryHint = { _, _ ->
                 BlessingState.ACTIVE to "Actions suggest only — never silent scan or VPN enablement."
             }
@@ -147,18 +164,20 @@ object AngelicDefenseBlessings {
         Spec(
             angel = "Michael",
             sephirah = "Hod",
-            title = "Method Splendor",
+            title = "Method Splendor · Fire Tablet",
             against = "Frida, hooks, memory patches, and unauthorized dynamic instrumentation",
             checkIds = listOf("frida", "hook_maps", "memory_integrity", "mount_integrity", "root"),
-            nextStep = "If Michael is BREACHED, treat the runtime as hostile — stop sensitive work and re-verify."
+            nextStep = "If Michael/Edelperna is BREACHED, treat the runtime as hostile — stop sensitive work and re-verify.",
+            watchtower = fire
         ),
         Spec(
             angel = "Gabriel",
             sephirah = "Yesod",
-            title = "Foundation Mirror",
+            title = "Foundation Mirror · Water Tablet",
             against = "Lost history, dropped telemetry frames, and uncorrelated Trojan residue",
             checkIds = emptyList(),
             nextStep = "Keep Scan Timeline + signed telemetry ring warm after every Nemesis cycle.",
+            watchtower = water,
             memoryHint = { memory, _ ->
                 when {
                     memory.historyCount == 0 && memory.telemetryDeltaCount == 0 ->
@@ -173,10 +192,11 @@ object AngelicDefenseBlessings {
         Spec(
             angel = "Sandalphon",
             sephirah = "Malkuth",
-            title = "Kingdom Ground",
+            title = "Kingdom Ground · Earth Tablet",
             against = "Overlay phishing, Accessibility capture, and sideload droppers on the device itself",
             checkIds = listOf("overlay_abuse", "accessibility_abuse", "sideload_risk"),
-            nextStep = "Revoke untrusted overlays/Accessibility; prefer Play installs; re-run Guardian Score."
+            nextStep = "Revoke untrusted overlays/Accessibility; prefer Play installs; re-run Guardian Score.",
+            watchtower = earth
         )
     )
 
@@ -190,13 +210,18 @@ object AngelicDefenseBlessings {
         val active = blessings.count { it.state == BlessingState.ACTIVE }
         val breached = blessings.count { it.state == BlessingState.BREACHED }
         val watching = blessings.count { it.state == BlessingState.WATCHING }
-        val seal = "Choir · active=$active · watching=$watching · breached=$breached"
+        val seal = "Choir · Watchtowers · active=$active · watching=$watching · breached=$breached"
         return ChoirReport(blessings, active, breached, watching, seal)
     }
 
     fun summaryLines(report: ChoirReport, limit: Int = 10): List<String> =
         report.blessings.take(limit).map { b ->
-            "${b.angel} (${b.sephirah}) · ${b.state.name} — ${b.title}: ${b.detail}"
+            val enoch = listOfNotNull(b.enochianKing, b.enochianSenior).joinToString("/")
+                .takeIf { it.isNotBlank() }
+                ?.let { " · $it" }
+                .orEmpty()
+            val wt = b.watchtower?.let { " [$it]" }.orEmpty()
+            "${b.angel} (${b.sephirah})$enoch$wt · ${b.state.name} — ${b.title}: ${b.detail}"
         }
 
     private fun evaluateSpec(
@@ -239,7 +264,10 @@ object AngelicDefenseBlessings {
             checkIds = spec.checkIds,
             state = state,
             detail = detail,
-            nextStep = spec.nextStep
+            nextStep = spec.nextStep,
+            enochianKing = spec.watchtower?.king,
+            enochianSenior = spec.watchtower?.senior,
+            watchtower = spec.watchtower?.let { "${it.direction}/${it.element}" }
         )
     }
 

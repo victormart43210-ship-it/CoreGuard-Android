@@ -148,7 +148,10 @@ class UltimateQuillaAgent(
             "flower of life", "merkaba", "sacred geometry", "living geometry",
             "loving awareness", "care loop", "unbounded", "no limits", "no caps",
             "angelic", "blessing", "blessings", "red team", "red-team", "trojan",
-            "unauthorized attack", "intrusion", "frida", "instrumentation"
+            "unauthorized attack", "intrusion", "frida", "instrumentation",
+            "enochian", "watchtower", "shem", "uriel", "cassiel", "sachiel",
+            "bataivah", "edelperna", "raagiosl", "iczhhcal", "black cross",
+            "golden spiral", "cube of space", "shem hamephorash"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }

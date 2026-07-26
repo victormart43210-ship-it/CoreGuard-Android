@@ -172,6 +172,45 @@ object QuillaReadyTopics {
                 "banking trojan defense"
             ),
             chipLabel = "Anti-Trojan"
+        ),
+        Topic(
+            prompt = "enochian watchtowers",
+            entryId = "enochian-watchtowers",
+            aliases = setOf(
+                "enochian",
+                "watchtowers",
+                "watchtower lattice",
+                "elemental tablets",
+                "black cross",
+                "bataivah",
+                "edelperna"
+            ),
+            chipLabel = "Enochian"
+        ),
+        Topic(
+            prompt = "shem hamephorash",
+            entryId = "shem-hamephorash-defense",
+            aliases = setOf(
+                "shemhamphorash",
+                "shem angels",
+                "72 names",
+                "seventy two names",
+                "vehuiah",
+                "lauviah"
+            ),
+            chipLabel = "Shem angels"
+        ),
+        Topic(
+            prompt = "sacred geometry defense",
+            entryId = "sacred-geometry-defense",
+            aliases = setOf(
+                "sacred geometry",
+                "golden spiral",
+                "cube of space",
+                "geometry lattice",
+                "lightning flash path"
+            ),
+            chipLabel = "Sacred geometry"
         )
     )
 
