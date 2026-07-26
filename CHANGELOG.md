@@ -3,6 +3,15 @@
 All notable changes to CoreGuard-Android are documented here.
 Version numbers match `gradle/android-app.gradle`.
 
+## 1.0.16 — 2026-07-26
+
+### Quilla Infinity threat training
+
+- Uncapped on-device study of malware + vulnerability corpora (CISA KEV, MISP Android, MISP Malpedia mobile filter, expanded Amnesty/MVT STIX)
+- `QuillaInfinityTrainer` hardens angel dossiers + notifies swarm peers after each Intel sync (not cloud LLM weights)
+- Local “train infinity angels” path studies the bundled Cyber Codex without HTTPS
+- Honesty preserved: Research ≠ Nemesis Premium signatures; training improves correlation/teaching, not zero-day guarantees
+
 ## 1.0.15 — 2026-07-26
 
 ### Home clarity

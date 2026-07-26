@@ -75,14 +75,23 @@ object AngelicDefenseBlessings {
             title = "Book of Secrets",
             against = "Unknown campaign IOCs and novel red-team C2 patterns",
             checkIds = emptyList(),
-            nextStep = "Sync Quilla Intel Network (Amnesty/MVT/CISA/MISP) — does not refresh Scanner signatures.",
+            nextStep = "Sync Quilla Infinity Intel (Amnesty/MVT/CISA/MISP/Malpedia) — trains the choir; does not refresh Scanner signatures.",
             watchtower = air,
             memoryHint = { _, research ->
+                val infinity = if (research.infinityGeneration > 0) {
+                    " Infinity gen ${research.infinityGeneration}: malware=${research.infinityMalwareStudied}, " +
+                        "vuln=${research.infinityVulnStudied}, codex=${research.infinityCodexDepth} (uncapped)."
+                } else {
+                    ""
+                }
                 when {
-                    research.syncFailed -> BlessingState.WATCHING to "Intel sync failed — prior cache may be stale."
-                    research.synced || research.indicatorCount > 0 ->
-                        BlessingState.ACTIVE to "${research.indicatorCount} correlator indicators cached from ${research.sourceLabel}."
-                    else -> BlessingState.IDLE to "Intel Network idle — optional HTTPS sync sharpens correlation."
+                    research.syncFailed -> BlessingState.WATCHING to
+                        "Intel sync failed — prior cache may be stale.$infinity"
+                    research.synced || research.indicatorCount > 0 || research.infinityGeneration > 0 ->
+                        BlessingState.ACTIVE to
+                            "${research.indicatorCount} correlator indicators cached from ${research.sourceLabel}.$infinity"
+                    else -> BlessingState.IDLE to
+                        "Intel Network idle — sync or train Infinity to harden Raziel against evolving malware/vuln DBs."
                 }
             }
         ),
@@ -92,10 +101,19 @@ object AngelicDefenseBlessings {
             title = "Understanding Vessel",
             against = "Untrained response to Trojan / pentest methodology abuse",
             checkIds = emptyList(),
-            nextStep = "Ask Quilla: overlay phishing, sideload dropper, MASVS-NETWORK, or care loop.",
+            nextStep = "Ask Quilla to train Infinity choir on malware/CVE corpora, or: overlay phishing, MASVS-NETWORK, care loop.",
             watchtower = air,
-            memoryHint = { _, _ ->
-                BlessingState.ACTIVE to "Cyber Codex + Living Geometry + Enochian lattice teach defense without enabling unauthorized attacks."
+            memoryHint = { _, research ->
+                if (research.infinityGeneration > 0) {
+                    BlessingState.ACTIVE to
+                        "Infinity-hardened understanding: studied ${research.infinityCodexDepth} codex entries " +
+                            "(malware=${research.infinityMalwareStudied}, vuln=${research.infinityVulnStudied}). " +
+                            "Teaching stays defensive — no unauthorized attack how-to."
+                } else {
+                    BlessingState.ACTIVE to
+                        "Cyber Codex + Living Geometry + Enochian lattice teach defense. " +
+                            "Train Infinity to deepen malware/vuln study without enabling unauthorized attacks."
+                }
             }
         ),
         Spec(

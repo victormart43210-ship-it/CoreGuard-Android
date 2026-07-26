@@ -7,6 +7,7 @@ import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ShieldState
+import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coreguard.security.telemetry.RiskSeverity
 import com.coreguard.security.telemetry.TelemetryBridge
 
@@ -14,7 +15,8 @@ import com.coreguard.security.telemetry.TelemetryBridge
  * Builds [QuillaMemorySnapshot] / [QuillaResearchSnapshot] from live CoreGuard state.
  *
  * Threat-intel honesty:
- * - Research sync uses [QuillaIntelNetwork] (Amnesty/MVT STIX + CISA/MISP web intel).
+ * - Research sync uses [QuillaIntelNetwork] (Amnesty/MVT STIX + CISA/MISP/Malpedia web intel)
+ *   then runs [QuillaInfinityTrainer] to harden angels + swarm (uncapped teaching).
  * - On-device MVT IOCs from [IocRepository] are also merged for correlation.
  * - Neither path writes Scanner signatures for free users; Premium Nemesis
  *   refresh remains [com.coldboar.coreguard.mvt.IocFeedFetcher].
@@ -116,8 +118,35 @@ object QuillaMemoryFactory {
             feedNotes = network.feedNotes,
             synced = network.synced && !network.syncFailed,
             syncFailed = network.syncFailed,
-            sourceLabel = network.sourceLabel
+            sourceLabel = network.sourceLabel,
+            infinityGeneration = network.infinityGeneration,
+            infinityMalwareStudied = network.infinityMalwareStudied,
+            infinityVulnStudied = network.infinityVulnStudied,
+            infinityCodexDepth = network.infinityCodexDepth
         )
         return cachedResearch
+    }
+
+    /**
+     * Offline Infinity pass — trains angels/swarm on the bundled Cyber Codex
+     * without requiring HTTPS. Useful when the user asks to "train the choir"
+     * on-device with no network.
+     */
+    fun trainInfinityLocal(context: Context): AngelSwarmTrainingLedger {
+        QuillaInfinityTrainer.restoreLite(context)
+        CyberKnowledgeAssets.ensureLoaded(context)
+        val training = QuillaInfinityTrainer.trainFromCodex(
+            context = context,
+            network = QuillaIntelNetwork.lastSnapshot(),
+            correlatorIndicatorCount = cachedResearch.indicatorCount
+        )
+        cachedResearch = cachedResearch.copy(
+            infinityGeneration = training.generation,
+            infinityMalwareStudied = training.malwareEntriesStudied,
+            infinityVulnStudied = training.vulnerabilityEntriesStudied,
+            infinityCodexDepth = training.totalCodexEntries,
+            feedNotes = (cachedResearch.feedNotes + training.summaryLine()).distinct()
+        )
+        return training
     }
 }

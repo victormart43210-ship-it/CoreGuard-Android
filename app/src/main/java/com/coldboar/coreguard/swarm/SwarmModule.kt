@@ -101,4 +101,40 @@ object SwarmModule {
     fun resetAlertCounter() {
         alertCounter.dispatch(SwarmAlertCounterStore.Action.Reset)
     }
+
+    /**
+     * Last Infinity training digest shared with swarm peers.
+     * Peers stay heuristic — this is shared intel depth, not an LLM brain.
+     */
+    @Volatile
+    var infinityTrainingDigest: InfinityTrainingDigest = InfinityTrainingDigest()
+        private set
+
+    /**
+     * Called by [com.coldboar.coreguard.quilla.QuillaInfinityTrainer] after a
+     * malware/vuln corpus study pass so Michael-choir peers share one generation.
+     */
+    fun noteInfinityTraining(
+        generation: Int,
+        malwareStudied: Int,
+        vulnStudied: Int,
+        correlatorIndicators: Int
+    ) {
+        infinityTrainingDigest = InfinityTrainingDigest(
+            generation = generation,
+            malwareStudied = malwareStudied,
+            vulnStudied = vulnStudied,
+            correlatorIndicators = correlatorIndicators,
+            notedAtMs = System.currentTimeMillis()
+        )
+    }
 }
+
+/** Shared swarm view of Quilla Infinity training depth (on-device, non-LLM). */
+data class InfinityTrainingDigest(
+    val generation: Int = 0,
+    val malwareStudied: Int = 0,
+    val vulnStudied: Int = 0,
+    val correlatorIndicators: Int = 0,
+    val notedAtMs: Long = 0L
+)

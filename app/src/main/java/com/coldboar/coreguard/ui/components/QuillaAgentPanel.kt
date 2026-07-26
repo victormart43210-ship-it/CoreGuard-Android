@@ -127,15 +127,27 @@ fun QuillaAgentPanel(
         delay(QUILLA_RESPONSE_DELAY_MS)
         val result = withContext(Dispatchers.IO) {
             CyberKnowledgeAssets.ensureLoaded(context)
-            val wantsResearch = prompt.lowercase().let {
+            val lower = prompt.lowercase()
+            val wantsResearch = lower.let {
                 it.contains("research") || it.contains("stix") || it.contains("amnesty") ||
                     it.contains("intel network") || it.contains("cisa") || it.contains("misp") ||
+                    it.contains("malpedia") ||
                     (it.contains("intel") && it.contains("sync")) ||
                     (it.contains("ioc") && it.contains("sync")) ||
-                    it.contains("sync threat") || it.contains("sync quilla")
+                    it.contains("sync threat") || it.contains("sync quilla") ||
+                    (it.contains("train") && it.contains("infinity") &&
+                        (it.contains("sync") || it.contains("network") || it.contains("feed")))
             }
-            if (wantsResearch) {
-                QuillaMemoryFactory.syncResearch(context)
+            val wantsLocalInfinity = !wantsResearch && lower.let {
+                it.contains("infinity") ||
+                    (it.contains("train") && (
+                        it.contains("angel") || it.contains("choir") || it.contains("swarm") ||
+                            it.contains("malware") || it.contains("vulnerab")
+                        ))
+            }
+            when {
+                wantsResearch -> QuillaMemoryFactory.syncResearch(context)
+                wantsLocalInfinity -> QuillaMemoryFactory.trainInfinityLocal(context)
             }
             UltimateQuillaAgent(
                 memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
