@@ -15,7 +15,7 @@ import androidx.core.app.NotificationCompat
 import com.coldboar.coreguard.MainActivity
 import com.coldboar.coreguard.R
 import com.coldboar.coreguard.quilla.QuillaIocBridge
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.net.DatagramPacket
@@ -120,10 +120,10 @@ class GuardVpnService : VpnService() {
                 val ipReply = IpV4Udp.buildReply(parsed, response)
                 runCatching { output.write(ipReply) }
                 ShieldState.recordBlocked(domain)
-                QuillaMemoryFactory.ensureLocalIntel(this)
+                QuillaMemoryModule.ensureLocalIntel(this)
                 QuillaIocBridge.correlateShieldBlock(
                     domain,
-                    QuillaMemoryFactory.correlationEngine()
+                    QuillaMemoryModule.correlationEngine()
                 )
                 Log.w(TAG, "BLOCKED $domain (${hit.malware})")
             } else {

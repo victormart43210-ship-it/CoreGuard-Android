@@ -586,12 +586,16 @@ class UltimateQuillaAgent(
     private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =
         if (memory.lastScanVerdict == null) {
             "Chesed · Tzadkiel — Tools → Nemesis Scanner can collect packages, processes, and file IOCs. " +
+                "Each completed scan bridges evidence into my Memory and the angelic choir (hypotheses, DTS, journal on hits). " +
                 "I will not invent a clean bill of health without that evidence. " +
                 briefing.headline
         } else {
-            "Gabriel's Memory still holds last verdict ${memory.lastScanVerdict}. " +
+            val bridge = QuillaMemoryModule.lastScanBridge()?.let { " Last bridge: ${it.scannerBlurb()}" }.orEmpty()
+            "Gabriel's Memory still holds last verdict ${memory.lastScanVerdict} " +
+                "(${memory.lastScanDetections ?: 0} detection(s); choir seal ${memory.blessingSeal ?: "pending"}). " +
+                "Tzadkiel's Mercy Scan and the choir refresh from that Nemesis evidence. " +
                 "Run another scan if you changed apps, networks, or suspect new residue. " +
-                "Posture ${briefing.posture.label} (${briefing.score}/100) · ${briefing.aspectName}."
+                "Posture ${briefing.posture.label} (${briefing.score}/100) · ${briefing.aspectName}.$bridge"
         }
 
     private fun shieldBlurb(memory: QuillaMemorySnapshot): String =

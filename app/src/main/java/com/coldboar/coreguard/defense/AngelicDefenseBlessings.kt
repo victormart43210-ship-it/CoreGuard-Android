@@ -122,8 +122,25 @@ object AngelicDefenseBlessings {
             title = "Mercy Scan",
             against = "Trojan packages, process IOCs, and file residue from intrusive implants",
             checkIds = listOf("spyware_scan"),
-            nextStep = "Open Nemesis Scanner and establish or refresh a baseline.",
-            watchtower = earth
+            nextStep = "Open Nemesis Scanner — each completed scan updates Quilla Memory, hypotheses, and this choir.",
+            watchtower = earth,
+            memoryHint = { memory, _ ->
+                when {
+                    memory.lastScanVerdict == null ->
+                        BlessingState.IDLE to "No Nemesis baseline yet — Mercy Scan waits for a privacy check."
+                    memory.lastScanVerdict.equals("INFECTED", ignoreCase = true) ->
+                        BlessingState.BREACHED to
+                            "Nemesis INFECTED (${memory.lastScanDetections ?: 0} hit(s)) bridged to Quilla hypotheses."
+                    memory.lastScanVerdict.equals("SUSPICIOUS", ignoreCase = true) ->
+                        BlessingState.WATCHING to
+                            "Nemesis SUSPICIOUS (${memory.lastScanDetections ?: 0} hit(s)) — review Scanner + Timeline."
+                    memory.lastScanVerdict.equals("CLEAN", ignoreCase = true) ->
+                        BlessingState.ACTIVE to
+                            "Nemesis CLEAN baseline in Memory — reassuring, not a guarantee."
+                    else ->
+                        BlessingState.WATCHING to "Nemesis verdict ${memory.lastScanVerdict} held in Memory."
+                }
+            }
         ),
         Spec(
             angel = "Kamael",
@@ -202,6 +219,10 @@ object AngelicDefenseBlessings {
                         BlessingState.IDLE to "Memory empty — foundation mirror has nothing to reflect yet."
                     memory.telemetryHighSeverity ->
                         BlessingState.WATCHING to "Telemetry ring holds high-severity frames (${memory.telemetryDeltaCount})."
+                    memory.lastScanVerdict != null ->
+                        BlessingState.ACTIVE to
+                            "Memory holds ${memory.historyCount} timeline entries · last Nemesis=${memory.lastScanVerdict} · " +
+                                "telemetry=${memory.telemetryDeltaCount}."
                     else ->
                         BlessingState.ACTIVE to "Memory holds ${memory.historyCount} timeline entries · telemetry=${memory.telemetryDeltaCount}."
                 }

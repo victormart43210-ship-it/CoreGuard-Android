@@ -3,7 +3,7 @@ package com.coreguard.security.telemetry
 import android.content.Context
 import android.util.Log
 import com.coldboar.coreguard.quilla.QuillaHypothesis
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import com.coldboar.coreguard.swarm.SwarmSignal
 import org.json.JSONObject
 import java.util.UUID
@@ -75,7 +75,7 @@ object TelemetryBridge {
             put("currentStateHash", delta.currentStateHash)
             put("anomalies", JSONObject(delta.detectedAnomalies))
         }.toString()
-        QuillaMemoryFactory.hypothesisStore().upsert(
+        QuillaMemoryModule.hypothesisStore().upsert(
             QuillaHypothesis(
                 id = UUID.randomUUID().toString(),
                 hypothesisType = "SIGNED_TELEMETRY_${delta.trigger.name}",

@@ -46,6 +46,29 @@ class AngelicDefenseBlessingsTest {
     }
 
     @Test
+    fun `tzadkiel watches suspicious Nemesis verdict from Memory`() {
+        val report = AngelicDefenseBlessings.evaluate(
+            checks = listOf(
+                SecurityCheckResult(
+                    "spyware_scan",
+                    "Privacy Integrity",
+                    SecurityCheckState.WARN,
+                    "Last check flagged 1 item(s)."
+                )
+            ),
+            memory = QuillaMemorySnapshot(
+                lastScanVerdict = "SUSPICIOUS",
+                lastScanDetections = 1,
+                historyCount = 1
+            ),
+            research = QuillaResearchSnapshot()
+        )
+        val tzadkiel = report.blessings.first { it.angel == "Tzadkiel" }
+        assertEquals(AngelicDefenseBlessings.BlessingState.WATCHING, tzadkiel.state)
+        assertTrue(tzadkiel.detail.contains("Nemesis") || tzadkiel.detail.contains("flagged"))
+    }
+
+    @Test
     fun `kamael active when shield on`() {
         val report = AngelicDefenseBlessings.evaluate(
             checks = emptyList(),

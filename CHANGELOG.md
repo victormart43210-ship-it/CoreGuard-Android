@@ -3,6 +3,17 @@
 All notable changes to CoreGuard-Android are documented here.
 Version numbers match `gradle/android-app.gradle`.
 
+## 1.0.17 — 2026-07-26
+
+### Nemesis ↔ Quilla ↔ choir bridge
+
+- Every Nemesis scan completes through `QuillaMemoryModule.onScanCompleted` (hypotheses, correlator, choir refresh, Elite DTS)
+- Non-clean / hit scans append `NEMESIS_SCAN` forensic journal entries and WARN+ swarm alerts
+- Scanner UI shows Quilla/choir bridge note; history always persisted inside `ScannerModule`
+- Tzadkiel/Gabriel blessings reflect Nemesis Memory; SpywareScan falls back to scan history after process death
+- `QuillaMemoryModule` is the module-pattern façade (`QuillaMemoryFactory` remains a deprecated alias)
+- Security Swarm VULN-IMPLICIT exempts only MAIN+LAUNCHER exported activities (MainActivity false positive)
+
 ## 1.0.16 — 2026-07-26
 
 ### Quilla Infinity threat training
