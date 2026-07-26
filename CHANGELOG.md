@@ -12,6 +12,10 @@ Version numbers match `gradle/android-app.gradle`.
 - Dynamic Threat Score caption states on-device correlator / not cloud AI
 - Empty states polished on Scanner, Forensic Journal, and Scam Guard; shortcut a11y descriptions improved
 
+### CI
+
+- Dependency Review soft-fails when GitHub Dependency Graph is disabled (environmental); enable the graph to get real review results
+
 ## 1.0.14 — 2026-07-26
 
 ### Release stabilization
