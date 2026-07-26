@@ -64,6 +64,7 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 fun SettingsScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
     onNavigateToPrivacyPolicy: () -> Unit = {},
+    onNavigateToTools: () -> Unit = {},
     onRunScan: () -> Unit = {},
     onOpenShield: () -> Unit = {},
     onOpenTimeline: () -> Unit = {}
@@ -89,7 +90,7 @@ fun SettingsScreen(
             modifier = Modifier.semantics { heading() }
         )
 
-        Spacer(modifier.height(20.dp))
+        Spacer(Modifier.height(20.dp))
 
         // ── Premium section ─────────────────────────────────────────────────
         Card(
@@ -102,7 +103,7 @@ fun SettingsScreen(
             ),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.Star,
@@ -172,7 +173,7 @@ fun SettingsScreen(
                         Spacer(Modifier.size(6.dp))
                         Text(subscribeLabel, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(modifier.height(6.dp))
+                    Spacer(Modifier.height(6.dp))
                     Text(
                         "Payment & cancellation are handled by Google Play.",
                         style = MaterialTheme.typography.bodySmall,
@@ -182,7 +183,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
         // ── Quilla AI assistant ──────────────────────────────────────────────
         Card(
@@ -192,7 +193,7 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.AutoAwesome,
@@ -214,7 +215,7 @@ fun SettingsScreen(
                     )
                 }
                 if (!quillaOpen) {
-                    Spacer(modifier.height(4.dp))
+                    Spacer(Modifier.height(4.dp))
                     Text(
                         "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
                         style = MaterialTheme.typography.bodyMedium
@@ -232,10 +233,10 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
 
-        Spacer(modifier.height(16.dp))
+        Spacer(Modifier.height(16.dp))
 
         // ── Device Hardening Guide ────────────────────────────────────────────
         Card(
@@ -245,7 +246,7 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.Bolt,
@@ -253,7 +254,7 @@ fun SettingsScreen(
                         tint = ElectricTeal,
                         modifier = Modifier.size(20.dp)
                     )
-                    Spacer(modifier.size(8.dp))
+                    Spacer(Modifier.size(8.dp))
                     Text(
                         "Device Hardening",
                         style = MaterialTheme.typography.titleMedium,
@@ -281,6 +282,29 @@ fun SettingsScreen(
             DeviceHardeningPanel(modifier = Modifier.padding(top = 8.dp))
         }
 
+        Spacer(Modifier.height(16.dp))
+
+        // ── Tools shortcut ───────────────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToTools),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(Modifier.padding(16.dp)) {
+                Text("Tools", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    "Open the Quilla tools workspace with ready-topic coaching and action buttons.",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         // ── Privacy & Legal ──────────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -289,13 +313,13 @@ fun SettingsScreen(
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Privacy & Legal", style = MaterialTheme.typography.titleSmall, color = MutedText)
-                HorizontalDivider(modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 SettingsLink(
                     label = "Privacy Policy",
                     icon = { Icon(Icons.Filled.Policy, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(18.dp)) },
                     onClick = onNavigateToPrivacyPolicy
                 )
-                HorizontalDivider(modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text(
                     text = "CoreGuard collects no personal data. All scans run entirely on-device.",
                     style = MaterialTheme.typography.bodySmall,
@@ -312,13 +336,13 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(modifier.padding(16.dp)) {
+            Column(Modifier.padding(16.dp)) {
                 Text("About", style = MaterialTheme.typography.titleSmall, color = MutedText)
-                Spacer(modifier.height(8.dp))
+                Spacer(Modifier.height(8.dp))
                 SettingsRow(label = "Version", value = BuildConfig.VERSION_NAME)
-                HorizontalDivider(modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 SettingsRow(label = "Build type", value = if (BuildConfig.DEBUG) "Debug" else "Release")
-                HorizontalDivider(modifier.padding(vertical = 8.dp))
+                HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text(
                     text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
                         "CoreGuard is an independent project and is not affiliated with Amnesty International.",
@@ -328,7 +352,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(modifier.height(24.dp))
+        Spacer(Modifier.height(24.dp))
     }
 }
 

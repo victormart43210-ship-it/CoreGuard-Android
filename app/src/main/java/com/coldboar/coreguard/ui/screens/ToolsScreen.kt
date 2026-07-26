@@ -28,8 +28,13 @@ import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
 @Composable
-fun ToolsScreen() {
-    var quillaOpen by remember { mutableStateOf(false) }
+fun ToolsScreen(
+    onBack: () -> Unit = {},
+    onRunScan: () -> Unit = {},
+    onOpenShield: () -> Unit = {},
+    onOpenTimeline: () -> Unit = {}
+) {
+    var quillaOpen by remember { mutableStateOf(true) }
 
     Column(
         modifier = Modifier
@@ -40,11 +45,15 @@ fun ToolsScreen() {
         Text(
             text = "Tools",
             style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
+            color = ElectricTeal,
+            modifier = Modifier
+                .semantics { heading() }
+                .clickable(onClick = onBack)
         )
         Text(
-            text = "Utilities and assistants available in CoreGuard.",
-            style = MaterialTheme.typography.bodyMedium
+            text = "Quilla cyber force and on-device utilities. Tap the title to go back.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedText
         )
 
         Spacer(Modifier.height(20.dp))
@@ -77,7 +86,12 @@ fun ToolsScreen() {
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaAgentPanel(modifier = Modifier.padding(top = 16.dp))
+            QuillaAgentPanel(
+                modifier = Modifier.padding(top = 16.dp),
+                onRunScan = onRunScan,
+                onOpenShield = onOpenShield,
+                onOpenTimeline = onOpenTimeline
+            )
         }
     }
 }

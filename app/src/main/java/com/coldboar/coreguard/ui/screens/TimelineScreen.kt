@@ -208,7 +208,7 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
             colors = CardDefaults.cardColors(containerColor = SurfacePewter),
             shape = RoundedCornerShape(12.dp)
         ) {
-            Column(modifier.padding(12.dp)) {
+            Column(Modifier.padding(12.dp)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,

@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -37,7 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 @Composable
-fun SupplyChainScreen() {
+fun SupplyChainScreen(onBack: () -> Unit = {}) {
     val context = LocalContext.current
     var packageCount by remember { mutableStateOf<Int?>(null) }
     var sdkSummaries by remember { mutableStateOf<List<SdkAuditSummary>>(emptyList()) }
@@ -63,10 +64,13 @@ fun SupplyChainScreen() {
         Text(
             text = "Supply Chain",
             style = MaterialTheme.typography.headlineLarge,
-            modifier = Modifier.semantics { heading() }
+            color = ElectricTeal,
+            modifier = Modifier
+                .semantics { heading() }
+                .clickable(onClick = onBack)
         )
         Text(
-            text = "SBOM generation and third-party SDK behavior auditing.",
+            text = "SBOM generation and third-party SDK behavior auditing. Tap the title to go back.",
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )

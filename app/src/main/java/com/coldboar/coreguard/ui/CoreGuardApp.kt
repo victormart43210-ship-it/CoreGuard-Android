@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AssuredWorkload
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.ManageSearch
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
@@ -46,6 +46,7 @@ import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
 import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
+import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
@@ -57,7 +58,7 @@ private data class NavItem(
 
 private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home),
-    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch),
+    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.AutoMirrored.Filled.ManageSearch),
     NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield),
     NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload),
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
@@ -66,7 +67,8 @@ private val bottomNavItems = listOf(
 private val routesWithoutBottomBar = setOf(
     CoreGuardRoute.PrivacyPolicy.route,
     CoreGuardRoute.Timeline.route,
-    CoreGuardRoute.SupplyChain.route
+    CoreGuardRoute.SupplyChain.route,
+    CoreGuardRoute.Tools.route
 )
 
 /**
@@ -148,7 +150,15 @@ fun CoreGuardApp(
                     )
                 }
                 composable(CoreGuardRoute.SupplyChain.route) {
-                    SupplyChainScreen()
+                    SupplyChainScreen(onBack = { navController.popBackStack() })
+                }
+                composable(CoreGuardRoute.Tools.route) {
+                    ToolsScreen(
+                        onBack = { navController.popBackStack() },
+                        onRunScan = { navigateToTab(CoreGuardRoute.Scanner.route) },
+                        onOpenShield = { navigateToTab(CoreGuardRoute.Shield.route) },
+                        onOpenTimeline = { navController.navigate(CoreGuardRoute.Timeline.route) }
+                    )
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen(
@@ -167,6 +177,9 @@ fun CoreGuardApp(
                         billingProvider = billingProvider,
                         onNavigateToPrivacyPolicy = {
                             navController.navigate(CoreGuardRoute.PrivacyPolicy.route)
+                        },
+                        onNavigateToTools = {
+                            navController.navigate(CoreGuardRoute.Tools.route)
                         },
                         onRunScan = {
                             navigateToTab(CoreGuardRoute.Scanner.route)

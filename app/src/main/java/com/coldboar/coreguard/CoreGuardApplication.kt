@@ -54,6 +54,13 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
             }
+            try {
+                // Open Room so hypothesis writes from the correlation engine do not
+                // pay first-open latency on the UI path.
+                quillaDatabase.quillaLearningDao()
+            } catch (t: Throwable) {
+                Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
+            }
         }.apply { isDaemon = true }.start()
     }
 

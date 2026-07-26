@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.attestation
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+
 /**
  * Represents the result of a remote attestation request.
  */
@@ -85,6 +87,7 @@ class LivePlayIntegrityAttestation(
         AttestationResult.Failure("Attestation error: ${t.message}")
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     private suspend fun attestInternal(nonce: String): AttestationResult {
         // Attempt to load the Play Integrity API via reflection so that the
         // module compiles without the SDK in the offline sandbox.
