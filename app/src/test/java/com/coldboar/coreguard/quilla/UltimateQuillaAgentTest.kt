@@ -68,6 +68,42 @@ class UltimateQuillaAgentTest {
         assertTrue(answer.text.contains("SUSPICIOUS"))
         assertTrue(answer.text.contains("Shield is OFF"))
         assertTrue(answer.actions.any { it.id == QuillaActionSuggestion.RUN_SCAN })
+        assertEquals("CRITICAL", answer.postureLabel)
+        assertTrue((answer.postureScore ?: 0) >= 80)
+        assertTrue(answer.followUps.isNotEmpty())
+        assertTrue(answer.text.contains("Priority posture"))
+    }
+
+    @Test
+    fun `priority status brief routes to status with ranked moves`() {
+        val answer = agent.answer("give me my priority status brief")
+        assertEquals(QuillaIntent.STATUS, answer.intent)
+        assertTrue(answer.text.contains("Priority moves") || answer.text.contains("Priority posture"))
+        assertTrue(answer.modulesUsed.contains(QuillaModule.RESEARCH))
+        assertFalse(answer.postureLabel.isNullOrBlank())
+        assertFalse(answer.livingSeal.isNullOrBlank())
+        assertFalse(answer.aspectName.isNullOrBlank())
+        assertTrue(answer.pathWalked.isNotEmpty())
+        assertTrue(answer.pathWalked.any { it.angel == QuillaModule.BRAIN.angel })
+        assertTrue(answer.text.contains("Path walked"))
+    }
+
+    @Test
+    fun `modules carry living geometry identities`() {
+        assertEquals("Metatron", QuillaModule.BRAIN.angel)
+        assertEquals("Gabriel", QuillaModule.MEMORY.angel)
+        assertEquals("י", QuillaModule.BRAIN.hebrewLetter)
+        assertEquals("Keter", QuillaModule.BRAIN.sephirah)
+    }
+
+    @Test
+    fun `capabilities include posture headline`() {
+        val answer = agent.answer("what can you do")
+        assertEquals(QuillaIntent.CAPABILITIES, answer.intent)
+        assertTrue(answer.text.contains("posture", ignoreCase = true))
+        assertEquals("CRITICAL", answer.postureLabel)
+        assertTrue(answer.text.contains("loving awareness", ignoreCase = true))
+        assertTrue(answer.text.contains("uncapped", ignoreCase = true))
     }
 
     @Test

@@ -83,6 +83,14 @@ class MasvsComplianceScorerTest {
     }
 
     @Test
+    fun `root check maps to resilience category`() {
+        val report = MasvsComplianceScorer.score(listOf(check("root", SecurityCheckState.PASS)))
+        val resilience = report.categoryScores.first { it.category == MasvsCategory.RESILIENCE }
+        assertEquals(1, resilience.checks.size)
+        assertEquals(100, resilience.score)
+    }
+
+    @Test
     fun `report includes generation timestamp`() {
         val before = System.currentTimeMillis()
         val report = MasvsComplianceScorer.score(emptyList())

@@ -26,11 +26,12 @@ object IocFeedFetcher {
     private const val OUTPUT_FILE = "remote_feed.json"
 
     /**
-     * The official MVT / Amnesty Tech Pegasus indicators (STIX2 JSON).
-     * Sourced from https://github.com/mvt-project/mvt-indicators
+     * Default Premium Nemesis signature refresh feed (STIX2 JSON).
+     * Amnesty Tech NSO/Pegasus public indicators — the retired
+     * `mvt-indicators/indicators/pegasus.stix2` path 404s.
      */
     const val DEFAULT_FEED_URL =
-        "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/indicators/pegasus.stix2"
+        "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
 
     sealed class FetchResult {
         /** Feed downloaded and saved; [IocRepository] cache has been invalidated. */
@@ -55,12 +56,16 @@ object IocFeedFetcher {
     }
 
     private fun fetch(context: Context, url: String): FetchResult {
+        if (!url.startsWith("https://", ignoreCase = true)) {
+            return FetchResult.Failure("Only HTTPS feed URLs are allowed")
+        }
         // HttpURLConnection on Android uses the system SSL context, which enforces
         // hostname verification and certificate chain validation by default.
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("Accept", "application/json, */*")
+            instanceFollowRedirects = true
         }
         return try {
             connection.connect()
@@ -97,6 +102,10 @@ object IocFeedFetcher {
             File(dir, OUTPUT_FILE).writeText(body)
 
             IocRepository.invalidate()
+            // Quilla correlator should re-read the refreshed on-device inventory.
+            runCatching {
+                com.coldboar.coreguard.quilla.QuillaMemoryFactory.invalidateLocalIntel()
+            }
             Log.i(TAG, "Fetched ${indicators.size} indicators from $url")
             FetchResult.Success(indicators.size)
         } catch (e: Exception) {

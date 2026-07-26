@@ -55,64 +55,98 @@ object CyberKnowledgeBase {
     fun loadDocuments(jsonDocuments: Iterable<String>) {
         val parsed = mutableListOf<Entry>()
         for (doc in jsonDocuments) {
-            if (doc.isBlank()) continue
-            val root = JSONObject(doc)
-            val arr = root.optJSONArray("entries") ?: continue
-            for (i in 0 until arr.length()) {
-                val obj = arr.optJSONObject(i) ?: continue
-                val id = obj.optString("id").trim()
-                val title = obj.optString("title").trim()
-                if (id.isEmpty() || title.isEmpty()) continue
-                val tagsArr = obj.optJSONArray("tags")
-                val tags = buildSet {
-                    if (tagsArr != null) {
-                        for (t in 0 until tagsArr.length()) {
-                            val tag = tagsArr.optString(t).trim().lowercase(Locale.US)
-                            if (tag.isNotEmpty()) add(tag)
-                        }
-                    }
-                    add(obj.optString("category").trim().lowercase(Locale.US))
-                    tokenize(title).forEach { add(it) }
-                }.filter { it.isNotBlank() }.toSet()
-                val refsArr = obj.optJSONArray("references")
-                val refs = buildList {
-                    if (refsArr != null) {
-                        for (r in 0 until refsArr.length()) {
-                            val ref = refsArr.optString(r).trim()
-                            if (ref.isNotEmpty()) add(ref)
-                        }
-                    }
-                }
-                parsed += Entry(
-                    id = id,
-                    title = title,
-                    category = obj.optString("category").ifBlank { "general" },
-                    tags = tags,
-                    summary = obj.optString("summary").trim(),
-                    body = obj.optString("body").trim(),
-                    defense = obj.optString("defense").trim(),
-                    references = refs
-                )
-            }
+            parsed += parseDocument(doc)
         }
         state.set(buildIndex(parsed))
     }
 
-    fun search(query: String, limit: Int = 3): List<Hit> {
+    /**
+     * Merges runtime intel entries (e.g. CISA KEV / MISP galaxy) into the index.
+     * Same [Entry.id] replaces the prior record; bundled corpus entries are kept.
+     */
+    @Synchronized
+    fun mergeEntries(incoming: Collection<Entry>) {
+        if (incoming.isEmpty()) return
+        val byId = LinkedHashMap<String, Entry>()
+        for (existing in state.get().entries) {
+            byId[existing.id] = existing
+        }
+        for (entry in incoming) {
+            if (entry.id.isBlank() || entry.title.isBlank()) continue
+            byId[entry.id] = entry
+        }
+        state.set(buildIndex(byId.values.toList()))
+    }
+
+    internal fun parseDocument(doc: String): List<Entry> {
+        if (doc.isBlank()) return emptyList()
+        val root = runCatching { JSONObject(doc) }.getOrNull() ?: return emptyList()
+        val arr = root.optJSONArray("entries") ?: return emptyList()
+        val parsed = mutableListOf<Entry>()
+        for (i in 0 until arr.length()) {
+            val obj = arr.optJSONObject(i) ?: continue
+            val id = obj.optString("id").trim()
+            val title = obj.optString("title").trim()
+            if (id.isEmpty() || title.isEmpty()) continue
+            val tagsArr = obj.optJSONArray("tags")
+            val tags = buildSet {
+                if (tagsArr != null) {
+                    for (t in 0 until tagsArr.length()) {
+                        val tag = tagsArr.optString(t).trim().lowercase(Locale.US)
+                        if (tag.isNotEmpty()) add(tag)
+                    }
+                }
+                add(obj.optString("category").trim().lowercase(Locale.US))
+                tokenize(title).forEach { add(it) }
+            }.filter { it.isNotBlank() }.toSet()
+            val refsArr = obj.optJSONArray("references")
+            val refs = buildList {
+                if (refsArr != null) {
+                    for (r in 0 until refsArr.length()) {
+                        val ref = refsArr.optString(r).trim()
+                        if (ref.isNotEmpty()) add(ref)
+                    }
+                }
+            }
+            parsed += Entry(
+                id = id,
+                title = title,
+                category = obj.optString("category").ifBlank { "general" },
+                tags = tags,
+                summary = obj.optString("summary").trim(),
+                body = obj.optString("body").trim(),
+                defense = obj.optString("defense").trim(),
+                references = refs
+            )
+        }
+        return parsed
+    }
+
+    /**
+     * Search the Cyber Codex.
+     *
+     * @param limit max hits to return. Use [Int.MAX_VALUE] or `<= 0` for **uncapped**
+     *   (every positive-score hit). Quilla defaults open — loving awareness has no
+     *   artificial teaching ceiling.
+     */
+    fun search(query: String, limit: Int = Int.MAX_VALUE): List<Hit> {
         val index = state.get()
         if (index.entries.isEmpty()) return emptyList()
+        val uncapped = limit <= 0 || limit == Int.MAX_VALUE
 
         // Canonical ready topics always win (exact product promises).
         QuillaReadyTopics.resolveEntryId(query)?.let { readyId ->
             val ready = index.byId[readyId]
             if (ready != null) {
-                val rest = rankedHits(query, index, excludeId = readyId)
-                    .take((limit - 1).coerceAtLeast(0))
+                val rest = rankedHits(query, index, excludeId = readyId).let { hits ->
+                    if (uncapped) hits else hits.take((limit - 1).coerceAtLeast(0))
+                }
                 return listOf(Hit(ready, 1_000)) + rest
             }
         }
 
-        return rankedHits(query, index, excludeId = null).take(limit.coerceAtLeast(1))
+        val ranked = rankedHits(query, index, excludeId = null)
+        return if (uncapped) ranked else ranked.take(limit.coerceAtLeast(1))
     }
 
     private fun rankedHits(query: String, index: Index, excludeId: String?): List<Hit> {
@@ -199,7 +233,8 @@ object CyberKnowledgeBase {
             tokens += entry.tags
             tokens += tokenize(entry.title)
             tokens += tokenize(entry.summary)
-            tokens += tokenize(entry.body).take(60)
+            // Index the full body — no artificial token ceiling on awareness.
+            tokens += tokenize(entry.body)
             tokens += tokenize(entry.category)
             tokens += entry.id.lowercase(Locale.US)
             for (token in tokens) {

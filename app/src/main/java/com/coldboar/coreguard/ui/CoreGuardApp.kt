@@ -1,5 +1,9 @@
 package com.coldboar.coreguard.ui
 
+import androidx.compose.animation.AnimatedContentTransitionScope
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -7,9 +11,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.AssuredWorkload
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.automirrored.filled.ManageSearch
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material3.Icon
@@ -20,12 +24,15 @@ import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -35,10 +42,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.FirstRunStore
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
+import com.coldboar.coreguard.ui.screens.OnboardingScreen
 import com.coldboar.coreguard.ui.screens.PrivacyPolicyScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
@@ -49,6 +57,8 @@ import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
+import com.coldboar.coreguard.ui.theme.RestrainedGold
+import com.coldboar.coreguard.ui.theme.SurfacePewter
 
 private data class NavItem(
     val route: String,
@@ -65,11 +75,14 @@ private val bottomNavItems = listOf(
 )
 
 private val routesWithoutBottomBar = setOf(
+    CoreGuardRoute.Onboarding.route,
     CoreGuardRoute.PrivacyPolicy.route,
     CoreGuardRoute.Timeline.route,
     CoreGuardRoute.SupplyChain.route,
     CoreGuardRoute.Tools.route
 )
+
+private val tabRoutes = bottomNavItems.map { it.route }.toSet()
 
 /**
  * Root composable for the entire app.
@@ -78,13 +91,14 @@ private val routesWithoutBottomBar = setOf(
  * primary destinations. All screens are reachable through this single graph.
  *
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider Production [BillingProvider] from MainActivity. Demo default is for previews/tests only.
+ * @param billingProvider Production [BillingProvider] from MainActivity (Play Billing).
  */
 @Composable
 fun CoreGuardApp(
     secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
-    billingProvider: BillingProvider = remember { DemoBillingProvider() }
+    billingProvider: BillingProvider = rememberAppBillingProvider()
 ) {
+    val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -100,6 +114,22 @@ fun CoreGuardApp(
         }
     }
 
+    fun finishOnboarding(thenRoute: String = CoreGuardRoute.Home.route) {
+        FirstRunStore.markOnboardingComplete(context)
+        navController.navigate(thenRoute) {
+            popUpTo(CoreGuardRoute.Onboarding.route) { inclusive = true }
+            launchSingleTop = true
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        if (!FirstRunStore.isOnboardingComplete(context)) {
+            navController.navigate(CoreGuardRoute.Onboarding.route) {
+                launchSingleTop = true
+            }
+        }
+    }
+
     Box {
         Scaffold(
             bottomBar = {
@@ -112,8 +142,42 @@ fun CoreGuardApp(
             NavHost(
                 navController = navController,
                 startDestination = CoreGuardRoute.Home.route,
-                modifier = Modifier.padding(paddingValues)
+                modifier = Modifier.padding(paddingValues),
+                enterTransition = {
+                    if (targetState.destination.route in tabRoutes &&
+                        initialState.destination.route in tabRoutes
+                    ) {
+                        fadeIn(animationSpec = tween(220))
+                    } else {
+                        fadeIn(animationSpec = tween(240)) +
+                            slideIntoContainer(
+                                towards = AnimatedContentTransitionScope.SlideDirection.Start,
+                                animationSpec = tween(280),
+                                initialOffset = { it / 20 }
+                            )
+                    }
+                },
+                exitTransition = {
+                    fadeOut(animationSpec = tween(180))
+                },
+                popEnterTransition = {
+                    fadeIn(animationSpec = tween(220)) +
+                        slideIntoContainer(
+                            towards = AnimatedContentTransitionScope.SlideDirection.End,
+                            animationSpec = tween(260),
+                            initialOffset = { it / 20 }
+                        )
+                },
+                popExitTransition = {
+                    fadeOut(animationSpec = tween(160))
+                }
             ) {
+                composable(CoreGuardRoute.Onboarding.route) {
+                    OnboardingScreen(
+                        onFinished = { finishOnboarding(CoreGuardRoute.Home.route) },
+                        onRunFirstScan = { finishOnboarding(CoreGuardRoute.Scanner.route) }
+                    )
+                }
                 composable(CoreGuardRoute.Home.route) {
                     HomeScreen(
                         onNavigateToScanner = {
@@ -215,10 +279,19 @@ private fun CoreGuardBottomBar(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(ElectricTeal.copy(alpha = 0.22f))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            ElectricTeal.copy(alpha = 0.05f),
+                            ElectricTeal.copy(alpha = 0.45f),
+                            RestrainedGold.copy(alpha = 0.35f),
+                            ElectricTeal.copy(alpha = 0.05f)
+                        )
+                    )
+                )
         )
         NavigationBar(
-            containerColor = MaterialTheme.colorScheme.surface,
+            containerColor = SurfacePewter.copy(alpha = 0.97f),
             tonalElevation = 0.dp
         ) {
             bottomNavItems.forEach { item ->

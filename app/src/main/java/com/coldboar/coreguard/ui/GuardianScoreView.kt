@@ -54,6 +54,10 @@ class GuardianScoreView @JvmOverloads constructor(
     private var displayedScore = 0f
     private var targetScore = 0
     private var animator: ValueAnimator? = null
+    private var cachedBlurRadius = -1f
+    private var cachedShaderCx = Float.NaN
+    private var cachedShaderCy = Float.NaN
+    private var cachedShaderColor = 0
 
     var scoreColor: Int = context.getColor(R.color.gold)
         private set
@@ -116,7 +120,11 @@ class GuardianScoreView @JvmOverloads constructor(
         trackPaint.strokeWidth = stroke
         arcPaint.strokeWidth = stroke
         glowPaint.strokeWidth = stroke * 2.2f
-        glowPaint.maskFilter = BlurMaskFilter(stroke * 1.6f, BlurMaskFilter.Blur.NORMAL)
+        val blurRadius = stroke * 1.6f
+        if (blurRadius != cachedBlurRadius) {
+            glowPaint.maskFilter = BlurMaskFilter(blurRadius, BlurMaskFilter.Blur.NORMAL)
+            cachedBlurRadius = blurRadius
+        }
 
         arcRect.set(cx - radius, cy - radius, cx + radius, cy + radius)
 
@@ -125,11 +133,21 @@ class GuardianScoreView @JvmOverloads constructor(
         val sweep = 360f * (displayedScore / 100f)
         if (sweep > 0f) {
             val dimmed = (scoreColor and 0x00FFFFFF) or 0x55000000
-            arcPaint.shader = SweepGradient(
-                cx, cy,
-                intArrayOf(dimmed, scoreColor, scoreColor),
-                floatArrayOf(0f, 0.6f, 1f)
-            )
+            if (
+                scoreColor != cachedShaderColor ||
+                cx != cachedShaderCx ||
+                cy != cachedShaderCy ||
+                arcPaint.shader == null
+            ) {
+                arcPaint.shader = SweepGradient(
+                    cx, cy,
+                    intArrayOf(dimmed, scoreColor, scoreColor),
+                    floatArrayOf(0f, 0.6f, 1f)
+                )
+                cachedShaderColor = scoreColor
+                cachedShaderCx = cx
+                cachedShaderCy = cy
+            }
             glowPaint.color = (scoreColor and 0x00FFFFFF) or 0x66000000
 
             canvas.save()

@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.swarm
 
+import com.coreguard.security.telemetry.TelemetryBridge
+
 /**
  * Orchestrates the on-device security agent swarm.
  *
@@ -76,6 +78,9 @@ open class SwarmCoordinator(private val maxAlerts: Int = 50) {
         if (signal.severity >= SwarmSeverity.WARN) {
             appendAlert(signal)
         }
+
+        // Continuity-preserving signed telemetry for Quilla (on-device only).
+        runCatching { TelemetryBridge.onSwarmSignal(signal) }
 
         if (signal.severity == SwarmSeverity.CRITICAL) {
             val peers = synchronized(lock) { agents.filter { it !== sender } }

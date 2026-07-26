@@ -12,12 +12,12 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityThreatScannerBinding
 import com.coldboar.coreguard.mvt.Detection
-import com.coldboar.coreguard.mvt.DeviceScanner
 import com.coldboar.coreguard.mvt.IocFeedFetcher
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.google.android.material.card.MaterialCardView
@@ -140,8 +140,7 @@ class ThreatScannerActivity : AppCompatActivity() {
         binding.btnRunScan.isEnabled = false
         binding.progressScan.visibility = android.view.View.VISIBLE
         executor.execute {
-            val report = DeviceScanner.scan(this)
-            LastScan.report = report
+            val report = ScannerModule.scanDevice(this)
             mainHandler.post {
                 binding.progressScan.visibility = android.view.View.GONE
                 binding.btnRunScan.isEnabled = true

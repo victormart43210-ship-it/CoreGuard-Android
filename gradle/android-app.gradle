@@ -10,15 +10,10 @@ android {
         applicationId "com.coldboar.coreguard"
         minSdk 24
         targetSdk 35
-        versionCode 2
-        versionName "1.0.1"
+        versionCode 11
+        versionName "1.0.10"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
-
-        // Set EXPECTED_CERT_SHA256 to the colon-hex SHA-256 of the upload/signing
-        // cert before production release (CI secret or local env). Empty = WARN.
-        def expectedCert = System.getenv("EXPECTED_CERT_SHA256") ?: ""
-        buildConfigField "String", "EXPECTED_CERT_SHA256", "\"${expectedCert}\""
 
         externalNativeBuild {
             cmake {
@@ -40,15 +35,49 @@ android {
 
     ndkVersion "26.1.10909125"
 
-    def storeFile = System.getenv("SIGNING_STORE_FILE")
-    def storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS")
-    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD")
+    // Prefer CI env secrets; fall back to local gitignored keystore.properties.
+    def localKeystoreProps = new Properties()
+    def localKeystoreFile = rootProject.file("keystore.properties")
+    if (localKeystoreFile.exists()) {
+        localKeystoreFile.withInputStream { localKeystoreProps.load(it) }
+    }
 
-    if (storeFile != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
+    def storeFilePath = System.getenv("SIGNING_STORE_FILE") ?: localKeystoreProps.getProperty("storeFile")
+    def storePass = System.getenv("SIGNING_STORE_PASSWORD") ?: localKeystoreProps.getProperty("storePassword")
+    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: localKeystoreProps.getProperty("keyAlias")
+    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD") ?: localKeystoreProps.getProperty("keyPassword")
+
+    // Resolve expected upload-cert SHA-256 for SignatureCheckEvaluator.
+    // Priority: EXPECTED_CERT_SHA256 env → keystore.properties → keytool on release keystore.
+    def expectedCert = System.getenv("EXPECTED_CERT_SHA256") ?: localKeystoreProps.getProperty("expectedCertSha256") ?: ""
+    if ((expectedCert == null || expectedCert.trim().isEmpty()) &&
+            storeFilePath != null && storePass != null && signingKeyAlias != null) {
+        def ksFile = rootProject.file(storeFilePath)
+        if (ksFile.exists()) {
+            try {
+                def proc = ["keytool", "-list", "-v",
+                            "-keystore", ksFile.absolutePath,
+                            "-alias", signingKeyAlias,
+                            "-storepass", storePass].execute()
+                proc.waitFor()
+                def out = proc.text
+                def matcher = (out =~ /SHA256:\s*([0-9A-Fa-f:]+)/)
+                if (matcher.find()) {
+                    expectedCert = matcher.group(1).trim().toUpperCase()
+                    logger.lifecycle("Derived EXPECTED_CERT_SHA256 from keystore (${signingKeyAlias})")
+                }
+            } catch (Exception e) {
+                logger.warn("Could not derive EXPECTED_CERT_SHA256: ${e.message}")
+            }
+        }
+    }
+    expectedCert = (expectedCert ?: "").trim()
+    android.defaultConfig.buildConfigField "String", "EXPECTED_CERT_SHA256", "\"${expectedCert}\""
+
+    if (storeFilePath != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
         signingConfigs {
             release {
-                storeFile file(storeFile)
+                storeFile rootProject.file(storeFilePath)
                 storePassword storePass
                 keyAlias signingKeyAlias
                 keyPassword signingKeyPass
@@ -103,6 +132,8 @@ android {
 }
 
 dependencies {
+    implementation project(":core:model")
+
     implementation "androidx.core:core-ktx:1.13.1"
     implementation "androidx.appcompat:appcompat:1.7.0"
     implementation "com.google.android.material:material:1.12.0"

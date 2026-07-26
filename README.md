@@ -60,6 +60,19 @@ protanopia-friendly Okabe–Ito palette with shape markers. See
 The React Native/Expo project referenced in some delivery screenshots is **not**
 present in this repository. Missing tRPC context cannot be repaired here.
 
+## Fast path: emulator + Play (deadline checklist)
+
+```bash
+./scripts/setup-android-sdk.sh          # SDK + AVD CoreGuard_API35
+./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug
+./scripts/run-emulator.sh               # boot AVD, install, launch debug app
+./scripts/prepare-upload-keystore.sh    # once — then :app:bundleRelease for Play
+```
+
+Wednesday launch sequence: [`docs/WEDNESDAY_PLAY_LAUNCH.md`](docs/WEDNESDAY_PLAY_LAUNCH.md).
+
+Debug package id is `com.coldboar.coreguard.debug`. Release / Play package is `com.coldboar.coreguard`.
+
 ## Build and lint
 
 By default, `./gradlew :app:assembleDebug` stays sandbox-friendly: if the Android Gradle Plugin and
@@ -73,7 +86,7 @@ To run the real Android build, install the Android toolchain below and opt in wi
 | Requirement | Value |
 |---|---|
 | JDK | Host JDK compatible with Java 17 bytecode (the task VM currently ships JDK 21) |
-| Gradle | 8.9 via `./gradlew` |
+| Gradle | 8.13 via `./gradlew` |
 | Android Gradle Plugin | 8.5.2 |
 | Kotlin | 1.9.25 |
 | Compose Compiler | 1.5.15 |
@@ -81,7 +94,7 @@ To run the real Android build, install the Android toolchain below and opt in wi
 | `compileSdk` / `targetSdk` | 35 |
 | `minSdk` | 24 |
 | `versionCode` / `versionName` | 2 / 1.0.1 |
-| Android SDK packages | `platforms;android-35`, matching build-tools, `platform-tools` |
+| Android SDK packages | `platforms;android-35`, build-tools 35, platform-tools, NDK 26.1, CMake 3.22.1 |
 
 ### One-time setup
 

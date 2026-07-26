@@ -15,3 +15,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "CoreGuard"
 include(":app")
+include(":core:model")

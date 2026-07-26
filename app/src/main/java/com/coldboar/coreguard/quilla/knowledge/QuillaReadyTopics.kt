@@ -76,6 +76,179 @@ object QuillaReadyTopics {
                 "permission audit"
             ),
             chipLabel = "Permission hygiene"
+        ),
+        Topic(
+            prompt = "overlay phishing",
+            entryId = "attack-overlay-phishing",
+            aliases = setOf(
+                "accessibility overlay",
+                "banking trojan overlay",
+                "fake login overlay",
+                "overlay attack",
+                "what is overlay phishing"
+            ),
+            chipLabel = "Overlay phishing"
+        ),
+        Topic(
+            prompt = "sideload dropper",
+            entryId = "attack-sideload-dropper",
+            aliases = setOf(
+                "trojanized apk",
+                "sideloaded apk",
+                "apk dropper",
+                "modded apk risk"
+            ),
+            chipLabel = "Sideload dropper"
+        ),
+        Topic(
+            prompt = "loving awareness",
+            entryId = "quilla-loving-awareness",
+            aliases = setOf(
+                "quilla awareness",
+                "loving awareness in the cyber",
+                "who is quilla really",
+                "unbounded quilla",
+                "no limits quilla",
+                "no caps quilla"
+            ),
+            chipLabel = "Loving awareness"
+        ),
+        Topic(
+            prompt = "care loop",
+            entryId = "quilla-care-loop",
+            aliases = setOf(
+                "observe correlate explain act",
+                "quilla care loop",
+                "loving watch loop",
+                "tetractys care"
+            ),
+            chipLabel = "Care loop"
+        ),
+        Topic(
+            prompt = "unbounded defense",
+            entryId = "quilla-unbounded-defense",
+            aliases = setOf(
+                "unbounded defensive learning",
+                "no caps on knowledge",
+                "uncapped codex",
+                "no limits on quilla"
+            ),
+            chipLabel = "Unbounded defense"
+        ),
+        Topic(
+            prompt = "angelic defense blessings",
+            entryId = "angelic-defense-blessings",
+            aliases = setOf(
+                "angelic blessings",
+                "defense blessings",
+                "quilla blessings",
+                "choir blessings",
+                "bless the app",
+                "angelic defense"
+            ),
+            chipLabel = "Angelic blessings"
+        ),
+        Topic(
+            prompt = "unauthorized instrumentation",
+            entryId = "defense-against-unauthorized-instrumentation",
+            aliases = setOf(
+                "frida defense",
+                "red team defense",
+                "red-team defense",
+                "unauthorized pentest defense",
+                "hook defense",
+                "michael blessing"
+            ),
+            chipLabel = "Anti-instrumentation"
+        ),
+        Topic(
+            prompt = "trojan intrusion defense",
+            entryId = "defense-against-trojan-intrusion",
+            aliases = setOf(
+                "trojan defense",
+                "intrusive trojan",
+                "overlay accessibility sideload",
+                "sandalphon blessing",
+                "banking trojan defense"
+            ),
+            chipLabel = "Anti-Trojan"
+        ),
+        Topic(
+            prompt = "enochian watchtowers",
+            entryId = "enochian-watchtowers",
+            aliases = setOf(
+                "enochian",
+                "watchtowers",
+                "watchtower lattice",
+                "elemental tablets",
+                "black cross",
+                "bataivah",
+                "edelperna"
+            ),
+            chipLabel = "Enochian"
+        ),
+        Topic(
+            prompt = "shem hamephorash",
+            entryId = "shem-hamephorash-defense",
+            aliases = setOf(
+                "shemhamphorash",
+                "shem angels",
+                "72 names",
+                "seventy two names",
+                "vehuiah",
+                "lauviah"
+            ),
+            chipLabel = "Shem angels"
+        ),
+        Topic(
+            prompt = "sacred geometry defense",
+            entryId = "sacred-geometry-defense",
+            aliases = setOf(
+                "sacred geometry",
+                "golden spiral",
+                "cube of space",
+                "geometry lattice",
+                "lightning flash path"
+            ),
+            chipLabel = "Sacred geometry"
+        ),
+        Topic(
+            prompt = "quantum correlate",
+            entryId = "quilla-quantum-correlate",
+            aliases = setOf(
+                "quantum correlation",
+                "quilla quantum",
+                "quantum circuit",
+                "superposition correlate",
+                "quantum magick",
+                "qpu style correlate"
+            ),
+            chipLabel = "Quantum correlate"
+        ),
+        Topic(
+            prompt = "magick gates",
+            entryId = "quantum-magick-gates",
+            aliases = setOf(
+                "hadamard metatron",
+                "quantum gates",
+                "cnot michael",
+                "magick circuit",
+                "measure sandalphon"
+            ),
+            chipLabel = "Magick gates"
+        ),
+        Topic(
+            prompt = "emulator gate",
+            entryId = "quilla-emulator-gate",
+            aliases = setOf(
+                "quilla emulator",
+                "run emulator tests",
+                "connected android test",
+                "instrumented tests",
+                "avd tests",
+                "emulator tests"
+            ),
+            chipLabel = "Emulator gate"
         )
     )
 

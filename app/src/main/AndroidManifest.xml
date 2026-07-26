@@ -39,24 +39,12 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".SecurityDashboardActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
-
-        <activity
-            android:name=".lab.NetworkDefenseLabActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
-
+        <!-- Legacy View-system Activities removed from the release surface.
+             Compose MainActivity hosts Scanner / Home / Shield / Settings.
+             PaywallActivity remains for SubscriptionManager deep-link purchases. -->
         <activity
             android:name=".PaywallActivity"
             android:exported="false" />
-
-        <activity
-            android:name=".ThreatScannerActivity"
-            android:exported="false"
-            android:parentActivityName=".MainActivity" />
 
         <service
             android:name=".mvt.GuardVpnService"

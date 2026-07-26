@@ -1,0 +1,172 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex — defensive summaries of publicly documented mobile attack methods (OWASP MASTG/WSTG orientation, MITRE ATT&CK Mobile, vendor advisories). Not exploit code.",
+  "license_note": "Educational paraphrase for on-device defense. See references.",
+  "entries": [
+    {
+      "id": "attack-overlay-phishing",
+      "title": "Accessibility / overlay phishing (modern mobile)",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "overlay",
+        "accessibility",
+        "phishing",
+        "banking trojan",
+        "social engineering",
+        "hack method",
+        "android attack"
+      ],
+      "summary": "Malware abuses Accessibility or draw-over-apps to steal credentials via fake screens.",
+      "body": "Contemporary Android banking trojans and stalkerware often request Accessibility Services, then paint convincing login overlays over legitimate apps or system dialogs. Victims type credentials into the overlay; the implant exfiltrates them. Related tricks include notification listeners, clipboard scrape, and session cookie theft from WebViews. This is a social-engineering + privilege abuse pattern, not a kernel exploit.",
+      "defense": "Deny Accessibility to untrusted apps. Review draw-over-other-apps permission. Prefer biometric/OS autofill. Run Nemesis after installing new apps. Enable Privacy Shield on hostile networks. Quilla will not help build overlays.",
+      "references": [
+        "https://mas.owasp.org/MASTG/",
+        "https://attack.mitre.org/techniques/T1417/"
+      ]
+    },
+    {
+      "id": "attack-sideload-dropper",
+      "title": "Sideloaded dropper / trojanized APK supply chain",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "sideload",
+        "dropper",
+        "supply chain",
+        "apk",
+        "trojan",
+        "hack method",
+        "pentest"
+      ],
+      "summary": "Attackers distribute modified APKs outside Play with nested payloads.",
+      "body": "Operators ship 'modded' or 'cracked' APKs, SMS/Telegram droppers, or lookalike apps that unpack a second-stage payload after install. Techniques include encrypted asset DEX, dynamic code loading, and delayed C2 beacons to evade first-run scanners. Authorized pentests enumerate sideload paths under ROE; criminals use the same paths without consent.",
+      "defense": "Install only from trusted stores. Disable unknown sources. Scan with Nemesis after any sideload. Uninstall apps you do not recognize. Quilla refuses help packaging malware.",
+      "references": [
+        "https://source.android.com/docs/security/features/verify-apps",
+        "https://attack.mitre.org/techniques/T1476/"
+      ]
+    },
+    {
+      "id": "attack-deeplink-intent",
+      "title": "Deep link / Intent redirection abuse",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "deeplink",
+        "intent",
+        "exported component",
+        "webview",
+        "hack method",
+        "android"
+      ],
+      "summary": "Crafted links or Intents coerce apps into unsafe actions.",
+      "body": "Misconfigured exported Activities, custom URL schemes, and App Links can be hijacked so a malicious app or phishing page opens a victim app into an attacker-controlled WebView, bypasses auth screens, or leaks tokens. Mobile pentests map exported components; defenders lock exports, validate deep-link origins, and disable JavaScript bridges where unnecessary.",
+      "defense": "Keep apps updated. Avoid opening unexpected links. Prefer verified App Links. Developers: mark components non-exported, validate intents, and avoid trusting WebView content. Quilla teaches defense, not exploit PoCs.",
+      "references": [
+        "https://mas.owasp.org/MASTG/Android/0x05h-Testing-Platform-Interaction/",
+        "https://owasp.org/www-project-mobile-top-10/"
+      ]
+    },
+    {
+      "id": "attack-spyware-zero-click",
+      "title": "Commercial spyware & zero-click messaging paths (defender view)",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "spyware",
+        "pegasus",
+        "zero click",
+        "amnesty",
+        "mvt",
+        "hack method",
+        "nso"
+      ],
+      "summary": "High-end spyware may exploit messaging stacks without user taps; detection leans on IOCs and forensics.",
+      "body": "Public Amnesty / MVT reporting documents mercenary spyware that can compromise phones via messaging or zero-click paths. Non-rooted on-device scanners cannot guarantee absence of such implants, but IOC matching (domains, processes, packages, paths) and timeline forensics raise signal. Clean scans are reassuring, not absolute.",
+      "defense": "Keep OS patched. Prefer latest messaging apps. Use Nemesis + Amnesty/MVT IOC refresh (Premium signatures). Enable Shield. High-risk users: consider device replacement after confirmed compromise. Quilla correlates public IOCs — it does not sell or teach spyware ops.",
+      "references": [
+        "https://github.com/mvt-project/mvt",
+        "https://github.com/AmnestyTech/investigations",
+        "https://attack.mitre.org/techniques/T1636/"
+      ]
+    },
+    {
+      "id": "attack-rasp-bypass-attempts",
+      "title": "RASP / anti-tamper bypass attempts (awareness)",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "rasp",
+        "frida",
+        "hooking",
+        "tamper",
+        "bypass",
+        "pentest",
+        "hack method"
+      ],
+      "summary": "Attackers and authorized testers probe for Frida, Magisk, and debugger hooks.",
+      "body": "Dynamic instrumentation (Frida, Xposed-class frameworks), Magisk hide, and debugger attach are used both by legitimate mobile pentesters (with written ROE) and by malware authors to defeat certificate pinning, root detection, or in-app RASP. Signals include unexpected tracers, modified libc, and injected libraries.",
+      "defense": "CoreGuard's native tamper checks and RASP telemetry raise these signals for correlation. On a personal device: avoid rooting, avoid unknown Magisk modules, and treat sudden integrity failures as reason to rescan. Quilla will not coach bypassing protections on third-party apps.",
+      "references": [
+        "https://mas.owasp.org/MASTG/Android/0x05j-Testing-Resiliency-Against-Reverse-Engineering/",
+        "https://owasp.org/www-project-mobile-app-security-testing-guide/"
+      ]
+    },
+    {
+      "id": "attack-dns-c2-exfil",
+      "title": "DNS tunneling & malicious domain C2",
+      "category": "emerging-mobile-attacks",
+      "tags": [
+        "dns",
+        "c2",
+        "exfiltration",
+        "tunneling",
+        "network",
+        "hack method"
+      ],
+      "summary": "Implants resolve or tunnel through DNS to reach command infrastructure.",
+      "body": "Many mobile implants use short-lived domains, DGA-like names, or DNS queries as a covert channel. Domain blocklists (including Amnesty/MVT-style IOCs) can NXDOMAIN known C2 names via a local VPN DNS filter. Hardcoded IPs bypass DNS filters — a documented limitation.",
+      "defense": "Keep Privacy Shield on when you need DNS IOC sinkholing. Combine with Nemesis package/process scans. Prefer trusted networks. Quilla correlates Shield blocks against STIX IOCs.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1071/004/",
+        "https://www.cisa.gov/news-events/cybersecurity-advisories"
+      ]
+    },
+    {
+      "id": "pentest-mastg-orientation",
+      "title": "OWASP MASTG orientation for authorized mobile tests",
+      "category": "pentest-methodology",
+      "tags": [
+        "mastg",
+        "owasp",
+        "pentest",
+        "mobile testing",
+        "methodology",
+        "authorized"
+      ],
+      "summary": "MASTG structures authorized Android/iOS testing; always under written ROE.",
+      "body": "The OWASP Mobile Application Security Testing Guide organizes static/dynamic tests for storage, crypto, auth, network, platform interaction, code quality, and resiliency. Professional testers map findings to MASVS controls and deliver remediation-focused reports. Unauthorized testing is illegal.",
+      "defense": "Use MASTG as a checklist to harden your own apps and devices. Ask Quilla about MASVS categories. Never use Quilla to attack systems you do not own or lack permission to test.",
+      "references": [
+        "https://mas.owasp.org/MASTG/",
+        "https://mas.owasp.org/MASVS/"
+      ]
+    },
+    {
+      "id": "pentest-wstg-api-mobile",
+      "title": "WSTG API abuse patterns that hit mobile backends",
+      "category": "pentest-methodology",
+      "tags": [
+        "wstg",
+        "api",
+        "bola",
+        "broken auth",
+        "pentest",
+        "hack method",
+        "owasp"
+      ],
+      "summary": "Mobile apps often fail open at the API — IDOR/BOLA, weak tokens, over-sharing.",
+      "body": "Even a polished APK can talk to APIs with broken object-level authorization, long-lived tokens in logs, or excessive data in responses. OWASP WSTG and API Security Top 10 catalog these for authorized assessments. Defenders rotate tokens, enforce server-side authz, and minimize client trust.",
+      "defense": "As a user: prefer apps with modern auth, enable MFA on accounts the app touches, and revoke sessions after device loss. Developers: server-side checks, short-lived tokens, certificate pinning with backup pins. Quilla explains patterns — not exploit scripts against live targets.",
+      "references": [
+        "https://owasp.org/www-project-web-security-testing-guide/",
+        "https://owasp.org/API-Security/"
+      ]
+    }
+  ]
+}

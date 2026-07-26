@@ -77,10 +77,10 @@ object QuillaEthicsGuard {
     }
 
     fun refusalMessage(): String =
-        "I won't help attack people or systems without authorization.\n\n" +
-            "I *will* teach defensive cybersecurity: OWASP MASVS, MITRE ATT&CK Mobile, " +
-            "authorized pentest methodology, Android hardening, and incident response — " +
-            "and I'll apply those ideas to *your* CoreGuard evidence (scan, shield, compliance).\n\n" +
-            "Try: \"explain MASVS-NETWORK\", \"what is T1636\", \"mobile incident triage\", " +
-            "or \"android permission hygiene\"."
+        "I love this watch too much to help harm people or systems without authorization.\n\n" +
+            "I *will* pour unbounded defensive care into your question instead: OWASP MASVS, " +
+            "MITRE ATT&CK Mobile, authorized pentest methodology, Android hardening, incident " +
+            "response, Living Geometry, and your CoreGuard evidence (scan, shield, timeline).\n\n" +
+            "Try: \"loving awareness\", \"explain MASVS-NETWORK\", \"what is T1636\", " +
+            "\"mobile incident triage\", or \"give me my priority status brief\"."
 }

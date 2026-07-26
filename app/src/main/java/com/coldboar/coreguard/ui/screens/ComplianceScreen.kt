@@ -39,7 +39,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckRunner
@@ -66,7 +66,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ComplianceScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider = rememberAppBillingProvider(),
     onUpgrade: () -> Unit = {},
     onNavigateToSettings: () -> Unit = {},
     onNavigateToSupplyChain: () -> Unit = {},
@@ -127,6 +127,7 @@ fun ComplianceScreen(
 
         Spacer(Modifier.height(24.dp))
 
+        val complianceError = loadError
         if (loading) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -135,11 +136,11 @@ fun ComplianceScreen(
                 CircularProgressIndicator(color = ElectricTeal)
             }
             Spacer(Modifier.height(16.dp))
-        } else if (loadError != null) {
+        } else if (complianceError != null) {
             CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
                 Text("Couldn’t run compliance checks", style = MaterialTheme.typography.titleMedium, color = HighRed)
                 Spacer(Modifier.height(6.dp))
-                Text(loadError!!, style = MaterialTheme.typography.bodyMedium, color = MutedText)
+                Text(complianceError, style = MaterialTheme.typography.bodyMedium, color = MutedText)
                 Spacer(Modifier.height(12.dp))
                 PrimaryTealButton(text = "Retry", onClick = { reloadToken++ })
             }

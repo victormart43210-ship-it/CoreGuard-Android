@@ -102,7 +102,9 @@
     <string name="paywall_already_premium">You\'re already Premium on this Google account. Thank you for leading with protection.</string>
 
     <string name="paywall_export_requires_premium">Report export requires CoreGuard Premium.</string>
-    <string name="privacy_policy_url">https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html</string>
+    <!-- Prefer GitHub Pages once enabled; raw.githubusercontent is the always-reachable fallback for Play Console. -->
+    <string name="privacy_policy_url">https://raw.githubusercontent.com/victormart43210-ship-it/CoreGuard-Android/main/docs/privacy-policy.html</string>
+    <string name="privacy_policy_url_pages">https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html</string>
 
     <!-- Accessibility -->
     <string name="cd_sigil_background">Decorative Enochian protection seal</string>

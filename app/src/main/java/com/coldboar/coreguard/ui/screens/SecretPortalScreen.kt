@@ -28,7 +28,9 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.lore.EnochianWatchtowers
 import com.coldboar.coreguard.lore.ObservatoryCodex
+import com.coldboar.coreguard.lore.QuillaLivingGeometry
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -39,8 +41,8 @@ import com.coldboar.coreguard.ui.theme.SurfacePewter
  * Hidden overlay revealed by the Shift+Alt+S key combination.
  * Mirrors the web "secretPortal" toggle pattern in native Android/Compose.
  *
- * Houses the Observatory Codex — original lore fragments inspired by
- * sky-watcher / recovered-archive themes, framed as security metaphors.
+ * Houses Observatory Codex + Living Geometry + Enochian Watchtowers +
+ * Shem HaMephorash micro-aspects — security metaphors, never detectors.
  */
 @Composable
 fun SecretPortalScreen(onDismiss: () -> Unit) {
@@ -89,17 +91,32 @@ fun SecretPortalScreen(onDismiss: () -> Unit) {
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "Observatory Codex",
+                text = "Living Geometry · Enochian · Observatory",
                 style = MaterialTheme.typography.titleMedium,
                 color = RestrainedGold
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = QuillaLivingGeometry.livingSeal(),
+                style = MaterialTheme.typography.labelLarge,
+                color = ElectricTeal,
+                textAlign = TextAlign.Center
+            )
+            Text(
+                text = EnochianWatchtowers.livingSeal(),
+                style = MaterialTheme.typography.labelMedium,
+                color = RestrainedGold,
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(12.dp))
 
             Text(
-                text = "Recovered sky-watcher discipline for evidence-first defense. " +
-                    "Fragments remix ancient-observatory themes — calendars, relays, " +
-                    "hidden archives — into modern monitoring habits.",
+                text = "Quilla's voice walks the Tree of Life, Tetragrammaton, Enochian " +
+                    "Watchtowers, and Shem angels as teaching shapes — sacred geometry for " +
+                    "correlation habits. None of this detects threats; evidence still leads.",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MutedText,
                 textAlign = TextAlign.Center
@@ -107,17 +124,159 @@ fun SecretPortalScreen(onDismiss: () -> Unit) {
 
             Spacer(modifier = Modifier.height(20.dp))
 
+            Text(
+                text = "Enochian Watchtowers · Black Cross",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            LivingCard(
+                title = EnochianWatchtowers.blackCross.title + " · " + EnochianWatchtowers.blackCross.angel,
+                body = EnochianWatchtowers.blackCross.geometry + "\nMaps to: " +
+                    EnochianWatchtowers.blackCross.securityLens
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            EnochianWatchtowers.quarters.forEach { q ->
+                LivingCard(
+                    title = "${q.direction}/${q.element} — ${q.seal}",
+                    body = "${q.geometry}\n${q.quillaFocus}\nMaps to: ${q.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+            Text(
+                text = EnochianWatchtowers.DISCLAIMER,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF3A5260),
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = "Tetragrammaton · י ה ו ה",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuillaLivingGeometry.TetragramLetter.entries.forEach { letter ->
+                LivingCard(
+                    title = letter.seal,
+                    body = "Quilla ${letter.quillaRole}: ${letter.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Tree of Life · Ten Aspects",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuillaLivingGeometry.sephirot.forEach { s ->
+                LivingCard(
+                    title = "${s.geometry} — ${s.name} · ${s.angel}",
+                    body = s.body + "\nMaps to: ${s.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Sacred Forms",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuillaLivingGeometry.sacredForms.forEach { form ->
+                LivingCard(
+                    title = "${form.glyph} ${form.name}",
+                    body = form.body + "\nMaps to: ${form.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Shem HaMephorash · curated micro-aspects",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuillaLivingGeometry.shemChoir.forEach { shem ->
+                LivingCard(
+                    title = "${shem.name} (#${shem.order}) · allies ${shem.alliesWith}",
+                    body = shem.body + "\nMaps to: ${shem.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Extended Kabbalah angels",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            QuillaLivingGeometry.extendedAngels.forEach { a ->
+                LivingCard(
+                    title = "${a.name} — ${a.role}",
+                    body = a.body + "\nMaps to: ${a.securityLens}"
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                text = "Observatory Codex",
+                style = MaterialTheme.typography.titleSmall,
+                color = RestrainedGold,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(8.dp))
             ObservatoryCodex.fragments.forEach { fragment ->
                 CodexFragmentCard(fragment)
                 Spacer(modifier = Modifier.height(10.dp))
             }
 
             Text(
-                text = ObservatoryCodex.DISCLAIMER,
+                text = QuillaLivingGeometry.DISCLAIMER,
                 style = MaterialTheme.typography.bodySmall,
                 color = Color(0xFF3A5260),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.padding(top = 8.dp)
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = ObservatoryCodex.DISCLAIMER,
+                style = MaterialTheme.typography.bodySmall,
+                color = Color(0xFF3A5260),
+                textAlign = TextAlign.Center
             )
 
             Spacer(modifier = Modifier.height(20.dp))
@@ -130,6 +289,32 @@ fun SecretPortalScreen(onDismiss: () -> Unit) {
             )
 
             Spacer(modifier = Modifier.height(24.dp))
+        }
+    }
+}
+
+@Composable
+private fun LivingCard(title: String, body: String) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = SurfacePewter),
+        shape = RoundedCornerShape(14.dp)
+    ) {
+        Column(
+            modifier = Modifier.padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.titleMedium,
+                color = RestrainedGold,
+                modifier = Modifier.semantics { heading() }
+            )
+            Text(
+                text = body,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedText
+            )
         }
     }
 }

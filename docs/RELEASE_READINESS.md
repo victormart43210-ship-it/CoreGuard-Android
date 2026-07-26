@@ -81,8 +81,9 @@ Google Play requires a signed AAB/APK. If you lose the keystore you lose the abi
    This protects against keystore loss.
 
 5. **Update `SignatureCheckEvaluator`**:
-   After signing, record the SHA-256 of your signing certificate and set
-   `expectedSha256` in `SecurityDashboardActivity` to enable signature pinning.
+   After signing, set `EXPECTED_CERT_SHA256` (env) or `expectedCertSha256` in
+   `keystore.properties`. Gradle can also derive it from the release keystore via
+   `keytool` so Guardian Score no longer WARN-only for an empty pin.
 
 ---
 

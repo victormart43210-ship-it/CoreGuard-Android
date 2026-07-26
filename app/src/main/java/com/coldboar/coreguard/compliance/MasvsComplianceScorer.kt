@@ -77,6 +77,9 @@ object MasvsComplianceScorer {
         // PLATFORM
         "emulator" to MasvsCategory.PLATFORM,
         "build_type" to MasvsCategory.PLATFORM,
+        "overlay_abuse" to MasvsCategory.PLATFORM,
+        "accessibility_abuse" to MasvsCategory.PLATFORM,
+        "sideload_risk" to MasvsCategory.PLATFORM,
 
         // CODE
         "signature" to MasvsCategory.CODE,
@@ -87,6 +90,7 @@ object MasvsComplianceScorer {
         "frida" to MasvsCategory.RESILIENCE,
         "hook_maps" to MasvsCategory.RESILIENCE,
         "mount_integrity" to MasvsCategory.RESILIENCE,
+        "root" to MasvsCategory.RESILIENCE,
         "inline_hook_sample" to MasvsCategory.RESILIENCE,
         "memory_patch_sample" to MasvsCategory.RESILIENCE
     )

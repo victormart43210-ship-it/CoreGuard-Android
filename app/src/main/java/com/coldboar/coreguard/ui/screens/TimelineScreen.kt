@@ -16,12 +16,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -36,18 +30,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
+import com.coldboar.coreguard.ui.components.LoadingLine
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
-import com.coldboar.coreguard.ui.components.PrimaryTealButton
-import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.SubScreenTopBar
 import com.coldboar.coreguard.ui.theme.AttentionAmber
-import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
@@ -60,7 +54,7 @@ import java.util.Locale
 
 @Composable
 fun TimelineScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider = rememberAppBillingProvider(),
     onUpgrade: () -> Unit = {},
     onBack: () -> Unit = {},
     onNavigateToScanner: () -> Unit = {}
@@ -79,67 +73,34 @@ fun TimelineScreen(
     val visible = records.take(policy.maxTimelineEntries())
     val hiddenCount = (records.size - visible.size).coerceAtLeast(0)
 
-    Column(
+    ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
     ) {
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) {
-                Icon(
-                    Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Go back",
-                    tint = ElectricTeal
-                )
-            }
-            ScreenHeader(
-                title = "Scan history",
-                subtitle = if (policy.isPremium()) {
-                    "Up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} privacy checks, timestamped."
-                } else {
-                    "Free keeps ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans; Premium keeps the longer history."
-                },
-                modifier = Modifier.weight(1f)
-            )
-        }
+        SubScreenTopBar(
+            title = "Scan history",
+            subtitle = if (policy.isPremium()) {
+                "Up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} privacy checks, timestamped."
+            } else {
+                "Free keeps ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans; Premium keeps the longer history."
+            },
+            onBack = onBack
+        )
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
 
         when {
             loading -> {
-                Text("Loading history…", style = MaterialTheme.typography.bodyMedium, color = MutedText)
+                LoadingLine("Loading your privacy check history…")
             }
             records.isEmpty() -> {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-                    shape = RoundedCornerShape(16.dp)
-                ) {
-                    Column(
-                        modifier = Modifier.padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Text(
-                            "No scan history yet",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = ElectricTeal
-                        )
-                        Spacer(Modifier.height(8.dp))
-                        Text(
-                            "Run a privacy check on Scanner to start the timeline. Compare later scans against this baseline.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MutedText,
-                            textAlign = TextAlign.Center,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                        Spacer(Modifier.height(16.dp))
-                        PrimaryTealButton(
-                            text = "Run privacy check",
-                            onClick = onNavigateToScanner
-                        )
-                    }
-                }
+                EmptyStatePanel(
+                    title = "No privacy checks yet",
+                    body = "Run Nemesis Scanner to create a baseline. Later checks line up here so you can spot changes over time.",
+                    actionLabel = "Check my device",
+                    onAction = onNavigateToScanner
+                )
             }
             else -> {
                 visible.forEachIndexed { index, record ->
@@ -147,10 +108,10 @@ fun TimelineScreen(
                         record = record,
                         isLast = index == visible.lastIndex && hiddenCount == 0
                     )
-                    if (index < visible.lastIndex) Spacer(Modifier.height(2.dp))
+                    if (index < visible.lastIndex) Spacer(modifier = Modifier.height(2.dp))
                 }
                 if (hiddenCount > 0 && !policy.isPremium()) {
-                    Spacer(Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                     PremiumUpsellCard(
                         title = "See the full timeline",
                         body = "$hiddenCount older scan(s) are hidden on Free. Premium unlocks up to " +
@@ -161,7 +122,7 @@ fun TimelineScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
     }
 }
 
@@ -201,57 +162,56 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
             }
         }
 
-        Card(
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(bottom = 8.dp),
-            colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-            shape = RoundedCornerShape(12.dp)
+                .padding(bottom = 8.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .background(SurfacePewter.copy(alpha = 0.9f))
+                .padding(12.dp)
         ) {
-            Column(Modifier.padding(12.dp)) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = verdictLabel,
-                        style = MaterialTheme.typography.titleSmall,
-                        color = verdictColor,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "${record.durationMillis} ms",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
-                    )
-                }
-                Spacer(Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Text(
-                    text = dateStr,
+                    text = verdictLabel,
+                    style = MaterialTheme.typography.titleSmall,
+                    color = verdictColor,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = "${record.durationMillis} ms",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
-                Spacer(Modifier.height(4.dp))
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            }
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = dateStr,
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "${record.scannedArtifacts} checked",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Text(
+                    text = "${record.indicatorCount} signatures",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                if (record.detectionCount > 0) {
                     Text(
-                        text = "${record.scannedArtifacts} checked",
+                        text = "${record.detectionCount} flagged",
                         style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
+                        color = HighRed,
+                        fontWeight = FontWeight.SemiBold
                     )
-                    Text(
-                        text = "${record.indicatorCount} signatures",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MutedText
-                    )
-                    if (record.detectionCount > 0) {
-                        Text(
-                            text = "${record.detectionCount} flagged",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = HighRed,
-                            fontWeight = FontWeight.SemiBold
-                        )
-                    }
                 }
             }
         }

@@ -1,0 +1,80 @@
+{
+  "entries": [
+    {
+      "id": "angelic-defense-blessings",
+      "title": "Angelic Defense Blessings — Evidence-Backed Choir",
+      "category": "quilla-awareness",
+      "tags": [
+        "angelic",
+        "blessings",
+        "defense blessings",
+        "metatron",
+        "michael",
+        "kamael",
+        "sandalphon",
+        "red team",
+        "trojan",
+        "unauthorized",
+        "intrusion"
+      ],
+      "summary": "Quilla's ten angelic blessings name real defense bundles against unauthorized pentest tooling, Trojans, overlays, and sideload droppers — never supernatural wards.",
+      "body": "Each Sephirot angel labels a concrete CoreGuard surface: Metatron (debugger/signature crown), Raziel (intel sync), Tzaphkiel (codex teaching), Tzadkiel (Nemesis scan), Kamael (Privacy Shield), Raphael (priority correlation), Haniel (consentful actions), Michael (Frida/hooks/root swarm), Gabriel (timeline/telemetry memory), Sandalphon (overlay/Accessibility/sideload kingdom). Blessings are ACTIVE/WATCHING/BREACHED/IDLE only from Guardian Score checks and Memory. They do not invent hits. Against unauthorized red-team instrumentation and intrusive Trojans, the choir raises human attention — you still run Scanner, arm Shield with VPN consent, and revoke abusive overlays.",
+      "defense": "Ask Quilla for a priority status brief or \"angelic defense blessings\". On BREACHED Michael/Sandalphon lines, stop sensitive work, revoke overlays/Accessibility you do not trust, re-scan with Nemesis, and arm Shield.",
+      "references": [
+        "AngelicDefenseBlessings",
+        "SecurityCheckRunner",
+        "OWASP MASVS-RESILIENCE",
+        "MITRE ATT&CK Mobile"
+      ]
+    },
+    {
+      "id": "defense-against-unauthorized-instrumentation",
+      "title": "Defense Against Unauthorized Instrumentation (Frida / Red-Team Tooling)",
+      "category": "android-hardening",
+      "tags": [
+        "frida",
+        "instrumentation",
+        "red team",
+        "red-team",
+        "unauthorized pentest",
+        "hooks",
+        "michael",
+        "rasp"
+      ],
+      "summary": "Michael's blessing maps to Frida, hook maps, memory integrity, mount integrity, and root checks — plus the on-device swarm.",
+      "body": "Unauthorized dynamic instrumentation (Frida, Xposed-style hooks, memory patches) is a common red-team and malware technique. CoreGuard answers with native ptrace anti-debug, text-segment baselines, Frida port/thread heuristics, hook library map scans, and swarm agents that hand off CRITICAL signals. This is defensive RASP for your device — not a license to attack others. Authorized pentests require rules of engagement; Quilla refuses unauthorized attack how-tos.",
+      "defense": "If Frida/hook checks FAIL: treat the runtime as hostile, end sensitive sessions, reinstall from Play if integrity is doubted, and re-run Guardian Score.",
+      "references": [
+        "NativeTamperGuard",
+        "FridaDetectionEvaluator",
+        "SwarmCoordinator",
+        "MASVS-RESILIENCE"
+      ]
+    },
+    {
+      "id": "defense-against-trojan-intrusion",
+      "title": "Defense Against Intrusive Trojans (Overlay · Accessibility · Sideload)",
+      "category": "threats",
+      "tags": [
+        "trojan",
+        "overlay",
+        "accessibility",
+        "sideload",
+        "dropper",
+        "banking trojan",
+        "sandalphon",
+        "intrusive"
+      ],
+      "summary": "Sandalphon's kingdom blessing watches overlay holders, third-party Accessibility services, and sideload risk — classic Trojan delivery and capture paths.",
+      "body": "Intrusive Android Trojans often combine: (1) sideloaded APK droppers outside Play, (2) SYSTEM_ALERT_WINDOW overlays that fake bank/login UI, and (3) Accessibility services that capture input or drive the UI. CoreGuard's Sandalphon checks inventory these surfaces and Quilla teaches overlay phishing / sideload dropper topics. Pair with Tzadkiel (Nemesis IOC scan) and Kamael (DNS Shield) for depth.",
+      "defense": "Revoke draw-over-apps and Accessibility for apps you do not fully trust. Prefer Play installs. Run Nemesis after any unexpected APK. Arm Privacy Shield with VPN consent.",
+      "references": [
+        "OverlayAbuseEvaluator",
+        "AccessibilityAbuseEvaluator",
+        "SideloadRiskEvaluator",
+        "attack-overlay-phishing",
+        "attack-sideload-dropper"
+      ]
+    }
+  ]
+}

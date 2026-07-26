@@ -3,7 +3,12 @@ package com.coldboar.coreguard
 import android.app.Application
 import android.util.Log
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
+import com.coldboar.coreguard.swarm.MemoryIntegrityAgent
+import com.coldboar.coreguard.swarm.NetworkMonitorAgent
+import com.coldboar.coreguard.swarm.ProcessLineageAgent
+import com.coldboar.coreguard.swarm.SwarmCoordinator
 import com.coreguard.android.data.local.QuillaDatabase
+import com.coreguard.security.telemetry.TelemetryBridge
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -28,6 +33,12 @@ class CoreGuardApplication : Application() {
 
     /** Room database for Quilla Intelligence threat hypotheses. */
     val quillaDatabase: QuillaDatabase by lazy { QuillaDatabase.getInstance(this) }
+
+    /**
+     * Michael's swarm — on-device RASP peer agents (Frida/hooks/network/process).
+     * Started once after native tamper baseline; never claims supernatural detection.
+     */
+    val swarmCoordinator: SwarmCoordinator by lazy { SwarmCoordinator() }
 
     override fun onCreate() {
         super.onCreate()
@@ -60,6 +71,22 @@ class CoreGuardApplication : Application() {
                 quillaDatabase.quillaLearningDao()
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
+            }
+            try {
+                TelemetryBridge.init(this@CoreGuardApplication)
+                TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
+            } catch (t: Throwable) {
+                Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
+            }
+            try {
+                // Michael (Hod) — register swarm agents once for collaborative RASP watch.
+                val swarm = swarmCoordinator
+                swarm.register(MemoryIntegrityAgent())
+                swarm.register(NetworkMonitorAgent())
+                swarm.register(ProcessLineageAgent())
+                Log.i(TAG, "Angelic swarm registered (Michael · memory/network/process)")
+            } catch (t: Throwable) {
+                Log.w(TAG, "Swarm registration failed: ${t.message}")
             }
         }.apply { isDaemon = true }.start()
     }
