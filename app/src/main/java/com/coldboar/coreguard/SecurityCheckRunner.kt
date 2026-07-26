@@ -11,7 +11,7 @@ import java.security.MessageDigest
  * Builds and runs the standard set of security check evaluators.
  *
  * Shared by [MainActivity] (Guardian Score preview) and
- * [SecurityDashboardActivity] (full per-check breakdown) so both screens are
+ * the Compliance / Home Compose screens (full per-check breakdown) so both are
  * always driven by the same evaluator configuration.
  */
 object SecurityCheckRunner {

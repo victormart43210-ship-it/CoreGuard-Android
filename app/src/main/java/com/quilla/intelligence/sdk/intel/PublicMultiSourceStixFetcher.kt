@@ -39,11 +39,13 @@ class PublicMultiSourceStixFetcher(
     }
 
     private fun fetchFeed(feed: Feed): List<StixIndicator> {
+        if (!feed.url.startsWith("https://", ignoreCase = true)) return emptyList()
         val connection = (URL(feed.url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("Accept", "application/json, */*")
             setRequestProperty("User-Agent", USER_AGENT)
+            instanceFollowRedirects = true
         }
         return try {
             connection.connect()

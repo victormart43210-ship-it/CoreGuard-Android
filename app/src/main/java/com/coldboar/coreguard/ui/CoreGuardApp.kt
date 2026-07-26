@@ -42,7 +42,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.FirstRunStore
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
@@ -92,12 +91,12 @@ private val tabRoutes = bottomNavItems.map { it.route }.toSet()
  * primary destinations. All screens are reachable through this single graph.
  *
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider Production [BillingProvider] from MainActivity. Demo default is for previews/tests only.
+ * @param billingProvider Production [BillingProvider] from MainActivity (Play Billing).
  */
 @Composable
 fun CoreGuardApp(
     secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
-    billingProvider: BillingProvider = remember { DemoBillingProvider() }
+    billingProvider: BillingProvider = rememberAppBillingProvider()
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()

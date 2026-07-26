@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -55,7 +56,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.IocFeedFetcher
@@ -91,7 +92,7 @@ private val scanStages = listOf(
 
 @Composable
 fun ScannerScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider = rememberAppBillingProvider(),
     onUpgrade: () -> Unit = {}
 ) {
     val context = LocalContext.current
@@ -100,6 +101,9 @@ fun ScannerScreen(
     val policy = remember(isPremium) { EntitlementPolicy(billingProvider) }
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
     val feedExecutor = remember { Executors.newSingleThreadExecutor() }
+    DisposableEffect(feedExecutor) {
+        onDispose { feedExecutor.shutdown() }
+    }
 
     var isScanning by remember { mutableStateOf(false) }
     var stageIndex by remember { mutableIntStateOf(0) }

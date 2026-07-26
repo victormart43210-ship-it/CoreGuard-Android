@@ -56,12 +56,16 @@ object IocFeedFetcher {
     }
 
     private fun fetch(context: Context, url: String): FetchResult {
+        if (!url.startsWith("https://", ignoreCase = true)) {
+            return FetchResult.Failure("Only HTTPS feed URLs are allowed")
+        }
         // HttpURLConnection on Android uses the system SSL context, which enforces
         // hostname verification and certificate chain validation by default.
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("Accept", "application/json, */*")
+            instanceFollowRedirects = true
         }
         return try {
             connection.connect()

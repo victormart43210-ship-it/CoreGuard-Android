@@ -10,9 +10,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.R
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
@@ -21,6 +23,8 @@ import com.coldboar.coreguard.ui.theme.MutedText
 
 @Composable
 fun PrivacyPolicyScreen(onBack: () -> Unit) {
+    val hostedPolicyUrl = stringResource(R.string.privacy_policy_url)
+    val pagesPolicyUrl = stringResource(R.string.privacy_policy_url_pages)
     ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
@@ -102,9 +106,10 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
         PolicySection(
             title = "Hosted Privacy Policy",
-            body = "The canonical web copy of this policy is published at:\n" +
-                "https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html\n" +
-                "Use that URL in the Google Play Console Data safety / Privacy policy fields."
+            body = "Use this URL in the Google Play Console Data safety / Privacy policy fields:\n" +
+                "$hostedPolicyUrl\n\n" +
+                "When GitHub Pages is enabled for this repo, the same document is also at:\n" +
+                pagesPolicyUrl
         )
 
         PolicySection(

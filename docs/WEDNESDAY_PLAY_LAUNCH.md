@@ -32,8 +32,9 @@ This is the shortest path from “code in repo” to **Internal Testing** on Goo
    - App name: **CoreGuard**
    - Package: **`com.coldboar.coreguard`** (release — no `.debug` suffix)
    - Free app, category Tools / Productivity
-4. Host privacy policy (GitHub Pages already documented):
-   `https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html`
+4. Host privacy policy (use in Play Console):
+   - Always-reachable: `https://raw.githubusercontent.com/victormart43210-ship-it/CoreGuard-Android/main/docs/privacy-policy.html`
+   - After enabling GitHub Pages: `https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html`
 
 ### Tuesday — signing, AAB, Internal Testing
 

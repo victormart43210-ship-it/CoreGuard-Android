@@ -1,53 +1,49 @@
 # Test evidence (Cloud Agent session)
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
-Date: 2026-07-26
+Date: 2026-07-26  
+Version: **1.0.2** (`versionCode` 3)
 
-> **GitHub Milestones note:** Creating repo milestones via the agent token returned HTTP 403
-> (`Resource not accessible by integration`). Milestone results are posted as labeled
-> comments on [PR #70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
-> and recorded here.
+> GitHub Milestone objects cannot be created with the agent token (HTTP 403).
+> Results are posted as labeled comments on [PR #70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70).
 
-## Milestone M1 · Automated unit + lint
-
-| Check | Result | Notes |
-|-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **248** tests, 0 failures / 0 errors / 0 skipped |
-| `:app:lintDebug` | **PASS** | 0 Error/Fatal (prior pass; warnings only) |
-| `:app:assembleDebug` | **PASS** | Debug APK builds clean |
-
-## Milestone M2 · Quilla Amnesty / MVT intel
-
-Focused suites (all PASS) — IOC bridge, correlation, honesty, sales coach, ready queries.
-
-## Milestone M3 · CI + Play packaging
+## Milestone M5 · Play Store release repairs
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:bundleRelease` | **PASS** | Signed AAB ~6.5 MB (prior pass) |
-| Android CI / Security Swarm | **PASS** | Green on PR tip (re-check after each push) |
+| `:app:testDebugUnitTest` | **PASS** | **249** tests, 0 failures |
+| `:app:assembleDebug` | **PASS** | Debug APK built |
+| `:app:bundleRelease` | **PASS** | Signed AAB for Internal Testing |
+| Privacy policy URL | **PASS** | `raw.githubusercontent.com/.../main/docs/privacy-policy.html` → HTTP 200 |
+| Signature pin derivation | **PASS** | Gradle derives `EXPECTED_CERT_SHA256` from upload keystore via `keytool` |
+| HTTPS-only intel feeds | **PASS** | Cleartext feed URLs rejected |
 
-## Milestone M4 · Quilla Intel Network (web security + pen-test knowledge)
+### Code repairs landed
 
-| Check | Result | Notes |
-|-------|--------|-------|
-| Unit tests (full) | **PASS** | **248/248** including Intel Network / web-intel parsers |
-| Live STIX smoke | **PASS** | Amnesty Android 2187 IOCs · NoviSpy 18 · MVT DarkSword 43 · Amnesty Pegasus 1549 |
-| Live CISA KEV smoke | **PASS** | 1653 vulns · **219** Android/mobile-relevant |
-| Live MISP Android galaxy | **PASS** | **449** malware family briefs |
-| Bundled corpus | **PASS** | `emerging-mobile-attacks.json` loaded via manifest (overlay/sideload/deeplink/spyware/RASP/DNS + MASTG/WSTG) |
+- Production Compose screens resolve billing via `rememberAppBillingProvider()` (Play Billing), not silent `DemoBillingProvider` defaults
+- Removed legacy `SecurityDashboardActivity` / `ThreatScannerActivity` / `NetworkDefenseLabActivity` from the release manifest
+- Privacy policy string wired in-app; Play Console URL uses always-reachable raw GitHub URL
+- Scanner feed executor shut down on leave; Compliance `!!` removed
+- Intel/IOC fetchers reject non-HTTPS URLs
+- App version bumped to **1.0.2 / 3** for Play upload
 
-Implementation:
-- `QuillaIntelNetwork` orchestrates multi-source STIX + web knowledge sync
-- `PublicMultiSourceStixFetcher` (Amnesty/MVT/stalkerware campaigns)
-- `QuillaWebSecurityIntelFetcher` (CISA KEV + MISP → Cyber Codex)
-- Sliding-window engine wired when Room is available
-- Honesty preserved: Research ≠ Nemesis signature refresh; defensive framing only
+### Prior milestones
+
+| Milestone | Result |
+|-----------|--------|
+| M1 Unit + lint | PASS |
+| M2 Quilla Amnesty/MVT | PASS |
+| M3 CI + packaging | PASS |
+| M4 Quilla Intel Network | PASS (live STIX/KEV/MISP smoke) |
 
 ## Emulator (this VM)
 
-| Step | Result | Notes |
-|------|--------|-------|
-| Interactive UI | PARTIAL | No `/dev/kvm` → SystemUI ANRs |
+Interactive UI remains **PARTIAL** (no `/dev/kvm`). Use a laptop/phone for Manual Release Test.
 
-**Honest limitation:** interactive UI validation needs a KVM laptop/phone (`./scripts/run-emulator.sh` + `./scripts/smoke-adb.sh`).
+## Play Console next steps (human)
+
+1. Merge PR #70 → `main`
+2. Upload `app-release.aab` to Internal Testing
+3. Paste privacy policy URL into Data safety
+4. Declare VPN + `QUERY_ALL_PACKAGES` justifications
+5. Create `coreguard_premium_monthly` + license tester

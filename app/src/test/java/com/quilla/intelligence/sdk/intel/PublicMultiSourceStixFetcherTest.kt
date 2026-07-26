@@ -41,5 +41,16 @@ class PublicMultiSourceStixFetcherTest {
         assertTrue(urls.any { it.contains("mvt-project/mvt-indicators") })
         assertTrue(urls.any { it.contains("novispy") || it.contains("darksword") })
         assertTrue(urls.none { it.contains("indicators/pegasus.stix2") })
+        assertTrue(urls.all { it.startsWith("https://") })
+    }
+
+    @Test
+    fun `cleartext feed URLs are rejected`() {
+        val fetcher = PublicMultiSourceStixFetcher(
+            feeds = listOf(
+                PublicMultiSourceStixFetcher.Feed("bad", "http://example.com/feed.stix2")
+            )
+        )
+        assertTrue(fetcher.fetchAllSources().isEmpty())
     }
 }

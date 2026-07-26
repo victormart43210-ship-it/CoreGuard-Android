@@ -167,11 +167,13 @@ object QuillaWebSecurityIntelFetcher {
     }
 
     private fun httpGet(url: String): String? {
+        if (!url.startsWith("https://", ignoreCase = true)) return null
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("Accept", "application/json, */*")
             setRequestProperty("User-Agent", USER_AGENT)
+            instanceFollowRedirects = true
         }
         return try {
             connection.connect()
