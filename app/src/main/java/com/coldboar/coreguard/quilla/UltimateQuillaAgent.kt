@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.lore.QuillaKnowledge
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -100,7 +101,9 @@ class UltimateQuillaAgent(
             "sideload", "accessibility", "hardening", "permission", "phishing",
             "smishing", "banking trojan", "supply chain", "ransomware", "zero-day",
             "zero day", "rules of engagement", "kill chain", "t16", "t14", "t15",
-            "masvs-", "explain ", "what is ", "how does ", "define "
+            "masvs-", "explain ", "what is ", "how does ", "define ",
+            "observatory", "sky-watcher", "sky watcher", "maya", "calendar cycle",
+            "relay", "lunar", "ancient", "codex"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }

@@ -121,13 +121,13 @@ fun TimelineScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "Your story starts with one check",
+                            "No observatory entries yet",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run your first device check now — then watch your protection habit grow.",
+                            "Run a Nemesis scan to open the ledger. Cycles matter more than single readings — correlate later scans against this baseline.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
                             textAlign = TextAlign.Center,
