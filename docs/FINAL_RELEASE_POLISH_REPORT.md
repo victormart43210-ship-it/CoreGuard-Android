@@ -254,6 +254,16 @@ Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
 
 Validation: `:app:testDebugUnitTest` → **354** tests, 0 failures (includes timeline viz + score accent tests).
 
+### Full re-gate (post-fix)
+
+| Gate | Result |
+|------|--------|
+| `clean` + lint/unit/assemble/verify | PASS (354 unit, 0 fail; lint 0 Error/Fatal) |
+| MASVS agent | PASS (0 FAIL) after renaming pulse prefs `KEY_*` → `PREF_*` |
+| Vuln agent | 0 FAIL / 7 WARN (launcher exported MAIN+LAUNCHER known) |
+| Quilla emulator gate | PASS (2+1 instrumented + smoke) |
+| Merge vs `main` | 0 behind / ahead only (no rebase conflicts) |
+
 ### Changed files (this PR branch)
 
 - `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`
