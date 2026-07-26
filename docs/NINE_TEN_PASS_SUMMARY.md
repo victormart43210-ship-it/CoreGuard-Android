@@ -49,7 +49,13 @@ without inventing new major features.
 
 ## Honest rating after this pass
 
-**In-repo product quality: ~7.5 → ~8.2 / 10**  
-**Ship / release readiness: still ~6.5 / 10** until external build, billing, and device evidence exist.
+**In-repo product quality: ~7.5 → ~8.3 / 10**  
+**Ship / release readiness: still ~6.5–7 / 10** until Play Console, signing cert, and device evidence exist.
 
-Do **not** treat this branch as “release-ready” solely because docs and unit contracts improved.
+### Validation performed in this agent environment
+
+- Installed Android SDK platform 35 + build-tools locally in the agent home (not committed)
+- `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest` → **BUILD SUCCESSFUL**
+- **Not** performed: `assembleRelease` / `bundleRelease`, Play license-tester purchase, physical device / emulator VPN smoke, Play Console submission
+
+Do **not** treat this branch as “release-ready” solely because unit tests and docs improved.
