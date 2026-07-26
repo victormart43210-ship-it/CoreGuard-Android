@@ -7,8 +7,17 @@ import android.util.Log
 /**
  * Optional [NotificationListenerService] for Scam Guard.
  *
- * User must explicitly enable CoreGuard under Notification access settings.
- * We only parse notification text locally for URLs — no cloud upload.
+ * ## Privilege + privacy
+ *
+ * The user must explicitly enable CoreGuard under **Notification access**.
+ * We only parse notification text locally for URLs — no cloud upload, no SMS
+ * inbox permission.
+ *
+ * ## Module pattern
+ *
+ * This service must not talk to Compose. It calls [EliteModule.inspectScamText],
+ * which updates Scam Guard memory, the Forensic Journal (amber+), and the
+ * Redux [EliteThreatCounterStore] so the Home amber pill can recompose.
  */
 class ScamGuardNotificationListener : NotificationListenerService() {
 
@@ -21,7 +30,8 @@ class ScamGuardNotificationListener : NotificationListenerService() {
         val blob = listOf(title, text, big).filter { it.isNotBlank() }.joinToString("\n")
         if (blob.isBlank()) return
         runCatching {
-            ScamGuardEngine.inspectNotificationText(
+            // Façade entry — keeps Counter / journal wiring out of this Service.
+            EliteModule.inspectScamText(
                 applicationContext,
                 blob,
                 source = sbn.packageName ?: "notification"

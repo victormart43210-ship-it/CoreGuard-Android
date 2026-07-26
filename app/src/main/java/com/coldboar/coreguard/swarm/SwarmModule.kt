@@ -5,9 +5,12 @@ import com.coldboar.coreguard.CoreGuardApplication
 /**
  * Module-pattern façade for the on-device security swarm.
  *
+ * ## Why a façade?
+ *
  * UI and Quilla should call **this** object — not [SwarmCoordinator] internals,
- * agent constructors, or the alert Counter store — so `:feature:swarm` can be
- * extracted later without rewriting screens (see `docs/MODULE_ARCHITECTURE.md`).
+ * agent constructors, or the alert Counter store's Action types — so
+ * `:feature:swarm` can be extracted later without rewriting screens
+ * (see `docs/MODULE_ARCHITECTURE.md`).
  *
  * ## Use case: is swarm recommended?
  *
@@ -19,15 +22,25 @@ import com.coldboar.coreguard.CoreGuardApplication
  *
  * Full matrix: `docs/SWARM_ARCHITECTURE.md`.
  *
- * ## Redux Counter
+ * ## Redux Counter — UI separation contract
  *
  * [alertCounter] is a Redux-style store. Compose UI
- * ([com.coldboar.coreguard.ui.components.SwarmAlertCounter]) only dispatches /
- * subscribes — never owns the integer.
+ * ([com.coldboar.coreguard.ui.components.SwarmAlertCounter]) must:
+ *
+ * - **Subscribe** for rendering (local Compose state is a mirror only)
+ * - **Dispatch via this façade** ([incrementAlertCounter], [resetAlertCounter])
+ * - **Never** own the integer, call the reducer, or register agents
+ *
+ * Agent threads feed the Counter through [onAlertRouted] when severity ≥ WARN.
  */
 object SwarmModule {
 
-    /** Process-wide Redux-style alert Counter (WARN+ observations). */
+    /**
+     * Process-wide Redux-style alert Counter (WARN+ observations).
+     *
+     * Prefer [incrementAlertCounter] / [resetAlertCounter] from UI so screens
+     * do not depend on [SwarmAlertCounterStore.Action] sealed types.
+     */
     val alertCounter: SwarmAlertCounterStore = SwarmAlertCounterStore()
 
     /**
@@ -63,6 +76,9 @@ object SwarmModule {
     /**
      * Bridge a routed signal into the Redux Counter.
      * Called from [SwarmCoordinator] when severity ≥ WARN.
+     *
+     * This is the **agent → store** path. UI never constructs [SwarmSignal]
+     * just to bump the Counter — use [incrementAlertCounter] for demos.
      */
     fun onAlertRouted(signal: SwarmSignal) {
         if (signal.severity >= SwarmSeverity.WARN) {
@@ -70,7 +86,18 @@ object SwarmModule {
         }
     }
 
-    /** UI / tests: reset Counter without shutting down agents. */
+    /**
+     * UI-facing dispatch: demo / manual +1 without constructing a [SwarmSignal].
+     * Keeps Action types behind the module boundary.
+     */
+    fun incrementAlertCounter() {
+        alertCounter.dispatch(SwarmAlertCounterStore.Action.Increment)
+    }
+
+    /**
+     * UI / tests: reset Counter without shutting down agents or clearing the
+     * coordinator's alert ring buffer.
+     */
     fun resetAlertCounter() {
         alertCounter.dispatch(SwarmAlertCounterStore.Action.Reset)
     }

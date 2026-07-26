@@ -45,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -71,7 +72,7 @@ import com.coldboar.coreguard.GuardianScore
 import com.coldboar.coreguard.MemoryUsageCalculator
 import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.elite.DynamicThreatEngine
-import com.coldboar.coreguard.elite.ScamGuardEngine
+import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.swarm.SwarmModule
@@ -91,9 +92,14 @@ import kotlin.math.sin
 /**
  * CG Elite Home dashboard — sacred-geometry status hub + power-user cards.
  *
- * Metrics are wired to on-device evidence (Guardian Score, Dynamic Threat Score,
- * CPU/RAM, Nemesis scan, Privacy Shield, swarm alert Counter, Scam Guard).
- * Toggles are local UI preferences only — they do **not** enable a cloud LLM.
+ * ## Module + Redux boundaries
+ *
+ * - **Swarm alerts** — read via [SwarmModule.alertCounter] (never own the int).
+ * - **DTS / Scam amber Counter** — subscribe to [EliteModule.threatCounter];
+ *   refresh DTS only through [EliteModule.evaluateThreatScore].
+ * - **Toggles** below are local UI preferences only — not a cloud LLM switch.
+ *
+ * Compose state for DTS/scam is a **mirror** of the Redux store for painting.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -108,15 +114,17 @@ fun EliteDashboardScreen(
 ) {
     val context = LocalContext.current
 
+    // Local prefs only — do not treat these as entitlement or cloud AI flags.
     var realTimeEnabled by remember { mutableStateOf(true) }
     var deepScanEnabled by remember { mutableStateOf(true) }
     var quillaCorrelateEnabled by remember { mutableStateOf(true) }
     var intelSyncEnabled by remember { mutableStateOf(true) }
 
     var score by remember { mutableStateOf<Int?>(null) }
-    var dtsScore by remember { mutableStateOf<Int?>(null) }
-    var dtsBand by remember { mutableStateOf(DynamicThreatEngine.Band.CLEAR) }
-    var scamFinding by remember { mutableStateOf(ScamGuardEngine.latestFinding()) }
+    // Redux mirror for Elite threat Counter (DTS + scam amber).
+    var eliteCounter by remember {
+        mutableStateOf(EliteModule.threatCounter.getState())
+    }
     var cpuText by remember { mutableStateOf("…") }
     var ramText by remember { mutableStateOf("…") }
     var lastScanLabel by remember { mutableStateOf("NO SCAN YET") }
@@ -125,10 +133,17 @@ fun EliteDashboardScreen(
     var swarmAlerts by remember { mutableStateOf(0) }
     var shieldOn by remember { mutableStateOf(false) }
 
+    // Subscribe once — engines / EliteModule dispatch; we only recompose.
+    DisposableEffect(Unit) {
+        val unsub = EliteModule.threatCounter.subscribe { eliteCounter = it }
+        onDispose { unsub() }
+    }
+
     LaunchedEffect(Unit) {
         val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
         score = GuardianScore.compute(results)
         shieldOn = ShieldState.isActive
+        // Swarm Counter: read through module store, do not cache as business truth.
         swarmAlerts = SwarmModule.alertCounter.getState().count
 
         val report = ScannerModule.latestReport()
@@ -142,10 +157,8 @@ fun EliteDashboardScreen(
             threatsLabel = "0"
         }
 
-        val dts = withContext(Dispatchers.IO) { DynamicThreatEngine.evaluate(context) }
-        dtsScore = dts.score
-        dtsBand = dts.band
-        scamFinding = ScamGuardEngine.latestFinding()
+        // DTS evaluation dispatches into EliteModule.threatCounter (Redux).
+        withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
 
         var ticks = 0
         while (true) {
@@ -155,17 +168,17 @@ fun EliteDashboardScreen(
             )
             shieldOn = ShieldState.isActive
             swarmAlerts = SwarmModule.alertCounter.getState().count
-            scamFinding = ScamGuardEngine.latestFinding()
             ticks++
+            // Periodic correlator refresh — still via module, never engine-from-UI.
             if (ticks % 15 == 0) {
-                val refreshed = withContext(Dispatchers.IO) { DynamicThreatEngine.evaluate(context) }
-                dtsScore = refreshed.score
-                dtsBand = refreshed.band
+                withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
             }
             delay(2_000L)
         }
     }
 
+    val dtsBand = eliteCounter.dtsBand
+    val dtsScore = eliteCounter.dtsScore
     val hubStatus = when {
         dtsBand == DynamicThreatEngine.Band.CRITICAL -> "CRITICAL DTS"
         dtsBand == DynamicThreatEngine.Band.ELEVATED -> "ELEVATED DTS"
@@ -179,7 +192,7 @@ fun EliteDashboardScreen(
         append(" · GS ")
         append(score?.toString() ?: "–")
         append(" · DTS ")
-        append(dtsScore?.toString() ?: "–")
+        append(dtsScore.toString())
     }
 
     Scaffold(
@@ -233,13 +246,16 @@ fun EliteDashboardScreen(
         ) {
             SacredGeometryStatusHub(statusText = hubStatus, subText = hubSub)
 
-            scamFinding?.takeIf { it.score >= 50 }?.let { finding ->
-                AmberScamPill(
-                    host = finding.host,
-                    score = finding.score,
-                    onClick = onNavigateToScamGuard
-                )
-            }
+            // Amber pill reads Redux Counter fields — not a local scamFinding var.
+            eliteCounter.lastScamHost
+                ?.takeIf { eliteCounter.lastScamScore >= 50 }
+                ?.let { host ->
+                    AmberScamPill(
+                        host = host,
+                        score = eliteCounter.lastScamScore,
+                        onClick = onNavigateToScamGuard
+                    )
+                }
 
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -288,7 +304,7 @@ fun EliteDashboardScreen(
                 )
                 QuickStatusItem(
                     icon = Icons.Filled.Shield,
-                    label = "DTS\n${dtsScore ?: "–"}",
+                    label = "DTS\n$dtsScore",
                     onClick = onNavigateToForensicJournal
                 )
             }
@@ -322,7 +338,7 @@ fun EliteDashboardScreen(
                     MetricMiniRow(
                         label = "DTS",
                         value = if (realTimeEnabled) {
-                            "${dtsScore ?: "–"} ${dtsBand.name}"
+                            "$dtsScore ${dtsBand.name}"
                         } else {
                             "—"
                         }

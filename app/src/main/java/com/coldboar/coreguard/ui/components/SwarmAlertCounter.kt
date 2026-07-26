@@ -31,22 +31,47 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 
 /**
- * Presentation-only Swarm alert **Counter**.
+ * Presentation-only Swarm alert **Counter** composable.
  *
- * Intentionally Redux-separated from business logic:
- * - Reads state via [SwarmModule.alertCounter] subscription
- * - Mutates only by `dispatch(Action)` (Increment / Reset)
- * - Contains **no** agent registration, IOC matching, or native RASP calls
+ * ## Redux separation (required)
  *
- * This is the Android analogue of “use Redux to separate UI from the Counter
- * component” — without pulling a JS Redux runtime into the APK.
+ * This file is intentionally dumb UI. It implements the product ask
+ * “use Redux to separate the UI code from the Counter component”:
+ *
+ * | Layer | Responsibility | This file? |
+ * |-------|----------------|------------|
+ * | [SwarmAlertCounterStore] | State + pure reducer + dispatch | No |
+ * | [SwarmModule] | Module façade; UI-facing increment/reset | Called only |
+ * | This composable | Subscribe, paint, forward button taps | Yes |
+ *
+ * Local Compose `var state` is a **mirror** of the Redux store for recomposition.
+ * It is never the source of truth: agents and [SwarmModule] own mutations.
+ *
+ * ## What must never live here
+ *
+ * - Agent registration / [com.coldboar.coreguard.swarm.SwarmCoordinator] calls
+ * - Native RASP / Frida probes
+ * - IOC matching or journal I/O
+ * - Direct `count++` or reducer invocation
+ *
+ * Android does not ship React-Redux; [SwarmAlertCounterStore] is the idiomatic
+ * unidirectional stand-in inside the APK.
+ *
+ * @param store Injectable for previews / tests; production uses [SwarmModule.alertCounter].
+ * @param onIncrement UI → module dispatch (override when injecting a private store).
+ * @param onReset UI → module reset (override when injecting a private store).
  */
 @Composable
 fun SwarmAlertCounter(
     modifier: Modifier = Modifier,
-    store: SwarmAlertCounterStore = SwarmModule.alertCounter
+    store: SwarmAlertCounterStore = SwarmModule.alertCounter,
+    onIncrement: () -> Unit = { SwarmModule.incrementAlertCounter() },
+    onReset: () -> Unit = { SwarmModule.resetAlertCounter() }
 ) {
-    // Local Compose mirror of the Redux store — never the source of truth.
+    // -------------------------------------------------------------------------
+    // Subscription: mirror Redux state into Compose for recomposition only.
+    // DisposableEffect guarantees we unsubscribe when leaving the composition.
+    // -------------------------------------------------------------------------
     var state by remember {
         mutableStateOf(store.getState())
     }
@@ -56,6 +81,8 @@ fun SwarmAlertCounter(
         onDispose { unsubscribe() }
     }
 
+    // Color encodes severity pressure without embedding business thresholds
+    // beyond what the store already exposed (criticalCount / count).
     val countColor = when {
         state.criticalCount > 0 -> HighRed
         state.count > 0 -> RestrainedGold
@@ -72,11 +99,13 @@ fun SwarmAlertCounter(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Redux-style store · UI dispatches only · agents feed via SwarmModule",
+                text = "Redux store · UI dispatches via SwarmModule · agents feed alerts",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )
             Spacer(modifier = Modifier.height(12.dp))
+
+            // The big numeral — rendered from store state, never a local counter.
             Text(
                 text = state.count.toString(),
                 style = MaterialTheme.typography.displaySmall,
@@ -90,6 +119,7 @@ fun SwarmAlertCounter(
                     append("critical=")
                     append(state.criticalCount)
                     append(" · agents=")
+                    // Agent count comes from the module façade, not from UI state.
                     append(SwarmModule.agentCount())
                     state.lastSeverity?.let {
                         append(" · last=")
@@ -113,19 +143,14 @@ fun SwarmAlertCounter(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                // Demo increment — proves UI never touches the integer directly.
-                OutlinedButton(
-                    onClick = {
-                        store.dispatch(SwarmAlertCounterStore.Action.Increment)
-                    }
-                ) {
+                // -------------------------------------------------------------
+                // Dispatch only through SwarmModule — UI does not import Action
+                // sealed classes, proving the Counter is Redux-separated.
+                // -------------------------------------------------------------
+                OutlinedButton(onClick = onIncrement) {
                     Text("Dispatch +1")
                 }
-                OutlinedButton(
-                    onClick = {
-                        store.dispatch(SwarmAlertCounterStore.Action.Reset)
-                    }
-                ) {
+                OutlinedButton(onClick = onReset) {
                     Text("Reset")
                 }
             }

@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ForensicJournal
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
@@ -44,8 +45,9 @@ fun ForensicJournalScreen(onBack: () -> Unit) {
     var chainOk by remember { mutableStateOf(true) }
 
     fun refresh() {
-        entries = ForensicJournal.all(context).asReversed()
-        chainOk = ForensicJournal.verifyChain(context)
+        // Module façade — screens avoid talking to journal storage directly.
+        entries = EliteModule.journalEntries(context).asReversed()
+        chainOk = EliteModule.verifyJournalChain(context)
     }
 
     LaunchedEffect(Unit) { refresh() }
@@ -70,13 +72,13 @@ fun ForensicJournalScreen(onBack: () -> Unit) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             OutlinedButton(
                 onClick = {
-                    val json = ForensicJournal.exportJson(context)
+                    val json = EliteModule.exportJournalJson(context)
                     shareText(context, "coreguard-forensic.json", json)
                 }
             ) { Text("Export JSON") }
             OutlinedButton(
                 onClick = {
-                    val csv = ForensicJournal.exportCsv(context)
+                    val csv = EliteModule.exportJournalCsv(context)
                     shareText(context, "coreguard-forensic.csv", csv)
                 }
             ) { Text("Export CSV") }

@@ -25,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ScamGuardEngine
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
@@ -35,12 +36,18 @@ import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 
+/**
+ * Scam Guard screen — presentation only.
+ *
+ * Analysis goes through [EliteModule] so the Redux Elite threat Counter and
+ * Forensic Journal stay behind the module boundary (no engine imports for I/O).
+ */
 @Composable
 fun ScamGuardScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     var input by remember { mutableStateOf("") }
-    var last by remember { mutableStateOf(ScamGuardEngine.latestFinding()) }
-    val recent = remember { mutableStateOf(ScamGuardEngine.recentFindings()) }
+    var last by remember { mutableStateOf(EliteModule.latestScamFinding()) }
+    val recent = remember { mutableStateOf(EliteModule.recentScamFindings()) }
 
     ScreenAtmosphere(
         modifier = Modifier
@@ -49,7 +56,7 @@ fun ScamGuardScreen(onBack: () -> Unit) {
     ) {
         SubScreenTopBar(
             title = "Scam Guard",
-            subtitle = "On-device URL / smishing heuristics · Quilla-assisted",
+            subtitle = "On-device URL / smishing heuristics · via EliteModule",
             onBack = onBack
         )
         Spacer(modifier = Modifier.height(12.dp))
@@ -79,27 +86,16 @@ fun ScamGuardScreen(onBack: () -> Unit) {
         Spacer(modifier = Modifier.height(8.dp))
         OutlinedButton(
             onClick = {
-                last = ScamGuardEngine.inspectNotificationText(context, input, source = "manual")
-                    ?: ScamGuardEngine.scoreUrl(context, input, source = "manual")
-                recent.value = ScamGuardEngine.recentFindings()
+                // Module façade: updates engine memory + Redux Counter + journal.
+                last = EliteModule.inspectScamText(context, input, source = "manual")
+                    ?: EliteModule.scoreScamUrl(context, input, source = "manual")
+                recent.value = EliteModule.recentScamFindings()
             }
         ) { Text("Analyze with Scam Guard") }
 
         last?.let { f ->
             Spacer(modifier = Modifier.height(16.dp))
-            CoreGuardCard(modifier = Modifier.fillMaxWidth()) {
-                Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                    Text(
-                        text = if (f.score >= 50) "AMBER WARNING" else "WATCH",
-                        color = if (f.score >= 50) AttentionAmber else ElectricTeal,
-                        style = MaterialTheme.typography.titleMedium,
-                        modifier = Modifier.semantics { heading() }
-                    )
-                    Text(f.host, color = HighRed, style = MaterialTheme.typography.bodyLarge)
-                    Text("Score ${f.score}/100", color = MutedText)
-                    f.reasons.forEach { Text("• $it", color = MutedText, style = MaterialTheme.typography.bodySmall) }
-                }
-            }
+            FindingCard(f)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -111,6 +107,25 @@ fun ScamGuardScreen(onBack: () -> Unit) {
                 color = if (f.score >= 50) AttentionAmber else SafeGreen,
                 style = MaterialTheme.typography.bodySmall
             )
+        }
+    }
+}
+
+@Composable
+private fun FindingCard(f: ScamGuardEngine.Finding) {
+    CoreGuardCard(modifier = Modifier.fillMaxWidth()) {
+        Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text(
+                text = if (f.score >= 50) "AMBER WARNING" else "WATCH",
+                color = if (f.score >= 50) AttentionAmber else ElectricTeal,
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.semantics { heading() }
+            )
+            Text(f.host, color = HighRed, style = MaterialTheme.typography.bodyLarge)
+            Text("Score ${f.score}/100", color = MutedText)
+            f.reasons.forEach {
+                Text("• $it", color = MutedText, style = MaterialTheme.typography.bodySmall)
+            }
         }
     }
 }

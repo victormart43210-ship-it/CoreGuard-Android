@@ -20,6 +20,17 @@ import kotlin.concurrent.withLock
  * is encrypted at rest with [HardwareKeyManager] (StrongBox → TEE → software).
  *
  * Not a remote SIEM — on-device, exportable for IT / analysts.
+ *
+ * ## Module boundary
+ *
+ * Screens should prefer [EliteModule.appendJournal] / export helpers so journal
+ * I/O stays behind the Elite façade. Engines may append directly when already
+ * inside the elite package (e.g. DTS band transitions).
+ *
+ * ## Test seam
+ *
+ * [memoryStore] bypasses Keystore encryption for JVM unit tests. Never enable
+ * in production UI paths.
  */
 object ForensicJournal {
 

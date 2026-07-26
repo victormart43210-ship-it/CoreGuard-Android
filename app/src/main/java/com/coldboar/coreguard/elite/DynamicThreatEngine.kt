@@ -20,6 +20,13 @@ import kotlin.math.roundToInt
  * amplitudes the way research stacks approximate QC on silicon. Features come
  * from RASP/BAE, overlay/a11y surfaces, Nemesis detections, and swarm alerts.
  *
+ * ## Module boundary
+ *
+ * Prefer [EliteModule.evaluateThreatScore] from UI / Services. That path also
+ * dispatches into the Redux [EliteThreatCounterStore]. Calling [evaluate]
+ * directly is reserved for the façade and JVM tests that do not need Counter
+ * updates.
+ *
  * Honesty: this is **not** an NPU Small Language Model and does not invent
  * zero-days. It scores observed signals into 0–100 for the Elite dashboard.
  */

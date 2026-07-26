@@ -13,6 +13,12 @@ import java.util.concurrent.atomic.AtomicReference
  * zero-trust heuristics (IP literals, homoglyph-ish banks, suspicious TLDs,
  * credential-bait keywords). No cloud LLM. No reading SMS inbox without OS
  * notification access granted by the user.
+ *
+ * ## Module boundary
+ *
+ * UI and [ScamGuardNotificationListener] should enter via [EliteModule]
+ * (`inspectScamText` / `scoreScamUrl`) so the Redux Elite threat Counter stays
+ * synchronized. This object remains the pure-ish heuristic engine + ring buffer.
  */
 object ScamGuardEngine {
 

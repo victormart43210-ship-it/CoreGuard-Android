@@ -27,6 +27,7 @@ import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.defense.AccessibilityAbuseEvaluator
 import com.coldboar.coreguard.defense.OverlayAbuseEvaluator
 import com.coldboar.coreguard.defense.SideloadRiskEvaluator
+import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ForensicJournal
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
@@ -58,7 +59,7 @@ fun OverlayProtectionMatrixScreen(onBack: () -> Unit) {
             )
             list.filter { it.state != SecurityCheckState.PASS }.forEach { r ->
                 runCatching {
-                    ForensicJournal.append(
+                    EliteModule.appendJournal(
                         context,
                         when (r.id) {
                             "overlay_abuse" -> ForensicJournal.EventKind.OVERLAY_ALERT
