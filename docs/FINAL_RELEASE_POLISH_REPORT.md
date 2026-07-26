@@ -10,7 +10,7 @@ Update after every phase. **Only claim tests that were actually run.**
 | Baseline commit | `626962f85fbde529972ae58eb2fcf75e25af841e` |
 | Baseline note | `main` tip after Quilla Infinity (#74) |
 | Branch | `cursor/final-release-polish-6db1` |
-| Documented version | `versionCode 17`, `versionName 1.0.16` |
+| Documented version | `versionCode 18`, `versionName 1.0.17` |
 | Application IDs | release `com.coldboar.coreguard`, debug `com.coldboar.coreguard.debug` |
 | Phase 0 date | 2026-07-26 |
 

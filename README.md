@@ -90,7 +90,7 @@ Android SDK are not available, normal tasks (`assembleDebug`, `test`, `lint`, `b
 | Compose BOM | 2024.06.00 |
 | `compileSdk` / `targetSdk` | 35 |
 | `minSdk` | 24 |
-| `versionCode` / `versionName` | 17 / 1.0.16 |
+| `versionCode` / `versionName` | 18 / 1.0.17 |
 | Android SDK packages | `platforms;android-35`, build-tools 35, platform-tools, NDK 26.1, CMake 3.22.1 |
 
 ### One-time setup
