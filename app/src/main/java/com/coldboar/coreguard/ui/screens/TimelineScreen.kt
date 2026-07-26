@@ -121,13 +121,13 @@ fun TimelineScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "No scans yet",
+                            "Your story starts with one check",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run your first privacy check to start a history on this device.",
+                            "Run your first device check now — then watch your protection habit grow.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
                             textAlign = TextAlign.Center,

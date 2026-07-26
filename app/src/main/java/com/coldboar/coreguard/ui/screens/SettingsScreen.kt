@@ -65,7 +65,7 @@ fun SettingsScreen(
     var quillaOpen by remember { mutableStateOf(false) }
     val priceLabel = billingProvider.premiumPriceLabel()
     val subscribeLabel =
-        if (priceLabel.isNotBlank()) "Subscribe · $priceLabel" else "Subscribe with Google Play"
+        if (priceLabel.isNotBlank()) "Yes — Go Premium Now · $priceLabel" else "Yes — Go Premium Now"
 
     Column(
         modifier = Modifier
@@ -113,7 +113,7 @@ fun SettingsScreen(
 
                 if (isPremium) {
                     Text(
-                        "Premium active — thank you for your support.",
+                        "You're Premium — thank you for choosing to protect on purpose.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RestrainedGold
                     )

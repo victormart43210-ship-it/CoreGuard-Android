@@ -171,7 +171,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "On-device protection for this phone",
+                    text = "See clearly. Decide boldly. Protect what matters.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
@@ -445,7 +445,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
             Text(
-                "Check for spyware risks",
+                "Check My Device Now",
                 color = BackgroundDeepBlack,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
@@ -461,7 +461,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(14.dp)
         ) {
-            Text("View scan history", color = ElectricTeal)
+            Text("See My Progress Over Time", color = ElectricTeal)
         }
     }
 }

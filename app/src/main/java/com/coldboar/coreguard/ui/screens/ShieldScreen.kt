@@ -130,7 +130,7 @@ fun ShieldScreen() {
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Text(
-                        text = "Enable Privacy Shield",
+                        text = "Activate My Privacy Shield",
                         style = MaterialTheme.typography.titleMedium,
                         modifier = Modifier.weight(1f)
                     )
