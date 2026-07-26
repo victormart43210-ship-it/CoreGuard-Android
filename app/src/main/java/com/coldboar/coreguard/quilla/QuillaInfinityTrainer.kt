@@ -138,11 +138,11 @@ object QuillaInfinityTrainer {
     private fun persistLite(context: Context, ledger: AngelSwarmTrainingLedger) {
         runCatching {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
-                .putLong(KEY_GEN, ledger.generation.toLong())
-                .putLong(KEY_AT, ledger.trainedAtMs)
-                .putInt(KEY_CODEX, ledger.totalCodexEntries)
-                .putInt(KEY_MALWARE, ledger.malwareEntriesStudied)
-                .putInt(KEY_VULN, ledger.vulnerabilityEntriesStudied)
+                .putLong(PREF_GENERATION, ledger.generation.toLong())
+                .putLong(PREF_TRAINED_AT, ledger.trainedAtMs)
+                .putInt(PREF_CODEX_DEPTH, ledger.totalCodexEntries)
+                .putInt(PREF_MALWARE_COUNT, ledger.malwareEntriesStudied)
+                .putInt(PREF_VULN_COUNT, ledger.vulnerabilityEntriesStudied)
                 .apply()
         }
     }
@@ -150,17 +150,17 @@ object QuillaInfinityTrainer {
     fun restoreLite(context: Context) {
         runCatching {
             val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            val gen = prefs.getLong(KEY_GEN, 0L).toInt()
+            val gen = prefs.getLong(PREF_GENERATION, 0L).toInt()
             if (gen <= 0) return
             val current = ledgerRef.get()
             if (current.generation >= gen) return
             ledgerRef.set(
                 current.copy(
                     generation = gen,
-                    trainedAtMs = prefs.getLong(KEY_AT, 0L),
-                    totalCodexEntries = prefs.getInt(KEY_CODEX, 0),
-                    malwareEntriesStudied = prefs.getInt(KEY_MALWARE, 0),
-                    vulnerabilityEntriesStudied = prefs.getInt(KEY_VULN, 0),
+                    trainedAtMs = prefs.getLong(PREF_TRAINED_AT, 0L),
+                    totalCodexEntries = prefs.getInt(PREF_CODEX_DEPTH, 0),
+                    malwareEntriesStudied = prefs.getInt(PREF_MALWARE_COUNT, 0),
+                    vulnerabilityEntriesStudied = prefs.getInt(PREF_VULN_COUNT, 0),
                     uncapped = true
                 )
             )
@@ -189,11 +189,12 @@ object QuillaInfinityTrainer {
     }
 
     private const val PREFS = "quilla_infinity_training"
-    private const val KEY_GEN = "generation"
-    private const val KEY_AT = "trained_at"
-    private const val KEY_CODEX = "codex"
-    private const val KEY_MALWARE = "malware"
-    private const val KEY_VULN = "vuln"
+    // SharedPreferences field names for Infinity training ledger (not crypto material).
+    private const val PREF_GENERATION = "generation"
+    private const val PREF_TRAINED_AT = "trained_at"
+    private const val PREF_CODEX_DEPTH = "codex"
+    private const val PREF_MALWARE_COUNT = "malware"
+    private const val PREF_VULN_COUNT = "vuln"
 }
 
 /** Per-angel study dossier — depth has no artificial product ceiling. */
