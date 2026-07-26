@@ -3,6 +3,7 @@ package com.coldboar.coreguard
 import android.app.Application
 import android.util.Log
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
+import com.coreguard.android.data.local.QuillaDatabase
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -18,12 +19,25 @@ class CoreGuardApplication : Application() {
     /** Lazily provisioned; exposed so security checks can report its backing. */
     val keyManager: HardwareKeyManager by lazy { HardwareKeyManager(this) }
 
+    /**
+     * Shared Google Play Billing provider for the whole process.
+     * Activities must call [PlayBillingProvider.attach] / [PlayBillingProvider.detach]
+     * around their lifecycle; purchase UI requires an attached Activity.
+     */
+    val billingProvider: PlayBillingProvider by lazy { PlayBillingProvider(this) }
+
+    /** Room database for Quilla Intelligence threat hypotheses. */
+    val quillaDatabase: QuillaDatabase by lazy { QuillaDatabase.getInstance(this) }
+
     override fun onCreate() {
         super.onCreate()
         instance.set(this)
 
         // Triggers System.loadLibrary + JNI_OnLoad (ptrace guard, baseline).
         NativeTamperGuard.ensureLoaded()
+
+        // Warm the billing client early so entitlement queries are ready.
+        billingProvider
 
         // Provision the hardware key without blocking the main thread. A tiny
         // round-trip confirms the key is usable and records its security level.
@@ -40,6 +54,13 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
             }
+            try {
+                // Open Room so hypothesis writes from the correlation engine do not
+                // pay first-open latency on the UI path.
+                quillaDatabase.quillaLearningDao()
+            } catch (t: Throwable) {
+                Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
+            }
         }.apply { isDaemon = true }.start()
     }
 
@@ -49,5 +70,9 @@ class CoreGuardApplication : Application() {
 
         /** The running application instance, if available. */
         fun get(): CoreGuardApplication? = instance.get()
+
+        /** Non-null application instance; throws if accessed before [onCreate]. */
+        fun require(): CoreGuardApplication =
+            checkNotNull(instance.get()) { "CoreGuardApplication not initialized" }
     }
 }

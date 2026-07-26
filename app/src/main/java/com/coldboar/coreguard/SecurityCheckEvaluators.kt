@@ -142,7 +142,7 @@ class BuildTypeCheckEvaluator(
  * Checks the APK signing certificate by comparing the first certificate's SHA-256
  * hash against an expected value.
  *
- * In this demo build, [expectedSha256] defaults to empty string which always
+ * When [expectedSha256] is empty (unset BuildConfig), the check always
  * produces WARN (unknown/not configured). Integrate a real certificate hash in
  * production before distributing.
  *

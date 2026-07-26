@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.lore.QuillaKnowledge
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -12,6 +13,7 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
  * - **Memory** — last scan, timeline size, shield state, hypotheses
  * - **Research** — Amnesty / STIX indicator sync status
  * - **Knowledge** — on-device cyber codex (OWASP, MITRE ATT&CK Mobile, pentest, IR)
+ *   plus optional Observatory Codex metaphors (never treated as detection)
  * - **Actions** — suggested automations (scan, shield, timeline, intel sync)
  * - **Tools** — Nemesis Scanner, Privacy Shield, Scan Timeline
  *
@@ -68,7 +70,8 @@ class UltimateQuillaAgent(
             p.contains("what can you") || p.contains("capabilities") ||
                 p.contains("ultimate") || p.contains("modules") ||
                 p.contains("formula") || p.contains("who are you") ||
-                p.contains("codex") || p.contains("knowledge base") -> QuillaIntent.CAPABILITIES
+                p.contains("knowledge base") || p.contains("cyber codex") ->
+                QuillaIntent.CAPABILITIES
 
             p.contains("research") || p.contains("intel") || p.contains("stix") ||
                 p.contains("amnesty") ||
@@ -85,7 +88,9 @@ class UltimateQuillaAgent(
             p.contains("safe") || p.contains("status") || p.contains("how am i") ||
                 p.contains("my risk") || p.contains("protect me") -> QuillaIntent.STATUS
 
-            isKnowledgeHeavy(p) || CyberKnowledgeBase.search(p, limit = 1).isNotEmpty() ->
+            QuillaKnowledge.matchFragment(p) != null ||
+                isKnowledgeHeavy(p) ||
+                CyberKnowledgeBase.search(p, limit = 1).isNotEmpty() ->
                 QuillaIntent.KNOWLEDGE
 
             else -> QuillaIntent.GENERAL
@@ -100,7 +105,9 @@ class UltimateQuillaAgent(
             "sideload", "accessibility", "hardening", "permission", "phishing",
             "smishing", "banking trojan", "supply chain", "ransomware", "zero-day",
             "zero day", "rules of engagement", "kill chain", "t16", "t14", "t15",
-            "masvs-", "explain ", "what is ", "how does ", "define "
+            "masvs-", "explain ", "what is ", "how does ", "define ",
+            "observatory", "sky-watcher", "sky watcher", "maya", "calendar cycle",
+            "relay", "lunar", "ancient", "codex"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -261,9 +268,13 @@ class UltimateQuillaAgent(
     private fun knowledgeBlurb(prompt: String, memory: QuillaMemorySnapshot): String {
         val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
         if (hits.isEmpty()) {
+            val loreHit = QuillaKnowledge.matchFragment(prompt.lowercase())
+            if (loreHit != null) {
+                return QuillaKnowledge.answer(prompt)
+            }
             return "Knowledge found no strong codex match yet. Try a ready prompt: " +
                 QuillaReadyTopics.suggestionPrompts().joinToString(", ") +
-                " — or ask about your device status.\n" +
+                " — or ask about Observatory cycles / relays in the Secret Portal.\n" +
                 statusBlurb(memory)
         }
         val primary = hits.first()

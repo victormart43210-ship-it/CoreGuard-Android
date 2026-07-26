@@ -88,7 +88,12 @@ class SbomGenerator(private val context: Context) {
 
         val components = JSONArray()
         for (pkg in packages) {
-            val label = try { pm.getApplicationLabel(pkg.applicationInfo).toString() } catch (_: Exception) { pkg.packageName }
+            val appInfo = pkg.applicationInfo
+            val label = if (appInfo != null) {
+                try { pm.getApplicationLabel(appInfo).toString() } catch (_: Exception) { pkg.packageName }
+            } else {
+                pkg.packageName
+            }
             val comp = JSONObject()
             comp.put("type", "library")
             comp.put("name", label)
@@ -98,7 +103,7 @@ class SbomGenerator(private val context: Context) {
             val props = JSONArray()
             props.put(property("android:packageName", pkg.packageName))
             props.put(property("android:versionCode", packageVersionCode(pkg).toString()))
-            props.put(property("android:targetSdk", pkg.applicationInfo?.targetSdkVersion?.toString() ?: "unknown"))
+            props.put(property("android:targetSdk", appInfo?.targetSdkVersion?.toString() ?: "unknown"))
             comp.put("properties", props)
             components.put(comp)
         }

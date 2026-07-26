@@ -1,5 +1,8 @@
 name: Security Swarm CI
 
+# Multi-agent CI swarm for code auditing (MASVS / vuln / RASP).
+# Architecture & use-case matrix: docs/SWARM_ARCHITECTURE.md
+#
 # ---------------------------------------------------------------------------
 # Trigger: same gates as the main Android CI, plus manual dispatch.
 # ---------------------------------------------------------------------------
@@ -147,15 +150,20 @@ jobs:
           path: /tmp/reports
         continue-on-error: true
 
+      # Write a durable gate-summary.md for the PR comment step.
+      # Do NOT read $GITHUB_STEP_SUMMARY from a later step — Actions clears /
+      # harvests that file between steps, which produced empty PR comments
+      # (GitHub API 422: body cannot be blank).
       - name: Aggregate findings and write step summary
         id: gate
         run: |
           python scripts/security_gate.py > gate-summary.md
-          cat gate-summary.md > "$GITHUB_STEP_SUMMARY"
+          cat gate-summary.md >> "$GITHUB_STEP_SUMMARY"
         continue-on-error: true
 
       - name: Post PR comment with gate decision
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
+        continue-on-error: true
         uses: actions/github-script@v7
         with:
           script: |
@@ -181,7 +189,7 @@ jobs:
 
       - name: Enforce gate decision
         # Fail this job (and the workflow) if the gatekeeper script exited non-zero.
-        if: steps.gate.outcome == 'failure'
+        if: always() && steps.gate.outcome == 'failure'
         run: |
           echo "::error::Security Swarm gate FAILED — see step summary for details."
           exit 1

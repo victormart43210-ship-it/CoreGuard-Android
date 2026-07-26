@@ -3,7 +3,8 @@ package com.coldboar.coreguard
 /**
  * Entitlement tiers available in the app.
  *
- * Keep this enum in sync with the product IDs defined in the Play Console.
+ * Keep this enum in sync with the product IDs defined in the Play Console
+ * ([PlayBillingProvider.PREMIUM_PRODUCT_ID] / [EntitlementPolicy.PREMIUM_PRODUCT_ID]).
  */
 enum class EntitlementTier {
     /** Free tier – core scan + shield + score. */
@@ -53,18 +54,22 @@ class EntitlementPolicy(private val billing: BillingProvider) {
 }
 
 /**
- * Legacy singleton wrapper kept for backwards compatibility.
- * New code should use [EntitlementPolicy] with an injected [BillingProvider].
+ * App-wide entitlement helpers backed by the production [PlayBillingProvider]
+ * held on [CoreGuardApplication].
  *
- * **DEMO ONLY** – uses [DemoBillingProvider] internally.
+ * Prefer injecting [EntitlementPolicy] in new code; this object exists for
+ * call sites that cannot easily receive a provider.
  */
 object Entitlements {
 
-    private val demoBilling = DemoBillingProvider(startAsPremium = false)
-    private val policy = EntitlementPolicy(demoBilling)
+    private fun policy(): EntitlementPolicy {
+        val billing = CoreGuardApplication.get()?.billingProvider
+            ?: return EntitlementPolicy(DemoBillingProvider(startAsPremium = false))
+        return EntitlementPolicy(billing)
+    }
 
-    fun isPremium(): Boolean = policy.isPremium()
-    fun canViewSecurityDashboard(): Boolean = policy.canViewSecurityDashboard()
-    fun canExportReport(): Boolean = policy.canExportReport()
-    fun canAccessAdvancedMonitoring(): Boolean = policy.canAccessAdvancedMonitoring()
+    fun isPremium(): Boolean = policy().isPremium()
+    fun canViewSecurityDashboard(): Boolean = policy().canViewSecurityDashboard()
+    fun canExportReport(): Boolean = policy().canExportReport()
+    fun canAccessAdvancedMonitoring(): Boolean = policy().canAccessAdvancedMonitoring()
 }

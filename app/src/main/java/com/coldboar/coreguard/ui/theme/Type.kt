@@ -9,7 +9,8 @@ val CoreGuardTypography = Typography(
     headlineLarge = TextStyle(
         fontWeight = FontWeight.Bold,
         fontSize = 28.sp,
-        lineHeight = 34.sp
+        lineHeight = 34.sp,
+        letterSpacing = 0.5.sp
     ),
     headlineMedium = TextStyle(
         fontWeight = FontWeight.SemiBold,
@@ -23,13 +24,18 @@ val CoreGuardTypography = Typography(
     ),
     titleLarge = TextStyle(
         fontWeight = FontWeight.SemiBold,
-        fontSize = 16.sp,
-        lineHeight = 22.sp
+        fontSize = 18.sp,
+        lineHeight = 24.sp
     ),
     titleMedium = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp,
         lineHeight = 20.sp
+    ),
+    titleSmall = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 13.sp,
+        lineHeight = 18.sp
     ),
     bodyLarge = TextStyle(
         fontWeight = FontWeight.Normal,
@@ -49,5 +55,10 @@ val CoreGuardTypography = Typography(
     labelLarge = TextStyle(
         fontWeight = FontWeight.Medium,
         fontSize = 14.sp
+    ),
+    labelSmall = TextStyle(
+        fontWeight = FontWeight.Medium,
+        fontSize = 11.sp,
+        lineHeight = 14.sp
     )
 )

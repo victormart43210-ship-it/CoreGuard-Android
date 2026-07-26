@@ -55,6 +55,7 @@ If a signing key must be rotated (e.g., due to compromise), an advisory will be 
 - **Least-privilege permissions**: Only permissions required for shipped features are declared. All dangerous and special permissions are requested at runtime with contextual explanations.
 - **Automated dependency updates**: Dependabot is enabled for Gradle and GitHub Actions dependencies.
 - **CI/CD provenance**: Release builds are produced by GitHub Actions from a protected tag and include a GitHub artifact attestation linking the binary to the source commit and workflow.
+- **Security swarm CI**: Multi-agent MASVS / static vuln / RASP audits gate pull requests (see [docs/SWARM_ARCHITECTURE.md](docs/SWARM_ARCHITECTURE.md)). Real-time on-device RASP stays in native C++; LLM swarms are not used on the hot path.
 
 ## Scope
 

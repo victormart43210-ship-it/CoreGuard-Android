@@ -1,18 +1,24 @@
 // Plugin classpath + apply are owned by app/build.gradle so AGP resolves on the
 // project PluginManager. This script only configures the Android project.
+// kotlin-kapt is applied from app/build.gradle for Room annotation processing.
 
 android {
     namespace "com.coldboar.coreguard"
-    compileSdk 34
+    compileSdk 35
 
     defaultConfig {
         applicationId "com.coldboar.coreguard"
         minSdk 24
-        targetSdk 34
-        versionCode 1
-        versionName "1.0.0"
+        targetSdk 35
+        versionCode 2
+        versionName "1.0.1"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        // Set EXPECTED_CERT_SHA256 to the colon-hex SHA-256 of the upload/signing
+        // cert before production release (CI secret or local env). Empty = WARN.
+        def expectedCert = System.getenv("EXPECTED_CERT_SHA256") ?: ""
+        buildConfigField "String", "EXPECTED_CERT_SHA256", "\"${expectedCert}\""
 
         externalNativeBuild {
             cmake {
@@ -129,4 +135,8 @@ dependencies {
     testImplementation "org.json:json:20240303"
     androidTestImplementation "androidx.test.ext:junit:1.2.1"
     androidTestImplementation "androidx.test.espresso:espresso-core:3.6.1"
+
+    implementation "androidx.room:room-runtime:2.6.1"
+    implementation "androidx.room:room-ktx:2.6.1"
+    kapt "androidx.room:room-compiler:2.6.1"
 }

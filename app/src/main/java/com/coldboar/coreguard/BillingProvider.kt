@@ -1,10 +1,13 @@
 package com.coldboar.coreguard
 
+import kotlinx.coroutines.flow.StateFlow
+
 /**
  * Contract for the app's billing/subscription backend.
  *
- * Production UI should use [PlayBillingProvider]. [DemoBillingProvider] is for
- * tests / local demos only.
+ * Production code uses [PlayBillingProvider] (Google Play Billing Library).
+ * [DemoBillingProvider] exists for JVM unit tests and Compose previews only —
+ * never ship demo billing as the production path.
  */
 interface BillingProvider {
 
@@ -15,6 +18,12 @@ interface BillingProvider {
      * thread (e.g., return a cached value from a previous network call).
      */
     fun isPremium(): Boolean
+
+    /**
+     * Observable premium entitlement. UI should collect this so restore/purchase
+     * updates refresh Settings and Compliance without remounting.
+     */
+    val premiumState: StateFlow<Boolean>
 
     /**
      * Optional formatted price for Premium (e.g. "$4.99/month") when known.

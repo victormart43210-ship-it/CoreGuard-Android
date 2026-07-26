@@ -5,20 +5,25 @@ import androidx.appcompat.app.AppCompatActivity
 import com.coldboar.coreguard.databinding.ActivityPaywallBinding
 
 /**
- * Legacy paywall Activity. Uses [PlayBillingProvider] for real purchases.
+ * Paywall screen for CoreGuard Premium via Google Play Billing.
+ *
+ * Uses the shared [PlayBillingProvider] from [CoreGuardApplication] so entitlement
+ * state stays consistent with Settings and other premium gates.
  * Prefer the Compose Settings Premium card for the primary purchase UX.
  */
 class PaywallActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityPaywallBinding
-    private lateinit var billing: PlayBillingProvider
+
+    private val billing: PlayBillingProvider
+        get() = CoreGuardApplication.require().billingProvider
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityPaywallBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
-        billing = PlayBillingProvider(applicationContext).also { it.attach(this) }
+        billing.attach(this)
 
         if (billing.isPremium()) {
             binding.tvPaywallStatus.text = getString(R.string.paywall_already_premium)
@@ -53,12 +58,14 @@ class PaywallActivity : AppCompatActivity() {
         binding.btnClose.setOnClickListener { finish() }
     }
 
+    override fun onResume() {
+        super.onResume()
+        billing.attach(this)
+    }
+
     override fun onDestroy() {
         SubscriptionManager(billing).onPaywallDismissed()
-        if (::billing.isInitialized) {
-            billing.detach()
-            if (isFinishing) billing.destroy()
-        }
+        billing.detach()
         super.onDestroy()
     }
 }

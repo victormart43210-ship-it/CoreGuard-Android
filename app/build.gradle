@@ -29,6 +29,7 @@ def enableAndroidBuild = providers.gradleProperty("coreguard.androidBuild")
 if (enableAndroidBuild) {
     apply plugin: "com.android.application"
     apply plugin: "org.jetbrains.kotlin.android"
+    apply plugin: "kotlin-kapt"
     apply from: rootProject.file("gradle/android-app.gradle")
 } else {
     apply from: rootProject.file("gradle/android-offline.gradle")

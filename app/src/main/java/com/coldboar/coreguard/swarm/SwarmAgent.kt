@@ -7,11 +7,16 @@ package com.coldboar.coreguard.swarm
  * to the [SwarmCoordinator] when it detects an anomaly.  Agents must also respond
  * to coordinator directives delivered via [onCoordinatorDirective].
  *
+ * On-device agents are **not** LLM workers. They perform background / offline
+ * analysis and signal handoff only. Microsecond-path RASP remains in native
+ * C++ — see `docs/SWARM_ARCHITECTURE.md`.
+ *
  * Design principles:
  *  - Single-purpose: one agent, one concern.
  *  - Injectable signals: all raw inputs are injected via constructor lambdas so
  *    agents are fully unit-testable on the JVM without an Android device.
  *  - Stateless between polls: agents must not accumulate unbounded state.
+ *  - No cloud model calls on the monitoring loop.
  */
 interface SwarmAgent {
 
