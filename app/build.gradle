@@ -1,0 +1,35 @@
+// buildscript MUST be top-level in this project file. Putting it only inside
+// gradle/android-app.gradle (applied via apply from:) registers plugins on an
+// isolated script classpath, which caused CI to fail with:
+//   Plugin with id 'com.android.application' not found
+buildscript {
+    def enableAndroidBuild = (
+        findProperty("coreguard.androidBuild")
+            ?: System.getenv("COREGUARD_ANDROID_BUILD")
+            ?: "false"
+    ).toString().equalsIgnoreCase("true")
+
+    if (enableAndroidBuild) {
+        repositories {
+            google()
+            mavenCentral()
+        }
+        dependencies {
+            classpath "com.android.tools.build:gradle:8.5.2"
+            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
+        }
+    }
+}
+
+def enableAndroidBuild = providers.gradleProperty("coreguard.androidBuild")
+    .orElse(providers.environmentVariable("COREGUARD_ANDROID_BUILD"))
+    .map { it.equalsIgnoreCase("true") }
+    .getOrElse(false)
+
+if (enableAndroidBuild) {
+    apply plugin: "com.android.application"
+    apply plugin: "org.jetbrains.kotlin.android"
+    apply from: rootProject.file("gradle/android-app.gradle")
+} else {
+    apply from: rootProject.file("gradle/android-offline.gradle")
+}

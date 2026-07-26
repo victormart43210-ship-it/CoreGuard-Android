@@ -169,7 +169,7 @@ jobs:
           script: |
             const fs = require('fs');
 
-            let body = '## :shield: Security Swarm Gate\n\nNo report summary available.';
+            let body = '## 🛡️ Security Swarm Gate\n\nNo report summary available.';
 
             if (fs.existsSync('gate-summary.md')) {
               const report = fs.readFileSync('gate-summary.md', 'utf8').trim();

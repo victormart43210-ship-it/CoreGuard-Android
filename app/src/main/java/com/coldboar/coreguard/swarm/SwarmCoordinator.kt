@@ -24,7 +24,7 @@ package com.coldboar.coreguard.swarm
  *
  * @param maxAlerts Maximum number of recent alerts retained in [getActiveAlerts].
  */
-class SwarmCoordinator(private val maxAlerts: Int = 50) {
+open class SwarmCoordinator(private val maxAlerts: Int = 50) {
 
     private val lock = Any()
     private val agents = mutableListOf<SwarmAgent>()
@@ -72,7 +72,7 @@ class SwarmCoordinator(private val maxAlerts: Int = 50) {
      * @param signal  The event emitted by the sending agent.
      * @param sender  The agent that produced the signal (excluded from broadcasts).
      */
-    fun broadcast(signal: SwarmSignal, sender: SwarmAgent) {
+    open fun broadcast(signal: SwarmSignal, sender: SwarmAgent) {
         if (signal.severity >= SwarmSeverity.WARN) {
             appendAlert(signal)
         }

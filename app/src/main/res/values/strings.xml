@@ -3,6 +3,10 @@
     <string name="main_subtitle">Occult wards. Modern defense.</string>
     <string name="main_tagline">Your device, sealed beneath the Sigillum Dei</string>
 
+    <!-- Play Store listing (keep escaping AAPT-safe: no raw apostrophes, use \\n for breaks) -->
+    <string name="store_short_description">Real-time mobile security: spyware scanner, VPN shield &amp; compliance scoring.</string>
+    <string name="store_full_description">CoreGuard puts enterprise-grade mobile security intelligence in your hands — designed for journalists, activists, privacy-conscious professionals, and anyone who refuses to be surveilled.\n\nGUARDIAN SCORE\nYour device gets a live 0–100 Guardian Score based on six security dimensions — root detection, debugger presence, emulator checks, build integrity, spyware signatures, and certificate pinning. Watch it animate on every launch.\n\nNEMESIS SCANNER\nPowered by threat intelligence from the Amnesty International Security Lab (mvt-project), the Nemesis Scanner checks your device against hundreds of known spyware, stalkerware, and surveillance campaign indicators. A clean result is reassuring; a flagged result could save your life.\n\nPRIVACY SHIELD\nAn on-device VPN that silently blocks connections to servers used by surveillance firms, trackers, and data brokers — without routing your traffic through any third-party server. Your data stays on your device.\n\nMASVS COMPLIANCE\nSee how your device scores against the OWASP Mobile Application Security Verification Standard (MASVS v2) across six security domains. Export a full JSON compliance report to share with your security team.\n\nSUPPLY CHAIN AUDIT\nEnumerate every installed package and audit third-party SDK network behavior. Know exactly what\'s calling home from your device.\n\nWHAT WE DON\'T DO:\n- We don\'t collect your data\n- We don\'t send scans to the cloud\n- We don\'t show ads\n- We don\'t track you\n\nCoreGuard is built on open-source threat intelligence. Source code available on GitHub.\n\nPrivacy signatures are sourced from the Amnesty International Security Lab / mvt-project. CoreGuard is an independent project and is not affiliated with Amnesty International.</string>
+
     <!-- Guardian score -->
     <string name="guardian_score_title">Guardian Score</string>
     <string name="guardian_score_hint">Tap the shield for the full ritual of checks</string>
@@ -22,7 +26,7 @@
     <string name="btn_security_dashboard">Enter the Sanctum</string>
     <string name="btn_network_defense_lab">Open Network Defense Lab</string>
     <string name="btn_nemesis_scanner">Nemesis Scanner</string>
-    <string name="btn_upgrade_premium">Forge Premium (Demo)</string>
+    <string name="btn_upgrade_premium">Upgrade to Premium</string>
     <string name="btn_back">Back</string>
 
     <!-- IOC feed refresh -->
@@ -81,7 +85,7 @@
     <string name="check_state_fail">FAIL</string>
 
     <!-- Paywall -->
-    <string name="paywall_title">Forge Premium</string>
+    <string name="paywall_title">Upgrade to Premium</string>
     <string name="paywall_headline">CoreGuard Premium</string>
     <string name="paywall_description">Stay ahead of spyware. Private. Always guarded.</string>
     <string name="paywall_benefit_1">Automated daily security scans</string>
@@ -89,7 +93,7 @@
     <string name="paywall_benefit_3">Live signature updates — new threats detected faster</string>
     <string name="paywall_social_proof">Your privacy. Your device. Your control.</string>
     <string name="paywall_demo_disclaimer">⚠️ DEMO BUILD: No real payment is processed. This screen is a placeholder for Google Play Billing integration.</string>
-    <string name="paywall_btn_subscribe">Take the Oath (Demo)</string>
+    <string name="paywall_btn_subscribe">Subscribe</string>
     <string name="paywall_btn_close">Not now</string>
     <string name="paywall_purchase_success_demo">✅ Demo purchase simulated. No real payment was made.</string>
     <string name="paywall_purchase_cancelled">Purchase cancelled.</string>

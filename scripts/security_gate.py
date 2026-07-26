@@ -1,66 +1,124 @@
 #!/usr/bin/env python3
 """
-Security Swarm gate
-===================
-Aggregates JSON reports from the MASVS / vuln / RASP agents and prints a
-single Markdown summary to stdout.
+Security Gate — CoreGuard Security Swarm
+=========================================
+Aggregates JSON reports produced by the MASVS, Vulnerability Scan, and RASP
+audit agents and writes a single GitHub Markdown summary to stdout.
 
-Intended CI usage (keeps a durable file for the PR-comment step):
+The script auto-discovers report files from /tmp/reports/ so it can be called
+without arguments in CI:
 
-  python scripts/security_gate.py > gate-summary.md
-  cat gate-summary.md >> "$GITHUB_STEP_SUMMARY"
+    python scripts/security_gate.py > gate-summary.md
 
 Exit codes:
-  0 — no FAIL findings across all reports
-  1 — at least one FAIL finding
+    0 — no FAIL findings across all reports
+    1 — at least one FAIL finding (CI job fails; PR is blocked)
 """
 
-from __future__ import annotations
-
+import json
 import sys
 from pathlib import Path
 
-AGENTS_DIR = Path(__file__).resolve().parent / "agents"
-sys.path.insert(0, str(AGENTS_DIR))
+REPORTS_DIR = Path("/tmp/reports")
+REPORT_GLOB = "*.json"
 
-from pr_gatekeeper import build_markdown, load_reports  # noqa: E402
-
-DEFAULT_REPORTS = (
-    Path("/tmp/reports/masvs_report.json"),
-    Path("/tmp/reports/vuln_report.json"),
-    Path("/tmp/reports/rasp_report.json"),
-)
+SEVERITY_RANK = {"FAIL": 0, "WARN": 1, "INFO": 2}
+SEVERITY_ICON = {"FAIL": "❌", "WARN": "⚠️", "INFO": "ℹ️"}
 
 
-def resolve_report_paths(argv: list[str]) -> list[str]:
-    if argv:
-        return argv
-    return [str(path) for path in DEFAULT_REPORTS if path.exists()]
+def load_reports(report_dir: Path):
+    reports = []
+    paths = sorted(report_dir.glob(REPORT_GLOB)) if report_dir.is_dir() else []
+    for p in paths:
+        try:
+            data = json.loads(p.read_text(encoding="utf-8"))
+            reports.append(data)
+        except (OSError, json.JSONDecodeError) as exc:
+            print(f"[security_gate] WARNING: could not load {p}: {exc}", file=sys.stderr)
+    return reports
 
 
-def main() -> None:
-    report_paths = resolve_report_paths(sys.argv[1:])
+def build_markdown(reports):
+    lines = ["# 🛡️ CoreGuard Security Swarm — PR Gate Report\n"]
 
-    if not report_paths:
-        print(
-            "## :shield: Security Swarm Gate\n\n"
-            "_No agent reports found to aggregate._"
+    total_fail = 0
+    total_warn = 0
+    total_info = 0
+
+    for report in reports:
+        agent = report.get("agent", "Unknown Agent")
+        findings = report.get("findings", [])
+
+        fail = sum(1 for f in findings if f.get("severity") == "FAIL")
+        warn = sum(1 for f in findings if f.get("severity") == "WARN")
+        info = sum(1 for f in findings if f.get("severity") == "INFO")
+        total_fail += fail
+        total_warn += warn
+        total_info += info
+
+        status_icon = "✅" if fail == 0 else "❌"
+        lines.append(f"## {status_icon} {agent}")
+        lines.append(f"> {fail} FAIL &nbsp;|&nbsp; {warn} WARN &nbsp;|&nbsp; {info} INFO\n")
+
+        if not findings:
+            lines.append("_No findings._\n")
+            continue
+
+        sorted_findings = sorted(
+            findings, key=lambda f: SEVERITY_RANK.get(f.get("severity", "INFO"), 2)
         )
-        sys.exit(0)
 
-    reports = load_reports(report_paths)
+        lines.append("| Severity | Rule | Location | Message |")
+        lines.append("|----------|------|----------|---------|")
+        for f in sorted_findings:
+            sev = f.get("severity", "INFO")
+            icon = SEVERITY_ICON.get(sev, "")
+            rule = f.get("rule", "")
+            loc_file = f.get("file", "")
+            loc_line = f.get("line")
+            loc = f"{loc_file}:{loc_line}" if loc_line else loc_file
+            msg = f.get("message", "").replace("|", "\\|")
+            lines.append(f"| {icon} {sev} | `{rule}` | `{loc}` | {msg} |")
+        lines.append("")
+
+    overall_icon = "✅ PASSED" if total_fail == 0 else "❌ BLOCKED"
+    lines.append("---")
+    lines.append(f"## Overall Gate Decision: {overall_icon}")
+    lines.append(
+        f"**{total_fail} FAIL** &nbsp;|&nbsp; {total_warn} WARN &nbsp;|&nbsp; {total_info} INFO"
+    )
+    if total_fail > 0:
+        lines.append(
+            "\n> ⛔ This PR has security findings that must be resolved before merging."
+        )
+    else:
+        lines.append(
+            "\n> ✅ All security swarm agents passed. The PR is cleared for merge review."
+        )
+
+    return "\n".join(lines)
+
+
+def main():
+    reports = load_reports(REPORTS_DIR)
+
     if not reports:
         print(
-            "## :shield: Security Swarm Gate\n\n"
-            "_Agent report files were present but could not be parsed._"
+            "[security_gate] No report files found in"
+            f" {REPORTS_DIR} — nothing to aggregate.",
+            file=sys.stderr,
         )
-        sys.exit(1)
+        # Emit a minimal summary so the gate-summary.md is never empty.
+        print("# 🛡️ CoreGuard Security Swarm — PR Gate Report\n")
+        print("_No agent reports were available for this run._")
+        sys.exit(0)
 
-    print(build_markdown(reports))
+    markdown = build_markdown(reports)
+    print(markdown)
 
     total_fail = sum(
-        sum(1 for finding in report.get("findings", []) if finding.get("severity") == "FAIL")
-        for report in reports
+        sum(1 for f in r.get("findings", []) if f.get("severity") == "FAIL")
+        for r in reports
     )
     sys.exit(1 if total_fail > 0 else 0)
 
