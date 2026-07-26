@@ -206,7 +206,7 @@
                         android:layout_marginTop="6dp"
                         android:textAppearance="?attr/textAppearanceBodyMedium"
                         android:textColor="@color/text_tertiary"
-                        tools:text="N/A (simulated)" />
+                        tools:text="42%" />
 
                     <com.google.android.material.progressindicator.LinearProgressIndicator
                         android:id="@+id/cpuProgress"

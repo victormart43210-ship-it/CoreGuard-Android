@@ -95,4 +95,53 @@ Tentative next label after Phase 1–2 fixes (if still no physical/billing evide
 
 ## Phase 1 — Release blockers and correctness
 
-_Status: in progress after Phase 0 commit._
+_Status: first P0 batch landed; residual external blockers remain._
+
+### Fixes landed
+
+| Area | Change |
+|------|--------|
+| Emulator install | `scripts/run-emulator.sh` uses `adb install -r -d -t` and uninstalls on `VERSION_DOWNGRADE`; prefers component `am start` |
+| Smoke install | `scripts/smoke-adb.sh` uses `-d` + uninstall retry |
+| Honesty | README CPU row updated to BASIC `/proc/stat` (matches code + RELEASE_READINESS); removed legacy layout `tools:text` “simulated” |
+| Telemetry leak | `TelemetrySigner` no longer retains `Context`; StrongBox capability resolved in `TelemetryBridge.init` |
+| Version catalog | `gradle/libs.versions.toml` Kotlin aligned to **1.9.25** (was incorrect `2.4.10`) |
+| Root plugins | Attempted root `plugins { kotlin apply false }` — **reverted**; breaks hybrid buildscript AGP + Kotlin Android (`BaseVariant` / `KotlinAndroidTarget`). Dual-KGP warning remains documented. |
+
+### Manifest / component review (re-checked)
+
+- `allowBackup=false`, cleartext off, network security config present.
+- Exported only: `MainActivity` (LAUNCHER), `ScamGuardNotificationListener` (system bind).
+- VPN `exported=false` + `BIND_VPN_SERVICE` + `specialUse` FGS property.
+- Production billing path: `PlayBillingProvider` / `FailClosedBillingProvider` (not Demo) via `rememberAppBillingProvider`.
+
+### Phase 1 validation (actually run)
+
+```bash
+./gradlew -Pcoreguard.androidBuild=true \
+  :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:verifyNoPlaceholderApk
+# BUILD SUCCESSFUL — 333 unit tests, 0 failures
+# lint: 0 Error/Fatal; 70 Warning, 3 Information (StaticFieldLeak cleared)
+# verifyNoPlaceholderApk OK (~22.7 MB)
+
+./scripts/smoke-adb.sh
+# PASS — process alive, no fatal (no-KVM: LaunchState UNKNOWN / focus null still observed)
+
+adb shell am instrument -w -r \
+  -e class com.coldboar.coreguard.quilla.MainActivityLaunchTest \
+  com.coldboar.coreguard.debug.test/androidx.test.runner.AndroidJUnitRunner
+# OK (1 test)
+```
+
+### Remaining P0 / release blockers
+
+| Item | Owner / next |
+|------|----------------|
+| Populate `EXPECTED_CERT_SHA256` for Play signing cert | Release operator + `keystore.properties` / CI secret |
+| Signed `bundleRelease` AAB | Not run here |
+| Physical-device smoke + Play billing license tester | External |
+| Dual Kotlin Gradle Plugin load warning | Accept for now; full plugins-DSL migration is larger than this polish pass |
+
+### Release verdict (after Phase 1 batch)
+
+Still **NO-GO** for production Play. Automated debug gates remain green → candidate for **GO FOR INTERNAL TESTING ONLY** after Phase 2 claims pass and operator sets signing cert hash.

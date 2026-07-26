@@ -29,7 +29,12 @@ for i in $(seq 1 90); do
 done
 
 echo "[smoke] Installing $APK"
-adb install -r -t -g "$APK"
+# -d allows downgrade on shared AVDs that retained a newer versionCode.
+if ! adb install -r -d -t -g "$APK"; then
+  echo "[smoke] install failed — uninstalling $PACKAGE and retrying…"
+  adb uninstall "$PACKAGE" >/dev/null 2>&1 || true
+  adb install -r -d -t -g "$APK"
+fi
 
 echo "[smoke] Clearing logcat + launching"
 adb logcat -c || true
