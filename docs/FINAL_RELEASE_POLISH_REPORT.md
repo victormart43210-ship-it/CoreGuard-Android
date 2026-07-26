@@ -252,6 +252,8 @@ Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
 | Premium motion | Shared `premiumTween` / NavHost motion constants; reduced-motion freezes |
 | Background pulse | `SecurityPulseWorker` hourly, `RequiresBatteryNotLow`; BAE 15s / 45s power-save |
 
+Validation: `:app:testDebugUnitTest` → **354** tests, 0 failures (includes timeline viz + score accent tests).
+
 ### Changed files (this PR branch)
 
 - `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`
