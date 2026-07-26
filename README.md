@@ -93,7 +93,7 @@ To run the real Android build, install the Android toolchain below and opt in wi
 | Compose BOM | 2024.06.00 |
 | `compileSdk` / `targetSdk` | 35 |
 | `minSdk` | 24 |
-| `versionCode` / `versionName` | 2 / 1.0.1 |
+| `versionCode` / `versionName` | 15 / 1.0.14 |
 | Android SDK packages | `platforms;android-35`, build-tools 35, platform-tools, NDK 26.1, CMake 3.22.1 |
 
 ### One-time setup
