@@ -429,7 +429,7 @@ fun EliteDashboardScreen(
                     )
                     MetricMiniRow(
                         label = "SHIELD",
-                        value = if (shieldOn) "ARMED" else "IDLE"
+                        value = if (shieldOn) "ON" else "OFF"
                     )
                 }
 

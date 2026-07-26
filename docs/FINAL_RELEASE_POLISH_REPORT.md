@@ -164,6 +164,25 @@ _Status: claims pass batch landed; signing cert hash still operator-owned._
 | Signature check | Empty `EXPECTED_CERT_SHA256` → WARN (fail-soft); still must be set for Play |
 | Cleartext / backup | Already disabled (reconfirmed Phase 0) |
 
-### Phase 2 validation
+### Phase 2 validation (actually run)
 
-Re-run lint/unit after this batch (see commit notes). Do not mark Play billing or signed AAB without evidence.
+```bash
+./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest :app:lintDebug
+# BUILD SUCCESSFUL — 333 unit tests, 0 failures
+# lint: 0 Error/Fatal; 70 Warning, 3 Information
+```
+
+Signed AAB / physical / Play billing still **not run**.
+
+---
+
+## Phase 3 / 4 (partial) — calm UI + reduced motion
+
+| Item | Change |
+|------|--------|
+| Motion helper | `ui/theme/Motion.kt` → `rememberMotionEnabled()` reads `ANIMATOR_DURATION_SCALE` |
+| Atmosphere | Decorative drift/pulse freezes when motion disabled |
+| Shield presence | Same freeze; copy calmed (ON/OFF, indicator-domain wording) |
+| Home metrics | Shield chip `ARMED`/`IDLE` → `ON`/`OFF` |
+
+Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
