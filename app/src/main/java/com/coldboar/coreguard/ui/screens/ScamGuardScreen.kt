@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ScamGuardEngine
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
 import com.coldboar.coreguard.ui.theme.AttentionAmber
@@ -105,14 +106,28 @@ fun ScamGuardScreen(onBack: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Recent findings", color = ElectricTeal, style = MaterialTheme.typography.titleSmall)
-        recent.value.take(10).forEach { f ->
+        Text(
+            "Recent findings",
+            color = ElectricTeal,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.semantics { heading() }
+        )
+        if (recent.value.isEmpty() && last == null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "${f.score} · ${f.host}",
-                color = if (f.score >= 50) AttentionAmber else SafeGreen,
-                style = MaterialTheme.typography.bodySmall
+            EmptyStatePanel(
+                title = "No findings yet",
+                body = "Paste a suspicious link above, or enable notification access so Scam Guard " +
+                    "can score URLs from alerts on-device. Heuristics are not guaranteed detection."
             )
+        } else {
+            recent.value.take(10).forEach { f ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "${f.score} · ${f.host}",
+                    color = if (f.score >= 50) AttentionAmber else SafeGreen,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }

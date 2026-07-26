@@ -1,6 +1,6 @@
 # CoreGuard Fast Launch Gate (Internal/Test Track)
 
-**Version:** 1.0.14 (`versionCode` 15)  
+**Version:** 1.0.15 (`versionCode` 16)  
 **Date:** 2026-07-26
 
 ## Required (Auto NO-GO if any fail)

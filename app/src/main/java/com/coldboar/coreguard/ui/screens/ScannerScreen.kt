@@ -66,6 +66,7 @@ import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.NestedSurface
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
@@ -138,19 +139,10 @@ fun ScannerScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         if (showEmptyState) {
-            CoreGuardCard {
-                Text(
-                    text = "No scan yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = ElectricTeal
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MutedText
-                )
-            }
+            EmptyStatePanel(
+                title = "No privacy check yet",
+                body = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds, and results stay on this device unless you opt into Premium signature refresh."
+            )
             Spacer(modifier = Modifier.height(16.dp))
         }
 

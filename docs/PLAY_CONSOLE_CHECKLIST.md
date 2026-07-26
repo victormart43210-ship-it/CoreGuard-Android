@@ -4,7 +4,7 @@ Use this after merging the Play Store readiness branch. Code + assets in-repo ar
 
 ## In this repo (code / assets)
 
-- [x] `targetSdk` / `compileSdk` 35, `versionCode` 15 / `versionName` 1.0.14 (source: `gradle/android-app.gradle`)
+- [x] `targetSdk` / `compileSdk` 35, `versionCode` 16 / `versionName` 1.0.15 (source: `gradle/android-app.gradle`)
 - [x] `com.android.vending.BILLING` declared; production path is `PlayBillingProvider`
 - [x] Unused `READ_PHONE_STATE` removed
 - [x] Honest store listing + paywall copy (no magical spyware guarantees)
@@ -28,7 +28,7 @@ Use this after merging the Play Store readiness branch. Code + assets in-repo ar
    - Data Safety form (see below)
 5. **Monetize** — create subscription product ID `coreguard_premium_monthly`; add license testers
 6. **Signing** — upload key / Play App Signing; set `EXPECTED_CERT_SHA256` for release builds
-7. **Release** — upload AAB (`v1.0.14` / `versionCode` 15) to Internal testing → Closed → Production (staged rollout)
+7. **Release** — upload AAB (`v1.0.15` / `versionCode` 16) to Internal testing → Closed → Production (staged rollout)
 
 ## Data Safety form (recommended answers)
 

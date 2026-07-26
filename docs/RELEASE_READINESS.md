@@ -183,7 +183,7 @@ Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `c
 
 - [ ] All unit tests pass: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
 - [ ] Debug APK builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
-- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.14 / versionCode 15)
+- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.15 / versionCode 16)
 - [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [x] Production billing path is `PlayBillingProvider` (Demo is tests/previews only)
 - [x] Authoritative SKU is `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`

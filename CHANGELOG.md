@@ -3,6 +3,15 @@
 All notable changes to CoreGuard-Android are documented here.
 Version numbers match `gradle/android-app.gradle`.
 
+## 1.0.15 — 2026-07-26
+
+### Home clarity
+
+- Elite Home leads with plain-language Guardian status, one primary next step, and FAIL/WARN evidence (confidence labeled) instead of lore-as-proof
+- Sacred geometry called out as brand artwork, not a sensor reading
+- Dynamic Threat Score caption states on-device correlator / not cloud AI
+- Empty states polished on Scanner, Forensic Journal, and Scam Guard; shortcut a11y descriptions improved
+
 ## 1.0.14 — 2026-07-26
 
 ### Release stabilization

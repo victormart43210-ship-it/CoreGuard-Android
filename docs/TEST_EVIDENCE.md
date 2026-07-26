@@ -2,7 +2,7 @@
 
 Branch: `fix/release-stabilization`  
 Date: 2026-07-26  
-Version: **1.0.14** (`versionCode` 15) — source of truth: `gradle/android-app.gradle`
+Version: **1.0.15** (`versionCode` 16) — source of truth: `gradle/android-app.gradle`
 
 ## Validation (this branch)
 
