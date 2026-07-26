@@ -38,7 +38,6 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckRunner
@@ -61,7 +60,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ComplianceScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider,
     onUpgrade: () -> Unit = {},
     securityResults: List<SecurityCheckResult>? = null
 ) {

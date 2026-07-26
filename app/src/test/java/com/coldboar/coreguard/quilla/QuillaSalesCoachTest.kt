@@ -76,5 +76,70 @@ class QuillaSalesCoachTest {
             QuillaSalesCoach.DeviceContext(isPremium = false, lastScan = report)
         )
         assertTrue(answer.suggestPremium)
+        assertTrue(answer.premiumPitch!!.isNotBlank())
+    }
+
+    @Test
+    fun `premium user status coach never upsells`() {
+        val report = ScanReport(
+            startedAtMillis = 0L,
+            finishedAtMillis = 12L,
+            scannedPackages = 10,
+            scannedProcesses = 0,
+            scannedFiles = 0,
+            indicatorCount = 5,
+            detections = listOf(
+                Detection(
+                    kind = ArtifactKind.DOMAIN,
+                    artifact = "example.test",
+                    indicator = Indicator(
+                        type = IndicatorType.DOMAIN,
+                        value = "example.test",
+                        malware = "test"
+                    ),
+                    severity = ThreatSeverity.MEDIUM
+                )
+            )
+        )
+        val answer = QuillaSalesCoach.answer(
+            "scan risk score",
+            QuillaSalesCoach.DeviceContext(isPremium = true, lastScan = report)
+        )
+        assertFalse(answer.suggestPremium)
+        assertTrue(answer.premiumPitch == null)
+    }
+
+    @Test
+    fun `signature coach gates live refresh behind premium`() {
+        val free = QuillaSalesCoach.answer(
+            "refresh ioc signatures",
+            QuillaSalesCoach.DeviceContext(isPremium = false)
+        )
+        assertTrue(free.suggestPremium)
+        assertTrue(free.premiumPitch!!.contains("signature", ignoreCase = true))
+
+        val premium = QuillaSalesCoach.answer(
+            "refresh ioc signatures",
+            QuillaSalesCoach.DeviceContext(isPremium = true)
+        )
+        assertFalse(premium.suggestPremium)
+        assertTrue(premium.text.contains("Refresh threat signatures", ignoreCase = true))
+    }
+
+    @Test
+    fun `timeline coach reports free vs premium history depth`() {
+        val free = QuillaSalesCoach.answer(
+            "open timeline history",
+            QuillaSalesCoach.DeviceContext(isPremium = false, timelineCount = 3)
+        )
+        assertTrue(free.suggestPremium)
+        assertTrue(free.text.contains("3"))
+
+        val premium = QuillaSalesCoach.answer(
+            "open timeline history",
+            QuillaSalesCoach.DeviceContext(isPremium = true, timelineCount = 10)
+        )
+        assertFalse(premium.suggestPremium)
+        assertTrue(premium.text.contains("Premium", ignoreCase = true))
     }
 }

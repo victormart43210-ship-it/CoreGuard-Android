@@ -36,6 +36,7 @@ import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.quilla.QuillaInsight
 import com.coldboar.coreguard.ui.components.QuillaInsightCard
+import com.coldboar.coreguard.ui.navigation.QuillaActionRouter
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -150,12 +151,11 @@ fun ShieldScreen(
             QuillaInsightCard(
                 card = card,
                 onAction = { action ->
-                    when (action) {
-                        QuillaInsight.Action.RUN_SCAN -> onNavigateToScanner()
-                        QuillaInsight.Action.ASK_QUILLA,
-                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
-                        else -> Unit
-                    }
+                    QuillaActionRouter.dispatchInsight(
+                        action = action,
+                        onScanner = onNavigateToScanner,
+                        onQuilla = onNavigateToQuilla
+                    )
                 }
             )
             Spacer(modifier = Modifier.height(16.dp))

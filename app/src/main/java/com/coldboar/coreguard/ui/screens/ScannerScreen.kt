@@ -35,7 +35,6 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
@@ -48,6 +47,7 @@ import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.quilla.QuillaInsight
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.QuillaInsightCard
+import com.coldboar.coreguard.ui.navigation.QuillaActionRouter
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -61,7 +61,7 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ScannerScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider,
     onUpgrade: () -> Unit = {},
     onNavigateToShield: () -> Unit = {},
     onNavigateToTimeline: () -> Unit = {},
@@ -196,13 +196,12 @@ fun ScannerScreen(
             QuillaInsightCard(
                 card = coach,
                 onAction = { action ->
-                    when (action) {
-                        QuillaInsight.Action.OPEN_SHIELD -> onNavigateToShield()
-                        QuillaInsight.Action.OPEN_TIMELINE -> onNavigateToTimeline()
-                        QuillaInsight.Action.ASK_QUILLA,
-                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
-                        QuillaInsight.Action.RUN_SCAN -> Unit
-                    }
+                    QuillaActionRouter.dispatchInsight(
+                        action = action,
+                        onShield = onNavigateToShield,
+                        onTimeline = onNavigateToTimeline,
+                        onQuilla = onNavigateToQuilla
+                    )
                 }
             )
         }

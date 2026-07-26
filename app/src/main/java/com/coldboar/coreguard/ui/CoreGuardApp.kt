@@ -30,7 +30,6 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
@@ -64,13 +63,15 @@ private val bottomNavItems = listOf(
  * Contains exactly one [NavHost] and one bottom navigation bar with five
  * primary destinations. All screens are reachable through this single graph.
  *
+ * @param billingProvider Production [BillingProvider] from the host Activity
+ *   (typically [com.coldboar.coreguard.PlayBillingProvider]). Required — do not
+ *   default to a demo/test billing stub in production UI.
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider The active [BillingProvider] instance. Defaults to demo mode.
  */
 @Composable
 fun CoreGuardApp(
-    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
-    billingProvider: BillingProvider = remember { DemoBillingProvider() }
+    billingProvider: BillingProvider,
+    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) }
 ) {
     val navController = rememberNavController()
     val openQuillaInSettings = remember { mutableStateOf(false) }

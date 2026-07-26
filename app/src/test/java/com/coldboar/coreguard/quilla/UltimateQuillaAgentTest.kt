@@ -1,9 +1,18 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.mvt.ArtifactKind
+import com.coldboar.coreguard.mvt.Detection
+import com.coldboar.coreguard.mvt.Indicator
+import com.coldboar.coreguard.mvt.IndicatorType
+import com.coldboar.coreguard.mvt.ScanReport
+import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
+import com.coldboar.coreguard.ui.navigation.QuillaActionRouter
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -26,6 +35,27 @@ class UltimateQuillaAgentTest {
         sourceLabel = "Amnesty STIX2"
     )
 
+    private val suspiciousScan = ScanReport(
+        startedAtMillis = 0L,
+        finishedAtMillis = 12L,
+        scannedPackages = 10,
+        scannedProcesses = 0,
+        scannedFiles = 0,
+        indicatorCount = 5,
+        detections = listOf(
+            Detection(
+                kind = ArtifactKind.DOMAIN,
+                artifact = "example.test",
+                indicator = Indicator(
+                    type = IndicatorType.DOMAIN,
+                    value = "example.test",
+                    malware = "test"
+                ),
+                severity = ThreatSeverity.MEDIUM
+            )
+        )
+    )
+
     private lateinit var agent: UltimateQuillaAgent
 
     @Before
@@ -38,7 +68,9 @@ class UltimateQuillaAgentTest {
         CyberKnowledgeBase.loadDocuments(docs)
         agent = UltimateQuillaAgent(
             memoryProvider = { memory },
-            researchProvider = { research }
+            researchProvider = { research },
+            isPremiumProvider = { false },
+            lastScanProvider = { suspiciousScan }
         )
     }
 
@@ -115,5 +147,67 @@ class UltimateQuillaAgentTest {
         val answer = agent.answer("status")
         assertEquals(6, answer.moduleStatuses.size)
         assertEquals(QuillaModule.entries.toSet(), answer.moduleStatuses.map { it.module }.toSet())
+    }
+
+    @Test
+    fun `premium ask upsells free users with pitch and actions`() {
+        val answer = agent.answer("Is Premium worth it?")
+        assertTrue(answer.suggestPremium)
+        assertNotNull(answer.premiumPitch)
+        assertTrue(answer.premiumPitch!!.contains("signature", ignoreCase = true))
+        assertTrue(answer.actions.any { it.id == QuillaActionSuggestion.RUN_SCAN })
+        answer.actions.forEach { action ->
+            assertTrue(
+                QuillaActionRouter.destinationForSuggestion(action.id) !=
+                    QuillaActionRouter.Destination.NONE
+            )
+        }
+    }
+
+    @Test
+    fun `premium users are not upsold on premium ask`() {
+        val premiumAgent = UltimateQuillaAgent(
+            memoryProvider = { memory },
+            researchProvider = { research },
+            isPremiumProvider = { true },
+            lastScanProvider = { suspiciousScan }
+        )
+        val answer = premiumAgent.answer("upgrade to Premium")
+        assertFalse(answer.suggestPremium)
+        assertNull(answer.premiumPitch)
+        assertTrue(answer.text.contains("already Premium", ignoreCase = true))
+    }
+
+    @Test
+    fun `status for free user with suspicious scan can suggest premium`() {
+        val answer = agent.answer("am I safe right now?")
+        assertTrue(answer.suggestPremium)
+        assertNotNull(answer.premiumPitch)
+        assertTrue(answer.actions.any { it.id == QuillaActionSuggestion.OPEN_SHIELD })
+        assertEquals(
+            QuillaActionRouter.Destination.SHIELD,
+            QuillaActionRouter.destinationForSuggestion(QuillaActionSuggestion.OPEN_SHIELD)
+        )
+    }
+
+    @Test
+    fun `status for premium user suppresses premium pitch`() {
+        val premiumAgent = UltimateQuillaAgent(
+            memoryProvider = { memory },
+            researchProvider = { research },
+            isPremiumProvider = { true },
+            lastScanProvider = { suspiciousScan }
+        )
+        val answer = premiumAgent.answer("am I safe right now?")
+        assertFalse(answer.suggestPremium)
+        assertNull(answer.premiumPitch)
+    }
+
+    @Test
+    fun `scan action suggestions wire to scanner and timeline routes`() {
+        val answer = agent.answer("please run a nemesis scan")
+        val destinations = answer.actions.map { QuillaActionRouter.destinationForSuggestion(it.id) }
+        assertTrue(destinations.contains(QuillaActionRouter.Destination.SCANNER))
+        assertTrue(destinations.contains(QuillaActionRouter.Destination.TIMELINE))
     }
 }

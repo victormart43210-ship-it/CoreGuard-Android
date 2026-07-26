@@ -1,7 +1,7 @@
 package com.coldboar.coreguard.quilla
 
-import com.coldboar.coreguard.Entitlements
 import com.coldboar.coreguard.mvt.LastScan
+import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -18,11 +18,14 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
  * - **Tools** — Nemesis Scanner, Privacy Shield, Scan Timeline
  *
  * Quilla never claims supernatural detection or silent VPN enablement.
+ * Premium gating is injected via [isPremiumProvider] — never a demo billing stub.
  */
 class UltimateQuillaAgent(
     private val memoryProvider: () -> QuillaMemorySnapshot,
     private val researchProvider: () -> QuillaResearchSnapshot = { QuillaResearchSnapshot() },
-    private val knowledgeLimit: Int = 3
+    private val knowledgeLimit: Int = 3,
+    private val isPremiumProvider: () -> Boolean = { false },
+    private val lastScanProvider: () -> ScanReport? = { LastScan.report }
 ) {
 
     fun answer(prompt: String): QuillaAgentAnswer {
@@ -62,14 +65,15 @@ class UltimateQuillaAgent(
                 base
             }
         }
+        val isPremium = isPremiumProvider()
         return QuillaAgentAnswer(
             text = text,
             intent = intent,
             modulesUsed = modulesUsed,
             moduleStatuses = statuses,
             actions = actions,
-            suggestPremium = sales.suggestPremium && !Entitlements.isPremium(),
-            premiumPitch = sales.premiumPitch
+            suggestPremium = sales.suggestPremium && !isPremium,
+            premiumPitch = if (isPremium) null else sales.premiumPitch
         )
     }
 
@@ -81,8 +85,8 @@ class UltimateQuillaAgent(
 
     private fun salesContext(memory: QuillaMemorySnapshot): QuillaSalesCoach.DeviceContext =
         QuillaSalesCoach.DeviceContext(
-            isPremium = Entitlements.isPremium(),
-            lastScan = LastScan.report,
+            isPremium = isPremiumProvider(),
+            lastScan = lastScanProvider(),
             timelineCount = memory.historyCount,
             shieldActive = memory.shieldActive,
             shieldBlocked = memory.shieldBlocked

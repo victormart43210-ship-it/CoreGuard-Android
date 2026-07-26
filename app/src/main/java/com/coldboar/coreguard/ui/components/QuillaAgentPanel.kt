@@ -38,13 +38,13 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.coldboar.coreguard.quilla.QuillaActionSuggestion
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
 import com.coldboar.coreguard.quilla.QuillaMemoryFactory
 import com.coldboar.coreguard.quilla.QuillaModule
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
+import com.coldboar.coreguard.ui.navigation.QuillaActionRouter
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -57,10 +57,14 @@ private const val QUILLA_RESPONSE_DELAY_MS = 500L
 
 /**
  * Shared Ultimate Quilla panel: Brain / Memory / Research / Knowledge / Actions / Tools.
+ *
+ * Navigation callbacks should be wired by the host screen. Missing callbacks are
+ * no-ops for nav destinations; threat-intel sync stays in-panel.
  */
 @Composable
 fun QuillaAgentPanel(
     modifier: Modifier = Modifier,
+    isPremium: Boolean = false,
     onRunScan: (() -> Unit)? = null,
     onOpenShield: (() -> Unit)? = null,
     onOpenTimeline: (() -> Unit)? = null,
@@ -73,14 +77,17 @@ fun QuillaAgentPanel(
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
     val hasQuestion = question.isNotBlank()
 
+    fun buildAgent(): UltimateQuillaAgent = UltimateQuillaAgent(
+        memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
+        researchProvider = { QuillaMemoryFactory.cachedResearch() },
+        isPremiumProvider = { isPremium }
+    )
+
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             CyberKnowledgeAssets.ensureLoaded(context)
         }
-        answer = UltimateQuillaAgent(
-            memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
-            researchProvider = { QuillaMemoryFactory.cachedResearch() }
-        ).answer("what can you do")
+        answer = buildAgent().answer("what can you do")
     }
 
     LaunchedEffect(pendingPrompt) {
@@ -97,10 +104,7 @@ fun QuillaAgentPanel(
             if (wantsResearch) {
                 QuillaMemoryFactory.syncResearch()
             }
-            UltimateQuillaAgent(
-                memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
-                researchProvider = { QuillaMemoryFactory.cachedResearch() }
-            ).answer(prompt)
+            buildAgent().answer(prompt)
         }
         answer = result
         isAsking = false
@@ -241,16 +245,15 @@ fun QuillaAgentPanel(
                 actions.forEach { action ->
                     OutlinedButton(
                         onClick = {
-                            when (action.id) {
-                                QuillaActionSuggestion.RUN_SCAN -> onRunScan?.invoke()
-                                    ?: run { pendingPrompt = "run a nemesis scan" }
-                                QuillaActionSuggestion.OPEN_SHIELD -> onOpenShield?.invoke()
-                                    ?: run { pendingPrompt = "open privacy shield" }
-                                QuillaActionSuggestion.OPEN_TIMELINE -> onOpenTimeline?.invoke()
-                                    ?: run { pendingPrompt = "open scan timeline" }
-                                QuillaActionSuggestion.SYNC_INTEL ->
+                            QuillaActionRouter.dispatchSuggestion(
+                                actionId = action.id,
+                                onScanner = onRunScan,
+                                onShield = onOpenShield,
+                                onTimeline = onOpenTimeline,
+                                onSyncIntel = {
                                     pendingPrompt = "sync threat intel research"
-                            }
+                                }
+                            )
                         },
                         enabled = !isAsking,
                         modifier = Modifier

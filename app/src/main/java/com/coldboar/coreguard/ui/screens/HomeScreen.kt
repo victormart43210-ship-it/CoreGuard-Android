@@ -78,6 +78,7 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import com.coldboar.coreguard.quilla.QuillaInsight
 import com.coldboar.coreguard.ui.components.QuillaInsightCard
+import com.coldboar.coreguard.ui.navigation.QuillaActionRouter
 import com.coldboar.coreguard.ui.theme.SurfacePewter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -324,13 +325,13 @@ fun HomeScreen(
             QuillaInsightCard(
                 card = card,
                 onAction = { action ->
-                    when (action) {
-                        QuillaInsight.Action.RUN_SCAN -> onNavigateToScanner()
-                        QuillaInsight.Action.OPEN_SHIELD -> onNavigateToShield()
-                        QuillaInsight.Action.OPEN_TIMELINE -> onNavigateToTimeline()
-                        QuillaInsight.Action.ASK_QUILLA,
-                        QuillaInsight.Action.OPEN_SETTINGS -> onNavigateToQuilla()
-                    }
+                    QuillaActionRouter.dispatchInsight(
+                        action = action,
+                        onScanner = onNavigateToScanner,
+                        onShield = onNavigateToShield,
+                        onTimeline = onNavigateToTimeline,
+                        onQuilla = onNavigateToQuilla
+                    )
                 },
                 modifier = Modifier.padding(horizontal = 16.dp)
             )

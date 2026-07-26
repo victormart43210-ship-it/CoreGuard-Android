@@ -9,7 +9,7 @@ import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 
 /**
- * Short, buyer-facing Quilla blurbs for Home / Scanner / Shield —
+ * Short, user-facing Quilla blurbs for Home / Scanner / Shield —
  * powered by the same on-device agent stack (no cloud LLM).
  */
 object QuillaInsight {
@@ -51,7 +51,16 @@ object QuillaInsight {
             .joinToString("\n")
             .ifBlank { answer.text }
             .take(420)
+        return homeCardFromMemory(memory, body)
+    }
 
+    /**
+     * Pure home-card builder for tests and production (after memory is loaded).
+     */
+    fun homeCardFromMemory(memory: QuillaMemorySnapshot, answerBody: String = ""): Card {
+        val body = answerBody.ifBlank {
+            "Ask me about MASVS, ATT&CK, or your next hardening step."
+        }
         return when {
             memory.lastScanVerdict == null -> Card(
                 title = "I haven’t checked this phone yet",
@@ -100,7 +109,7 @@ object QuillaInsight {
                     if (shieldActive) {
                         "Shield is already helping. Re-check after new installs."
                     } else {
-                        "Turn on Privacy Shield on public Wi‑Fi for a cheap extra layer."
+                        "Turn on Privacy Shield on public Wi‑Fi for an easy extra layer."
                     },
                 primaryCta = if (shieldActive) "Ask Quilla" else "Enable Shield",
                 primaryAction = if (shieldActive) Action.ASK_QUILLA else Action.OPEN_SHIELD,
@@ -131,13 +140,21 @@ object QuillaInsight {
     fun shieldCard(context: Context): Card? {
         ensureReady(context)
         val memory = QuillaMemoryFactory.memorySnapshot(context)
-        val last = LastScan.report
+        return shieldCardFromMemory(memory, LastScan.report)
+    }
+
+    /**
+     * Pure shield-card builder for tests and production (after memory is loaded).
+     */
+    fun shieldCardFromMemory(memory: QuillaMemorySnapshot, lastReport: ScanReport?): Card {
         return when {
             !memory.shieldActive &&
-                (last?.verdict == ScanVerdict.SUSPICIOUS || last?.verdict == ScanVerdict.INFECTED) -> Card(
+                (lastReport?.verdict == ScanVerdict.SUSPICIOUS ||
+                    lastReport?.verdict == ScanVerdict.INFECTED) -> Card(
                 title = "Quilla recommends Shield",
                 body = "Your last scan wasn’t clean, but Privacy Shield is off. Enabling it sinkholes known-bad DNS names while you investigate.",
-                primaryCta = null, // screen already has the toggle
+                // Shield screen already owns the toggle — no primary CTA needed.
+                primaryCta = null,
                 primaryAction = Action.OPEN_SHIELD
             )
             memory.shieldActive && memory.shieldBlocked > 0 -> Card(
@@ -159,8 +176,8 @@ object QuillaInsight {
                 primaryAction = Action.ASK_QUILLA
             )
             else -> Card(
-                title = "Quilla: cheap insurance on hostile Wi‑Fi",
-                body = "Shield is a local DNS sinkhole — not magic spyware removal. Flip it on when you don’t trust the network.",
+                title = "Quilla: light protection on hostile Wi‑Fi",
+                body = "Shield is a local DNS sinkhole — not spyware removal. Flip it on when you don’t trust the network.",
                 primaryCta = "Ask Quilla",
                 primaryAction = Action.ASK_QUILLA
             )

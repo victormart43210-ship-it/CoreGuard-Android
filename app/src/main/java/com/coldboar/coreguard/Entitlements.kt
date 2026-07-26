@@ -53,11 +53,16 @@ class EntitlementPolicy(private val billing: BillingProvider) {
 }
 
 /**
- * Legacy singleton wrapper kept for backwards compatibility.
- * New code should use [EntitlementPolicy] with an injected [BillingProvider].
+ * Legacy singleton kept for older call sites and unit fixtures.
  *
- * **DEMO ONLY** – uses [DemoBillingProvider] internally.
+ * Production UI and Quilla must inject a real [BillingProvider] (e.g.
+ * [PlayBillingProvider]) via [EntitlementPolicy] — never rely on this object.
+ * Internally uses [DemoBillingProvider] (always non-premium).
  */
+@Deprecated(
+    message = "Inject BillingProvider + EntitlementPolicy instead of the demo Entitlements singleton",
+    replaceWith = ReplaceWith("EntitlementPolicy(billingProvider)")
+)
 object Entitlements {
 
     private val demoBilling = DemoBillingProvider(startAsPremium = false)

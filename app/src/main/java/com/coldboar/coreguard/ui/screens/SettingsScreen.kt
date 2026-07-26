@@ -43,7 +43,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
-import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.PurchaseResult
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
@@ -53,7 +52,7 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 
 @Composable
 fun SettingsScreen(
-    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    billingProvider: BillingProvider,
     onNavigateToPrivacyPolicy: () -> Unit = {},
     onNavigateToScanner: () -> Unit = {},
     onNavigateToShield: () -> Unit = {},
@@ -218,6 +217,7 @@ fun SettingsScreen(
         AnimatedVisibility(visible = quillaOpen) {
             QuillaAgentPanel(
                 modifier = Modifier.padding(top = 8.dp),
+                isPremium = isPremium,
                 onRunScan = onNavigateToScanner,
                 onOpenShield = onNavigateToShield,
                 onOpenTimeline = onNavigateToTimeline,
