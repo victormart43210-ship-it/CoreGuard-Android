@@ -7,6 +7,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Claim | Why it is allowed |
 |-------|-------------------|
 | On-device privacy-integrity / spyware **indicator** checks | Nemesis Scanner matches local artifacts against IOC lists |
+| Aggregate CPU usage is a **BASIC** `/proc/stat` sample | `CpuUsageCalculator`; not per-process and not a security verdict |
 | A clean scan is **reassuring, not a guarantee** | Explicitly disclosed in Scanner UI and store copy |
 | Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent |
 | Guardian Score summarizes local heuristic checks | Root/debugger/emulator/signature/build heuristics |
@@ -22,6 +23,8 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Do not say | Why |
 |------------|-----|
 | Guaranteed spyware detection or removal | App cannot prove absence of spyware or uninstall foreign implants |
+| CPU usage is “Simulated” | Implementation samples `/proc/stat` on-device (coarse BASIC metric) |
+| “Pegasus blocker” / “removes Pegasus” as a product claim | Shield is a DNS sinkhole for listed indicator domains only |
 | “100% offline” / “fully offline” as absolute | Billing, optional IOC refresh, Quilla Research sync, and Shield DNS forwarding use network |
 | Quilla “automates defenses” or silently runs scans/VPN | Actions **navigate** / suggest; VPN still needs Android consent |
 | “Live continuous threat intel” for Quilla Research | Optional pull of public Amnesty/MVT STIX archives, not a live feed |

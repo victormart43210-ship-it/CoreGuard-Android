@@ -352,9 +352,9 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "No spyware signs found"
-        ScanVerdict.SUSPICIOUS -> "Possible privacy risk"
-        ScanVerdict.INFECTED -> "Privacy threat found"
+        ScanVerdict.CLEAN -> "No selected indicators matched"
+        ScanVerdict.SUSPICIOUS -> "Possible privacy risk indicators"
+        ScanVerdict.INFECTED -> "Spyware indicators matched"
     }
 
     CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {

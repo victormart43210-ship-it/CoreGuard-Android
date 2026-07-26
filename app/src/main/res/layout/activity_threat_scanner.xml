@@ -125,7 +125,7 @@
             android:textAppearance="?attr/textAppearanceHeadline6"
             android:textStyle="bold"
             android:visibility="gone"
-            tools:text="NO SPYWARE DETECTED"
+            tools:text="No selected indicators matched"
             tools:visibility="visible" />
 
         <TextView

@@ -145,3 +145,25 @@ adb shell am instrument -w -r \
 ### Release verdict (after Phase 1 batch)
 
 Still **NO-GO** for production Play. Automated debug gates remain green → candidate for **GO FOR INTERNAL TESTING ONLY** after Phase 2 claims pass and operator sets signing cert hash.
+
+---
+
+## Phase 2 — Security integrity and honest claims
+
+_Status: claims pass batch landed; signing cert hash still operator-owned._
+
+### Claims / integrity changes
+
+| Item | Action |
+|------|--------|
+| Scanner CLEAN/INFECTED headlines | Softened to indicator language (“No selected indicators matched” / “Spyware indicators matched”) |
+| Legacy scanner `tools:text` | Removed “NO SPYWARE DETECTED” preview copy |
+| `GuardVpnService` / `ShieldState` KDoc | Dropped “Pegasus blocker” product framing; DNS-indicator sinkhole + limitations |
+| `docs/SECURITY_CLAIMS.md` | Documented BASIC CPU + banned “Simulated CPU” / “Pegasus blocker” claims |
+| PendingIntent | Shield notification already uses `FLAG_IMMUTABLE` |
+| Signature check | Empty `EXPECTED_CERT_SHA256` → WARN (fail-soft); still must be set for Play |
+| Cleartext / backup | Already disabled (reconfirmed Phase 0) |
+
+### Phase 2 validation
+
+Re-run lint/unit after this batch (see commit notes). Do not mark Play billing or signed AAB without evidence.
