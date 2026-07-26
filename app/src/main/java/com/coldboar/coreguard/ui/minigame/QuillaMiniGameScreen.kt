@@ -3,6 +3,7 @@ package com.coldboar.coreguard.ui.minigame
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -36,6 +37,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -53,14 +55,14 @@ private val TealDark = Color(0xFF005B66)
 private val GoldAccent = Color(0xFFFFD700)
 private val MalwareRed = Color(0xFFFF3366)
 private val GridColor = Color(0xFF003840)
+private val SpellGlow = Color(0xAA00E5FF)
 
 /**
  * Hidden Quilla purge mini-game — Flappy-style flight + spell shots.
  * Educational / fun only; not a security claim or detector.
  *
- * Physics runs in [QuillaGameEngine] (non-Snapshot). Compose invalidates once
- * per frame via [frame], avoiding the ANR-prone state thrash of updating many
- * mutableState fields inside `withFrameNanos`.
+ * Smooth path: fixed-timestep engine + render interpolation, vsync-paced
+ * invalidation (no artificial FPS sleep), reused draw Paths.
  */
 @Composable
 fun QuillaMiniGameScreen(
@@ -68,8 +70,9 @@ fun QuillaMiniGameScreen(
     modifier: Modifier = Modifier
 ) {
     val engine = remember { QuillaGameEngine() }
+    val robePath = remember { Path() }
+    val hatPath = remember { Path() }
 
-    // Canvas invalidation only — not a source of physics truth.
     var frame by remember { mutableIntStateOf(0) }
     var hudScore by remember { mutableIntStateOf(0) }
     var hudShield by remember { mutableIntStateOf(100) }
@@ -88,30 +91,25 @@ fun QuillaMiniGameScreen(
         frame++
     }
 
-    // Re-enter when Restart clears gameOver so the frame loop resumes.
     LaunchedEffect(sized, gameOver) {
         if (!sized || gameOver) return@LaunchedEffect
         if (engine.pipes.isEmpty()) resetRun()
-        // Let the first Compose layout/draw finish before physics starts (avoids startup jank).
-        delay(FRAME_BUDGET_MS)
+        delay(48)
 
         var lastFrameMs = 0L
         while (isActive && !engine.gameOver) {
             withFrameMillis { now ->
                 if (engine.gameOver) return@withFrameMillis
                 val dt = if (lastFrameMs == 0L) {
-                    QuillaGameEngine.REF_DT_MS
+                    QuillaGameEngine.FIXED_DT_MS
                 } else {
                     (now - lastFrameMs).toFloat()
                 }
                 lastFrameMs = now
-                val hudChanged = engine.tick(dt)
+                val hudChanged = engine.beginFrame(dt)
                 frame++
-                // HUD Text is expensive to recompose on soft GPUs — only on real changes.
                 if (hudChanged) syncHud()
             }
-            // Cap ~30 FPS so Compose + Canvas do not starve System UI on software renderers.
-            delay(FRAME_BUDGET_MS)
         }
         syncHud()
     }
@@ -133,22 +131,45 @@ fun QuillaMiniGameScreen(
                 sized = true
             }
             .semantics { contentDescription = "Quilla mini-game. Tap to jump and cast." }
-            .clickable(enabled = !gameOver) {
-                engine.jumpAndCast()
-                frame++
+            .pointerInput(gameOver) {
+                if (gameOver) return@pointerInput
+                detectTapGestures {
+                    engine.jumpAndCast()
+                    frame++
+                }
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
-            // Subscribe to frame so Canvas redraws without Snapshot lists.
             @Suppress("UNUSED_EXPRESSION")
             frame
-            drawCyberGrid()
-            engine.pipes.forEach { drawSecurityGate(it) }
-            engine.spells.forEach {
-                drawCircle(color = TealPrimary, radius = 10f, center = Offset(it.x, it.y))
+
+            val blink = engine.invulnerable && ((frame / 3) % 2 == 0)
+            drawCyberGrid(scrollX = engine.scrollX)
+
+            engine.pipes.forEach { pipe ->
+                drawSecurityGate(x = engine.renderPipeX(pipe), pipe)
             }
-            engine.enemies.forEach { drawMalware(it) }
-            drawQuilla(y = engine.quillaY, x = QuillaGameEngine.QUILLA_X)
+            engine.spells.forEach { spell ->
+                val sx = engine.renderSpellX(spell)
+                val sy = engine.renderSpellY(spell)
+                drawCircle(color = SpellGlow, radius = 14f, center = Offset(sx, sy))
+                drawCircle(color = TealPrimary, radius = 7f, center = Offset(sx, sy))
+            }
+            engine.enemies.forEach { enemy ->
+                drawMalware(
+                    enemy,
+                    x = engine.renderEnemyX(enemy),
+                    y = engine.renderEnemyY(enemy)
+                )
+            }
+            if (!blink) {
+                drawQuilla(
+                    y = engine.renderQuillaY(),
+                    x = QuillaGameEngine.QUILLA_X,
+                    robePath = robePath,
+                    hatPath = hatPath
+                )
+            }
         }
 
         Row(
@@ -264,13 +285,11 @@ fun QuillaMiniGameScreen(
     }
 }
 
-private const val FRAME_BUDGET_MS = 33L
-
-private fun DrawScope.drawCyberGrid() {
-    // Sparse grid — soft GPUs choke on dense line meshes every frame.
-    val gridSize = 120f
-    var x = 0f
-    while (x < size.width) {
+private fun DrawScope.drawCyberGrid(scrollX: Float) {
+    val gridSize = 140f
+    val offset = scrollX % gridSize
+    var x = -offset
+    while (x < size.width + gridSize) {
         drawLine(
             color = GridColor,
             start = Offset(x, 0f),
@@ -291,84 +310,81 @@ private fun DrawScope.drawCyberGrid() {
     }
 }
 
-private fun DrawScope.drawSecurityGate(gate: PipeObstacle) {
+private fun DrawScope.drawSecurityGate(x: Float, gate: PipeObstacle) {
     drawRect(
         color = TealDark,
-        topLeft = Offset(gate.x, 0f),
+        topLeft = Offset(x, 0f),
         size = Size(gate.width, gate.gapY)
     )
     drawRect(
         color = TealPrimary,
-        topLeft = Offset(gate.x, 0f),
+        topLeft = Offset(x, 0f),
         size = Size(gate.width, gate.gapY),
-        style = Stroke(3f)
+        style = Stroke(2.5f)
     )
 
     val bottomY = gate.gapY + gate.gapHeight
     drawRect(
         color = TealDark,
-        topLeft = Offset(gate.x, bottomY),
+        topLeft = Offset(x, bottomY),
         size = Size(gate.width, size.height - bottomY)
     )
     drawRect(
         color = TealPrimary,
-        topLeft = Offset(gate.x, bottomY),
+        topLeft = Offset(x, bottomY),
         size = Size(gate.width, size.height - bottomY),
-        style = Stroke(3f)
+        style = Stroke(2.5f)
     )
 }
 
-private fun DrawScope.drawQuilla(y: Float, x: Float) {
-    drawPath(
-        path = Path().apply {
-            moveTo(x - 25f, y + 30f)
-            lineTo(x + 20f, y + 30f)
-            lineTo(x + 15f, y - 10f)
-            lineTo(x - 20f, y - 10f)
-            close()
-        },
-        color = TealDark
-    )
+private fun DrawScope.drawQuilla(
+    y: Float,
+    x: Float,
+    robePath: Path,
+    hatPath: Path
+) {
+    robePath.rewind()
+    robePath.moveTo(x - 22f, y + 28f)
+    robePath.lineTo(x + 18f, y + 28f)
+    robePath.lineTo(x + 14f, y - 8f)
+    robePath.lineTo(x - 18f, y - 8f)
+    robePath.close()
+    drawPath(path = robePath, color = TealDark)
 
-    drawCircle(color = Color.Black, radius = 18f, center = Offset(x, y - 15f))
-    drawCircle(color = TealPrimary, radius = 4f, center = Offset(x - 5f, y - 15f))
-    drawCircle(color = TealPrimary, radius = 4f, center = Offset(x + 5f, y - 15f))
+    drawCircle(color = Color.Black, radius = 16f, center = Offset(x, y - 12f))
+    drawCircle(color = TealPrimary, radius = 3.5f, center = Offset(x - 5f, y - 12f))
+    drawCircle(color = TealPrimary, radius = 3.5f, center = Offset(x + 5f, y - 12f))
 
-    val hat = Path().apply {
-        moveTo(x - 35f, y - 25f)
-        lineTo(x + 35f, y - 25f)
-        lineTo(x + 5f, y - 65f)
-        close()
-    }
-    drawPath(path = hat, color = TealBackground)
-    drawPath(path = hat, color = TealPrimary, style = Stroke(3f))
-    drawCircle(color = GoldAccent, radius = 4f, center = Offset(x, y - 35f))
+    hatPath.rewind()
+    hatPath.moveTo(x - 30f, y - 22f)
+    hatPath.lineTo(x + 30f, y - 22f)
+    hatPath.lineTo(x + 4f, y - 58f)
+    hatPath.close()
+    drawPath(path = hatPath, color = TealBackground)
+    drawPath(path = hatPath, color = TealPrimary, style = Stroke(2.5f))
+    drawCircle(color = GoldAccent, radius = 3.5f, center = Offset(x, y - 32f))
 
     drawLine(
         color = GoldAccent,
-        start = Offset(x + 18f, y + 25f),
-        end = Offset(x + 22f, y - 30f),
-        strokeWidth = 4f
+        start = Offset(x + 16f, y + 22f),
+        end = Offset(x + 20f, y - 26f),
+        strokeWidth = 3.5f
     )
-    drawCircle(color = TealPrimary, radius = 8f, center = Offset(x + 22f, y - 35f))
+    drawCircle(color = TealPrimary, radius = 7f, center = Offset(x + 20f, y - 30f))
 }
 
-private fun DrawScope.drawMalware(enemy: Enemy) {
+private fun DrawScope.drawMalware(enemy: Enemy, x: Float, y: Float) {
     if (enemy.isWorm) {
-        drawCircle(color = MalwareRed, radius = 16f, center = Offset(enemy.x, enemy.y))
-        drawCircle(color = MalwareRed, radius = 12f, center = Offset(enemy.x + 18f, enemy.y + 4f))
-        drawCircle(color = MalwareRed, radius = 8f, center = Offset(enemy.x + 32f, enemy.y - 2f))
+        drawCircle(color = MalwareRed, radius = 14f, center = Offset(x, y))
+        drawCircle(color = MalwareRed, radius = 11f, center = Offset(x + 16f, y + 3f))
+        drawCircle(color = MalwareRed, radius = 7f, center = Offset(x + 28f, y - 1f))
     } else {
+        drawCircle(color = MalwareRed, radius = enemy.size / 2, center = Offset(x, y))
         drawCircle(
             color = MalwareRed,
-            radius = enemy.size / 2,
-            center = Offset(enemy.x, enemy.y)
-        )
-        drawCircle(
-            color = MalwareRed,
-            radius = enemy.size / 2 + 6f,
-            center = Offset(enemy.x, enemy.y),
-            style = Stroke(3f)
+            radius = enemy.size / 2 + 5f,
+            center = Offset(x, y),
+            style = Stroke(2.5f)
         )
     }
 }

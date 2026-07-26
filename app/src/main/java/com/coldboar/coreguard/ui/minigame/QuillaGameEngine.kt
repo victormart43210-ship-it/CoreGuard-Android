@@ -8,8 +8,10 @@ internal data class Enemy(
     val id: String = UUID.randomUUID().toString(),
     var x: Float,
     var y: Float,
-    val size: Float = 40f,
-    val speed: Float = 3f,
+    var prevX: Float = x,
+    var prevY: Float = y,
+    val size: Float = 36f,
+    val speed: Float = 2.8f,
     val isWorm: Boolean = false
 )
 
@@ -17,14 +19,17 @@ internal data class Spell(
     val id: String = UUID.randomUUID().toString(),
     var x: Float,
     var y: Float,
-    val speed: Float = 14f
+    var prevX: Float = x,
+    var prevY: Float = y,
+    val speed: Float = 16f
 )
 
 internal data class PipeObstacle(
     var x: Float,
     val gapY: Float,
     val gapHeight: Float = 240f,
-    val width: Float = 70f,
+    val width: Float = 64f,
+    var prevX: Float = x,
     /** One-shot gate damage so overlap does not melt shield every frame. */
     var damaged: Boolean = false,
     var scored: Boolean = false
@@ -32,7 +37,8 @@ internal data class PipeObstacle(
 
 /**
  * Non-Compose physics for the Quilla mini-game.
- * Kept off Snapshot state so the UI can invalidate once per frame without thrashing.
+ *
+ * Use [beginFrame] → [fixedTick] (fixed dt) → read [alpha] / lerp helpers for smooth draws.
  */
 internal class QuillaGameEngine(
     private val random: Random = Random.Default
@@ -41,10 +47,15 @@ internal class QuillaGameEngine(
     var worldH: Float = 1920f
 
     var quillaY: Float = 400f
+    var prevQuillaY: Float = 400f
     var velocityY: Float = 0f
     var score: Int = 0
     var shieldHp: Int = 100
     var gameOver: Boolean = false
+
+    /** 0..1 blend from previous physics state → current for rendering. */
+    var alpha: Float = 1f
+        private set
 
     val enemies = ArrayList<Enemy>(16)
     val spells = ArrayList<Spell>(16)
@@ -52,32 +63,46 @@ internal class QuillaGameEngine(
 
     private var spawnAccumulatorMs = 0f
     private var iFramesMs = 0f
+    private var graceMs = 0f
+    private var timeMs = 0f
+    private var accumulatorMs = 0f
+
+    val scrollX: Float
+        get() = timeMs * 0.04f
 
     fun reset() {
         score = 0
         shieldHp = 100
         velocityY = 0f
         quillaY = worldH * 0.45f
+        prevQuillaY = quillaY
         enemies.clear()
         spells.clear()
         pipes.clear()
         spawnAccumulatorMs = 0f
         iFramesMs = 0f
+        graceMs = GRACE_MS
+        timeMs = 0f
+        accumulatorMs = 0f
+        alpha = 1f
         gameOver = false
         if (worldW > 1f && worldH > 1f) {
-            val startGap = (worldH * 0.22f).coerceIn(180f, 280f)
+            val startGap = (worldH * 0.28f).coerceIn(220f, 320f)
+            val gapY = (quillaY - startGap / 2f).coerceIn(worldH * 0.12f, worldH * 0.5f)
             pipes.add(
                 PipeObstacle(
-                    x = worldW * 0.85f,
-                    gapY = (quillaY - startGap / 2f).coerceIn(worldH * 0.1f, worldH * 0.55f),
-                    gapHeight = startGap
+                    x = worldW * 0.95f,
+                    gapY = gapY,
+                    gapHeight = startGap,
+                    prevX = worldW * 0.95f
                 )
             )
             pipes.add(
                 PipeObstacle(
-                    x = worldW * 1.35f,
-                    gapY = worldH * 0.35f,
-                    gapHeight = startGap
+                    x = worldW * 1.55f,
+                    gapY = worldH * 0.32f,
+                    gapHeight = startGap,
+                    prevX = worldW * 1.55f
                 )
             )
         }
@@ -87,31 +112,94 @@ internal class QuillaGameEngine(
         if (gameOver) return
         velocityY = JUMP_POWER
         if (spells.size < MAX_SPELLS) {
-            spells.add(Spell(x = quillaX + 20f, y = quillaY))
+            val y = renderQuillaY()
+            spells.add(Spell(x = quillaX + 24f, y = y, prevX = quillaX + 24f, prevY = y))
         }
     }
 
-    /**
-     * Advance simulation by [dtMs] (clamped). Returns true when HUD-facing fields changed.
-     */
-    fun tick(dtMs: Float): Boolean {
-        if (gameOver || worldW < 2f || worldH < 2f) return false
+    fun renderQuillaY(): Float = lerp(prevQuillaY, quillaY, alpha)
 
-        val dt = dtMs.coerceIn(MIN_DT_MS, MAX_DT_MS)
-        val scale = dt / REF_DT_MS
+    fun renderPipeX(pipe: PipeObstacle): Float = lerp(pipe.prevX, pipe.x, alpha)
+
+    fun renderEnemyX(enemy: Enemy): Float = lerp(enemy.prevX, enemy.x, alpha)
+
+    fun renderEnemyY(enemy: Enemy): Float = lerp(enemy.prevY, enemy.y, alpha)
+
+    fun renderSpellX(spell: Spell): Float = lerp(spell.prevX, spell.x, alpha)
+
+    fun renderSpellY(spell: Spell): Float = lerp(spell.prevY, spell.y, alpha)
+
+    val invulnerable: Boolean
+        get() = iFramesMs > 0f || graceMs > 0f
+
+    /** Test-only: skip opening grace so collision assertions are immediate. */
+    internal fun clearGraceForTests() {
+        graceMs = 0f
+    }
+
+    /**
+     * Advance by wall-clock [frameDtMs]. Runs zero or more fixed physics steps.
+     * Returns true when HUD-facing fields changed.
+     */
+    fun beginFrame(frameDtMs: Float): Boolean {
+        if (gameOver || worldW < 2f || worldH < 2f) {
+            alpha = 1f
+            return false
+        }
+
+        val frameDt = frameDtMs.coerceIn(0f, MAX_FRAME_DT_MS)
+        accumulatorMs = (accumulatorMs + frameDt).coerceAtMost(MAX_ACCUMULATOR_MS)
+
+        var hudChanged = false
+        while (accumulatorMs >= FIXED_DT_MS) {
+            hudChanged = fixedTick(FIXED_DT_MS) || hudChanged
+            accumulatorMs -= FIXED_DT_MS
+            if (gameOver) {
+                alpha = 1f
+                return true
+            }
+        }
+        alpha = (accumulatorMs / FIXED_DT_MS).coerceIn(0f, 1f)
+        return hudChanged
+    }
+
+    /** @deprecated Prefer [beginFrame]; kept for unit tests of a single step. */
+    fun tick(dtMs: Float): Boolean {
+        accumulatorMs = 0f
+        alpha = 1f
+        return fixedTick(dtMs.coerceIn(MIN_DT_MS, MAX_DT_MS))
+    }
+
+    private fun fixedTick(dt: Float): Boolean {
         val beforeScore = score
         val beforeShield = shieldHp
 
-        if (iFramesMs > 0f) iFramesMs = (iFramesMs - dt).coerceAtLeast(0f)
-
-        velocityY += GRAVITY * scale
-        quillaY += velocityY * scale
-
-        if (quillaY < 0f) {
-            quillaY = 0f
-            velocityY = 0f
+        // Snapshot previous positions for interpolation.
+        prevQuillaY = quillaY
+        for (p in pipes) p.prevX = p.x
+        for (e in enemies) {
+            e.prevX = e.x
+            e.prevY = e.y
         }
-        if (quillaY > worldH) {
+        for (s in spells) {
+            s.prevX = s.x
+            s.prevY = s.y
+        }
+
+        timeMs += dt
+        if (iFramesMs > 0f) iFramesMs = (iFramesMs - dt).coerceAtLeast(0f)
+        if (graceMs > 0f) graceMs = (graceMs - dt).coerceAtLeast(0f)
+
+        velocityY = (velocityY + GRAVITY).coerceIn(-MAX_UP_SPEED, MAX_FALL_SPEED)
+        quillaY += velocityY
+
+        val topPad = 48f
+        val bottomPad = 48f
+        if (quillaY < topPad) {
+            quillaY = topPad
+            if (velocityY < 0f) velocityY = 0f
+        }
+        if (quillaY > worldH - bottomPad) {
             shieldHp = 0
             gameOver = true
             return true
@@ -120,11 +208,14 @@ internal class QuillaGameEngine(
         spawnAccumulatorMs += dt
         if (spawnAccumulatorMs >= SPAWN_EVERY_MS && enemies.size < MAX_ENEMIES) {
             spawnAccumulatorMs = 0f
-            val spawnY = random.nextFloat() * max(1f, worldH - 120f) + 60f
+            val spawnY = random.nextFloat() * max(1f, worldH - 160f) + 80f
+            val x = worldW + 40f
             enemies.add(
                 Enemy(
-                    x = worldW + 40f,
+                    x = x,
                     y = spawnY,
+                    prevX = x,
+                    prevY = spawnY,
                     isWorm = random.nextBoolean()
                 )
             )
@@ -133,31 +224,33 @@ internal class QuillaGameEngine(
         var si = 0
         while (si < spells.size) {
             val s = spells[si]
-            s.x += s.speed * scale
+            s.x += s.speed
             if (s.x > worldW + 40f) spells.removeAt(si) else si++
         }
 
         for (i in pipes.indices) {
             val p = pipes[i]
-            p.x -= PIPE_SPEED * scale
+            p.x -= PIPE_SPEED
             if (p.x < -p.width) {
+                val gapH = (worldH * 0.26f).coerceIn(200f, 300f)
+                val newX = worldW + 40f
                 pipes[i] = PipeObstacle(
-                    x = worldW + 40f,
-                    gapY = random.nextFloat() * max(1f, worldH * 0.45f) + worldH * 0.12f,
-                    gapHeight = (worldH * 0.22f).coerceIn(180f, 280f)
+                    x = newX,
+                    gapY = random.nextFloat() * max(1f, worldH * 0.42f) + worldH * 0.12f,
+                    gapHeight = gapH,
+                    prevX = newX
                 )
                 continue
             }
-            if (!p.scored && p.x + p.width < QUILLA_X) {
+            if (!p.scored && p.x + p.width < QUILLA_X - 10f) {
                 p.scored = true
                 score += 5
             }
-            if (
-                !p.damaged &&
-                p.x < QUILLA_X + 20f &&
-                p.x + p.width > QUILLA_X - 20f &&
-                (quillaY < p.gapY || quillaY > p.gapY + p.gapHeight)
-            ) {
+            // Hitbox uses Quilla body radius, not hat tip.
+            val bodyY = quillaY
+            val inX = p.x < QUILLA_X + HIT_RADIUS && p.x + p.width > QUILLA_X - HIT_RADIUS
+            val inGap = bodyY > p.gapY + HIT_RADIUS && bodyY < p.gapY + p.gapHeight - HIT_RADIUS
+            if (!p.damaged && inX && !inGap && graceMs <= 0f) {
                 p.damaged = true
                 applyDamage(PIPE_DAMAGE)
             }
@@ -166,12 +259,12 @@ internal class QuillaGameEngine(
         var ei = 0
         while (ei < enemies.size) {
             val enemy = enemies[ei]
-            enemy.x -= enemy.speed * scale
+            enemy.x -= enemy.speed
 
             val hitSpellIndex = spells.indexOfFirst { spell ->
                 val dx = spell.x - enemy.x
                 val dy = spell.y - enemy.y
-                dx * dx + dy * dy < 1600f
+                dx * dx + dy * dy < 1400f
             }
             if (hitSpellIndex >= 0) {
                 spells.removeAt(hitSpellIndex)
@@ -182,7 +275,7 @@ internal class QuillaGameEngine(
 
             val dx = QUILLA_X - enemy.x
             val dy = quillaY - enemy.y
-            if (dx * dx + dy * dy < 1800f) {
+            if (dx * dx + dy * dy < 1600f && graceMs <= 0f) {
                 enemies.removeAt(ei)
                 applyDamage(ENEMY_DAMAGE)
                 continue
@@ -198,7 +291,7 @@ internal class QuillaGameEngine(
     }
 
     private fun applyDamage(amount: Int) {
-        if (gameOver || iFramesMs > 0f) return
+        if (gameOver || iFramesMs > 0f || graceMs > 0f) return
         shieldHp = (shieldHp - amount).coerceAtLeast(0)
         iFramesMs = IFRAMES_MS
         if (shieldHp <= 0) gameOver = true
@@ -206,17 +299,26 @@ internal class QuillaGameEngine(
 
     companion object {
         const val QUILLA_X = 200f
-        const val GRAVITY = 0.65f
-        const val JUMP_POWER = -12f
-        const val PIPE_SPEED = 4f
+        const val HIT_RADIUS = 22f
+        const val GRAVITY = 0.42f
+        const val JUMP_POWER = -9.5f
+        const val MAX_FALL_SPEED = 11f
+        const val MAX_UP_SPEED = 12f
+        const val PIPE_SPEED = 3.2f
+        const val FIXED_DT_MS = 1000f / 60f
         const val REF_DT_MS = 16f
         const val MIN_DT_MS = 8f
         const val MAX_DT_MS = 33f
-        const val SPAWN_EVERY_MS = 1800f
-        const val MAX_ENEMIES = 8
-        const val MAX_SPELLS = 6
+        const val MAX_FRAME_DT_MS = 50f
+        const val MAX_ACCUMULATOR_MS = 100f
+        const val SPAWN_EVERY_MS = 2000f
+        const val MAX_ENEMIES = 6
+        const val MAX_SPELLS = 5
         const val PIPE_DAMAGE = 20
         const val ENEMY_DAMAGE = 15
-        const val IFRAMES_MS = 600f
+        const val IFRAMES_MS = 700f
+        const val GRACE_MS = 1400f
+
+        fun lerp(a: Float, b: Float, t: Float): Float = a + (b - a) * t
     }
 }
