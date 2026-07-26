@@ -44,7 +44,11 @@
     <li><strong>FOREGROUND_SERVICE / SPECIAL_USE</strong> — Privacy Shield VPN notification service</li>
     <li><strong>POST_NOTIFICATIONS</strong> — VPN status notification</li>
     <li><strong>QUERY_ALL_PACKAGES</strong> — compare installed packages to spyware package indicators on-device</li>
+    <li><strong>Notification access</strong> (optional) — Scam Guard may use Android’s Notification Listener API when you explicitly enable CoreGuard under system Notification access. It inspects notification text on-device for smishing / scam URL heuristics. Notification content is not uploaded to a CoreGuard backend and is not used for advertising.</li>
   </ul>
+
+  <h2>Scam Guard (optional Notification Listener)</h2>
+  <p>Scam Guard’s live interception is opt-in. Until you grant Notification access in Android Settings, CoreGuard does not read other apps’ notifications. When enabled, processing stays on-device; CoreGuard does not sell or share notification contents.</p>
 
   <h2>Subscriptions &amp; Billing</h2>
   <p>Premium subscriptions use Google Play Billing. CoreGuard does not receive your payment card details. Entitlement is determined from Play purchase state on the device.</p>

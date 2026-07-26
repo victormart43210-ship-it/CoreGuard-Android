@@ -19,7 +19,7 @@ This is the shortest path from “code in repo” to **Internal Testing** on Goo
 
 ### Monday — merge, local run, Play Console shell
 
-1. **Merge** [PR #70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70) (or rebase onto `main` and ship).
+1. **Ship from `main`** — Elite / M17–M18 landed via [PR #72](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/72) (`v1.0.14` / `versionCode` 15).
 2. On your Mac/Linux machine with KVM or Android Studio:
    ```bash
    git pull

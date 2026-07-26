@@ -137,6 +137,7 @@ Scans and Quilla Q&A run on-device. The app **does** use the network when you en
 - Privacy Shield DNS forwarding for allowed queries
 
 In the Data Safety form on Play Console, follow `docs/PLAY_CONSOLE_CHECKLIST.md` (not an absolute “no network” answer).
+Disclose optional Scam Guard **Notification Listener** access: on-device notification text heuristics only when the user grants Notification access; not shared off-device.
 
 **Privacy Policy**: Host a policy that matches the above. In-app screen + `docs/privacy-policy.html` are the source of truth.
 
@@ -182,7 +183,7 @@ Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `c
 
 - [ ] All unit tests pass: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
 - [ ] Debug APK builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
-- [ ] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease`
+- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.14 / versionCode 15)
 - [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [x] Production billing path is `PlayBillingProvider` (Demo is tests/previews only)
 - [x] Authoritative SKU is `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`

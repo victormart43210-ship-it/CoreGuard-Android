@@ -1,20 +1,20 @@
 # CoreGuard Fast Launch Gate (Internal/Test Track)
 
-**Version:** ____________________  
-**Date:** ____________________
+**Version:** 1.0.14 (`versionCode` 15)  
+**Date:** 2026-07-26
 
 ## Required (Auto NO-GO if any fail)
-- [ ] Tests pass: `./gradlew test`
-- [ ] Build works: `./gradlew bundleRelease`
-- [ ] Minify + shrink on
-- [ ] No hardcoded secrets
-- [ ] Security checks visible + working
-- [ ] Restricted mode active
-- [ ] No crash-loop on risk
-- [ ] Data Safety form accurate
+- [x] Tests pass: `./gradlew test` (318 unit on M18 evidence)
+- [x] Build works: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` → signed `app-release.aab`
+- [x] Minify + shrink on
+- [x] No hardcoded secrets
+- [x] Security checks visible + working
+- [x] Restricted mode active
+- [x] No crash-loop on risk
+- [x] Data Safety form answers documented (incl. Scam Guard Notification Listener) — human must paste into Console
 
 ## GO / NO-GO
-- [ ] **GO** (proceed to test track)
+- [x] **GO** for Internal Testing upload (human Play Console step remains)
 - [ ] **NO-GO** (fix failures first)
 
 **Sign:** __________________ **Date:** __________

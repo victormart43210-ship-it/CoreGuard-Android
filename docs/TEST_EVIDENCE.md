@@ -54,10 +54,18 @@ Version: **1.0.14** (`versionCode` 15)
 | **M17 Elite zero-trust features** | **PASS — 315 unit + ATD instrumented + smoke** |
 | **M18 Module + Redux Counter** | **PASS — 318 unit** |
 
-## Play Console next (human)
+## Release · v1.0.14 Internal Testing
 
-1. Merge PR #72 → Internal Testing AAB  
-2. Privacy policy URL on Play listing  
-3. VPN + `QUERY_ALL_PACKAGES` declarations  
-4. `coreguard_premium_monthly` + license tester  
-5. Disclose Notification Listener use for Scam Guard in Play Data safety  
+| Step | Status |
+|------|--------|
+| Merge PR #72 | **DONE** (`bf29ac3` on `main`) |
+| Notification Listener disclosure (privacy policy + Play checklist) | **DONE** in-repo |
+| `:app:testDebugUnitTest` (release prep) | **PASS** — **318** tests, 0 failures |
+| Signed release AAB (`versionCode` 15) | **PASS** — `app/build/outputs/bundle/release/app-release.aab` (~6.8 MB); SHA-256 `7ef305932c8ea63f317f6b5c61e1abd1d02d8226b89e9474ec3131a2858cd7c1` |
+| GitHub tag `v1.0.14` → Release workflow | Triggered on push of annotated tag |
+| Upload AAB to Play **Internal testing** | **Human** — Play Console (use Play App Signing / existing upload key if already enrolled) |
+| Privacy policy URL on Play listing | **Human** |
+| VPN + `QUERY_ALL_PACKAGES` + Notification Listener declarations | **Human** — see `PLAY_CONSOLE_CHECKLIST.md` |
+| `coreguard_premium_monthly` + license tester | **Human** |
+
+> Signing note: cloud agent built the AAB with a freshly generated upload keystore under `~/coreguard-secrets` (gitignored). If Play already has an upload certificate, rebuild with that keystore before uploading.
