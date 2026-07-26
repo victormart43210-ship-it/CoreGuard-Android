@@ -236,6 +236,19 @@ object QuillaReadyTopics {
                 "measure sandalphon"
             ),
             chipLabel = "Magick gates"
+        ),
+        Topic(
+            prompt = "emulator gate",
+            entryId = "quilla-emulator-gate",
+            aliases = setOf(
+                "quilla emulator",
+                "run emulator tests",
+                "connected android test",
+                "instrumented tests",
+                "avd tests",
+                "emulator tests"
+            ),
+            chipLabel = "Emulator gate"
         )
     )
 

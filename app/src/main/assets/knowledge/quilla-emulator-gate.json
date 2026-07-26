@@ -1,0 +1,30 @@
+{
+  "entries": [
+    {
+      "id": "quilla-emulator-gate",
+      "title": "Quilla Emulator Gate",
+      "tags": [
+        "emulator",
+        "avd",
+        "instrumented test",
+        "androidTest",
+        "deadline",
+        "smoke"
+      ],
+      "aliases": [
+        "emulator gate",
+        "run emulator tests",
+        "quilla emulator",
+        "connected android test"
+      ],
+      "summary": "Host script boots CoreGuard_API35 and runs unit + instrumented + smoke tests. On-device Quilla reports emulator presence and smokes Quantum Correlate — she cannot spawn QEMU from the APK.",
+      "body": "Deadline harness: ./scripts/quilla-emulator-tests.sh (HEADLESS=1 on CI). It starts AVD CoreGuard_API35 via run-emulator.sh, then :app:testDebugUnitTest, :app:connectedDebugAndroidTest (MainActivity launch + Quilla quantum on-device), then smoke-adb.sh. QuillaEmulatorGate.probe() detects ranchu/goldfish fingerprints and runs an idle quantum circuit for the status brief. Magick gate names still label classical math only.",
+      "defense": "Use the host harness before Play uploads. Treat emulator PASS as silicon proof, not occult assurance. Prefer KVM hosts — software graphics is slow.",
+      "related": [
+        "QuillaEmulatorGate",
+        "QuillaQuantumCorrelate",
+        "scripts/quilla-emulator-tests.sh"
+      ]
+    }
+  ]
+}

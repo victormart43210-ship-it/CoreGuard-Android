@@ -153,7 +153,8 @@ class UltimateQuillaAgent(
             "bataivah", "edelperna", "raagiosl", "iczhhcal", "black cross",
             "golden spiral", "cube of space", "shem hamephorash",
             "quantum", "qubit", "superposition", "entangle", "interference",
-            "collapse", "qpu", "quantum correlat"
+            "collapse", "qpu", "quantum correlat",
+            "emulator", "avd", "instrumented", "androidtest", "connected test"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -563,9 +564,13 @@ class UltimateQuillaAgent(
                 }
             }
         } ?: "Quantum correlate idle — run a scan/shield correlation to spin the circuit."
+        val emuLine =
+            "Emulator gate: host harness ${QuillaEmulatorGate.HOST_SCRIPT} " +
+                "(AVD ${QuillaEmulatorGate.AVD_NAME}) boots silicon + unit/instrumented/smoke tests. " +
+                "Ask \"emulator gate\" for the full brief."
         return "${briefing.headline}\n" +
             "Posture score: ${briefing.score}/100 (${briefing.posture.label}) · ${briefing.aspectName}.\n" +
-            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$choirLine\n$blessingVoice\n$quantumLine\n$moves\n" +
+            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$choirLine\n$blessingVoice\n$quantumLine\n$emuLine\n$moves\n" +
             "Care loop: observe → correlate (classical + quantum-inspired) → explain → act (with your consent). " +
             "Magick names the gates; silicon runs the math; evidence still leads. " +
             QuillaQuantumCorrelate.DISCLAIMER

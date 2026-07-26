@@ -51,6 +51,7 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.lore.QuillaLivingGeometry
@@ -181,7 +182,10 @@ fun QuillaAgentPanel(
     )
 
     Card(
-        modifier = modifier.fillMaxWidth(),
+        modifier = modifier
+            .fillMaxWidth()
+            .testTag("quilla_agent_panel")
+            .semantics { contentDescription = "Quilla agent panel" },
         colors = CardDefaults.cardColors(containerColor = SurfacePewter),
         shape = RoundedCornerShape(16.dp)
     ) {
