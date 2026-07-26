@@ -204,10 +204,7 @@ fun ComplianceScreen(
             )
         } else {
             OutlinedButton(
-                onClick = {
-                    showUpsell = true
-                    onNavigateToSettings()
-                },
+                onClick = { onNavigateToSettings() },
                 modifier = Modifier.fillMaxWidth(),
                 colors = ButtonDefaults.outlinedButtonColors(contentColor = ElectricTeal)
             ) {
@@ -224,7 +221,7 @@ fun ComplianceScreen(
             )
         }
 
-        if (showUpsell && !policy.isPremium()) {
+        if (!policy.isPremium()) {
             Spacer(Modifier.height(12.dp))
             PremiumUpsellCard(
                 title = "Export what you measured",
@@ -464,7 +461,7 @@ private fun scoreColor(score: Int): Color = when {
 }
 
 private fun scoreLabel(score: Int): String = when {
-    score >= 80 -> "Strong compliance"
-    score >= 50 -> "Partial compliance – action recommended"
-    else -> "Poor compliance – immediate remediation needed"
+    score >= 80 -> "Strong coverage"
+    score >= 50 -> "Partial coverage – review recommended"
+    else -> "Needs work — review failing checks"
 }

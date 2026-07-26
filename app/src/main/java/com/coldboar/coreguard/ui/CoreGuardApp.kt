@@ -157,7 +157,8 @@ fun CoreGuardApp(
                         onBack = { navController.popBackStack() },
                         onRunScan = { navigateToTab(CoreGuardRoute.Scanner.route) },
                         onOpenShield = { navigateToTab(CoreGuardRoute.Shield.route) },
-                        onOpenTimeline = { navController.navigate(CoreGuardRoute.Timeline.route) }
+                        onOpenTimeline = { navController.navigate(CoreGuardRoute.Timeline.route) },
+                        isPremium = billingProvider.isPremium()
                     )
                 }
                 composable(CoreGuardRoute.Timeline.route) {
@@ -226,7 +227,7 @@ private fun CoreGuardBottomBar(navController: NavController) {
                     icon = {
                         Icon(
                             imageVector = item.icon,
-                            contentDescription = null
+                            contentDescription = item.label
                         )
                     },
                     label = {

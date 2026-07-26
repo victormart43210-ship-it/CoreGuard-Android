@@ -184,7 +184,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Quilla AI assistant ──────────────────────────────────────────────
+        // ── Quilla (on-device agent) ─────────────────────────────────────────
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -202,7 +202,7 @@ fun SettingsScreen(
                     )
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        "Quilla Intelligence",
+                        "Quilla",
                         style = MaterialTheme.typography.titleMedium,
                         color = ElectricTeal,
                         modifier = Modifier.weight(1f)
@@ -216,7 +216,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
+                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence. Q&A stays free.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -228,12 +228,10 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 8.dp),
                 onRunScan = onRunScan,
                 onOpenShield = onOpenShield,
-                onOpenTimeline = onOpenTimeline
+                onOpenTimeline = onOpenTimeline,
+                isPremium = isPremium
             )
         }
-
-        Spacer(Modifier.height(16.dp))
-
 
         Spacer(Modifier.height(16.dp))
 
@@ -320,7 +318,7 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text(
-                    text = "CoreGuard collects no personal data. All scans run entirely on-device.",
+                    text = "CoreGuard does not collect personal accounts or chat history. Scans and Quilla Q&A run on-device; optional Premium signature refresh, Quilla Research sync, billing, and Shield DNS forwarding use the network when you enable them.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )

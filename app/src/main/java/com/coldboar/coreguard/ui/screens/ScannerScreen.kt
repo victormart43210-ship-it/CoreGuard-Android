@@ -98,7 +98,7 @@ fun ScannerScreen(
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
             title = "Privacy check",
-            subtitle = "Looks for known spyware and suspicious signs on this device. Nothing leaves your phone."
+            subtitle = "Looks for known spyware indicators and suspicious signs on this device. Scans stay local; optional Premium signature refresh uses HTTPS."
         )
 
         Spacer(Modifier.height(20.dp))

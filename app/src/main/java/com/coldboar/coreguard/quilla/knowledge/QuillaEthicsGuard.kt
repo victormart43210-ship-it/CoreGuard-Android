@@ -11,9 +11,13 @@ object QuillaEthicsGuard {
         "how to hack",
         "hack someone's",
         "hack someones",
+        "hack wifi",
+        "hack wi-fi",
         "break into",
         "steal password",
         "steal passwords",
+        "crack password",
+        "crack passwords",
         "crack wifi",
         "crack wi-fi",
         "ransomware for",
@@ -25,22 +29,49 @@ object QuillaEthicsGuard {
         "spy on my boyfriend",
         "spy on my wife",
         "spy on my husband",
-        "install spyware on"
+        "install spyware on",
+        "install stalkerware",
+        "keylogger for",
+        "phish someone",
+        "social engineer someone",
+        "ddos ",
+        "ddos attack"
     )
 
     private val defensiveSignals = listOf(
         "defend", "defense", "detect", "detection", "prevent", "prevention",
         "secure", "security", "harden", "hardening", "protect", "protection",
         "masvs", "mitre", "owasp", "incident", "response", "blue team",
-        "my device", "my phone", "coreguard", "triage", "authorize", "authorized",
-        "pentest methodology", "rules of engagement"
+        "coreguard", "triage", "authorize", "authorized",
+        "pentest methodology", "rules of engagement",
+        "how do i protect", "how to protect", "how do i defend", "how to defend",
+        "how do i detect", "how to detect", "how do i prevent", "how to prevent"
+    )
+
+    /** Phrases that keep refusal even if a defensive keyword appears nearby. */
+    private val hardRefuseSignals = listOf(
+        "without permission",
+        "hack someone's",
+        "hack someones",
+        "attack my ex",
+        "spy on my girlfriend",
+        "spy on my boyfriend",
+        "spy on my wife",
+        "spy on my husband",
+        "install spyware on",
+        "install stalkerware",
+        "keylogger for",
+        "phish someone",
+        "social engineer someone"
     )
 
     fun shouldRefuse(prompt: String): Boolean {
         val p = prompt.lowercase()
         if (p.isBlank()) return false
+        if (hardRefuseSignals.any { p.contains(it) }) return true
         val offensive = offensiveSignals.any { p.contains(it) }
         if (!offensive) return false
+        // "my device/phone" alone must not cancel refusal for attack how-tos.
         val defensive = defensiveSignals.any { p.contains(it) }
         return !defensive
     }

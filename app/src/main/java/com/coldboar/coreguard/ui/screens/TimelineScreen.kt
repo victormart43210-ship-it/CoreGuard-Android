@@ -96,9 +96,9 @@ fun TimelineScreen(
             ScreenHeader(
                 title = "Scan history",
                 subtitle = if (policy.isPremium()) {
-                    "Observatory ledger — up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} integrity scans, timestamped."
+                    "Up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} privacy checks, timestamped."
                 } else {
-                    "Observatory ledger — free keeps ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans; Premium keeps the longer history."
+                    "Free keeps ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans; Premium keeps the longer history."
                 },
                 modifier = Modifier.weight(1f)
             )
@@ -121,13 +121,13 @@ fun TimelineScreen(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            "No observatory entries yet",
+                            "No scan history yet",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
                         Spacer(Modifier.height(8.dp))
                         Text(
-                            "Run a Nemesis scan to open the ledger. Cycles matter more than single readings — correlate later scans against this baseline.",
+                            "Run a privacy check on Scanner to start the timeline. Compare later scans against this baseline.",
                             style = MaterialTheme.typography.bodyMedium,
                             color = MutedText,
                             textAlign = TextAlign.Center,

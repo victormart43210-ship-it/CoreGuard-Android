@@ -65,8 +65,8 @@ object QuillaSalesCoach {
         }
         return CoachAnswer(
             text = "Premium is for people who want more than a one-off check: live signature refresh, " +
-                "full scan history, Compliance JSON export, and my deeper next-step coaching. " +
-                "Core scan + shield stay free — upgrade when you want the full operating system.",
+                "full scan history, Compliance JSON export, and Premium next-step coaching tips. " +
+                "Quilla Q&A + core scan + shield stay free — upgrade when you want the full toolkit.",
             suggestPremium = true,
             premiumPitch = premiumValuePitch()
         )

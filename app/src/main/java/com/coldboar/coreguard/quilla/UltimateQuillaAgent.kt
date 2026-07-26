@@ -67,16 +67,18 @@ class UltimateQuillaAgent(
         }
 
         return when {
+            // Capabilities: avoid matching incidental "ultimate" / "formula" in security questions.
             p.contains("what can you") || p.contains("capabilities") ||
-                p.contains("ultimate") || p.contains("modules") ||
-                p.contains("formula") || p.contains("who are you") ||
-                p.contains("knowledge base") || p.contains("cyber codex") ->
+                p.contains("who are you") || p.contains("your modules") ||
+                p.contains("knowledge base") || p.contains("cyber codex") ||
+                (p.contains("ultimate") && (p.contains("agent") || p.contains("quilla"))) ||
+                (p.contains("formula") && (p.contains("agent") || p.contains("quilla"))) ->
                 QuillaIntent.CAPABILITIES
 
-            p.contains("research") || p.contains("intel") || p.contains("stix") ||
-                p.contains("amnesty") ||
-                (p.contains("ioc") && !p.contains("mitre")) ||
-                (p.contains("indicator") && p.contains("sync")) ->
+            p.contains("research") || p.contains("stix") || p.contains("amnesty") ||
+                (p.contains("intel") && (p.contains("sync") || p.contains("threat"))) ||
+                (p.contains("indicator") && p.contains("sync")) ||
+                (p.contains("ioc") && (p.contains("sync") || p.contains("feed") || p.contains("refresh"))) ->
                 QuillaIntent.RESEARCH
 
             p.contains("shield") || p.contains("vpn") || p.contains("block") -> QuillaIntent.SHIELD
@@ -151,10 +153,15 @@ class UltimateQuillaAgent(
         QuillaModuleStatus(
             QuillaModule.RESEARCH,
             research.synced || research.indicatorCount > 0,
-            if (research.synced || research.indicatorCount > 0) {
-                "${research.indicatorCount} ${research.sourceLabel} indicators loaded"
-            } else {
-                "Intel idle — ask Quilla to research / sync IOCs"
+            when {
+                research.syncFailed ->
+                    "Intel sync failed — still using prior cache (${research.indicatorCount} indicators)"
+                research.synced && research.indicatorCount == 0 ->
+                    "Synced empty campaign archive — not a Nemesis signature refresh"
+                research.synced || research.indicatorCount > 0 ->
+                    "${research.indicatorCount} ${research.sourceLabel} indicators cached"
+                else ->
+                    "Intel idle — optional STIX pull (does not refresh Scanner signatures)"
             }
         ),
         QuillaModuleStatus(
@@ -169,7 +176,7 @@ class UltimateQuillaAgent(
         QuillaModuleStatus(
             QuillaModule.ACTIONS,
             true,
-            "Can suggest scan, shield, timeline, intel sync"
+            "Suggests open Scanner / Shield / Timeline / optional intel sync"
         ),
         QuillaModuleStatus(
             QuillaModule.TOOLS,
@@ -186,8 +193,8 @@ class UltimateQuillaAgent(
     private fun actionsFor(intent: QuillaIntent, memory: QuillaMemorySnapshot): List<QuillaActionSuggestion> {
         val scan = QuillaActionSuggestion(
             QuillaActionSuggestion.RUN_SCAN,
-            "Run Nemesis scan",
-            "Collect fresh on-device evidence with the Nemesis Scanner."
+            "Open Scanner",
+            "Opens the Nemesis Scanner screen so you can start a scan. Quilla does not run scans silently."
         )
         val shield = QuillaActionSuggestion(
             QuillaActionSuggestion.OPEN_SHIELD,
@@ -197,12 +204,12 @@ class UltimateQuillaAgent(
         val timeline = QuillaActionSuggestion(
             QuillaActionSuggestion.OPEN_TIMELINE,
             "Open Scan Timeline",
-            "Review the observatory ledger of prior scans."
+            "Review prior scan history on this device."
         )
         val intel = QuillaActionSuggestion(
             QuillaActionSuggestion.SYNC_INTEL,
-            "Sync threat intel",
-            "Refresh Amnesty STIX indicators used by Quilla Research."
+            "Sync Quilla research intel",
+            "Pulls an Amnesty campaign STIX archive for Quilla Research only — does not refresh Nemesis Scanner signatures."
         )
         return when (intent) {
             QuillaIntent.SCAN -> listOf(scan, timeline)
@@ -224,7 +231,7 @@ class UltimateQuillaAgent(
         actions: List<QuillaActionSuggestion>
     ): String {
         val header = if (prompt.isBlank()) {
-            "Ultimate Quilla online."
+            "Quilla online."
         } else {
             "Quilla hears you: \"$prompt\"."
         }
@@ -244,8 +251,20 @@ class UltimateQuillaAgent(
         } else {
             "\n\nSuggested actions: " + actions.joinToString(" · ") { it.label } + "."
         }
-        return "$header\n\n$body$actionLine\n\n" +
-            "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — on-device, evidence first."
+        val usedResearch = intent == QuillaIntent.RESEARCH || research.synced || research.syncFailed
+        val footer = if (usedResearch) {
+            "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — " +
+                "reasoning stays on-device; Research may use HTTPS when you sync. Evidence first."
+        } else {
+            "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — " +
+                "on-device reasoning and local evidence first."
+        }
+        // Lore answers already include their own "Quilla hears you" header.
+        return if (body.startsWith("Quilla hears you:")) {
+            "$body$actionLine\n\n$footer"
+        } else {
+            "$header\n\n$body$actionLine\n\n$footer"
+        }
     }
 
     private fun capabilitiesBlurb(): String {
@@ -254,14 +273,14 @@ class UltimateQuillaAgent(
         } else {
             "cyber codex loading on first open"
         }
-        return "I run as a full local agent stack:\n" +
+        return "I run as a local agent stack (no cloud LLM):\n" +
             "• Brain — classify intent and decide next checks\n" +
             "• Memory — cite last scan, timeline, shield, hypotheses\n" +
-            "• Research — sync Amnesty STIX threat intel\n" +
+            "• Research — optional Amnesty campaign STIX pull (not live continuous intel; not Scanner signature refresh)\n" +
             "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
-            "• Actions — propose scan / shield / timeline / intel sync\n" +
+            "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
-            "I do not call ChatGPT/Claude/Zapier. I teach defense and correlate CoreGuard evidence.\n" +
+            "I do not call ChatGPT/Claude/Zapier. I teach defense and cite CoreGuard evidence.\n" +
             "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } + "."
     }
 
@@ -308,7 +327,7 @@ class UltimateQuillaAgent(
             "Privacy Shield is ON (${memory.shieldBlocked} domains blocked" +
                 (memory.lastBlockedDomain?.let { ", last=$it" } ?: "") + ")."
         } else {
-            "Privacy Shield is OFF — outbound spyware domains are not being sinkholed."
+            "Privacy Shield is OFF — DNS IOC/tracker filtering is idle until you enable it with VPN consent."
         }
         val hyp = if (memory.activeHypotheses.isEmpty()) {
             "No active Quilla hypotheses stored."
@@ -347,17 +366,25 @@ class UltimateQuillaAgent(
         }
 
     private fun researchBlurb(research: QuillaResearchSnapshot, memory: QuillaMemorySnapshot): String {
-        val intel = if (research.synced || research.indicatorCount > 0) {
-            "Research loaded ${research.indicatorCount} indicators from ${research.sourceLabel}."
-        } else {
-            "Research has not synced yet (offline, blocked, or empty feed)."
+        val intel = when {
+            research.syncFailed ->
+                "Research sync failed (network or parse error). Cached indicators: ${research.indicatorCount}."
+            research.synced && research.indicatorCount == 0 ->
+                "Research synced an empty campaign archive from ${research.sourceLabel}."
+            research.synced || research.indicatorCount > 0 ->
+                "Research cached ${research.indicatorCount} indicators from ${research.sourceLabel}."
+            else ->
+                "Research has not synced yet. Sync is optional and uses HTTPS when available."
         }
         val hyp = if (memory.activeHypotheses.isEmpty()) {
-            "No correlated hypotheses yet — Research alone is not a verdict."
+            "No correlated hypotheses yet — a STIX pull alone is not a device verdict. " +
+                "Hypotheses appear only when correlation matches local signals."
         } else {
             "Correlated hypotheses available: ${memory.activeHypotheses.size}."
         }
-        return "$intel\n$hyp\nDeep analysis here means STIX + on-device correlation, not web chatbots. " +
+        return "$intel\n$hyp\n" +
+            "This Quilla Research feed does not refresh Nemesis Scanner signatures " +
+            "(Premium signature refresh on Scanner is a separate path).\n" +
             "For framework education (ATT&CK/OWASP), ask Knowledge questions like \"what is T1636\"."
     }
 
