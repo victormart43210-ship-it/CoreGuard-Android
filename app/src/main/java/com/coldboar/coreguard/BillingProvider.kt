@@ -11,6 +11,14 @@ import kotlinx.coroutines.flow.StateFlow
  */
 interface BillingProvider {
 
+    companion object {
+        /**
+         * Single authoritative Play Console subscription product ID.
+         * All purchase flows and entitlement checks must use this value.
+         */
+        const val PREMIUM_PRODUCT_ID = "coreguard_premium_monthly"
+    }
+
     /**
      * Returns true when the user currently holds an active premium entitlement.
      *

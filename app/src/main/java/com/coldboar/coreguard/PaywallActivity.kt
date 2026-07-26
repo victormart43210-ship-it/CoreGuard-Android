@@ -38,7 +38,7 @@ class PaywallActivity : AppCompatActivity() {
         binding.btnBack.setOnClickListener { onBackPressedDispatcher.onBackPressed() }
 
         binding.btnSubscribe.setOnClickListener {
-            billing.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+            billing.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) { result ->
                 when (result) {
                     is PurchaseResult.Success -> {
                         binding.tvPaywallStatus.text = getString(R.string.paywall_purchase_success)

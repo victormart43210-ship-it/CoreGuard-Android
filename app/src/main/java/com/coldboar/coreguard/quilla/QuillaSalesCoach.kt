@@ -174,6 +174,6 @@ object QuillaSalesCoach {
 
     private fun premiumValuePitch(): String =
         "Premium unlocks: live signature refresh · Compliance JSON export · " +
-            "${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES}-scan timeline · deeper Quilla coaching. " +
-            "Core scan + shield stay free."
+            "${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES}-scan timeline · Premium next-step coaching tips. " +
+            "Quilla Q&A stays free. Core scan + shield stay free."
 }

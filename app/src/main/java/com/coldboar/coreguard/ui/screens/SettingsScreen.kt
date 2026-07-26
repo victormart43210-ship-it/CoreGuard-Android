@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
-import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.PurchaseResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.filled.Bolt
@@ -129,7 +128,7 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock live signature refresh, Compliance JSON export, a longer scan timeline, and deeper Quilla coaching. Core scan + shield stay free.",
+                        "Unlock live signature refresh, Compliance JSON export, and a longer scan timeline. Quilla Q&A stays free — Premium adds coaching tips for next steps. Core scan + shield stay free.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText
                     )
@@ -148,7 +147,7 @@ fun SettingsScreen(
 
                     Button(
                         onClick = {
-                            billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+                            billingProvider.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) { result ->
                                 when (result) {
                                     is PurchaseResult.Success -> {
                                         purchaseStatus = "Premium unlocked — thank you!"

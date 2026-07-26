@@ -15,7 +15,9 @@ object ScanHistoryStore {
 
     private const val PREFS_NAME = "coreguard_scan_history"
     private const val KEY_HISTORY = "history"
-    private const val MAX_ENTRIES = 25
+
+    /** Must stay aligned with [com.coldboar.coreguard.EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES]. */
+    const val MAX_ENTRIES = 25
 
     /** A lightweight record of one completed scan. */
     data class ScanRecord(
