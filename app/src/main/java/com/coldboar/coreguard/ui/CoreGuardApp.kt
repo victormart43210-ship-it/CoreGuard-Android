@@ -42,6 +42,7 @@ import com.coldboar.coreguard.ui.screens.ShieldScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
+import com.coldboar.coreguard.ui.theme.SurfacePewter
 
 private data class NavItem(
     val route: String,
@@ -137,7 +138,7 @@ private fun CoreGuardBottomBar(navController: NavController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
+    NavigationBar(containerColor = SurfacePewter.copy(alpha = 0.96f)) {
         bottomNavItems.forEach { item ->
             val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
             NavigationBarItem(
@@ -147,7 +148,12 @@ private fun CoreGuardBottomBar(navController: NavController) {
                         contentDescription = item.contentDescription
                     )
                 },
-                label = { Text(item.label) },
+                label = {
+                    Text(
+                        item.label,
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                },
                 selected = selected,
                 onClick = {
                     navController.navigate(item.route) {
@@ -163,7 +169,7 @@ private fun CoreGuardBottomBar(navController: NavController) {
                     selectedTextColor = ElectricTeal,
                     unselectedIconColor = MutedText,
                     unselectedTextColor = MutedText,
-                    indicatorColor = ElectricTeal.copy(alpha = 0.15f)
+                    indicatorColor = ElectricTeal.copy(alpha = 0.14f)
                 )
             )
         }

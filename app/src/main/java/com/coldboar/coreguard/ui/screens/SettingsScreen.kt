@@ -53,6 +53,7 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.PurchaseResult
+import com.coldboar.coreguard.ui.components.AtmosphereBackground
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -67,19 +68,26 @@ fun SettingsScreen(
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
 
+    AtmosphereBackground(accent = RestrainedGold) {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
         Text(
             text = "Settings",
             style = MaterialTheme.typography.headlineLarge,
+            color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
+        Text(
+            text = "Premium, privacy, and experimental assistants.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedText
+        )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // ── Premium section ─────────────────────────────────────────────────
         Card(
@@ -193,7 +201,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "Ask questions about threat signals and security intelligence.",
+                        "Experimental prototype — not a substitute for Nemesis scans.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -253,7 +261,8 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier = Modifier.height(24.dp))
+    }
     }
 }
 
@@ -293,7 +302,7 @@ private fun SettingsRow(label: String, value: String) {
 private const val QUILLA_RESPONSE_DELAY_MS = 900L
 
 private fun quillaResponse(prompt: String): String =
-    "Quilla hears you: \"$prompt\". Threat correlation focus is active."
+    "Prototype reply for \"$prompt\". Run Nemesis Scanner and review Guardian Score for real on-device signals."
 
 @Composable
 private fun QuillaPanel(modifier: Modifier = Modifier) {

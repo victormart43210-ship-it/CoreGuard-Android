@@ -32,6 +32,7 @@ object SecurityCheckRunner {
             BuildTypeCheckEvaluator(),
             SignatureCheckEvaluator(actualSha256 = { certSha256(context) }),
             StrongBoxCheckEvaluator(level = keyLevel),
+            ProcessLineageEvaluator(),
             SpywareScanEvaluator()
         )
     }

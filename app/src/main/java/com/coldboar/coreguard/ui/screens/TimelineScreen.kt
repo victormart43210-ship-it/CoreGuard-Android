@@ -36,6 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.ui.components.AtmosphereBackground
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -59,15 +60,17 @@ fun TimelineScreen() {
         loading = false
     }
 
+    AtmosphereBackground {
     Column(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .padding(20.dp)
     ) {
         Text(
             text = "Scan Timeline",
             style = MaterialTheme.typography.headlineLarge,
+            color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
         Text(
@@ -113,6 +116,7 @@ fun TimelineScreen() {
         }
 
         Spacer(Modifier.height(24.dp))
+    }
     }
 }
 

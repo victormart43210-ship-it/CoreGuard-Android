@@ -21,13 +21,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -45,10 +43,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -56,19 +54,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.coldboar.coreguard.BuildTypeCheckEvaluator
 import com.coldboar.coreguard.CpuUsageCalculator
-import com.coldboar.coreguard.DebuggerCheckEvaluator
-import com.coldboar.coreguard.EmulatorCheckEvaluator
 import com.coldboar.coreguard.GuardianRank
 import com.coldboar.coreguard.GuardianScore
 import com.coldboar.coreguard.MemoryUsageCalculator
-import com.coldboar.coreguard.RootCheckEvaluator
 import com.coldboar.coreguard.SecurityCheckResult
+import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
-import com.coldboar.coreguard.SecurityUtils
-import com.coldboar.coreguard.SignatureCheckEvaluator
-import com.coldboar.coreguard.SpywareScanEvaluator
+import com.coldboar.coreguard.ui.components.AtmosphereBackground
+import com.coldboar.coreguard.ui.components.SecurityStatusChip
+import com.coldboar.coreguard.ui.components.toStatusColor
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -91,16 +86,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     var scoreTarget by remember { mutableFloatStateOf(0f) }
 
     LaunchedEffect(Unit) {
-        val certSha256 = withContext(Dispatchers.IO) { SecurityUtils.getAppCertSha256(context) }
-        val evaluators = listOf(
-            SpywareScanEvaluator(),
-            DebuggerCheckEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { certSha256 })
-        )
-        securityResults = evaluators.map { it.evaluate() }
+        securityResults = withContext(Dispatchers.Default) { SecurityCheckRunner.run(context) }
         scoreTarget = GuardianScore.compute(securityResults).toFloat()
 
         CpuUsageCalculator.reset()
@@ -116,47 +102,34 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         }
     }
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .background(BackgroundDeepBlack)
-            .padding(bottom = 24.dp)
-    ) {
-        // ── Hero Header ──────────────────────────────────────────────────────
-        Box(
+    AtmosphereBackground {
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            SurfacePewter,
-                            BackgroundDeepBlack
-                        )
-                    )
-                )
-                .padding(horizontal = 24.dp, vertical = 32.dp),
-            contentAlignment = Alignment.Center
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(bottom = 28.dp)
         ) {
-            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 24.dp, vertical = 36.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
                 Text(
                     text = "CoreGuard",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    ),
+                    style = MaterialTheme.typography.displayLarge,
                     color = ElectricTeal,
                     modifier = Modifier.semantics { heading() }
                 )
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Mobile Security Intelligence",
+                    text = "On-device privacy intelligence",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(30.dp))
 
-                // ── Guardian Score Ring ─────────────────────────────────────
                 val score = scoreTarget.toInt()
                 val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
                 val ringColor = rankColor(rank)
@@ -168,8 +141,8 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 )
 
                 Box(contentAlignment = Alignment.Center) {
-                    Canvas(modifier = Modifier.size(180.dp)) {
-                        val strokeWidth = 14.dp.toPx()
+                    Canvas(modifier = Modifier.size(196.dp)) {
+                        val strokeWidth = 12.dp.toPx()
                         val radius = (size.minDimension - strokeWidth) / 2f
                         val topLeft = Offset(
                             (size.width - 2 * radius) / 2f,
@@ -177,9 +150,8 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                         val arcSize = Size(2 * radius, 2 * radius)
 
-                        // Track ring
                         drawArc(
-                            color = Color.White.copy(alpha = 0.08f),
+                            color = Color.White.copy(alpha = 0.07f),
                             startAngle = -90f,
                             sweepAngle = 360f,
                             useCenter = false,
@@ -188,33 +160,9 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                         )
 
-                        // Score arc with glow effect
                         if (animatedProgress > 0f) {
-                            // Glow layer
                             drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0f),
-                                        ringColor.copy(alpha = 0.4f),
-                                        ringColor
-                                    )
-                                ),
-                                startAngle = -90f,
-                                sweepAngle = 360f * animatedProgress,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth * 2.2f, cap = StrokeCap.Round)
-                            )
-                            // Main arc
-                            drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0.3f),
-                                        ringColor.copy(alpha = 0.7f),
-                                        ringColor
-                                    )
-                                ),
+                                color = ringColor,
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
@@ -228,122 +176,86 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         Text(
                             text = if (securityResults.isEmpty()) "–" else "$score",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 42.sp
-                            ),
+                            style = MaterialTheme.typography.displayLarge.copy(fontSize = 48.sp),
                             color = ringColor
                         )
                         Text(
-                            text = "GUARDIAN",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MutedText
-                        )
-                        Text(
-                            text = "SCORE",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
+                            text = "GUARDIAN SCORE",
+                            style = MaterialTheme.typography.labelSmall,
                             color = MutedText
                         )
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
-                // Rank badge
                 if (rank != null) {
-                    Box(
-                        modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(ringColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 20.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = rank.name,
-                            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
-                            color = ringColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    Text(
+                        text = rank.name,
+                        style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
+                        color = ringColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = rankTagline(rank),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        textAlign = TextAlign.Center
+                    )
                 }
             }
-        }
 
-        Spacer(Modifier.height(20.dp))
+            if (securityResults.isNotEmpty()) {
+                val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
+                val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
+                val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
 
-        // ── Quick Stats ──────────────────────────────────────────────────────
-        if (securityResults.isNotEmpty()) {
-            val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
-            val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
-            val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp)
+                ) {
+                    StatBadge("PASS", "$passCount", SafeGreen, Modifier.weight(1f))
+                    StatBadge("WARN", "$warnCount", AttentionAmber, Modifier.weight(1f))
+                    StatBadge("FAIL", "$failCount", HighRed, Modifier.weight(1f))
+                }
+
+                Spacer(modifier = Modifier.height(14.dp))
+            }
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
             ) {
-                StatBadge(
-                    label = "PASS",
-                    value = "$passCount",
-                    color = SafeGreen,
+                HealthMetric(
+                    icon = Icons.Filled.Memory,
+                    label = "RAM",
+                    value = ramText,
                     modifier = Modifier.weight(1f)
                 )
-                StatBadge(
-                    label = "WARN",
-                    value = "$warnCount",
-                    color = AttentionAmber,
-                    modifier = Modifier.weight(1f)
-                )
-                StatBadge(
-                    label = "FAIL",
-                    value = "$failCount",
-                    color = HighRed,
+                HealthMetric(
+                    icon = Icons.Filled.Speed,
+                    label = "CPU",
+                    value = cpuText,
                     modifier = Modifier.weight(1f)
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
-        }
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // ── System Health ─────────────────────────────────────────────────────
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            HealthCard(
-                icon = { Icon(Icons.Filled.Memory, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
-                label = "RAM",
-                value = ramText,
-                modifier = Modifier.weight(1f)
-            )
-            HealthCard(
-                icon = { Icon(Icons.Filled.BatteryFull, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
-                label = "CPU",
-                value = cpuText,
-                modifier = Modifier.weight(1f)
-            )
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // ── Security Checks Detail ────────────────────────────────────────────
-        if (securityResults.isNotEmpty()) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
+            if (securityResults.isNotEmpty()) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(SurfacePewter.copy(alpha = 0.88f))
+                        .padding(16.dp)
+                ) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Icon(
                             Icons.Filled.Shield,
@@ -351,119 +263,115 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             tint = ElectricTeal,
                             modifier = Modifier.size(18.dp)
                         )
-                        Spacer(Modifier.width(8.dp))
+                        Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            "Security Checks",
+                            "Live security posture",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     securityResults.forEachIndexed { index, result ->
                         SecurityCheckRow(result)
                         if (index < securityResults.lastIndex) {
                             HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 6.dp),
+                                modifier = Modifier.padding(vertical = 7.dp),
                                 color = Color.White.copy(alpha = 0.06f)
                             )
                         }
                     }
                 }
             }
-        }
 
-        Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(22.dp))
 
-        // ── CTA ───────────────────────────────────────────────────────────────
-        Button(
-            onClick = onNavigateToScanner,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp)
-                .height(54.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
-        ) {
-            Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "Run Nemesis Scanner",
-                color = BackgroundDeepBlack,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
+            Button(
+                onClick = onNavigateToScanner,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp)
+                    .height(54.dp),
+                shape = RoundedCornerShape(14.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
+            ) {
+                Icon(
+                    Icons.Filled.Shield,
+                    contentDescription = null,
+                    tint = BackgroundDeepBlack,
+                    modifier = Modifier.size(20.dp)
+                )
+                Spacer(modifier = Modifier.width(10.dp))
+                Text(
+                    "Run Nemesis Scanner",
+                    color = BackgroundDeepBlack,
+                    fontWeight = FontWeight.Bold,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
 
-        Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedButton(
-            onClick = onNavigateToTimeline,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            shape = RoundedCornerShape(14.dp)
-        ) {
-            Text("View Scan Timeline", color = ElectricTeal)
+            OutlinedButton(
+                onClick = onNavigateToTimeline,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                shape = RoundedCornerShape(14.dp)
+            ) {
+                Text("View scan timeline", color = ElectricTeal)
+            }
         }
     }
 }
 
 @Composable
 private fun StatBadge(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(12.dp)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.12f))
+            .padding(vertical = 12.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Column(
-            modifier = Modifier.padding(vertical = 12.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = value,
-                style = MaterialTheme.typography.headlineMedium.copy(fontWeight = FontWeight.Bold),
-                color = color,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-            Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall.copy(letterSpacing = 1.sp),
-                color = color.copy(alpha = 0.8f),
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
-        }
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineMedium,
+            color = color,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = color.copy(alpha = 0.85f),
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth()
+        )
     }
 }
 
 @Composable
-private fun HealthCard(
-    icon: @Composable () -> Unit,
+private fun HealthMetric(
+    icon: ImageVector,
     label: String,
     value: String,
     modifier: Modifier = Modifier
 ) {
-    Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-        shape = RoundedCornerShape(12.dp)
+    Column(
+        modifier = modifier
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfacePewter.copy(alpha = 0.88f))
+            .padding(12.dp)
     ) {
-        Column(Modifier.padding(12.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                icon()
-                Spacer(Modifier.width(6.dp))
-                Text(label, style = MaterialTheme.typography.bodySmall, color = MutedText)
-            }
-            Spacer(Modifier.height(4.dp))
-            Text(
-                value,
-                style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)
-            )
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(icon, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(18.dp))
+            Spacer(modifier = Modifier.width(6.dp))
+            Text(label, style = MaterialTheme.typography.labelMedium, color = MutedText)
         }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(value, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -479,9 +387,9 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
                 modifier = Modifier
                     .size(8.dp)
                     .clip(CircleShape)
-                    .background(result.state.toColor())
+                    .background(result.state.toStatusColor())
             )
-            Spacer(Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(10.dp))
             Column {
                 Text(
                     text = result.displayName,
@@ -497,26 +405,9 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
                 }
             }
         }
-        Spacer(Modifier.width(8.dp))
-        Box(
-            modifier = Modifier
-                .clip(RoundedCornerShape(6.dp))
-                .background(result.state.toColor().copy(alpha = 0.15f))
-                .padding(horizontal = 8.dp, vertical = 2.dp)
-        ) {
-            Text(
-                text = result.state.name,
-                style = MaterialTheme.typography.labelLarge,
-                color = result.state.toColor()
-            )
-        }
+        Spacer(modifier = Modifier.width(8.dp))
+        SecurityStatusChip(result.state)
     }
-}
-
-private fun SecurityCheckState.toColor(): Color = when (this) {
-    SecurityCheckState.PASS -> SafeGreen
-    SecurityCheckState.WARN -> AttentionAmber
-    SecurityCheckState.FAIL -> HighRed
 }
 
 private fun rankColor(rank: GuardianRank?): Color = when (rank) {
@@ -527,3 +418,9 @@ private fun rankColor(rank: GuardianRank?): Color = when (rank) {
     null -> RestrainedGold
 }
 
+private fun rankTagline(rank: GuardianRank): String = when (rank) {
+    GuardianRank.AEGIS -> "Your device looks well defended."
+    GuardianRank.WARDED -> "Solid posture — keep scanning."
+    GuardianRank.EXPOSED -> "Attention needed on flagged checks."
+    GuardianRank.BREACHED -> "High-risk signals detected — act now."
+}
