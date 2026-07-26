@@ -64,9 +64,14 @@ import kotlin.random.Random
 fun ScreenHeader(
     title: String,
     subtitle: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    eyebrow: String? = null
 ) {
     Column(modifier = modifier.fillMaxWidth()) {
+        if (eyebrow != null) {
+            TechCaption(text = eyebrow, accentDot = true)
+            Spacer(modifier = Modifier.height(10.dp))
+        }
         Text(
             text = title,
             style = MaterialTheme.typography.headlineLarge,
@@ -76,11 +81,11 @@ fun ScreenHeader(
         Spacer(modifier = Modifier.height(8.dp))
         Box(
             modifier = Modifier
-                .fillMaxWidth(0.28f)
+                .fillMaxWidth(0.34f)
                 .height(2.dp)
                 .background(
                     Brush.horizontalGradient(
-                        listOf(ElectricTeal, RestrainedGold.copy(alpha = 0.55f), Color.Transparent)
+                        listOf(ElectricTeal, RestrainedGold.copy(alpha = 0.7f), Color.Transparent)
                     )
                 )
         )
@@ -223,11 +228,24 @@ fun PrimaryTealButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
 ) {
+    val shape = MaterialTheme.shapes.medium
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                brush = Brush.horizontalGradient(
+                    listOf(
+                        RestrainedGold.copy(alpha = 0.45f),
+                        ElectricTeal.copy(alpha = 0.25f),
+                        Color.White.copy(alpha = 0.12f)
+                    )
+                ),
+                shape = shape
+            ),
+        shape = shape,
         colors = ButtonDefaults.buttonColors(
             containerColor = ElectricTeal,
             contentColor = BackgroundDeepBlack,
@@ -262,7 +280,7 @@ fun PremiumGoldButton(
 
 /**
  * Animated full-bleed atmosphere + content column used by primary screens.
- * Soft dual washes and drifting motes — presence without dashboard clutter.
+ * Precision-grid HUD wash, corner brackets, dual blooms, and drifting motes.
  */
 @Composable
 fun ScreenAtmosphere(
@@ -289,12 +307,21 @@ fun ScreenAtmosphere(
         ),
         label = "pulse"
     )
+    val radar by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 14_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "radar"
+    )
     val motes = remember {
-        List(16) {
+        List(22) {
             Triple(
                 Random.nextFloat(),
                 Random.nextFloat(),
-                1.2f + Random.nextFloat() * 2.2f
+                1.1f + Random.nextFloat() * 2.4f
             )
         }
     }
@@ -310,48 +337,90 @@ fun ScreenAtmosphere(
                     colors = listOf(
                         BackgroundInk,
                         BackgroundDeepBlack,
-                        AtmosphereTeal.copy(alpha = 0.32f)
+                        AtmosphereTeal.copy(alpha = 0.38f)
                     )
                 )
             )
+            // Precision grid — mastery / console feel
+            val gridStep = 28.dp.toPx()
+            val gridInk = accent.copy(alpha = 0.035f + 0.015f * pulse)
+            var gx = 0f
+            while (gx < size.width) {
+                drawLine(gridInk, Offset(gx, 0f), Offset(gx, size.height), strokeWidth = 1f)
+                gx += gridStep
+            }
+            var gy = 0f
+            while (gy < size.height) {
+                drawLine(gridInk, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 1f)
+                gy += gridStep
+            }
+
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(accent.copy(alpha = 0.16f * pulse), Color.Transparent),
-                    center = Offset(size.width * 0.18f, size.height * 0.1f),
-                    radius = size.minDimension * 0.85f
+                    colors = listOf(accent.copy(alpha = 0.2f * pulse), Color.Transparent),
+                    center = Offset(size.width * 0.18f, size.height * 0.08f),
+                    radius = size.minDimension * 0.9f
                 ),
-                center = Offset(size.width * 0.18f, size.height * 0.1f),
-                radius = size.minDimension * 0.85f
+                center = Offset(size.width * 0.18f, size.height * 0.08f),
+                radius = size.minDimension * 0.9f
             )
             drawCircle(
                 brush = Brush.radialGradient(
-                    colors = listOf(AtmosphereGold.copy(alpha = 0.2f), Color.Transparent),
-                    center = Offset(size.width * 0.9f, size.height * 0.06f),
-                    radius = size.minDimension * 0.5f
+                    colors = listOf(AtmosphereGold.copy(alpha = 0.24f), Color.Transparent),
+                    center = Offset(size.width * 0.92f, size.height * 0.05f),
+                    radius = size.minDimension * 0.55f
                 ),
-                center = Offset(size.width * 0.9f, size.height * 0.06f),
-                radius = size.minDimension * 0.5f
+                center = Offset(size.width * 0.92f, size.height * 0.05f),
+                radius = size.minDimension * 0.55f
             )
+
+            // Soft radar wedge in the upper field
+            val radarCenter = Offset(size.width * 0.72f, size.height * 0.18f)
+            val radarR = size.minDimension * 0.42f
+            rotate(degrees = radar, pivot = radarCenter) {
+                drawArc(
+                    brush = Brush.sweepGradient(
+                        listOf(
+                            Color.Transparent,
+                            accent.copy(alpha = 0.08f),
+                            Color.Transparent
+                        ),
+                        center = radarCenter
+                    ),
+                    startAngle = -40f,
+                    sweepAngle = 70f,
+                    useCenter = true,
+                    topLeft = Offset(radarCenter.x - radarR, radarCenter.y - radarR),
+                    size = androidx.compose.ui.geometry.Size(radarR * 2f, radarR * 2f)
+                )
+            }
+
             motes.forEachIndexed { index, (x, y, r) ->
                 val yy = (y + drift * (0.2f + (index % 5) * 0.08f)) % 1.1f
-                val xx = x + 0.01f * sin((drift + y) * Math.PI * 2).toFloat()
+                val xx = x + 0.012f * sin((drift + y) * Math.PI * 2).toFloat()
                 val color = if (index % 3 == 0) RestrainedGold else accent
                 drawCircle(
-                    color = color.copy(alpha = 0.16f + 0.18f * pulse),
+                    color = color.copy(alpha = 0.14f + 0.2f * pulse),
                     radius = r * density,
                     center = Offset(xx * size.width, yy * size.height)
                 )
             }
-            val sweepY = size.height * (0.22f + 0.015f * cos(drift * Math.PI * 2).toFloat())
+            val sweepY = size.height * (0.2f + 0.02f * cos(drift * Math.PI * 2).toFloat())
             drawLine(
                 brush = Brush.horizontalGradient(
-                    listOf(Color.Transparent, accent.copy(alpha = 0.12f), Color.Transparent)
+                    listOf(
+                        Color.Transparent,
+                        accent.copy(alpha = 0.18f),
+                        RestrainedGold.copy(alpha = 0.12f),
+                        Color.Transparent
+                    )
                 ),
                 start = Offset(0f, sweepY),
                 end = Offset(size.width, sweepY),
-                strokeWidth = 1.5f * density
+                strokeWidth = 1.8f * density
             )
         }
+        HudCornerOverlay(color = accent)
         Column(
             modifier = Modifier
                 .fillMaxWidth()

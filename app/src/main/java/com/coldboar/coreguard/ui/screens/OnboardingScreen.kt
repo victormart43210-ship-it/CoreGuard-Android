@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.ui.components.BrandSeal
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.TechCaption
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -95,14 +96,19 @@ fun OnboardingScreen(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 modifier = Modifier.padding(horizontal = 8.dp)
             ) {
+                TechCaption(
+                    text = "Protocol ${step + 1} / ${pages.size}",
+                    color = if (last) RestrainedGold else ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(16.dp))
                 Box(contentAlignment = Alignment.Center) {
                     BrandSeal(
-                        size = 168.dp,
+                        size = 178.dp,
                         color = if (last) RestrainedGold else ElectricTeal,
-                        alpha = 0.28f
+                        alpha = 0.32f
                     )
                 }
-                Spacer(modifier = Modifier.height(20.dp))
+                Spacer(modifier = Modifier.height(18.dp))
 
                 AnimatedContent(
                     targetState = step,

@@ -126,7 +126,8 @@ fun ScannerScreen(
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
             title = "Nemesis Scanner",
-            subtitle = "Looks for known spyware indicators and suspicious signs on this device. Scans stay local; optional Premium signature refresh uses HTTPS."
+            subtitle = "Looks for known spyware indicators and suspicious signs on this device. Scans stay local; optional Premium signature refresh uses HTTPS.",
+            eyebrow = "Active sensor lattice"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -482,66 +483,87 @@ private fun ScannerOrb(active: Boolean) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .height(150.dp),
+            .height(168.dp),
         contentAlignment = Alignment.Center
     ) {
-        Canvas(modifier = Modifier.size(140.dp)) {
+        Canvas(modifier = Modifier.size(158.dp)) {
             val radius = size.minDimension / 2f
             val center = Offset(size.width / 2f, size.height / 2f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
-                        ElectricTeal.copy(alpha = if (active) 0.22f * pulse else 0.08f),
+                        ElectricTeal.copy(alpha = if (active) 0.26f * pulse else 0.1f),
                         Color.Transparent
                     )
                 ),
                 radius = radius
             )
-            drawCircle(
-                color = Color.White.copy(alpha = 0.08f),
-                radius = radius * 0.72f,
-                style = Stroke(width = 2.dp.toPx())
-            )
-            drawCircle(
-                color = ElectricTeal.copy(alpha = 0.2f),
-                radius = radius * 0.9f,
-                style = Stroke(width = 1.dp.toPx())
-            )
-            // Geometric tick ring — instrument feel without clutter
-            val ticks = 36
-            for (i in 0 until ticks) {
-                val deg = Math.toRadians(i * 360.0 / ticks - 90.0)
-                val c = kotlin.math.cos(deg).toFloat()
-                val s = kotlin.math.sin(deg).toFloat()
-                val major = i % 3 == 0
-                val inner = radius * (if (major) 0.82f else 0.86f)
-                val outer = radius * 0.92f
-                drawLine(
-                    color = ElectricTeal.copy(alpha = if (major) 0.35f else 0.16f),
-                    start = Offset(center.x + c * inner, center.y + s * inner),
-                    end = Offset(center.x + c * outer, center.y + s * outer),
-                    strokeWidth = if (major) 2f else 1.2f
+            // Concentric instrument tracks
+            listOf(0.55f, 0.72f, 0.9f).forEachIndexed { idx, factor ->
+                drawCircle(
+                    color = ElectricTeal.copy(alpha = 0.1f + idx * 0.06f),
+                    radius = radius * factor,
+                    style = Stroke(width = if (idx == 2) 1.6.dp.toPx() else 1.1.dp.toPx())
                 )
             }
+            val ticks = 48
+            for (i in 0 until ticks) {
+                val deg = Math.toRadians(i * 360.0 / ticks - 90.0 + if (active) sweep * 0.08 else 0.0)
+                val c = kotlin.math.cos(deg).toFloat()
+                val s = kotlin.math.sin(deg).toFloat()
+                val major = i % 4 == 0
+                val inner = radius * (if (major) 0.8f else 0.86f)
+                val outer = radius * 0.94f
+                drawLine(
+                    color = ElectricTeal.copy(alpha = if (major) 0.45f * pulse else 0.18f),
+                    start = Offset(center.x + c * inner, center.y + s * inner),
+                    end = Offset(center.x + c * outer, center.y + s * outer),
+                    strokeWidth = if (major) 2.2f else 1.1f
+                )
+            }
+            // Crosshair
+            val arm = radius * 0.18f
+            drawLine(
+                color = RestrainedGold.copy(alpha = 0.4f),
+                start = Offset(center.x - arm, center.y),
+                end = Offset(center.x + arm, center.y),
+                strokeWidth = 1.4f
+            )
+            drawLine(
+                color = RestrainedGold.copy(alpha = 0.4f),
+                start = Offset(center.x, center.y - arm),
+                end = Offset(center.x, center.y + arm),
+                strokeWidth = 1.4f
+            )
             if (active) {
                 drawArc(
                     color = ElectricCyan,
                     startAngle = sweep,
-                    sweepAngle = 70f,
+                    sweepAngle = 78f,
                     useCenter = false,
-                    style = Stroke(width = 3.dp.toPx())
+                    style = Stroke(width = 3.2.dp.toPx())
                 )
                 drawArc(
-                    color = RestrainedGold.copy(alpha = 0.55f),
-                    startAngle = sweep + 80f,
-                    sweepAngle = 18f,
+                    color = RestrainedGold.copy(alpha = 0.65f),
+                    startAngle = sweep + 90f,
+                    sweepAngle = 22f,
                     useCenter = false,
+                    style = Stroke(width = 2.dp.toPx())
+                )
+                // Secondary counter-sweep
+                drawArc(
+                    color = ElectricTeal.copy(alpha = 0.35f),
+                    startAngle = -sweep,
+                    sweepAngle = 36f,
+                    useCenter = false,
+                    topLeft = Offset(center.x - radius * 0.55f, center.y - radius * 0.55f),
+                    size = androidx.compose.ui.geometry.Size(radius * 1.1f, radius * 1.1f),
                     style = Stroke(width = 2.dp.toPx())
                 )
             } else {
                 drawCircle(
-                    color = ElectricTeal.copy(alpha = 0.45f),
-                    radius = 6.dp.toPx(),
+                    color = ElectricTeal.copy(alpha = 0.55f),
+                    radius = 5.dp.toPx(),
                     center = center
                 )
             }

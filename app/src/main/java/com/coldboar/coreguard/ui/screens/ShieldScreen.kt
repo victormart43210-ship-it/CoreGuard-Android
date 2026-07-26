@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -55,9 +54,12 @@ import androidx.core.content.ContextCompat
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.TechStatusChip
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
+import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
 
 @Composable
@@ -123,20 +125,20 @@ fun ShieldScreen() {
             .verticalScroll(rememberScrollState()),
         accent = if (shieldActive) SafeGreen else ElectricTeal
     ) {
-        Text(
-            text = "Privacy Shield",
-            style = MaterialTheme.typography.headlineLarge,
-            color = ElectricTeal,
-            modifier = Modifier.semantics { heading() }
-        )
-        Text(
-            text = "On-device DNS filter VPN that can block domains matching known surveillance / tracker indicators.",
-            style = MaterialTheme.typography.bodyMedium,
-            color = MutedText
+        ScreenHeader(
+            title = "Privacy Shield",
+            subtitle = "On-device DNS filter VPN that can block domains matching known surveillance / tracker indicators.",
+            eyebrow = if (shieldActive) "Perimeter armed" else "Perimeter standby"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
         ShieldPresence(active = shieldActive, blocked = totalBlocked)
+        Spacer(modifier = Modifier.height(12.dp))
+        TechStatusChip(
+            text = if (shieldActive) "Armed · $totalBlocked blocked" else "Standby · awaiting arm",
+            color = if (shieldActive) SafeGreen else ElectricTeal,
+            modifier = Modifier.align(Alignment.CenterHorizontally)
+        )
         Spacer(modifier = Modifier.height(16.dp))
 
         Card(
@@ -257,25 +259,36 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
                 radius = r * 0.78f,
                 style = Stroke(width = 1.5.dp.toPx())
             )
-            val ticks = 28
+            val ticks = 36
             for (i in 0 until ticks) {
                 val deg = Math.toRadians(i * 360.0 / ticks + ring * 0.15 - 90.0)
                 val c = kotlin.math.cos(deg).toFloat()
                 val s = kotlin.math.sin(deg).toFloat()
-                val inner = r * 0.84f
-                val outer = r * 0.93f
+                val major = i % 3 == 0
+                val inner = r * (if (major) 0.8f else 0.86f)
+                val outer = r * 0.94f
                 drawLine(
-                    color = accent.copy(alpha = if (active) 0.4f * pulse else 0.18f),
+                    color = accent.copy(alpha = if (active) (if (major) 0.55f else 0.28f) * pulse else 0.16f),
                     start = Offset(center.x + c * inner, center.y + s * inner),
                     end = Offset(center.x + c * outer, center.y + s * outer),
-                    strokeWidth = 1.6f
+                    strokeWidth = if (major) 2.1f else 1.3f
                 )
             }
+            // Hex lock geometry when armed
             if (active) {
+                val hexR = r * 0.42f
+                val path = androidx.compose.ui.graphics.Path()
+                for (i in 0..6) {
+                    val deg = Math.toRadians(i * 60.0 - 90.0 + ring * 0.05)
+                    val x = center.x + kotlin.math.cos(deg).toFloat() * hexR
+                    val y = center.y + kotlin.math.sin(deg).toFloat() * hexR
+                    if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+                }
+                drawPath(path, color = RestrainedGold.copy(alpha = 0.35f), style = Stroke(width = 1.6.dp.toPx()))
                 drawArc(
-                    color = accent.copy(alpha = 0.7f),
+                    color = accent.copy(alpha = 0.75f),
                     startAngle = ring,
-                    sweepAngle = 48f,
+                    sweepAngle = 52f,
                     useCenter = false,
                     style = Stroke(width = 4.dp.toPx())
                 )
@@ -284,13 +297,13 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
                 text = if (active) "ARMED" else "STANDBY",
-                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 3.sp),
+                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 3.4.sp),
                 color = accent,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (active) "$blocked blocked" else "Awaiting arm",
-                style = MaterialTheme.typography.bodySmall,
+                text = if (active) "$blocked BLOCKED" else "AWAITING ARM",
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                 color = MutedText
             )
         }

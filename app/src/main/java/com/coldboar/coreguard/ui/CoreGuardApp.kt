@@ -30,6 +30,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -57,6 +58,7 @@ import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
+import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SurfacePewter
 
 private data class NavItem(
@@ -278,10 +280,19 @@ private fun CoreGuardBottomBar(navController: NavController) {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(ElectricTeal.copy(alpha = 0.22f))
+                .background(
+                    brush = Brush.horizontalGradient(
+                        listOf(
+                            ElectricTeal.copy(alpha = 0.05f),
+                            ElectricTeal.copy(alpha = 0.45f),
+                            RestrainedGold.copy(alpha = 0.35f),
+                            ElectricTeal.copy(alpha = 0.05f)
+                        )
+                    )
+                )
         )
         NavigationBar(
-            containerColor = SurfacePewter.copy(alpha = 0.96f),
+            containerColor = SurfacePewter.copy(alpha = 0.97f),
             tonalElevation = 0.dp
         ) {
             bottomNavItems.forEach { item ->

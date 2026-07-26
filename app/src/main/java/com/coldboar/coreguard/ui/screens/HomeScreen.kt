@@ -1,14 +1,8 @@
 package com.coldboar.coreguard.ui.screens
 
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.LinearEasing
-import androidx.compose.animation.core.RepeatMode
-import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.animation.core.infiniteRepeatable
-import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -30,8 +24,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Speed
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -52,11 +44,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.StrokeCap
-import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -74,18 +62,20 @@ import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.ui.components.BrandSeal
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.PrecisionScoreRing
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.SheenPrimaryButton
+import com.coldboar.coreguard.ui.components.TechCaption
+import com.coldboar.coreguard.ui.components.TechStatusChip
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
+import com.coldboar.coreguard.ui.theme.CoolWhite
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
-import com.coldboar.coreguard.ui.theme.SoftGold
 import com.coldboar.coreguard.ui.theme.SurfacePewter
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -135,19 +125,33 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     ) {
         // ── Hero Header ──────────────────────────────────────────────────────
         val heroReveal by animateFloatAsState(
-            targetValue = if (checksLoading) 0.82f else 1f,
-            animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            targetValue = if (checksLoading) 0.86f else 1f,
+            animationSpec = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
             label = "heroReveal"
         )
+        val score = scoreTarget.toInt()
+        val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
+        val ringColor = rankColor(rank)
+        val animatedProgress by animateFloatAsState(
+            targetValue = scoreTarget / 100f,
+            animationSpec = tween(durationMillis = 1700, easing = FastOutSlowInEasing),
+            label = "scoreRing"
+        )
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp)
-                .alpha(0.55f + 0.45f * heroReveal)
-                .scale(0.97f + 0.03f * heroReveal),
+                .padding(horizontal = 4.dp, vertical = 8.dp)
+                .alpha(0.5f + 0.5f * heroReveal)
+                .scale(0.96f + 0.04f * heroReveal),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TechCaption(
+                    text = if (checksLoading) "Calibrating local core" else "Live · on-device core",
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(10.dp))
                 Text(
                     text = "CoreGuard",
                     style = MaterialTheme.typography.displayLarge,
@@ -155,32 +159,12 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "On-device privacy intelligence",
+                    text = "Precision privacy intelligence",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                val score = scoreTarget.toInt()
-                val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
-                val ringColor = rankColor(rank)
-
-                val animatedProgress by animateFloatAsState(
-                    targetValue = scoreTarget / 100f,
-                    animationSpec = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
-                    label = "scoreRing"
-                )
-                val tickBreath = rememberInfiniteTransition(label = "scoreTicks")
-                val tickPulse by tickBreath.animateFloat(
-                    initialValue = 0.35f,
-                    targetValue = 0.7f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(durationMillis = 2800, easing = LinearEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "tickPulse"
-                )
+                Spacer(modifier = Modifier.height(20.dp))
 
                 Box(
                     contentAlignment = Alignment.Center,
@@ -193,85 +177,17 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     }
                 ) {
                     BrandSeal(
-                        size = 236.dp,
+                        size = 248.dp,
                         color = ringColor,
-                        alpha = 0.14f,
+                        alpha = 0.16f,
                         modifier = Modifier.align(Alignment.Center)
                     )
-                    Canvas(modifier = Modifier.size(196.dp)) {
-                        val strokeWidth = 12.dp.toPx()
-                        val radius = (size.minDimension - strokeWidth) / 2f
-                        val center = Offset(size.width / 2f, size.height / 2f)
-                        val topLeft = Offset(
-                            (size.width - 2 * radius) / 2f,
-                            (size.height - 2 * radius) / 2f
-                        )
-                        val arcSize = Size(2 * radius, 2 * radius)
-
-                        // Outer tick marks
-                        val ticks = 48
-                        for (i in 0 until ticks) {
-                            val deg = i * 360.0 / ticks - 90.0
-                            val rad = Math.toRadians(deg)
-                            val major = i % 4 == 0
-                            val innerR = radius + strokeWidth * 0.55f
-                            val outerR = innerR + if (major) 8.dp.toPx() else 4.dp.toPx()
-                            val c = cos(rad).toFloat()
-                            val s = sin(rad).toFloat()
-                            drawLine(
-                                color = ringColor.copy(
-                                    alpha = if (major) tickPulse * 0.85f else tickPulse * 0.4f
-                                ),
-                                start = Offset(center.x + c * innerR, center.y + s * innerR),
-                                end = Offset(center.x + c * outerR, center.y + s * outerR),
-                                strokeWidth = if (major) 2.2f else 1.2f,
-                                cap = StrokeCap.Round
-                            )
-                        }
-
-                        drawArc(
-                            color = Color.White.copy(alpha = 0.08f),
-                            startAngle = -90f,
-                            sweepAngle = 360f,
-                            useCenter = false,
-                            topLeft = topLeft,
-                            size = arcSize,
-                            style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                        )
-
-                        if (animatedProgress > 0f) {
-                            drawArc(
-                                color = ringColor.copy(alpha = 0.22f),
-                                startAngle = -90f,
-                                sweepAngle = 360f * animatedProgress,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth * 2f, cap = StrokeCap.Round)
-                            )
-                            drawArc(
-                                color = ringColor,
-                                startAngle = -90f,
-                                sweepAngle = 360f * animatedProgress,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
-                            )
-                            // Soft gold tip on the leading edge for brand warmth
-                            val tipAngle = -90f + 360f * animatedProgress - 8f
-                            drawArc(
-                                color = SoftGold.copy(alpha = 0.75f),
-                                startAngle = tipAngle,
-                                sweepAngle = 10f,
-                                useCenter = false,
-                                topLeft = topLeft,
-                                size = arcSize,
-                                style = Stroke(width = strokeWidth * 0.85f, cap = StrokeCap.Round)
-                            )
-                        }
-                    }
-
+                    PrecisionScoreRing(
+                        progress = animatedProgress,
+                        accent = ringColor,
+                        size = 214.dp,
+                        active = !checksLoading
+                    )
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
                         if (checksLoading) {
                             CircularProgressIndicator(
@@ -283,45 +199,27 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             Text(
                                 text = "$score",
                                 style = MaterialTheme.typography.displayLarge.copy(
-                                    fontSize = 48.sp,
-                                    lineHeight = 52.sp
+                                    fontSize = 52.sp,
+                                    lineHeight = 56.sp,
+                                    letterSpacing = (-1).sp
                                 ),
-                                color = ringColor
+                                color = CoolWhite
                             )
                         }
                         Text(
-                            text = "PROTECTION SCORE",
+                            text = "PROTECTION INDEX",
                             style = MaterialTheme.typography.labelSmall.copy(
-                                letterSpacing = 2.4.sp
+                                letterSpacing = 2.8.sp
                             ),
                             color = MutedText
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(16.dp))
 
                 if (rank != null) {
-                    Box(
-                        modifier = Modifier
-                            .border(
-                                width = 1.dp,
-                                color = ringColor.copy(alpha = 0.45f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .background(
-                                ringColor.copy(alpha = 0.12f),
-                                shape = RoundedCornerShape(8.dp)
-                            )
-                            .padding(horizontal = 18.dp, vertical = 6.dp)
-                    ) {
-                        Text(
-                            text = rank.userLabel,
-                            style = MaterialTheme.typography.labelLarge,
-                            color = ringColor,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
+                    TechStatusChip(text = rank.userLabel, color = ringColor)
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = rank.userGuidance,
@@ -397,13 +295,13 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         ) {
             HealthCard(
                 icon = { Icon(Icons.Filled.Memory, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
-                label = "RAM",
+                label = "MEM CORE",
                 value = ramText,
                 modifier = Modifier.weight(1f)
             )
             HealthCard(
                 icon = { Icon(Icons.Filled.Speed, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
-                label = "CPU",
+                label = "CPU LOAD",
                 value = cpuText,
                 modifier = Modifier.weight(1f)
             )
@@ -422,11 +320,18 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        "Device checks",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = ElectricTeal
-                    )
+                    Column {
+                        Text(
+                            "DEVICE CHECKS",
+                            style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 2.sp),
+                            color = MutedText
+                        )
+                        Text(
+                            "Integrity lattice",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = ElectricTeal
+                        )
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(12.dp))
@@ -445,23 +350,19 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         Spacer(modifier = Modifier.height(20.dp))
 
-        Button(
+        SheenPrimaryButton(
+            text = "Check My Device Now",
             onClick = onNavigateToScanner,
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(54.dp),
-            shape = RoundedCornerShape(14.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
-        ) {
-            Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
-            Spacer(Modifier.width(10.dp))
-            Text(
-                "Check My Device Now",
-                color = BackgroundDeepBlack,
-                fontWeight = FontWeight.Bold,
-                style = MaterialTheme.typography.titleMedium
-            )
-        }
+            modifier = Modifier.fillMaxWidth(),
+            leading = {
+                Icon(
+                    Icons.Filled.Shield,
+                    contentDescription = null,
+                    tint = BackgroundDeepBlack,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+        )
 
         Spacer(modifier = Modifier.height(8.dp))
 
@@ -496,9 +397,9 @@ private fun StatBadge(label: String, value: String, color: Color, modifier: Modi
                 modifier = Modifier.fillMaxWidth()
             )
             Text(
-                text = label,
-                style = MaterialTheme.typography.bodySmall,
-                color = color.copy(alpha = 0.8f),
+                text = label.uppercase(),
+                style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.4.sp),
+                color = color.copy(alpha = 0.85f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
             )
@@ -523,7 +424,11 @@ private fun HealthCard(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon()
                 Spacer(Modifier.width(6.dp))
-                Text(label, style = MaterialTheme.typography.bodySmall, color = MutedText)
+                Text(
+                    label,
+                    style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.2.sp),
+                    color = MutedText
+                )
             }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
