@@ -236,6 +236,40 @@ fun QuillaAgentPanel(
 
             ModuleChipRow(answer, isAsking)
 
+            val path = answer?.pathWalked.orEmpty()
+            if (path.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Path · י ה ו ה",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    path.forEach { step ->
+                        SuggestionChip(
+                            onClick = {},
+                            enabled = false,
+                            label = {
+                                Text(
+                                    "${step.letter} ${step.sephirah}",
+                                    style = MaterialTheme.typography.labelLarge
+                                )
+                            },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                disabledContainerColor = ElectricTeal.copy(alpha = 0.12f),
+                                disabledLabelColor = ElectricTeal
+                            )
+                        )
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
@@ -517,7 +551,7 @@ private fun ModuleChipRow(answer: QuillaAgentAnswer?, isAsking: Boolean) {
                 enabled = false,
                 label = {
                     Text(
-                        text = module.label,
+                        text = module.livingLabel,
                         style = MaterialTheme.typography.labelLarge
                     )
                 },

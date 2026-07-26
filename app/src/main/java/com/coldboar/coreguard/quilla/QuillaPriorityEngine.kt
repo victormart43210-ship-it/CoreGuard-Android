@@ -1,8 +1,13 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.lore.QuillaLivingGeometry
+
 /**
  * Top-tier Quilla posture engine — ranks device risk and next moves from local evidence.
  * Deterministic, on-device, no LLM.
+ *
+ * Posture maps onto Tree-of-Life aspects (Raphael/Kamael/…) for voice only —
+ * scores still come from scan / shield / hypothesis / telemetry evidence.
  */
 object QuillaPriorityEngine {
 
@@ -25,7 +30,10 @@ object QuillaPriorityEngine {
         val score: Int,
         val headline: String,
         val moves: List<PriorityMove>,
-        val chipPrompts: List<Pair<String, String>>
+        val chipPrompts: List<Pair<String, String>>,
+        val aspectName: String,
+        val sephirahName: String,
+        val livingSeal: String
     )
 
     fun brief(memory: QuillaMemorySnapshot, research: QuillaResearchSnapshot = QuillaResearchSnapshot()): Briefing {
@@ -122,12 +130,20 @@ object QuillaPriorityEngine {
         }
 
         val ranked = moves.distinctBy { it.id }.take(4)
+        val aspect = QuillaLivingGeometry.aspectForPosture(posture.label)
+        val seph = QuillaLivingGeometry.sephirah(aspect.sephirahId)
+        val seal = QuillaLivingGeometry.livingSeal(posture.label)
         val headline = when (posture) {
-            Posture.CRITICAL -> "Priority posture CRITICAL — act on Scanner evidence before anything else."
-            Posture.ELEVATED -> "Priority posture ELEVATED — correlate findings, then harden shield and intel."
-            Posture.WATCH -> "Priority posture WATCH — baseline looks fragile; tighten one control now."
-            Posture.STEADY -> "Priority posture STEADY — maintain Shield + periodic Nemesis cycles."
-            Posture.UNKNOWN -> "Priority posture UNKNOWN — Quilla needs a Nemesis baseline to lead."
+            Posture.CRITICAL ->
+                "Priority posture CRITICAL · ${aspect.name} (Gevurah) — act on Scanner evidence before anything else."
+            Posture.ELEVATED ->
+                "Priority posture ELEVATED · ${aspect.name} (Chesed) — correlate findings, then harden shield and intel."
+            Posture.WATCH ->
+                "Priority posture WATCH · ${aspect.name} (Hod) — baseline looks fragile; tighten one control now."
+            Posture.STEADY ->
+                "Priority posture STEADY · ${aspect.name} (Tiferet) — maintain Shield + periodic Nemesis cycles."
+            Posture.UNKNOWN ->
+                "Priority posture UNKNOWN · ${aspect.name} (Yesod) — Quilla needs a Nemesis baseline to lead."
         }
 
         val chips = buildList {
@@ -148,8 +164,18 @@ object QuillaPriorityEngine {
             }
             if (!memory.shieldActive) add("Shield" to "how do I open privacy shield")
             add("MASVS-NETWORK" to "MASVS-NETWORK")
+            add("Tree" to "explain the tree of life")
         }.distinctBy { it.second }.take(6)
 
-        return Briefing(posture, score, headline, ranked, chips)
+        return Briefing(
+            posture = posture,
+            score = score,
+            headline = headline,
+            moves = ranked,
+            chipPrompts = chips,
+            aspectName = aspect.name,
+            sephirahName = seph?.name ?: "Tiferet",
+            livingSeal = seal
+        )
     }
 }

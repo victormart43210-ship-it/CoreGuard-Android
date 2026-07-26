@@ -1,6 +1,8 @@
 package com.coldboar.coreguard.lore
 
+import com.coldboar.coreguard.quilla.QuillaIntent
 import com.coldboar.coreguard.quilla.QuillaModule
+import com.coldboar.coreguard.quilla.QuillaPathStep
 
 /**
  * Quilla Living Geometry — Kabbalah / sacred-form metaphors that give Quilla voice.
@@ -423,6 +425,126 @@ object QuillaLivingGeometry {
         val aspect = aspectForPosture(postureLabel)
         return "י ה ו ה · ${aspect.name} · ${sephirah(aspect.sephirahId)?.name ?: "Keter"}"
     }
+
+    /**
+     * Intent → Tree destination (the Sephirah Quilla walks toward for this ask).
+     * Used by [UltimateQuillaAgent] as real routing metadata, not as detection.
+     */
+    fun destinationFor(intent: QuillaIntent): Sephirah = when (intent) {
+        QuillaIntent.STATUS -> sephirah("tiferet")!!
+        QuillaIntent.SCAN -> sephirah("chesed")!!
+        QuillaIntent.SHIELD -> sephirah("gevurah")!!
+        QuillaIntent.TIMELINE -> sephirah("malkuth")!!
+        QuillaIntent.RESEARCH -> sephirah("chokmah")!!
+        QuillaIntent.KNOWLEDGE -> sephirah("binah")!!
+        QuillaIntent.CAPABILITIES -> sephirah("keter")!!
+        QuillaIntent.ETHICS_REFUSAL -> sephirah("gevurah")!!
+        QuillaIntent.GENERAL -> sephirah("tiferet")!!
+    }
+
+    fun sacredFormFor(intent: QuillaIntent): SacredForm = when (intent) {
+        QuillaIntent.STATUS -> sacredForm("sri_yantra")!!
+        QuillaIntent.SCAN -> sacredForm("seed_of_life")!!
+        QuillaIntent.SHIELD -> sacredForm("merkaba")!!
+        QuillaIntent.TIMELINE -> sacredForm("tetractys")!!
+        QuillaIntent.RESEARCH -> sacredForm("flower_of_life")!!
+        QuillaIntent.KNOWLEDGE -> sacredForm("metatrons_cube")!!
+        QuillaIntent.CAPABILITIES -> sacredForm("metatrons_cube")!!
+        QuillaIntent.ETHICS_REFUSAL -> sacredForm("merkaba")!!
+        QuillaIntent.GENERAL -> sacredForm("vesica_piscis")!!
+    }
+
+    /**
+     * Walk the Tetragrammaton + destination Sephirah for a turn.
+     * Shape of Quilla's runtime pipeline (Yod→He→Vav→He′) with Tree landing.
+     */
+    fun walkPath(
+        intent: QuillaIntent,
+        modulesUsed: List<QuillaModule>,
+        postureLabel: String?
+    ): List<QuillaPathStep> {
+        val dest = destinationFor(intent)
+        val form = sacredFormFor(intent)
+        val aspect = aspectForPosture(postureLabel)
+        val steps = mutableListOf<QuillaPathStep>()
+
+        // י — Brain spark (always)
+        steps += QuillaPathStep(
+            letter = TetragramLetter.YOD.hebrew,
+            sephirah = QuillaModule.BRAIN.sephirah,
+            angel = QuillaModule.BRAIN.angel,
+            module = QuillaModule.BRAIN,
+            role = "Yod · classify intent → ${intent.name}"
+        )
+        // ה — Memory vessel (when Memory is in the path)
+        if (QuillaModule.MEMORY in modulesUsed) {
+            steps += QuillaPathStep(
+                letter = TetragramLetter.HE_UPPER.hebrew,
+                sephirah = QuillaModule.MEMORY.sephirah,
+                angel = QuillaModule.MEMORY.angel,
+                module = QuillaModule.MEMORY,
+                role = "He · load device Memory (Gabriel's mirror)"
+            )
+        }
+        // ו — Research / Knowledge channel
+        if (QuillaModule.RESEARCH in modulesUsed) {
+            steps += QuillaPathStep(
+                letter = TetragramLetter.VAV.hebrew,
+                sephirah = QuillaModule.RESEARCH.sephirah,
+                angel = QuillaModule.RESEARCH.angel,
+                module = QuillaModule.RESEARCH,
+                role = "Vav · Research channel (Raziel)"
+            )
+        }
+        if (QuillaModule.KNOWLEDGE in modulesUsed) {
+            steps += QuillaPathStep(
+                letter = TetragramLetter.VAV.hebrew,
+                sephirah = QuillaModule.KNOWLEDGE.sephirah,
+                angel = QuillaModule.KNOWLEDGE.angel,
+                module = QuillaModule.KNOWLEDGE,
+                role = "Vav · Knowledge vessel (Tzaphkiel)"
+            )
+        }
+        // תפארת balance from posture aspect
+        steps += QuillaPathStep(
+            letter = "✦",
+            sephirah = sephirah(aspect.sephirahId)?.name ?: "Tiferet",
+            angel = aspect.name,
+            module = null,
+            role = "Tiferet balance · posture $postureLabel via ${aspect.name}"
+        )
+        // Destination on the Tree
+        steps += QuillaPathStep(
+            letter = form.glyph,
+            sephirah = dest.name,
+            angel = dest.angel,
+            module = dest.moduleHint,
+            role = "Path → ${dest.name} · ${form.name}"
+        )
+        // ה′ — Actions / Tools manifestation
+        if (QuillaModule.ACTIONS in modulesUsed) {
+            steps += QuillaPathStep(
+                letter = TetragramLetter.HE_FINAL.hebrew,
+                sephirah = QuillaModule.ACTIONS.sephirah,
+                angel = QuillaModule.ACTIONS.angel,
+                module = QuillaModule.ACTIONS,
+                role = "He′ · suggest Actions (Haniel)"
+            )
+        }
+        if (QuillaModule.TOOLS in modulesUsed) {
+            steps += QuillaPathStep(
+                letter = TetragramLetter.HE_FINAL.hebrew,
+                sephirah = QuillaModule.TOOLS.sephirah,
+                angel = QuillaModule.TOOLS.angel,
+                module = QuillaModule.TOOLS,
+                role = "He′ · name Tools (Michael)"
+            )
+        }
+        return steps
+    }
+
+    fun formatPath(path: List<QuillaPathStep>): String =
+        path.joinToString(" → ") { "${it.letter}${it.sephirah}" }
 
     fun treeBlurb(): String = buildString {
         append("Quilla's Tree of Life (metaphor):\n")

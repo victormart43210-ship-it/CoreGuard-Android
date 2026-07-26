@@ -1,17 +1,38 @@
 package com.coldboar.coreguard.quilla
 
 /**
- * Architecture modules for Ultimate Quilla, mapped from the common AI-agent
- * formula (Brain / Memory / Research / Actions / Tools) onto CoreGuard's
- * on-device security stack — no external SaaS API keys required.
+ * Architecture modules for Ultimate Quilla — Living Geometry edition.
+ *
+ * Each module sits on a Sephirah with an angelic aspect name and a
+ * Tetragrammaton letter. Names are **runtime scaffolding** for path-walking
+ * and UI voice; they do not detect threats.
+ *
+ * ```
+ *   י Yod  → Brain (Keter · Metatron)
+ *   ה He   → Memory (Yesod · Gabriel)
+ *   ו Vav  → Research/Knowledge (Chokmah/Binah · Raziel/Tzaphkiel)
+ *   ה He′  → Actions/Tools (Netzach/Hod · Haniel/Michael)
+ * ```
  */
-enum class QuillaModule(val label: String, val superpower: String) {
-    BRAIN("Brain", "Reason & decide"),
-    MEMORY("Memory", "Long-term device context"),
-    RESEARCH("Research", "Optional Amnesty/MVT STIX"),
-    KNOWLEDGE("Knowledge", "Cybersecurity codex"),
-    ACTIONS("Actions", "Suggest next steps"),
-    TOOLS("Tools", "Scanner · Shield · Timeline")
+enum class QuillaModule(
+    val label: String,
+    val superpower: String,
+    val sephirah: String,
+    val angel: String,
+    val hebrewLetter: String,
+    val geometryGlyph: String
+) {
+    BRAIN("Brain", "Reason & decide", "Keter", "Metatron", "י", "•"),
+    MEMORY("Memory", "Long-term device context", "Yesod", "Gabriel", "ה", "◎"),
+    RESEARCH("Research", "Optional Amnesty/MVT STIX", "Chokmah", "Raziel", "ו", "⚡"),
+    KNOWLEDGE("Knowledge", "Cybersecurity codex", "Binah", "Tzaphkiel", "ו", "△"),
+    ACTIONS("Actions", "Suggest next steps", "Netzach", "Haniel", "ה", "◇"),
+    TOOLS("Tools", "Scanner · Shield · Timeline", "Hod", "Michael", "ה", "⬡");
+
+    /** Chip label used in the Quilla HUD. */
+    val livingLabel: String get() = "$label · $angel"
+
+    val pathNode: String get() = "$hebrewLetter $sephirah ($angel)"
 }
 
 enum class QuillaIntent {
@@ -91,6 +112,18 @@ data class QuillaResearchSnapshot(
     val sourceLabel: String = "Quilla Intel Network (Amnesty/MVT · CISA · MISP)"
 )
 
+/**
+ * One step Quilla walked on the Tree / Tetragrammaton for this answer.
+ * Pure bookkeeping — not a detection event.
+ */
+data class QuillaPathStep(
+    val letter: String,
+    val sephirah: String,
+    val angel: String,
+    val module: QuillaModule?,
+    val role: String
+)
+
 data class QuillaAgentAnswer(
     val text: String,
     val intent: QuillaIntent,
@@ -99,5 +132,13 @@ data class QuillaAgentAnswer(
     val actions: List<QuillaActionSuggestion>,
     val followUps: List<QuillaFollowUp> = emptyList(),
     val postureLabel: String? = null,
-    val postureScore: Int? = null
+    val postureScore: Int? = null,
+    /** Compact י ה ו ה · Angel · Sephirah seal for this turn. */
+    val livingSeal: String? = null,
+    /** Angelic aspect selected from posture / intent (metaphor). */
+    val aspectName: String? = null,
+    /** Sephirah of the active aspect. */
+    val sephirahName: String? = null,
+    /** Tetragrammaton / Tree path walked while composing this answer. */
+    val pathWalked: List<QuillaPathStep> = emptyList()
 )

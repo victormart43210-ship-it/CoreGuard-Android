@@ -33,25 +33,40 @@ class UltimateQuillaAgent(
     fun answer(prompt: String): QuillaAgentAnswer {
         val trimmed = prompt.trim()
         if (QuillaEthicsGuard.shouldRefuse(trimmed)) {
+            val modules = listOf(QuillaModule.BRAIN, QuillaModule.KNOWLEDGE)
+            val path = QuillaLivingGeometry.walkPath(
+                QuillaIntent.ETHICS_REFUSAL, modules, postureLabel = "CRITICAL"
+            )
             return QuillaAgentAnswer(
                 text = QuillaEthicsGuard.refusalMessage(),
                 intent = QuillaIntent.ETHICS_REFUSAL,
-                modulesUsed = listOf(QuillaModule.BRAIN, QuillaModule.KNOWLEDGE),
+                modulesUsed = modules,
                 moduleStatuses = moduleStatuses(memoryProvider(), QuillaResearchSnapshot()),
-                actions = emptyList()
+                actions = emptyList(),
+                livingSeal = QuillaLivingGeometry.livingSeal("CRITICAL"),
+                aspectName = "Kamael",
+                sephirahName = "Gevurah",
+                pathWalked = path
             )
         }
 
+        // ── Tetragrammaton runtime walk (י → ה → ו → ✦ → ה′) ──────────────
+        // י Yod — Brain / Keter / Metatron: classify intent
         val intent = classify(trimmed)
+        // ה He — Memory / Yesod / Gabriel: load device context
         val memory = memoryProvider()
-        // Cached research is always available for posture / status / capabilities.
+        // ו Vav — Research cache always available for posture (Raziel's book may be idle)
         val research = researchProvider()
+        // ✦ Tiferet — Raphael balances posture from evidence (not omens)
         val briefing = QuillaPriorityEngine.brief(memory, research)
         val modulesUsed = modulesFor(intent)
+        // Walk Tree + Tetragrammaton for this turn (metadata used by HUD + text)
+        val pathWalked = QuillaLivingGeometry.walkPath(intent, modulesUsed, briefing.posture.label)
         val statuses = moduleStatuses(memory, research)
+        // ה′ He final — Actions / Tools manifestation (Haniel · Michael)
         val actions = actionsFor(intent, memory, briefing)
         val followUps = followUpsFor(intent, briefing, memory)
-        val text = compose(trimmed, intent, memory, research, actions, briefing)
+        val text = compose(trimmed, intent, memory, research, actions, briefing, pathWalked)
         return QuillaAgentAnswer(
             text = text,
             intent = intent,
@@ -60,7 +75,11 @@ class UltimateQuillaAgent(
             actions = actions,
             followUps = followUps,
             postureLabel = briefing.posture.label,
-            postureScore = briefing.score
+            postureScore = briefing.score,
+            livingSeal = briefing.livingSeal,
+            aspectName = briefing.aspectName,
+            sephirahName = briefing.sephirahName,
+            pathWalked = pathWalked
         )
     }
 
@@ -147,11 +166,17 @@ class UltimateQuillaAgent(
         memory: QuillaMemorySnapshot,
         research: QuillaResearchSnapshot
     ): List<QuillaModuleStatus> = listOf(
-        QuillaModuleStatus(QuillaModule.BRAIN, true, "On-device priority reasoning ready"),
+        QuillaModuleStatus(
+            QuillaModule.BRAIN,
+            true,
+            "${QuillaModule.BRAIN.pathNode} · on-device priority reasoning ready"
+        ),
         QuillaModuleStatus(
             QuillaModule.MEMORY,
             true,
             buildString {
+                append(QuillaModule.MEMORY.pathNode)
+                append(" · ")
                 append(memory.historyCount)
                 append(" timeline entries")
                 if (memory.lastScanVerdict != null) {
@@ -172,38 +197,51 @@ class UltimateQuillaAgent(
         QuillaModuleStatus(
             QuillaModule.RESEARCH,
             research.synced || research.indicatorCount > 0 || memory.correlatorIndicatorCount > 0,
-            when {
-                research.syncFailed ->
-                    "Intel sync failed — still using prior cache (${research.indicatorCount} indicators)"
-                research.synced && research.indicatorCount == 0 ->
-                    "Synced empty campaign archive — not a Nemesis signature refresh"
-                research.synced || research.indicatorCount > 0 ->
-                    "${research.indicatorCount} ${research.sourceLabel} indicators cached"
-                memory.correlatorIndicatorCount > 0 ->
-                    "${memory.correlatorIndicatorCount} correlator IOCs loaded (local)"
-                else ->
-                    "Intel idle — optional STIX pull (does not refresh Scanner signatures)"
+            buildString {
+                append(QuillaModule.RESEARCH.pathNode)
+                append(" · ")
+                append(
+                    when {
+                        research.syncFailed ->
+                            "Intel sync failed — still using prior cache (${research.indicatorCount} indicators)"
+                        research.synced && research.indicatorCount == 0 ->
+                            "Synced empty campaign archive — not a Nemesis signature refresh"
+                        research.synced || research.indicatorCount > 0 ->
+                            "${research.indicatorCount} ${research.sourceLabel} indicators cached"
+                        memory.correlatorIndicatorCount > 0 ->
+                            "${memory.correlatorIndicatorCount} correlator IOCs loaded (local)"
+                        else ->
+                            "Intel idle — optional STIX pull (does not refresh Scanner signatures)"
+                    }
+                )
             }
         ),
         QuillaModuleStatus(
             QuillaModule.KNOWLEDGE,
             CyberKnowledgeBase.isLoaded(),
-            if (CyberKnowledgeBase.isLoaded()) {
-                "${CyberKnowledgeBase.size()} cyber codex entries (OWASP · MITRE · IR · pentest)"
-            } else {
-                "Cyber codex not loaded yet"
+            buildString {
+                append(QuillaModule.KNOWLEDGE.pathNode)
+                append(" · ")
+                append(
+                    if (CyberKnowledgeBase.isLoaded()) {
+                        "${CyberKnowledgeBase.size()} cyber codex entries (OWASP · MITRE · IR · pentest)"
+                    } else {
+                        "Cyber codex not loaded yet"
+                    }
+                )
             }
         ),
         QuillaModuleStatus(
             QuillaModule.ACTIONS,
             true,
-            "Suggests open Scanner / Shield / Timeline / optional intel sync"
+            "${QuillaModule.ACTIONS.pathNode} · suggests open Scanner / Shield / Timeline / optional intel sync"
         ),
         QuillaModuleStatus(
             QuillaModule.TOOLS,
             true,
             buildString {
-                append("Shield ")
+                append(QuillaModule.TOOLS.pathNode)
+                append(" · Shield ")
                 append(if (memory.shieldActive) "ON" else "OFF")
                 append(" · blocked=")
                 append(memory.shieldBlocked)
@@ -317,13 +355,17 @@ class UltimateQuillaAgent(
         memory: QuillaMemorySnapshot,
         research: QuillaResearchSnapshot,
         actions: List<QuillaActionSuggestion>,
-        briefing: QuillaPriorityEngine.Briefing
+        briefing: QuillaPriorityEngine.Briefing,
+        pathWalked: List<QuillaPathStep>
     ): String {
-        val seal = QuillaLivingGeometry.livingSeal(briefing.posture.label)
+        val seal = briefing.livingSeal
+        val pathLine = "Path walked: " + QuillaLivingGeometry.formatPath(pathWalked)
+        val dest = QuillaLivingGeometry.destinationFor(intent)
+        val form = QuillaLivingGeometry.sacredFormFor(intent)
         val header = if (prompt.isBlank()) {
-            "Quilla online — priority lead engaged. Living seal $seal."
+            "Quilla online — priority lead engaged. Living seal $seal.\n$pathLine"
         } else {
-            "Quilla hears you: \"$prompt\".\nLiving seal $seal."
+            "Quilla hears you: \"$prompt\".\nLiving seal $seal.\n$pathLine"
         }
         val body = when (intent) {
             QuillaIntent.CAPABILITIES -> capabilitiesBlurb(briefing)
@@ -339,18 +381,29 @@ class UltimateQuillaAgent(
         val actionLine = if (actions.isEmpty()) {
             ""
         } else {
-            "\n\nSuggested actions: " + actions.joinToString(" · ") { it.label } + "."
+            "\n\nSuggested actions (Haniel): " + actions.joinToString(" · ") { it.label } + "."
         }
         val usedResearch = intent == QuillaIntent.RESEARCH ||
             intent == QuillaIntent.STATUS ||
             research.synced ||
             research.syncFailed
-        val footer = if (usedResearch) {
-            "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — " +
-                "reasoning stays on-device; Research may use HTTPS when you sync. Evidence first."
-        } else {
-            "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — " +
-                "on-device reasoning and local evidence first."
+        val footer = buildString {
+            append("Tree path → ")
+            append(dest.name)
+            append(" · ")
+            append(dest.angel)
+            append(" · form ")
+            append(form.name)
+            append(". Modules: ")
+            append(QuillaModule.entries.joinToString(" · ") { "${it.hebrewLetter}${it.label}" })
+            append(" — ")
+            if (usedResearch) {
+                append("reasoning stays on-device; Research may use HTTPS when you sync. Evidence first.")
+            } else {
+                append("on-device reasoning and local evidence first.")
+            }
+            append(' ')
+            append(QuillaLivingGeometry.DISCLAIMER)
         }
         // Lore answers already include their own "Quilla hears you" header.
         return if (body.startsWith("Quilla hears you:")) {
@@ -366,17 +419,17 @@ class UltimateQuillaAgent(
         } else {
             "cyber codex loading on first open"
         }
-        return "I run as a top-tier local agent stack (no cloud LLM):\n" +
-            "• Brain — classify intent, rank posture, decide next checks\n" +
-            "• Memory — cite last scan, timeline, shield, hypotheses, signed telemetry\n" +
-            "• Research — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs + on-device IOC correlation (not live continuous intel; not Scanner signature refresh)\n" +
-            "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
-            "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
-            "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
-            "Current posture: ${briefing.posture.label} (score ${briefing.score}/100). ${briefing.headline}\n" +
-            "Living Geometry (metaphor): Tetragrammaton י־ה־ו־ה maps Brain→Memory→Research/Knowledge→Actions/Tools; " +
-            "Tree of Life angels name my aspects — never my detectors.\n" +
-            "I do not call ChatGPT/Claude/Zapier. I teach defense and cite CoreGuard evidence.\n" +
+        return "I run as a top-tier local agent stack shaped as Living Geometry (no cloud LLM):\n" +
+            QuillaModule.entries.joinToString("\n") { m ->
+                "• ${m.hebrewLetter} ${m.label} (${m.sephirah} · ${m.angel}) — ${m.superpower}"
+            } + "\n" +
+            "• Research detail — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs " +
+            "(not live continuous intel; not Scanner signature refresh)\n" +
+            "• Knowledge detail — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest, IR)\n" +
+            "Current posture: ${briefing.posture.label} (score ${briefing.score}/100) · " +
+            "${briefing.aspectName} / ${briefing.sephirahName}. ${briefing.headline}\n" +
+            "Runtime walk: י classify → ה Memory → ו Research/Knowledge → ✦ Tiferet posture → ה′ Actions/Tools.\n" +
+            "I do not call ChatGPT/Claude/Zapier. Angelic names do not detect — evidence does.\n" +
             "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } +
             " · \"tree of life\" · \"tetragrammaton\" · \"metatron\"."
     }
@@ -474,30 +527,30 @@ class UltimateQuillaAgent(
 
     private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =
         if (memory.lastScanVerdict == null) {
-            "Tools → Nemesis Scanner can collect packages, processes, and file IOCs. " +
+            "Chesed · Tzadkiel — Tools → Nemesis Scanner can collect packages, processes, and file IOCs. " +
                 "I will not invent a clean bill of health without that evidence. " +
                 briefing.headline
         } else {
-            "Memory still holds last verdict ${memory.lastScanVerdict}. " +
+            "Gabriel's Memory still holds last verdict ${memory.lastScanVerdict}. " +
                 "Run another scan if you changed apps, networks, or suspect new residue. " +
-                "Posture ${briefing.posture.label} (${briefing.score}/100)."
+                "Posture ${briefing.posture.label} (${briefing.score}/100) · ${briefing.aspectName}."
         }
 
     private fun shieldBlurb(memory: QuillaMemorySnapshot): String =
         if (memory.shieldActive) {
-            "Shield tool is active with ${memory.shieldBlocked} blocks. " +
+            "Gevurah · Kamael — Shield tool is active with ${memory.shieldBlocked} blocks. " +
                 "Manage it from the Shield screen — stopping it is a deliberate Action."
         } else {
-            "Shield tool is idle. Opening Privacy Shield still requires Android VPN consent; " +
+            "Gevurah · Kamael — Shield tool is idle. Opening Privacy Shield still requires Android VPN consent; " +
                 "Quilla will not auto-enable a VPN without you."
         }
 
     private fun timelineBlurb(memory: QuillaMemorySnapshot): String =
         if (memory.historyCount == 0) {
-            "Memory has an empty Scan Timeline. Run Nemesis once to open the ledger, " +
+            "Malkuth · Sandalphon — Memory has an empty Scan Timeline. Run Nemesis once to open the ledger, " +
                 "then compare later cycles against that baseline."
         } else {
-            "Memory holds ${memory.historyCount} timeline entries. " +
+            "Malkuth · Sandalphon — Memory holds ${memory.historyCount} timeline entries. " +
                 "Open Timeline to compare cycles — one reading is noise, a streak is signal."
         }
 
@@ -526,10 +579,11 @@ class UltimateQuillaAgent(
         } else {
             "Correlated hypotheses available: ${memory.activeHypotheses.size}."
         }
-        return listOf(intel, notes, hyp).filter { it.isNotBlank() }.joinToString("\n") +
+        return "Chokmah · Raziel — " +
+            listOf(intel, notes, hyp).filter { it.isNotBlank() }.joinToString("\n") +
             "\nThis Quilla Research feed does not refresh Nemesis Scanner signatures " +
             "(Premium signature refresh on Scanner is a separate path).\n" +
-            "Ask Knowledge about emerging mobile attacks, CISA KEV CVEs, or \"what is T1636\"."
+            "Ask Knowledge (Binah · Tzaphkiel) about emerging mobile attacks, CISA KEV CVEs, or \"what is T1636\"."
     }
 
     private fun generalBlurb(

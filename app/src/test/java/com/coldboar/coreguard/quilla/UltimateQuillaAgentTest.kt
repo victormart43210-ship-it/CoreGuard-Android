@@ -81,6 +81,19 @@ class UltimateQuillaAgentTest {
         assertTrue(answer.text.contains("Priority moves") || answer.text.contains("Priority posture"))
         assertTrue(answer.modulesUsed.contains(QuillaModule.RESEARCH))
         assertFalse(answer.postureLabel.isNullOrBlank())
+        assertFalse(answer.livingSeal.isNullOrBlank())
+        assertFalse(answer.aspectName.isNullOrBlank())
+        assertTrue(answer.pathWalked.isNotEmpty())
+        assertTrue(answer.pathWalked.any { it.angel == QuillaModule.BRAIN.angel })
+        assertTrue(answer.text.contains("Path walked"))
+    }
+
+    @Test
+    fun `modules carry living geometry identities`() {
+        assertEquals("Metatron", QuillaModule.BRAIN.angel)
+        assertEquals("Gabriel", QuillaModule.MEMORY.angel)
+        assertEquals("י", QuillaModule.BRAIN.hebrewLetter)
+        assertEquals("Keter", QuillaModule.BRAIN.sephirah)
     }
 
     @Test

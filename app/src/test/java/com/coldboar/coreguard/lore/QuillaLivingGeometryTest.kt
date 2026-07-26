@@ -54,4 +54,21 @@ class QuillaLivingGeometryTest {
         assertTrue(QuillaKnowledge.matchLivingOrObservatory("sacred geometry metatron cube"))
         assertTrue(QuillaKnowledge.matchLivingOrObservatory("maya calendar cycles"))
     }
+
+    @Test
+    fun `walkPath encodes tetragrammaton pipeline for scan intent`() {
+        val path = QuillaLivingGeometry.walkPath(
+            intent = com.coldboar.coreguard.quilla.QuillaIntent.SCAN,
+            modulesUsed = listOf(
+                com.coldboar.coreguard.quilla.QuillaModule.BRAIN,
+                com.coldboar.coreguard.quilla.QuillaModule.ACTIONS,
+                com.coldboar.coreguard.quilla.QuillaModule.TOOLS
+            ),
+            postureLabel = "ELEVATED"
+        )
+        assertTrue(path.any { it.role.contains("Yod") })
+        assertTrue(path.any { it.sephirah == "Chesed" })
+        assertTrue(path.any { it.angel == "Tzadkiel" || it.role.contains("Chesed") || it.sephirah == "Chesed" })
+        assertTrue(QuillaLivingGeometry.formatPath(path).contains("Keter"))
+    }
 }
