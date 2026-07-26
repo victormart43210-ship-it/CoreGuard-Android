@@ -28,9 +28,11 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.FindInPage
+import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.VerifiedUser
+import androidx.compose.material.icons.filled.WarningAmber
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -68,6 +70,8 @@ import com.coldboar.coreguard.CpuUsageCalculator
 import com.coldboar.coreguard.GuardianScore
 import com.coldboar.coreguard.MemoryUsageCalculator
 import com.coldboar.coreguard.SecurityCheckRunner
+import com.coldboar.coreguard.elite.DynamicThreatEngine
+import com.coldboar.coreguard.elite.ScamGuardEngine
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.swarm.SwarmModule
@@ -87,9 +91,9 @@ import kotlin.math.sin
 /**
  * CG Elite Home dashboard — sacred-geometry status hub + power-user cards.
  *
- * Metrics are wired to on-device evidence (Guardian Score, CPU/RAM, Nemesis scan,
- * Privacy Shield, swarm alert Counter). Toggles are local UI preferences only —
- * they do **not** enable a cloud LLM or invent detections.
+ * Metrics are wired to on-device evidence (Guardian Score, Dynamic Threat Score,
+ * CPU/RAM, Nemesis scan, Privacy Shield, swarm alert Counter, Scam Guard).
+ * Toggles are local UI preferences only — they do **not** enable a cloud LLM.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -97,7 +101,10 @@ fun EliteDashboardScreen(
     onNavigateToScanner: () -> Unit = {},
     onNavigateToTimeline: () -> Unit = {},
     onNavigateToShield: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {}
+    onNavigateToTools: () -> Unit = {},
+    onNavigateToOverlayMatrix: () -> Unit = {},
+    onNavigateToForensicJournal: () -> Unit = {},
+    onNavigateToScamGuard: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -107,6 +114,9 @@ fun EliteDashboardScreen(
     var intelSyncEnabled by remember { mutableStateOf(true) }
 
     var score by remember { mutableStateOf<Int?>(null) }
+    var dtsScore by remember { mutableStateOf<Int?>(null) }
+    var dtsBand by remember { mutableStateOf(DynamicThreatEngine.Band.CLEAR) }
+    var scamFinding by remember { mutableStateOf(ScamGuardEngine.latestFinding()) }
     var cpuText by remember { mutableStateOf("…") }
     var ramText by remember { mutableStateOf("…") }
     var lastScanLabel by remember { mutableStateOf("NO SCAN YET") }
@@ -132,6 +142,12 @@ fun EliteDashboardScreen(
             threatsLabel = "0"
         }
 
+        val dts = withContext(Dispatchers.IO) { DynamicThreatEngine.evaluate(context) }
+        dtsScore = dts.score
+        dtsBand = dts.band
+        scamFinding = ScamGuardEngine.latestFinding()
+
+        var ticks = 0
         while (true) {
             cpuText = CpuUsageCalculator.getUsagePercent()?.let { "$it%" } ?: "n/a"
             ramText = MemoryUsageCalculator.formatBytes(
@@ -139,11 +155,20 @@ fun EliteDashboardScreen(
             )
             shieldOn = ShieldState.isActive
             swarmAlerts = SwarmModule.alertCounter.getState().count
+            scamFinding = ScamGuardEngine.latestFinding()
+            ticks++
+            if (ticks % 15 == 0) {
+                val refreshed = withContext(Dispatchers.IO) { DynamicThreatEngine.evaluate(context) }
+                dtsScore = refreshed.score
+                dtsBand = refreshed.band
+            }
             delay(2_000L)
         }
     }
 
     val hubStatus = when {
+        dtsBand == DynamicThreatEngine.Band.CRITICAL -> "CRITICAL DTS"
+        dtsBand == DynamicThreatEngine.Band.ELEVATED -> "ELEVATED DTS"
         score == null -> "CHECKING…"
         (score ?: 0) >= 80 -> "DEVICE SECURE"
         (score ?: 0) >= 50 -> "ELEVATED RISK"
@@ -151,8 +176,10 @@ fun EliteDashboardScreen(
     }
     val hubSub = buildString {
         append(lastScanLabel)
-        append(" · SCORE ")
+        append(" · GS ")
         append(score?.toString() ?: "–")
+        append(" · DTS ")
+        append(dtsScore?.toString() ?: "–")
     }
 
     Scaffold(
@@ -206,6 +233,14 @@ fun EliteDashboardScreen(
         ) {
             SacredGeometryStatusHub(statusText = hubStatus, subText = hubSub)
 
+            scamFinding?.takeIf { it.score >= 50 }?.let { finding ->
+                AmberScamPill(
+                    host = finding.host,
+                    score = finding.score,
+                    onClick = onNavigateToScamGuard
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -229,6 +264,32 @@ fun EliteDashboardScreen(
                     icon = Icons.Filled.CloudDone,
                     label = "SWARM\n$swarmAlerts",
                     onClick = onNavigateToTools
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                QuickStatusItem(
+                    icon = Icons.Filled.Layers,
+                    label = "OVERLAY\nMATRIX",
+                    onClick = onNavigateToOverlayMatrix
+                )
+                QuickStatusItem(
+                    icon = Icons.Filled.Lock,
+                    label = "FORENSIC\nJOURNAL",
+                    onClick = onNavigateToForensicJournal
+                )
+                QuickStatusItem(
+                    icon = Icons.Filled.WarningAmber,
+                    label = "SCAM\nGUARD",
+                    onClick = onNavigateToScamGuard
+                )
+                QuickStatusItem(
+                    icon = Icons.Filled.Shield,
+                    label = "DTS\n${dtsScore ?: "–"}",
+                    onClick = onNavigateToForensicJournal
                 )
             }
 
@@ -258,6 +319,14 @@ fun EliteDashboardScreen(
                 ) {
                     MetricMiniRow(label = "CPU", value = if (realTimeEnabled) cpuText else "—")
                     MetricMiniRow(label = "MEMORY", value = if (realTimeEnabled) ramText else "—")
+                    MetricMiniRow(
+                        label = "DTS",
+                        value = if (realTimeEnabled) {
+                            "${dtsScore ?: "–"} ${dtsBand.name}"
+                        } else {
+                            "—"
+                        }
+                    )
                     MetricMiniRow(
                         label = "SHIELD",
                         value = if (shieldOn) "ARMED" else "IDLE"
@@ -382,6 +451,45 @@ fun SacredGeometryStatusHub(statusText: String, subText: String) {
                 fontSize = 9.sp,
                 fontWeight = FontWeight.Medium,
                 textAlign = TextAlign.Center
+            )
+        }
+    }
+}
+
+@Composable
+private fun AmberScamPill(host: String, score: Int, onClick: () -> Unit) {
+    val amber = Color(0xFFFFB347)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(amber.copy(alpha = 0.18f))
+            .border(1.dp, amber, RoundedCornerShape(12.dp))
+            .clickable(onClick = onClick)
+            .padding(horizontal = 14.dp, vertical = 10.dp)
+            .semantics {
+                contentDescription = "Scam Guard amber warning for $host"
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(10.dp)
+    ) {
+        Icon(
+            imageVector = Icons.Filled.WarningAmber,
+            contentDescription = null,
+            tint = amber,
+            modifier = Modifier.size(20.dp)
+        )
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "SCAM GUARD · AMBER",
+                color = amber,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "$host · score $score",
+                color = TextPrimary,
+                fontSize = 12.sp
             )
         }
     }

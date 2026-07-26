@@ -36,6 +36,9 @@ fun ToolsScreen(
     onRunScan: () -> Unit = {},
     onOpenShield: () -> Unit = {},
     onOpenTimeline: () -> Unit = {},
+    onOpenOverlayMatrix: () -> Unit = {},
+    onOpenForensicJournal: () -> Unit = {},
+    onOpenScamGuard: () -> Unit = {},
     isPremium: Boolean = false
 ) {
     var quillaOpen by remember { mutableStateOf(true) }
@@ -67,6 +70,12 @@ fun ToolsScreen(
             PrimaryTealButton(text = "Open Privacy Shield", onClick = onOpenShield)
             Spacer(modifier = Modifier.height(8.dp))
             PrimaryTealButton(text = "View scan history", onClick = onOpenTimeline)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Overlay Protection Matrix", onClick = onOpenOverlayMatrix)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Forensic Journal", onClick = onOpenForensicJournal)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Scam Guard", onClick = onOpenScamGuard)
         }
 
         Spacer(modifier = Modifier.height(16.dp))

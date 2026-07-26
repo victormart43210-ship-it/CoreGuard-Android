@@ -7,6 +7,9 @@ import com.coldboar.coreguard.swarm.SwarmCoordinator
 import com.coldboar.coreguard.swarm.SwarmModule
 import com.coreguard.android.data.local.QuillaDatabase
 import com.coreguard.security.telemetry.TelemetryBridge
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -38,6 +41,9 @@ class CoreGuardApplication : Application() {
      */
     val swarmCoordinator: SwarmCoordinator by lazy { SwarmCoordinator() }
 
+    /** Application-scoped work for BAE / Elite correlators (not UI). */
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         instance.set(this)
@@ -47,6 +53,14 @@ class CoreGuardApplication : Application() {
 
         // Warm the billing client early so entitlement queries are ready.
         billingProvider
+
+        // Dynamic Threat Score feeds on continuous BAE samples (on-device only).
+        try {
+            BehavioralAnomalyEngine.start(appScope)
+            Log.i(TAG, "Behavioral anomaly engine started for Elite DTS")
+        } catch (t: Throwable) {
+            Log.w(TAG, "BAE start failed: ${t.message}")
+        }
 
         // Provision the hardware key without blocking the main thread. A tiny
         // round-trip confirms the key is usable and records its security level.

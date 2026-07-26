@@ -2,25 +2,31 @@
 
 Branch: `cursor/swarm-module-redux-counter-6db1`  
 Date: 2026-07-26  
-Version: **1.0.12** (`versionCode` 13)
+Version: **1.0.13** (`versionCode` 14)
 
 > Milestone results are posted as PR comments (GitHub Milestone API returns 403).
 
-## Milestone M16 · CG Elite sacred-geometry Home dashboard
+## Milestone M17 · CoreGuard Elite zero-trust feature set
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:compileDebugKotlin` | **PASS** | Elite dashboard package |
-| `:app:testDebugUnitTest` | **PASS** | **304** tests |
-| Emulator smoke (`CoreGuard_ATD35`) | **PASS** | MainActivity focused, no fatal |
-| Honesty | **PASS** | Hub uses Guardian Score / Nemesis / Shield / swarm — toggles are local prefs; “Quilla correlate” ≠ cloud AI |
+| `:app:compileDebugKotlin` | **PASS** | Elite engines + screens |
+| `:app:testDebugUnitTest` | **PASS** | **315** tests (was 304) |
+| Honesty | **PASS** | DTS = on-device correlator + Quilla quantum-inspired; not NPU SLM / cloud LLM. Overlay Matrix audits surfaces (no silent remote overlay-kill). Scam Guard needs user Notification access. Forensic Journal = SHA-256 chain + StrongBox/TEE at rest. |
 
 ### Landed
 
-- `ui/dashboard/EliteDashboardScreen` — Flower-of-Life / hexagram Canvas hub
-- Home tab delegates to Elite dashboard
-- Quick chips navigate to Shield / Scanner / Timeline / Tools
-- Power-user cards show live CPU / RAM / scan counts
+1. **Dynamic Threat Score** — `elite/DynamicThreatEngine` weighted correlator + `QuillaQuantumCorrelate`; BAE started from `CoreGuardApplication`
+2. **Overlay Protection Matrix** — screen + route; journals elevated overlay/a11y/sideload findings
+3. **Forensic Journal** — append-only SHA-256 chain, encrypted at rest via `HardwareKeyManager`; JSON/CSV export
+4. **Scam Guard** — URL/smishing heuristics + optional `NotificationListenerService`; amber pill on Elite Home
+5. Quilla codex: `coreguard-elite-platform.json` + ready topics (`elite platform`, `dynamic threat score`, `scam guard`)
+
+### Unit coverage added
+
+- `elite/ScamGuardEngineTest`
+- `elite/ForensicJournalTest` (in-memory chain)
+- `elite/DynamicThreatEngineTest` (band thresholds + disclaimer)
 
 ## Prior milestones
 
@@ -28,7 +34,8 @@ Version: **1.0.12** (`versionCode` 13)
 |-----------|--------|
 | M14 Emulator Gate | PASS |
 | M15 Swarm + Redux Counter + ATD | PASS — 304 unit + instrumented + smoke |
-| **M16 CG Elite Home dashboard** | **PASS — 304 unit + ATD smoke** |
+| M16 CG Elite Home dashboard | PASS — 304 unit + ATD smoke |
+| **M17 Elite zero-trust features** | **PASS — 315 unit** |
 
 ## Play Console next (human)
 
@@ -36,3 +43,4 @@ Version: **1.0.12** (`versionCode` 13)
 2. Privacy policy URL on Play listing  
 3. VPN + `QUERY_ALL_PACKAGES` declarations  
 4. `coreguard_premium_monthly` + license tester  
+5. Disclose Notification Listener use for Scam Guard in Play Data safety  

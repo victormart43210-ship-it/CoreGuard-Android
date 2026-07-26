@@ -45,9 +45,12 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.FirstRunStore
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
+import com.coldboar.coreguard.ui.screens.ForensicJournalScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
 import com.coldboar.coreguard.ui.screens.OnboardingScreen
+import com.coldboar.coreguard.ui.screens.OverlayProtectionMatrixScreen
 import com.coldboar.coreguard.ui.screens.PrivacyPolicyScreen
+import com.coldboar.coreguard.ui.screens.ScamGuardScreen
 import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
@@ -79,7 +82,10 @@ private val routesWithoutBottomBar = setOf(
     CoreGuardRoute.PrivacyPolicy.route,
     CoreGuardRoute.Timeline.route,
     CoreGuardRoute.SupplyChain.route,
-    CoreGuardRoute.Tools.route
+    CoreGuardRoute.Tools.route,
+    CoreGuardRoute.OverlayMatrix.route,
+    CoreGuardRoute.ForensicJournal.route,
+    CoreGuardRoute.ScamGuard.route
 )
 
 private val tabRoutes = bottomNavItems.map { it.route }.toSet()
@@ -191,6 +197,15 @@ fun CoreGuardApp(
                         },
                         onNavigateToTools = {
                             navController.navigate(CoreGuardRoute.Tools.route)
+                        },
+                        onNavigateToOverlayMatrix = {
+                            navController.navigate(CoreGuardRoute.OverlayMatrix.route)
+                        },
+                        onNavigateToForensicJournal = {
+                            navController.navigate(CoreGuardRoute.ForensicJournal.route)
+                        },
+                        onNavigateToScamGuard = {
+                            navController.navigate(CoreGuardRoute.ScamGuard.route)
                         }
                     )
                 }
@@ -228,8 +243,26 @@ fun CoreGuardApp(
                         onRunScan = { navigateToTab(CoreGuardRoute.Scanner.route) },
                         onOpenShield = { navigateToTab(CoreGuardRoute.Shield.route) },
                         onOpenTimeline = { navController.navigate(CoreGuardRoute.Timeline.route) },
+                        onOpenOverlayMatrix = {
+                            navController.navigate(CoreGuardRoute.OverlayMatrix.route)
+                        },
+                        onOpenForensicJournal = {
+                            navController.navigate(CoreGuardRoute.ForensicJournal.route)
+                        },
+                        onOpenScamGuard = {
+                            navController.navigate(CoreGuardRoute.ScamGuard.route)
+                        },
                         isPremium = billingProvider.isPremium()
                     )
+                }
+                composable(CoreGuardRoute.OverlayMatrix.route) {
+                    OverlayProtectionMatrixScreen(onBack = { navController.popBackStack() })
+                }
+                composable(CoreGuardRoute.ForensicJournal.route) {
+                    ForensicJournalScreen(onBack = { navController.popBackStack() })
+                }
+                composable(CoreGuardRoute.ScamGuard.route) {
+                    ScamGuardScreen(onBack = { navController.popBackStack() })
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen(
