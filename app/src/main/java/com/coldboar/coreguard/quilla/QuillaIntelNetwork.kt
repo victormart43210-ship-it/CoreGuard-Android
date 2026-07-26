@@ -110,6 +110,24 @@ object QuillaIntelNetwork {
             feedNotes += "Web security intel failed: ${web.exceptionOrNull()?.message}"
         }
 
+        // Infinity: harden angel choir + swarm on the merged malware/vuln corpus (uncapped).
+        QuillaInfinityTrainer.restoreLite(context)
+        val training = QuillaInfinityTrainer.trainFromCodex(
+            context = context,
+            network = QuillaIntelNetworkSnapshot(
+                stixIndicatorCount = stixCount,
+                mergedCorrelatorCount = merged.size,
+                onDeviceMvtCount = onDevice.size,
+                webKnowledgeCount = knowledgeCount,
+                feedNotes = feedNotes.toList(),
+                synced = true,
+                syncFailed = false,
+                sourceLabel = "Quilla Intel Network"
+            ),
+            correlatorIndicatorCount = merged.size
+        )
+        feedNotes += training.summaryLine()
+
         val snapshot = QuillaIntelNetworkSnapshot(
             stixIndicatorCount = stixCount,
             mergedCorrelatorCount = merged.size,
@@ -118,7 +136,11 @@ object QuillaIntelNetwork {
             feedNotes = feedNotes.toList(),
             synced = !stixFailed || stixCount > 0 || knowledgeCount > 0,
             syncFailed = stixFailed && knowledgeFailed && merged.isEmpty(),
-            sourceLabel = "Quilla Intel Network (Amnesty/MVT STIX · CISA KEV · MISP · on-device IOCs)"
+            sourceLabel = "Quilla Infinity Intel (Amnesty/MVT STIX · CISA KEV · MISP/Malpedia · on-device IOCs)",
+            infinityGeneration = training.generation,
+            infinityMalwareStudied = training.malwareEntriesStudied,
+            infinityVulnStudied = training.vulnerabilityEntriesStudied,
+            infinityCodexDepth = training.totalCodexEntries
         )
         lastSync = snapshot
         return snapshot
@@ -141,5 +163,9 @@ data class QuillaIntelNetworkSnapshot(
     val feedNotes: List<String> = emptyList(),
     val synced: Boolean = false,
     val syncFailed: Boolean = false,
-    val sourceLabel: String = "Quilla Intel Network"
+    val sourceLabel: String = "Quilla Intel Network",
+    val infinityGeneration: Int = 0,
+    val infinityMalwareStudied: Int = 0,
+    val infinityVulnStudied: Int = 0,
+    val infinityCodexDepth: Int = 0
 )

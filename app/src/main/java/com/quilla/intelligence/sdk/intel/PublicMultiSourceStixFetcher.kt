@@ -67,8 +67,9 @@ class PublicMultiSourceStixFetcher(
     companion object {
         private const val CONNECT_TIMEOUT_MS = 12_000
         private const val READ_TIMEOUT_MS = 30_000
-        private const val MAX_BYTES = 8 * 1024 * 1024
-        private const val MAX_INDICATORS_PER_FEED = 8_000
+        private const val MAX_BYTES = 12 * 1024 * 1024
+        /** No artificial IOC teaching ceiling — Infinity correlator ingest. */
+        private const val MAX_INDICATORS_PER_FEED = Int.MAX_VALUE
         private const val USER_AGENT = "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
 
         val DEFAULT_FEEDS: List<Feed> = listOf(
@@ -89,6 +90,10 @@ class PublicMultiSourceStixFetcher(
                 "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
             ),
             Feed(
+                "Amnesty Cytrox / Predator",
+                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-12-16_cytrox/cytrox.stix2"
+            ),
+            Feed(
                 "MVT WyrmSpy/DragonEgg",
                 "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2023-07-25_wyrmspy_dragonegg/wyrmspy_dragonegg.stix2"
             ),
@@ -99,6 +104,18 @@ class PublicMultiSourceStixFetcher(
             Feed(
                 "MVT DarkSword",
                 "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-03-30_darksword/darksword.stix2"
+            ),
+            Feed(
+                "MVT Coruna / CryptoWaters",
+                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-03-03_coruna_cryptowaters/coruna.stix2"
+            ),
+            Feed(
+                "MVT IPS Morpheus",
+                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-04-23_ips_morpheus/morpheus.stix2"
+            ),
+            Feed(
+                "MVT ResidentBat",
+                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/ResidentBat/residentbat.stix2"
             ),
             Feed(
                 "Open stalkerware IOCs",

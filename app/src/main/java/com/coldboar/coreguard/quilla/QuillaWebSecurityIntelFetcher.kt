@@ -7,21 +7,25 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 /**
- * Pulls public web security intelligence (CISA KEV + MISP Android galaxy) and
+ * Pulls public web security intelligence (CISA KEV + MISP malware galaxies) and
  * converts it into defensive [CyberKnowledgeBase.Entry] records for Quilla.
  *
  * Framing is always defensive / educational. Unauthorized offensive how-to is
  * rejected by [com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard].
+ *
+ * Teaching ceiling: **uncapped** entry counts (Infinity). Only HTTP response
+ * size is bounded so a hostile feed cannot OOM the process.
  *
  * Network I/O is synchronous — call from a background thread.
  */
 object QuillaWebSecurityIntelFetcher {
 
     private const val CONNECT_TIMEOUT_MS = 12_000
-    private const val READ_TIMEOUT_MS = 30_000
-    private const val MAX_BYTES = 4 * 1024 * 1024
-    private const val MAX_KEV_ENTRIES = 40
-    private const val MAX_GALAXY_ENTRIES = 60
+    private const val READ_TIMEOUT_MS = 45_000
+    private const val MAX_BYTES = 8 * 1024 * 1024
+    /** No product teaching cap — Infinity / QuillaAwareness. */
+    private const val MAX_KEV_ENTRIES = Int.MAX_VALUE
+    private const val MAX_GALAXY_ENTRIES = Int.MAX_VALUE
     private const val USER_AGENT =
         "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
 
@@ -30,6 +34,10 @@ object QuillaWebSecurityIntelFetcher {
 
     const val MISP_ANDROID_GALAXY_URL =
         "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/android.json"
+
+    /** Broader malware-family briefs (filtered to mobile/Android-relevant). */
+    const val MISP_MALPEDIA_GALAXY_URL =
+        "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/malpedia.json"
 
     data class WebIntelResult(
         val entries: List<CyberKnowledgeBase.Entry>,
@@ -55,6 +63,14 @@ object QuillaWebSecurityIntelFetcher {
             else -> {
                 entries += galaxy
                 ok += "MISP Android galaxy (${galaxy.size})"
+            }
+        }
+
+        when (val malpedia = runCatching { fetchMispMalpediaMobileEntries() }.getOrNull()) {
+            null -> failed += "MISP Malpedia (mobile filter)"
+            else -> {
+                entries += malpedia
+                ok += "MISP Malpedia mobile-relevant (${malpedia.size})"
             }
         }
 
@@ -164,6 +180,74 @@ object QuillaWebSecurityIntelFetcher {
         val parsed = parseMispAndroidGalaxyEntries(body)
         if (parsed.isEmpty()) throw IllegalStateException("Galaxy parse empty")
         return parsed
+    }
+
+    private fun fetchMispMalpediaMobileEntries(): List<CyberKnowledgeBase.Entry> {
+        val body = httpGet(MISP_MALPEDIA_GALAXY_URL) ?: throw IllegalStateException("Malpedia fetch failed")
+        val parsed = parseMispMalpediaMobileEntries(body)
+        if (parsed.isEmpty()) throw IllegalStateException("Malpedia mobile filter empty")
+        return parsed
+    }
+
+    /**
+     * Parses MISP Malpedia galaxy, keeping mobile/Android-relevant families only.
+     * Uncapped count — every matching family is studied.
+     */
+    internal fun parseMispMalpediaMobileEntries(json: String): List<CyberKnowledgeBase.Entry> {
+        val root = runCatching { JSONObject(json) }.getOrNull() ?: return emptyList()
+        val values = root.optJSONArray("values") ?: return emptyList()
+        val out = mutableListOf<CyberKnowledgeBase.Entry>()
+        for (i in 0 until values.length()) {
+            if (out.size >= MAX_GALAXY_ENTRIES) break
+            val obj = values.optJSONObject(i) ?: continue
+            val name = obj.optString("value").trim()
+            if (name.isBlank()) continue
+            val description = obj.optString("description").trim()
+            val meta = obj.optJSONObject("meta")
+            val refs = meta?.optJSONArray("refs")
+            val synonyms = meta?.optJSONArray("synonyms") ?: JSONArray()
+            val blob = buildString {
+                append(name)
+                append(' ')
+                append(description)
+                for (s in 0 until synonyms.length()) append(' ').append(synonyms.optString(s))
+            }.lowercase()
+            if (!isMobileRelevant(blob) && !blob.contains("android") && !blob.contains("mobile")) {
+                // Malpedia descriptions often omit vendor tokens — keep clear Android tags only.
+                if (!blob.contains("apk") && !blob.contains("aosp")) continue
+            }
+            val synTags = buildSet {
+                for (s in 0 until synonyms.length()) {
+                    val syn = synonyms.optString(s).trim().lowercase()
+                    if (syn.isNotEmpty()) add(syn)
+                }
+            }
+            val slug = name.lowercase().replace(Regex("[^a-z0-9]+"), "-").trim('-')
+            val refList = buildList {
+                add("https://malpedia.caad.fkie.fraunhofer.de/")
+                if (refs != null) {
+                    for (r in 0 until refs.length()) {
+                        val ref = refs.optString(r).trim()
+                        if (ref.startsWith("https://")) add(ref)
+                    }
+                }
+            }.distinct().take(6)
+            out += CyberKnowledgeBase.Entry(
+                id = "malpedia-$slug",
+                title = "Malware family (Malpedia): $name",
+                category = "web-intel-malware",
+                tags = setOf(
+                    "malware", "malpedia", "misp", "family", "evolving", "android", "mobile",
+                    name.lowercase()
+                ) + synTags,
+                summary = "Open MISP/Malpedia defensive family brief for evolving threat study.",
+                body = description.ifBlank { "Malpedia family $name — study IOCs defensively." }.take(1_500),
+                defense = "Use family traits as correlation clues. Re-run Nemesis after suspicious installs, " +
+                    "review overlays/Accessibility, and keep OS patches current. Quilla will not help deploy malware.",
+                references = refList
+            )
+        }
+        return out
     }
 
     private fun httpGet(url: String): String? {

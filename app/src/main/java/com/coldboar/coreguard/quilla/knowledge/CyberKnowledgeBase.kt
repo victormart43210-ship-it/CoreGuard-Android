@@ -41,6 +41,9 @@ object CyberKnowledgeBase {
 
     fun size(): Int = state.get().entries.size
 
+    /** Full on-device corpus snapshot for Infinity angel/swarm training (uncapped). */
+    fun allEntries(): List<Entry> = state.get().entries
+
     fun clear() {
         state.set(Index(emptyList(), emptyMap(), emptyMap()))
     }

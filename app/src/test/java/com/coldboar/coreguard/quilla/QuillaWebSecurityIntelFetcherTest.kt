@@ -62,6 +62,30 @@ class QuillaWebSecurityIntelFetcherTest {
     }
 
     @Test
+    fun `parseMispMalpediaMobileEntries keeps Android families uncapped by product limit`() {
+        val json = """
+            {
+              "values": [
+                {
+                  "value": "Alien",
+                  "description": "Android banking trojan distributed via sideloaded APK.",
+                  "meta": { "synonyms": ["AlienBot"], "refs": ["https://malpedia.caad.fkie.fraunhofer.de/"] }
+                },
+                {
+                  "value": "Emotet",
+                  "description": "Windows botnet delivered by malicious documents.",
+                  "meta": { "synonyms": [] }
+                }
+              ]
+            }
+        """.trimIndent()
+        val entries = QuillaWebSecurityIntelFetcher.parseMispMalpediaMobileEntries(json)
+        assertEquals(1, entries.size)
+        assertEquals("malpedia-alien", entries.first().id)
+        assertTrue(entries.first().tags.contains("evolving"))
+    }
+
+    @Test
     fun `mergeEntries brings web intel into CyberKnowledgeBase search`() {
         CyberKnowledgeBase.clear()
         CyberKnowledgeBase.loadDocuments(

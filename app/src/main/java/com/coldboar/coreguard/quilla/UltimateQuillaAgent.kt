@@ -106,6 +106,11 @@ class UltimateQuillaAgent(
                 QuillaIntent.CAPABILITIES
 
             p.contains("research") || p.contains("stix") || p.contains("amnesty") ||
+                p.contains("infinity") ||
+                (p.contains("train") && (
+                    p.contains("angel") || p.contains("choir") || p.contains("swarm") ||
+                        p.contains("malware") || p.contains("vulnerab") || p.contains("threat")
+                    )) ||
                 (p.contains("intel") && (p.contains("sync") || p.contains("threat"))) ||
                 (p.contains("indicator") && p.contains("sync")) ||
                 (p.contains("ioc") && (p.contains("sync") || p.contains("feed") || p.contains("refresh"))) ->
@@ -335,8 +340,8 @@ class UltimateQuillaAgent(
         ),
         QuillaActionSuggestion.SYNC_INTEL to QuillaActionSuggestion(
             QuillaActionSuggestion.SYNC_INTEL,
-            "Sync Quilla Intel Network",
-            "Pulls Amnesty/MVT STIX, CISA KEV, and MISP Android intel into Quilla for defensive correlation — does not refresh Nemesis Scanner signatures."
+            "Train Infinity · sync threat intel",
+            "Pulls Amnesty/MVT STIX, CISA KEV, MISP/Malpedia malware+vuln corpora, then hardens the angel choir and swarm on-device (uncapped teaching). Does not refresh Nemesis Scanner signatures."
         )
     )
 
@@ -358,6 +363,7 @@ class UltimateQuillaAgent(
             ) {
                 add(QuillaFollowUp("Status brief", "give me my priority status brief"))
                 add(QuillaFollowUp("Angelic blessings", "angelic defense blessings"))
+                add(QuillaFollowUp("Train Infinity", "train infinity angels on malware and vulnerability databases"))
                 add(QuillaFollowUp("Loving awareness", "loving awareness"))
                 add(QuillaFollowUp("Overlay phishing", "overlay phishing"))
                 add(QuillaFollowUp("Care loop", "care loop"))
@@ -447,8 +453,9 @@ class UltimateQuillaAgent(
             QuillaModule.entries.joinToString("\n") { m ->
                 "• ${m.hebrewLetter} ${m.label} (${m.sephirah} · ${m.angel}) — ${m.superpower}"
             } + "\n" +
-            "• Research detail — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs " +
-            "(not live continuous intel; not Scanner signature refresh)\n" +
+            "• Research detail — Quilla Infinity Intel: optional Amnesty/MVT STIX + CISA KEV + MISP/Malpedia briefs, " +
+            "then uncapped angel/swarm training on malware + vuln corpora " +
+            "(not live continuous intel; not Scanner signature refresh; not cloud LLM)\n" +
             "• Knowledge detail — $corpus (OWASP · MITRE · IR · pentest · loving-awareness codex); search is uncapped\n" +
             "Current posture: ${briefing.posture.label} (score ${briefing.score}/100) · " +
             "${briefing.aspectName} / ${briefing.sephirahName}. ${briefing.headline}\n" +
@@ -618,7 +625,14 @@ class UltimateQuillaAgent(
                     " (STIX=${research.remoteIndicatorCount}, on-device MVT=${research.mvtOnDeviceCount})."
             else ->
                 "Intel Network has not synced yet. Sync is optional and uses HTTPS for public " +
-                    "Amnesty/MVT STIX, CISA KEV, and MISP Android galaxy when available."
+                    "Amnesty/MVT STIX, CISA KEV, and MISP/Malpedia malware+vuln corpora when available."
+        }
+        val infinity = if (research.infinityGeneration > 0) {
+            "Infinity choir training gen ${research.infinityGeneration} (uncapped): " +
+                "codex=${research.infinityCodexDepth}, malware=${research.infinityMalwareStudied}, " +
+                "vuln=${research.infinityVulnStudied}. Angels + swarm hardened on-device — not cloud LLM weights."
+        } else {
+            "Infinity training idle — say \"train infinity angels\" (local codex) or sync the Intel Network (HTTPS + train)."
         }
         val notes = research.feedNotes.take(QuillaAwareness.FEED_NOTE_VOICE).takeIf { it.isNotEmpty() }
             ?.joinToString(" · ")
@@ -631,7 +645,7 @@ class UltimateQuillaAgent(
             "Correlated hypotheses available: ${memory.activeHypotheses.size}."
         }
         return "Chokmah · Raziel — " +
-            listOf(intel, notes, hyp).filter { it.isNotBlank() }.joinToString("\n") +
+            listOf(intel, infinity, notes, hyp).filter { it.isNotBlank() }.joinToString("\n") +
             "\nThis Quilla Research feed does not refresh Nemesis Scanner signatures " +
             "(Premium signature refresh on Scanner is a separate path).\n" +
             "Ask Knowledge (Binah · Tzaphkiel) about emerging mobile attacks, CISA KEV CVEs, or \"what is T1636\"."
