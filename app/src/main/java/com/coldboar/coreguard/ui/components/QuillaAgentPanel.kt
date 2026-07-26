@@ -97,6 +97,7 @@ fun QuillaAgentPanel(
             CyberKnowledgeAssets.ensureLoaded(context)
             val wantsResearch = prompt.lowercase().let {
                 it.contains("research") || it.contains("stix") || it.contains("amnesty") ||
+                    it.contains("intel network") || it.contains("cisa") || it.contains("misp") ||
                     (it.contains("intel") && it.contains("sync")) ||
                     (it.contains("ioc") && it.contains("sync")) ||
                     it.contains("sync threat") || it.contains("sync quilla")

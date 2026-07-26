@@ -76,6 +76,29 @@ object QuillaReadyTopics {
                 "permission audit"
             ),
             chipLabel = "Permission hygiene"
+        ),
+        Topic(
+            prompt = "overlay phishing",
+            entryId = "attack-overlay-phishing",
+            aliases = setOf(
+                "accessibility overlay",
+                "banking trojan overlay",
+                "fake login overlay",
+                "overlay attack",
+                "what is overlay phishing"
+            ),
+            chipLabel = "Overlay phishing"
+        ),
+        Topic(
+            prompt = "sideload dropper",
+            entryId = "attack-sideload-dropper",
+            aliases = setOf(
+                "trojanized apk",
+                "sideloaded apk",
+                "apk dropper",
+                "modded apk risk"
+            ),
+            chipLabel = "Sideload dropper"
         )
     )
 

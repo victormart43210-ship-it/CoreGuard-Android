@@ -68,11 +68,15 @@ data class QuillaResearchSnapshot(
     val remoteIndicatorCount: Int = 0,
     /** On-device MVT-style IOCs merged from Nemesis inventory into the correlator. */
     val mvtOnDeviceCount: Int = 0,
+    /** Defensive knowledge entries ingested from public web intel (CISA KEV / MISP). */
+    val webKnowledgeCount: Int = 0,
+    /** Human-readable feed notes from the last [QuillaIntelNetwork] sync. */
+    val feedNotes: List<String> = emptyList(),
     /** True only when the last sync attempt completed without throwing. */
     val synced: Boolean = false,
     /** True when the last sync attempt failed (network/parse). Distinct from empty feed. */
     val syncFailed: Boolean = false,
-    val sourceLabel: String = "Amnesty/MVT public STIX + on-device IOCs"
+    val sourceLabel: String = "Quilla Intel Network (Amnesty/MVT · CISA · MISP)"
 )
 
 data class QuillaAgentAnswer(

@@ -55,47 +55,71 @@ object CyberKnowledgeBase {
     fun loadDocuments(jsonDocuments: Iterable<String>) {
         val parsed = mutableListOf<Entry>()
         for (doc in jsonDocuments) {
-            if (doc.isBlank()) continue
-            val root = JSONObject(doc)
-            val arr = root.optJSONArray("entries") ?: continue
-            for (i in 0 until arr.length()) {
-                val obj = arr.optJSONObject(i) ?: continue
-                val id = obj.optString("id").trim()
-                val title = obj.optString("title").trim()
-                if (id.isEmpty() || title.isEmpty()) continue
-                val tagsArr = obj.optJSONArray("tags")
-                val tags = buildSet {
-                    if (tagsArr != null) {
-                        for (t in 0 until tagsArr.length()) {
-                            val tag = tagsArr.optString(t).trim().lowercase(Locale.US)
-                            if (tag.isNotEmpty()) add(tag)
-                        }
-                    }
-                    add(obj.optString("category").trim().lowercase(Locale.US))
-                    tokenize(title).forEach { add(it) }
-                }.filter { it.isNotBlank() }.toSet()
-                val refsArr = obj.optJSONArray("references")
-                val refs = buildList {
-                    if (refsArr != null) {
-                        for (r in 0 until refsArr.length()) {
-                            val ref = refsArr.optString(r).trim()
-                            if (ref.isNotEmpty()) add(ref)
-                        }
-                    }
-                }
-                parsed += Entry(
-                    id = id,
-                    title = title,
-                    category = obj.optString("category").ifBlank { "general" },
-                    tags = tags,
-                    summary = obj.optString("summary").trim(),
-                    body = obj.optString("body").trim(),
-                    defense = obj.optString("defense").trim(),
-                    references = refs
-                )
-            }
+            parsed += parseDocument(doc)
         }
         state.set(buildIndex(parsed))
+    }
+
+    /**
+     * Merges runtime intel entries (e.g. CISA KEV / MISP galaxy) into the index.
+     * Same [Entry.id] replaces the prior record; bundled corpus entries are kept.
+     */
+    @Synchronized
+    fun mergeEntries(incoming: Collection<Entry>) {
+        if (incoming.isEmpty()) return
+        val byId = LinkedHashMap<String, Entry>()
+        for (existing in state.get().entries) {
+            byId[existing.id] = existing
+        }
+        for (entry in incoming) {
+            if (entry.id.isBlank() || entry.title.isBlank()) continue
+            byId[entry.id] = entry
+        }
+        state.set(buildIndex(byId.values.toList()))
+    }
+
+    internal fun parseDocument(doc: String): List<Entry> {
+        if (doc.isBlank()) return emptyList()
+        val root = runCatching { JSONObject(doc) }.getOrNull() ?: return emptyList()
+        val arr = root.optJSONArray("entries") ?: return emptyList()
+        val parsed = mutableListOf<Entry>()
+        for (i in 0 until arr.length()) {
+            val obj = arr.optJSONObject(i) ?: continue
+            val id = obj.optString("id").trim()
+            val title = obj.optString("title").trim()
+            if (id.isEmpty() || title.isEmpty()) continue
+            val tagsArr = obj.optJSONArray("tags")
+            val tags = buildSet {
+                if (tagsArr != null) {
+                    for (t in 0 until tagsArr.length()) {
+                        val tag = tagsArr.optString(t).trim().lowercase(Locale.US)
+                        if (tag.isNotEmpty()) add(tag)
+                    }
+                }
+                add(obj.optString("category").trim().lowercase(Locale.US))
+                tokenize(title).forEach { add(it) }
+            }.filter { it.isNotBlank() }.toSet()
+            val refsArr = obj.optJSONArray("references")
+            val refs = buildList {
+                if (refsArr != null) {
+                    for (r in 0 until refsArr.length()) {
+                        val ref = refsArr.optString(r).trim()
+                        if (ref.isNotEmpty()) add(ref)
+                    }
+                }
+            }
+            parsed += Entry(
+                id = id,
+                title = title,
+                category = obj.optString("category").ifBlank { "general" },
+                tags = tags,
+                summary = obj.optString("summary").trim(),
+                body = obj.optString("body").trim(),
+                defense = obj.optString("defense").trim(),
+                references = refs
+            )
+        }
+        return parsed
     }
 
     fun search(query: String, limit: Int = 3): List<Hit> {

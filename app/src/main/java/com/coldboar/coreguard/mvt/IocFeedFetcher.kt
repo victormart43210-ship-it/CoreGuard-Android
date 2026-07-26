@@ -26,11 +26,12 @@ object IocFeedFetcher {
     private const val OUTPUT_FILE = "remote_feed.json"
 
     /**
-     * The official MVT / Amnesty Tech Pegasus indicators (STIX2 JSON).
-     * Sourced from https://github.com/mvt-project/mvt-indicators
+     * Default Premium Nemesis signature refresh feed (STIX2 JSON).
+     * Amnesty Tech NSO/Pegasus public indicators — the retired
+     * `mvt-indicators/indicators/pegasus.stix2` path 404s.
      */
     const val DEFAULT_FEED_URL =
-        "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/indicators/pegasus.stix2"
+        "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
 
     sealed class FetchResult {
         /** Feed downloaded and saved; [IocRepository] cache has been invalidated. */

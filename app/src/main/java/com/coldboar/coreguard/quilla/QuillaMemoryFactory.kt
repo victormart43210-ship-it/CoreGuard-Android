@@ -10,7 +10,7 @@ import com.coldboar.coreguard.mvt.ShieldState
  * Builds [QuillaMemorySnapshot] / [QuillaResearchSnapshot] from live CoreGuard state.
  *
  * Threat-intel honesty:
- * - Research sync pulls public Amnesty / MVT STIX into Quilla's correlator.
+ * - Research sync uses [QuillaIntelNetwork] (Amnesty/MVT STIX + CISA/MISP web intel).
  * - On-device MVT IOCs from [IocRepository] are also merged for correlation.
  * - Neither path writes Scanner signatures for free users; Premium Nemesis
  *   refresh remains [com.coldboar.coreguard.mvt.IocFeedFetcher].
@@ -71,49 +71,28 @@ object QuillaMemoryFactory {
     fun cachedResearch(): QuillaResearchSnapshot = cachedResearch
 
     /**
-     * Synchronous intel sync for Research module. Call from a background dispatcher.
+     * Synchronous intel sync for Research module via [QuillaIntelNetwork].
+     * Call from a background dispatcher.
      *
      * Honesty rules:
-     * - [QuillaResearchSnapshot.synced] is true only when the remote fetch completed without error.
-     * - Empty feed is success with zero remote indicators (not a fake "loaded" failure mask).
+     * - [QuillaResearchSnapshot.synced] is true only when the network sync reports success.
      * - Failure leaves [QuillaResearchSnapshot.syncFailed] true and does not claim success.
-     * - On-device MVT IOCs are still merged into the correlator on failure when available.
-     * - This feed feeds Quilla Research only — it does **not** refresh Nemesis Scanner signatures.
+     * - This feed feeds Quilla Research / correlation only — it does **not** refresh
+     *   Nemesis Scanner signatures.
      */
     fun syncResearch(context: Context): QuillaResearchSnapshot {
-        val onDevice = runCatching {
-            QuillaIocBridge.fromMvtIndicators(IocRepository.indicators(context))
-        }.getOrDefault(emptyList())
-
-        val remoteResult = runCatching { AmnestyThreatIntelFetcher.fetchPublicResearchIndicators() }
-        return if (remoteResult.isSuccess) {
-            val remote = remoteResult.getOrDefault(emptyList())
-            val merged = QuillaIocBridge.mergeUnique(remote, onDevice)
-            sharedCorrelation.loadIndicators(merged)
-            localIntelLoaded = true
-            cachedResearch = QuillaResearchSnapshot(
-                indicatorCount = merged.size,
-                remoteIndicatorCount = remote.size,
-                mvtOnDeviceCount = onDevice.size,
-                synced = true,
-                syncFailed = false,
-                sourceLabel = "Amnesty/MVT public STIX + on-device IOCs"
-            )
-            cachedResearch
-        } else {
-            if (onDevice.isNotEmpty()) {
-                sharedCorrelation.mergeIndicators(onDevice)
-                localIntelLoaded = true
-            }
-            cachedResearch = QuillaResearchSnapshot(
-                indicatorCount = maxOf(cachedResearch.indicatorCount, onDevice.size),
-                remoteIndicatorCount = cachedResearch.remoteIndicatorCount,
-                mvtOnDeviceCount = onDevice.size,
-                synced = false,
-                syncFailed = true,
-                sourceLabel = cachedResearch.sourceLabel
-            )
-            cachedResearch
-        }
+        val network = QuillaIntelNetwork.syncAll(context)
+        localIntelLoaded = true
+        cachedResearch = QuillaResearchSnapshot(
+            indicatorCount = network.mergedCorrelatorCount,
+            remoteIndicatorCount = network.stixIndicatorCount,
+            mvtOnDeviceCount = network.onDeviceMvtCount,
+            webKnowledgeCount = network.webKnowledgeCount,
+            feedNotes = network.feedNotes,
+            synced = network.synced && !network.syncFailed,
+            syncFailed = network.syncFailed,
+            sourceLabel = network.sourceLabel
+        )
+        return cachedResearch
     }
 }

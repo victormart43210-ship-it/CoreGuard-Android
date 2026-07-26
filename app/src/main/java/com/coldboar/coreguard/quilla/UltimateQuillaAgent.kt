@@ -208,8 +208,8 @@ class UltimateQuillaAgent(
         )
         val intel = QuillaActionSuggestion(
             QuillaActionSuggestion.SYNC_INTEL,
-            "Sync Quilla research intel",
-            "Pulls Amnesty/MVT public STIX into Quilla Research and merges on-device MVT IOCs for correlation — does not refresh Nemesis Scanner signatures."
+            "Sync Quilla Intel Network",
+            "Pulls Amnesty/MVT STIX, CISA KEV, and MISP Android intel into Quilla for defensive correlation — does not refresh Nemesis Scanner signatures."
         )
         return when (intent) {
             QuillaIntent.SCAN -> listOf(scan, timeline)
@@ -276,7 +276,7 @@ class UltimateQuillaAgent(
         return "I run as a local agent stack (no cloud LLM):\n" +
             "• Brain — classify intent and decide next checks\n" +
             "• Memory — cite last scan, timeline, shield, hypotheses\n" +
-            "• Research — optional Amnesty/MVT public STIX pull + on-device MVT IOC correlation (not live continuous intel; not Scanner signature refresh)\n" +
+            "• Research — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs + on-device IOC correlation (not live continuous intel; not Scanner signature refresh)\n" +
             "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
             "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
@@ -377,26 +377,32 @@ class UltimateQuillaAgent(
     private fun researchBlurb(research: QuillaResearchSnapshot, memory: QuillaMemorySnapshot): String {
         val intel = when {
             research.syncFailed ->
-                "Research sync failed (network or parse error). Cached indicators: ${research.indicatorCount}" +
+                "Intel Network sync failed (network or parse error). Cached indicators: ${research.indicatorCount}" +
                     " (on-device MVT IOCs still usable: ${research.mvtOnDeviceCount})."
-            research.synced && research.indicatorCount == 0 ->
-                "Research synced empty public feeds from ${research.sourceLabel}."
-            research.synced || research.indicatorCount > 0 ->
-                "Research cached ${research.indicatorCount} indicators from ${research.sourceLabel}" +
-                    " (remote=${research.remoteIndicatorCount}, on-device MVT=${research.mvtOnDeviceCount})."
+            research.synced && research.indicatorCount == 0 && research.webKnowledgeCount == 0 ->
+                "Intel Network synced empty public feeds from ${research.sourceLabel}."
+            research.synced || research.indicatorCount > 0 || research.webKnowledgeCount > 0 ->
+                "Intel Network cached ${research.indicatorCount} correlator indicators + " +
+                    "${research.webKnowledgeCount} web knowledge briefs from ${research.sourceLabel}" +
+                    " (STIX=${research.remoteIndicatorCount}, on-device MVT=${research.mvtOnDeviceCount})."
             else ->
-                "Research has not synced yet. Sync is optional and uses HTTPS for Amnesty/MVT public STIX when available."
+                "Intel Network has not synced yet. Sync is optional and uses HTTPS for public " +
+                    "Amnesty/MVT STIX, CISA KEV, and MISP Android galaxy when available."
         }
+        val notes = research.feedNotes.take(4).takeIf { it.isNotEmpty() }
+            ?.joinToString(" · ")
+            ?.let { "Feeds: $it." }
+            .orEmpty()
         val hyp = if (memory.activeHypotheses.isEmpty()) {
-            "No correlated hypotheses yet — a STIX pull alone is not a device verdict. " +
+            "No correlated hypotheses yet — a STIX/KEV pull alone is not a device verdict. " +
                 "Hypotheses appear when scans, Shield blocks, or RASP signals match Amnesty/MVT IOCs."
         } else {
             "Correlated hypotheses available: ${memory.activeHypotheses.size}."
         }
-        return "$intel\n$hyp\n" +
-            "This Quilla Research feed does not refresh Nemesis Scanner signatures " +
+        return listOf(intel, notes, hyp).filter { it.isNotBlank() }.joinToString("\n") +
+            "\nThis Quilla Research feed does not refresh Nemesis Scanner signatures " +
             "(Premium signature refresh on Scanner is a separate path).\n" +
-            "For framework education (ATT&CK/OWASP), ask Knowledge questions like \"what is T1636\"."
+            "Ask Knowledge about emerging mobile attacks, CISA KEV CVEs, or \"what is T1636\"."
     }
 
     private fun generalBlurb(prompt: String, memory: QuillaMemorySnapshot): String {

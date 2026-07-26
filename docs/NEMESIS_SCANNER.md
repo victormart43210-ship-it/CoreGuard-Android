@@ -70,12 +70,14 @@ Premium in-app refresh uses `IocFeedFetcher` (writes `filesDir/ioc/`). That path
 is entitlement-gated and separate from Quilla Research.
 
 ### Quilla threat-intelligence bridge
-Quilla Research can:
-1. Optionally HTTPS-pull public Amnesty Tech campaign STIX and MVT Pegasus STIX
-   into its correlator (`AmnestyThreatIntelFetcher`).
-2. Merge on-device MVT/Nemesis inventory from `IocRepository` (`QuillaIocBridge`)
+Quilla Intel Network (`QuillaIntelNetwork`) can:
+1. Optionally HTTPS-pull public Amnesty Tech + MVT campaign STIX (and open
+   stalkerware STIX) into its correlator / sliding-window engine.
+2. Ingest defensive web intel (CISA KEV Android/mobile filter, MISP Android galaxy)
+   into the Cyber Codex at runtime.
+3. Merge on-device MVT/Nemesis inventory from `IocRepository` (`QuillaIocBridge`)
    without ungating Premium Scanner signature writes.
-3. Record scan detections and Shield DNS blocks as correlation evidence.
+4. Record scan detections and Shield DNS blocks as correlation evidence.
 
 A Quilla Research sync is **not** a Nemesis signature refresh.
 
