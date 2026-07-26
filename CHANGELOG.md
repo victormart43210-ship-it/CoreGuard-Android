@@ -13,6 +13,9 @@ Version numbers match `gradle/android-app.gradle`.
 - Ward Circle hardening journey, Quilla Private Baseline (7-day learning), Ritual of Response
 - Verify CoreGuard installation identity, redacted report export
 - Hub screen: Tools → **Guardian Intelligence** (`GuardianModule` façade)
+- Home shows Guardian Pulse (tap opens Intelligence hub)
+- Baseline prefs use `PREF_*` names (MASVS-CRYPTO-1 false-positive fix)
+- On-device smoke: `GuardianIntelligenceOnDeviceTest` in emulator gate
 - Docs: blueprint + Phase 0 architecture audit
 
 ### Docs — Guardian Intelligence Phase 0

@@ -208,6 +208,9 @@ fun CoreGuardApp(
                         },
                         onNavigateToScamGuard = {
                             navController.navigate(CoreGuardRoute.ScamGuard.route)
+                        },
+                        onNavigateToGuardian = {
+                            navController.navigate(CoreGuardRoute.GuardianIntelligence.route)
                         }
                     )
                 }

@@ -78,9 +78,13 @@ import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
+import com.coldboar.coreguard.guardian.DataAvailability
+import com.coldboar.coreguard.guardian.GuardianModule
+import com.coldboar.coreguard.guardian.GuardianState
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.swarm.SwarmModule
+import com.coldboar.coreguard.ui.components.GuardianPulse
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBorder
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CyberGreen
@@ -111,6 +115,7 @@ import kotlin.math.sin
  * - **Swarm alerts** — read via [SwarmModule.alertCounter] (never own the int).
  * - **DTS / Scam amber Counter** — subscribe to [EliteModule.threatCounter];
  *   refresh DTS only through [EliteModule.evaluateThreatScore].
+ * - **Guardian Pulse** — resolved via [GuardianModule]; tap opens Guardian Intelligence.
  * - **Toggles** below are local UI preferences only — not a cloud LLM switch.
  */
 @OptIn(ExperimentalMaterial3Api::class)
@@ -122,7 +127,8 @@ fun EliteDashboardScreen(
     onNavigateToTools: () -> Unit = {},
     onNavigateToOverlayMatrix: () -> Unit = {},
     onNavigateToForensicJournal: () -> Unit = {},
-    onNavigateToScamGuard: () -> Unit = {}
+    onNavigateToScamGuard: () -> Unit = {},
+    onNavigateToGuardian: () -> Unit = {}
 ) {
     val context = LocalContext.current
 
@@ -146,6 +152,7 @@ fun EliteDashboardScreen(
     var threatsLabel by remember { mutableStateOf("–") }
     var swarmAlerts by remember { mutableStateOf(0) }
     var shieldOn by remember { mutableStateOf(false) }
+    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
 
     DisposableEffect(Unit) {
         val unsub = EliteModule.threatCounter.subscribe { eliteCounter = it }
@@ -158,6 +165,18 @@ fun EliteDashboardScreen(
         evidence = GuardianScore.explain(results)
         shieldOn = ShieldState.isActive
         swarmAlerts = SwarmModule.alertCounter.getState().count
+        guardianPulse = withContext(Dispatchers.IO) {
+            val findings = GuardianModule.explainChecks(context)
+            GuardianModule.resolvePulse(
+                findings = findings,
+                scanning = false,
+                dataAvailability = if (findings.isEmpty()) {
+                    DataAvailability.NONE
+                } else {
+                    DataAvailability.COMPLETE
+                }
+            )
+        }
 
         val report = ScannerModule.latestReport()
         if (report != null) {
@@ -300,6 +319,23 @@ fun EliteDashboardScreen(
                     .semantics {
                         contentDescription =
                             "Sacred geometry is brand artwork, not a live sensor reading"
+                    }
+            )
+
+            GuardianPulse(
+                state = guardianPulse,
+                onClick = onNavigateToGuardian
+            )
+            Text(
+                text = "Tap pulse for Guardian Intelligence (Truth Seals · evidence · next action).",
+                color = TextSecondary,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToGuardian)
+                    .semantics {
+                        contentDescription = "Open Guardian Intelligence"
                     }
             )
 
