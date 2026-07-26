@@ -96,10 +96,10 @@
     <string name="paywall_btn_subscribe_priced">Subscribe · %1$s</string>
     <string name="paywall_btn_subscribe">Yes — Go Premium Now</string>
     <string name="paywall_btn_close">Not yet</string>
-    <string name="paywall_purchase_success_demo">✅ You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
+    <string name="paywall_purchase_success_demo">You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
     <string name="paywall_purchase_cancelled">No problem — your free tools stay ready whenever you are.</string>
     <string name="paywall_purchase_error">Something went wrong: %1$s. Try again when you\'re ready.</string>
-    <string name="paywall_purchase_success">✅ You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
+    <string name="paywall_purchase_success">You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
     <string name="paywall_already_premium">You\'re already Premium on this Google account. Thank you for leading with protection.</string>
 
     <string name="paywall_export_requires_premium">Report export requires CoreGuard Premium.</string>
