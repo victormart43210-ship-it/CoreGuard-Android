@@ -2,43 +2,37 @@
 
 Branch: `cursor/swarm-module-redux-counter-6db1`  
 Date: 2026-07-26  
-Version: **1.0.11** (`versionCode` 12)
+Version: **1.0.12** (`versionCode` 13)
 
 > Milestone results are posted as PR comments (GitHub Milestone API returns 403).
 
-## Milestone M15 · Swarm module + Redux Counter + ATD emulator gate
+## Milestone M16 · CG Elite sacred-geometry Home dashboard
 
 | Check | Result | Notes |
 |-------|--------|-------|
+| `:app:compileDebugKotlin` | **PASS** | Elite dashboard package |
 | `:app:testDebugUnitTest` | **PASS** | **304** tests |
-| Emulator | **PASS** | `CoreGuard_ATD35` still running (google_atd, no KVM) |
-| Instrumented (`am instrument`) | **PASS** | Quantum **2/2** · MainActivity launch **1/1** |
-| `scripts/smoke-adb.sh` | **PASS** | pid alive, focus on MainActivity, no fatal |
-| Gradle wrapper | **8.13** | Pin restores kapt after 9.6.1 breakage on `main` |
+| Emulator smoke (`CoreGuard_ATD35`) | **PASS** | MainActivity focused, no fatal |
+| Honesty | **PASS** | Hub uses Guardian Score / Nemesis / Shield / swarm — toggles are local prefs; “Quilla correlate” ≠ cloud AI |
 
-### Landed (this branch)
+### Landed
 
-- `SwarmModule` façade + Redux-style `SwarmAlertCounterStore` / UI Counter
-- External Security Toolkit rescued from conflicting PR #68
-- Emulator harness prefers ATD + `am instrument` path
-
-### Re-run
-
-```bash
-HEADLESS=1 ./scripts/quilla-emulator-tests.sh
-```
+- `ui/dashboard/EliteDashboardScreen` — Flower-of-Life / hexagram Canvas hub
+- Home tab delegates to Elite dashboard
+- Quick chips navigate to Shield / Scanner / Timeline / Tools
+- Power-user cards show live CPU / RAM / scan counts
 
 ## Prior milestones
 
 | Milestone | Result |
 |-----------|--------|
-| M1–M13 | PASS (via #70) |
-| M14 Emulator Gate | PASS (PR #71) |
-| **M15 Swarm + Redux Counter + ATD gate** | **PASS — 304 unit + 3 instrumented + smoke** |
+| M14 Emulator Gate | PASS |
+| M15 Swarm + Redux Counter + ATD | PASS — 304 unit + instrumented + smoke |
+| **M16 CG Elite Home dashboard** | **PASS — 304 unit + ATD smoke** |
 
 ## Play Console next (human)
 
-1. Merge PR #72 (then #71 if still needed) → Internal Testing AAB  
+1. Merge PR #72 → Internal Testing AAB  
 2. Privacy policy URL on Play listing  
 3. VPN + `QUERY_ALL_PACKAGES` declarations  
 4. `coreguard_premium_monthly` + license tester  
