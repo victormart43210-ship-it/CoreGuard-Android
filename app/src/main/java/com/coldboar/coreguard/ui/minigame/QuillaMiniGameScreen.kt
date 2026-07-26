@@ -296,7 +296,10 @@ private fun AuditKeepHud(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Shield / shards bar
-            Column(modifier = Modifier.weight(1.2f)) {
+            Column(
+                modifier = Modifier.weight(1.2f),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Canvas(modifier = Modifier.size(18.dp)) {
                         drawRoundRect(
@@ -307,15 +310,23 @@ private fun AuditKeepHud(
                         drawCircle(CxVoid, radius = size.minDimension * 0.22f, center = center)
                     }
                     Spacer(modifier = Modifier.width(6.dp))
-                    LinearProgressIndicator(
-                        progress = { shield / 100f },
-                        modifier = Modifier
-                            .weight(1f)
-                            .height(10.dp),
-                        color = if (shield < 30) CxDanger else CxCyan,
-                        trackColor = CxPanelEdge,
-                        strokeCap = StrokeCap.Round
-                    )
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Shield $shield%",
+                            color = CxTealDim,
+                            fontSize = 10.sp,
+                            fontFamily = FontFamily.Monospace
+                        )
+                        LinearProgressIndicator(
+                            progress = { shield / 100f },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(10.dp),
+                            color = if (shield < 30) CxDanger else CxCyan,
+                            trackColor = CxPanelEdge,
+                            strokeCap = StrokeCap.Round
+                        )
+                    }
                 }
                 Text(
                     text = "Data Shards Collected",
