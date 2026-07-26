@@ -51,6 +51,44 @@ class QuillaCorrelationEngineTest {
     }
 
     @Test
+    fun `MVT parent domain matches subdomain destination`() {
+        engine.correlateSignals(
+            packageName = "com.test.app",
+            rasp = null,
+            network = NetworkEvent(
+                packageName = "com.test.app",
+                destinationDomainOrIp = "c2.evil.example.com",
+                isUntrustedNetwork = false,
+                bytesTransferred = 64L
+            )
+        )
+        val hypotheses = store.all()
+        assertEquals(1, hypotheses.size)
+        assertTrue(hypotheses.first().evidenceJson.contains("evil.example.com"))
+    }
+
+    @Test
+    fun `mergeIndicators keeps existing and adds new without clearing`() {
+        engine.mergeIndicators(
+            listOf(
+                AmnestyIndicator("indicator--new", "DOMAIN", "other.example.com", "Extra")
+            )
+        )
+        assertEquals(2, engine.indicatorCount())
+        engine.correlateSignals(
+            packageName = "com.test.app",
+            rasp = null,
+            network = NetworkEvent(
+                packageName = "com.test.app",
+                destinationDomainOrIp = "other.example.com",
+                isUntrustedNetwork = false,
+                bytesTransferred = 1L
+            )
+        )
+        assertEquals(1, store.all().size)
+    }
+
+    @Test
     fun `no signals below threshold produce no hypothesis`() {
         // Base score 0.50, untrusted network +0.10 = 0.60 — below 0.75 threshold.
         engine.correlateSignals(

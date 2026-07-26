@@ -8,7 +8,7 @@ package com.coldboar.coreguard.quilla
 enum class QuillaModule(val label: String, val superpower: String) {
     BRAIN("Brain", "Reason & decide"),
     MEMORY("Memory", "Long-term device context"),
-    RESEARCH("Research", "Optional STIX pull"),
+    RESEARCH("Research", "Optional Amnesty/MVT STIX"),
     KNOWLEDGE("Knowledge", "Cybersecurity codex"),
     ACTIONS("Actions", "Suggest next steps"),
     TOOLS("Tools", "Scanner · Shield · Timeline")
@@ -51,20 +51,28 @@ data class QuillaActionSuggestion(
 data class QuillaMemorySnapshot(
     val lastScanVerdict: String? = null,
     val lastScanDetections: Int? = null,
+    /** Short titles from the latest Nemesis detections (MVT-style matches). */
+    val lastScanDetectionTitles: List<String> = emptyList(),
     val historyCount: Int = 0,
     val shieldActive: Boolean = false,
     val shieldBlocked: Int = 0,
     val lastBlockedDomain: String? = null,
-    val activeHypotheses: List<String> = emptyList()
+    val activeHypotheses: List<String> = emptyList(),
+    /** On-device MVT/Nemesis IOC inventory size available to Quilla correlation. */
+    val mvtIocInventoryCount: Int = 0
 )
 
 data class QuillaResearchSnapshot(
     val indicatorCount: Int = 0,
+    /** Indicators from remote Amnesty / MVT public STIX pulls (Quilla Research only). */
+    val remoteIndicatorCount: Int = 0,
+    /** On-device MVT-style IOCs merged from Nemesis inventory into the correlator. */
+    val mvtOnDeviceCount: Int = 0,
     /** True only when the last sync attempt completed without throwing. */
     val synced: Boolean = false,
     /** True when the last sync attempt failed (network/parse). Distinct from empty feed. */
     val syncFailed: Boolean = false,
-    val sourceLabel: String = "Amnesty STIX2 (campaign archive)"
+    val sourceLabel: String = "Amnesty/MVT public STIX + on-device IOCs"
 )
 
 data class QuillaAgentAnswer(

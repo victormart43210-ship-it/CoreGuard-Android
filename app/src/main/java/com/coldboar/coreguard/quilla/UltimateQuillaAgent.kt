@@ -11,7 +11,7 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
  * Formula (adapted for CoreGuard, no ChatGPT/Claude/Zapier keys):
  * - **Brain** — intent classification + evidence-based answer composition
  * - **Memory** — last scan, timeline size, shield state, hypotheses
- * - **Research** — Amnesty / STIX indicator sync status
+ * - **Research** — Amnesty / MVT STIX indicator sync + on-device IOC correlation
  * - **Knowledge** — on-device cyber codex (OWASP, MITRE ATT&CK Mobile, pentest, IR)
  *   plus optional Observatory Codex metaphors (never treated as detection)
  * - **Actions** — suggested automations (scan, shield, timeline, intel sync)
@@ -209,7 +209,7 @@ class UltimateQuillaAgent(
         val intel = QuillaActionSuggestion(
             QuillaActionSuggestion.SYNC_INTEL,
             "Sync Quilla research intel",
-            "Pulls an Amnesty campaign STIX archive for Quilla Research only — does not refresh Nemesis Scanner signatures."
+            "Pulls Amnesty/MVT public STIX into Quilla Research and merges on-device MVT IOCs for correlation — does not refresh Nemesis Scanner signatures."
         )
         return when (intent) {
             QuillaIntent.SCAN -> listOf(scan, timeline)
@@ -276,7 +276,7 @@ class UltimateQuillaAgent(
         return "I run as a local agent stack (no cloud LLM):\n" +
             "• Brain — classify intent and decide next checks\n" +
             "• Memory — cite last scan, timeline, shield, hypotheses\n" +
-            "• Research — optional Amnesty campaign STIX pull (not live continuous intel; not Scanner signature refresh)\n" +
+            "• Research — optional Amnesty/MVT public STIX pull + on-device MVT IOC correlation (not live continuous intel; not Scanner signature refresh)\n" +
             "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
             "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
@@ -319,9 +319,13 @@ class UltimateQuillaAgent(
         val scanLine = if (memory.lastScanVerdict == null) {
             "No recent Nemesis scan in Memory — run a scan before claiming the device is clean."
         } else {
+            val titles = memory.lastScanDetectionTitles.takeIf { it.isNotEmpty() }
+                ?.joinToString("; ")
+                ?.let { " Notable: $it." }
+                .orEmpty()
             "Last scan verdict: ${memory.lastScanVerdict}" +
                 (memory.lastScanDetections?.let { " ($it detections)" } ?: "") +
-                ". Timeline holds ${memory.historyCount} entries."
+                ". Timeline holds ${memory.historyCount} entries.$titles"
         }
         val shieldLine = if (memory.shieldActive) {
             "Privacy Shield is ON (${memory.shieldBlocked} domains blocked" +
@@ -329,13 +333,18 @@ class UltimateQuillaAgent(
         } else {
             "Privacy Shield is OFF — DNS IOC/tracker filtering is idle until you enable it with VPN consent."
         }
+        val iocLine = if (memory.mvtIocInventoryCount > 0) {
+            "MVT-style on-device IOC inventory: ${memory.mvtIocInventoryCount} indicators available to Quilla correlation."
+        } else {
+            "MVT-style on-device IOC inventory not loaded yet."
+        }
         val hyp = if (memory.activeHypotheses.isEmpty()) {
             "No active Quilla hypotheses stored."
         } else {
             "Active hypotheses: " + memory.activeHypotheses.take(3).joinToString("; ") +
                 if (memory.activeHypotheses.size > 3) "…" else "."
         }
-        return "$scanLine\n$shieldLine\n$hyp\nObserve → correlate → explain before you escalate."
+        return "$scanLine\n$shieldLine\n$iocLine\n$hyp\nObserve → correlate → explain before you escalate."
     }
 
     private fun scanBlurb(memory: QuillaMemorySnapshot): String =
@@ -368,17 +377,19 @@ class UltimateQuillaAgent(
     private fun researchBlurb(research: QuillaResearchSnapshot, memory: QuillaMemorySnapshot): String {
         val intel = when {
             research.syncFailed ->
-                "Research sync failed (network or parse error). Cached indicators: ${research.indicatorCount}."
+                "Research sync failed (network or parse error). Cached indicators: ${research.indicatorCount}" +
+                    " (on-device MVT IOCs still usable: ${research.mvtOnDeviceCount})."
             research.synced && research.indicatorCount == 0 ->
-                "Research synced an empty campaign archive from ${research.sourceLabel}."
+                "Research synced empty public feeds from ${research.sourceLabel}."
             research.synced || research.indicatorCount > 0 ->
-                "Research cached ${research.indicatorCount} indicators from ${research.sourceLabel}."
+                "Research cached ${research.indicatorCount} indicators from ${research.sourceLabel}" +
+                    " (remote=${research.remoteIndicatorCount}, on-device MVT=${research.mvtOnDeviceCount})."
             else ->
-                "Research has not synced yet. Sync is optional and uses HTTPS when available."
+                "Research has not synced yet. Sync is optional and uses HTTPS for Amnesty/MVT public STIX when available."
         }
         val hyp = if (memory.activeHypotheses.isEmpty()) {
             "No correlated hypotheses yet — a STIX pull alone is not a device verdict. " +
-                "Hypotheses appear only when correlation matches local signals."
+                "Hypotheses appear when scans, Shield blocks, or RASP signals match Amnesty/MVT IOCs."
         } else {
             "Correlated hypotheses available: ${memory.activeHypotheses.size}."
         }

@@ -66,6 +66,19 @@ Download a fresh feed from the
 repository (STIX2), convert or copy it into the `ioc` folder, and call
 `IocRepository.invalidate()` (or restart the app) to reload.
 
+Premium in-app refresh uses `IocFeedFetcher` (writes `filesDir/ioc/`). That path
+is entitlement-gated and separate from Quilla Research.
+
+### Quilla threat-intelligence bridge
+Quilla Research can:
+1. Optionally HTTPS-pull public Amnesty Tech campaign STIX and MVT Pegasus STIX
+   into its correlator (`AmnestyThreatIntelFetcher`).
+2. Merge on-device MVT/Nemesis inventory from `IocRepository` (`QuillaIocBridge`)
+   without ungating Premium Scanner signature writes.
+3. Record scan detections and Shield DNS blocks as correlation evidence.
+
+A Quilla Research sync is **not** a Nemesis signature refresh.
+
 ## Testing
 
 Pure logic is covered by unit tests (`app/src/test/.../mvt/`): the IOC matcher,

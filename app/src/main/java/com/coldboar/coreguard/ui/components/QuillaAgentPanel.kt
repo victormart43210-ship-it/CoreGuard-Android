@@ -38,6 +38,7 @@ import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.quilla.QuillaActionSuggestion
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
 import com.coldboar.coreguard.quilla.QuillaMemoryFactory
@@ -101,7 +102,7 @@ fun QuillaAgentPanel(
                     it.contains("sync threat") || it.contains("sync quilla")
             }
             if (wantsResearch) {
-                QuillaMemoryFactory.syncResearch()
+                QuillaMemoryFactory.syncResearch(context)
             }
             UltimateQuillaAgent(
                 memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
@@ -110,13 +111,15 @@ fun QuillaAgentPanel(
         }
         answer = result
         // Honest Premium coaching tips (SalesCoach) — Quilla Q&A itself stays free.
+        val memory = QuillaMemoryFactory.memorySnapshot(context)
         val coach = QuillaSalesCoach.answer(
             prompt,
             QuillaSalesCoach.DeviceContext(
                 isPremium = isPremium,
-                timelineCount = QuillaMemoryFactory.memorySnapshot(context).historyCount,
-                shieldActive = QuillaMemoryFactory.memorySnapshot(context).shieldActive,
-                shieldBlocked = QuillaMemoryFactory.memorySnapshot(context).shieldBlocked
+                lastScan = ScannerModule.latestReport(),
+                timelineCount = memory.historyCount,
+                shieldActive = memory.shieldActive,
+                shieldBlocked = memory.shieldBlocked
             )
         )
         coachTip = when {

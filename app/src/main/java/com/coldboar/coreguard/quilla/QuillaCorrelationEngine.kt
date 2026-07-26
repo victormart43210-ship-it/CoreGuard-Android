@@ -7,9 +7,12 @@ import java.util.UUID
 /**
  * Quilla Correlation & Intelligence Engine.
  *
- * Matches real-time device telemetry against Amnesty International threat
- * intelligence feeds and generates a [QuillaHypothesis] when the combined
+ * Matches real-time device telemetry against Amnesty / MVT-style threat
+ * intelligence indicators and generates a [QuillaHypothesis] when the combined
  * confidence score reaches [ACTIVATION_THRESHOLD].
+ *
+ * Domain matching follows MVT conventions: exact host or parent-domain of a
+ * subdomain (`evil.com` matches `c2.evil.com`).
  *
  * Thread-safety: [syncThreatIntelligence] and [correlateSignals] may be called
  * from any thread; the active IOC list is protected by an internal lock.
@@ -30,6 +33,9 @@ class QuillaCorrelationEngine(
 
     private val indicatorLock = Any()
     private val activeIndicators = mutableListOf<AmnestyIndicator>()
+
+    /** Count of indicators currently loaded for correlation. */
+    fun indicatorCount(): Int = synchronized(indicatorLock) { activeIndicators.size }
 
     /**
      * Replaces the active IOC list with freshly fetched indicators from the
@@ -55,15 +61,35 @@ class QuillaCorrelationEngine(
     }
 
     /**
+     * Merges indicators into the active set without clearing existing entries.
+     * Deduplicates by lower-cased [AmnestyIndicator.patternValue].
+     */
+    fun mergeIndicators(indicators: List<AmnestyIndicator>) {
+        if (indicators.isEmpty()) return
+        synchronized(indicatorLock) {
+            val byKey = LinkedHashMap<String, AmnestyIndicator>()
+            for (existing in activeIndicators) {
+                byKey[existing.patternValue.trim().lowercase()] = existing
+            }
+            for (incoming in indicators) {
+                val key = incoming.patternValue.trim().lowercase()
+                if (key.isNotEmpty()) byKey.putIfAbsent(key, incoming)
+            }
+            activeIndicators.clear()
+            activeIndicators.addAll(byKey.values)
+        }
+    }
+
+    /**
      * Correlates weak local signals from RASP and Network Shield against the
-     * active Amnesty threat intelligence indicators.
+     * active Amnesty / MVT threat intelligence indicators.
      *
      * A [QuillaHypothesis] is written to [store] when the accumulated
      * confidence score is at least [ACTIVATION_THRESHOLD].
      *
      * Signal contributions:
-     * - IOC domain/IP match        → +0.40
-     * - Dynamic code loading (DCL) → +0.25
+     * - IOC domain/IP/package match → +0.40
+     * - Dynamic code loading (DCL)  → +0.25
      * - Root / privilege escalation → +0.20
      * - Untrusted network           → +0.10
      * (Base score starts at 0.50.)
@@ -80,17 +106,28 @@ class QuillaCorrelationEngine(
         var confidenceScore = 0.50f
         val evidenceList = mutableListOf<String>()
 
-        // 1. Check network traffic against Amnesty IOCs.
+        // 1. Check network traffic against Amnesty / MVT IOCs (MVT subdomain rules).
         network?.destinationDomainOrIp?.let { domain ->
             val matchingIoc = synchronized(indicatorLock) {
-                activeIndicators.find { it.patternValue.equals(domain, ignoreCase = true) }
+                findDomainOrIpMatch(domain)
             }
             if (matchingIoc != null) {
                 confidenceScore += 0.40f
                 evidenceList.add(
-                    "Matched Amnesty International IOC: ${matchingIoc.patternValue} (${matchingIoc.description})"
+                    "Matched Amnesty/MVT IOC: ${matchingIoc.patternValue} (${matchingIoc.description})"
                 )
             }
+        }
+
+        // 1b. Package id against PACKAGE indicators (MVT app:id style).
+        val packageIoc = synchronized(indicatorLock) {
+            findTypedMatch(packageName, "PACKAGE")
+        }
+        if (packageIoc != null) {
+            confidenceScore += 0.40f
+            evidenceList.add(
+                "Matched Amnesty/MVT package IOC: ${packageIoc.patternValue} (${packageIoc.description})"
+            )
         }
 
         // 2. Evaluate RASP behavioral indicators.
@@ -130,5 +167,40 @@ class QuillaCorrelationEngine(
                 )
             )
         }
+    }
+
+    private fun findTypedMatch(value: String, type: String): AmnestyIndicator? {
+        val needle = value.trim().lowercase()
+        if (needle.isEmpty()) return null
+        return activeIndicators.firstOrNull {
+            it.indicatorType.equals(type, ignoreCase = true) &&
+                it.patternValue.equals(needle, ignoreCase = true)
+        }
+    }
+
+    /** MVT-style: exact host or parent domain of a subdomain; also exact IP. */
+    private fun findDomainOrIpMatch(raw: String): AmnestyIndicator? {
+        val host = normaliseHost(raw) ?: return null
+        return activeIndicators.firstOrNull { ioc ->
+            val type = ioc.indicatorType.uppercase()
+            if (type != "DOMAIN" && type != "IP" && type != "GENERIC" && type != "URL") {
+                return@firstOrNull false
+            }
+            val value = ioc.patternValue.trim().lowercase()
+            if (value.isEmpty()) return@firstOrNull false
+            host == value || host.endsWith(".$value") ||
+                (type == "URL" && host in value)
+        }
+    }
+
+    private fun normaliseHost(input: String): String? {
+        var host = input.trim().lowercase()
+        if (host.isEmpty()) return null
+        val schemeIdx = host.indexOf("://")
+        if (schemeIdx >= 0) host = host.substring(schemeIdx + 3)
+        host = host.substringAfterLast('@')
+        host = host.substringBefore('/').substringBefore('?')
+        host = host.substringBefore(':')
+        return host.ifEmpty { null }
     }
 }
