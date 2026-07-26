@@ -87,6 +87,7 @@ object MasvsComplianceScorer {
         "frida" to MasvsCategory.RESILIENCE,
         "hook_maps" to MasvsCategory.RESILIENCE,
         "mount_integrity" to MasvsCategory.RESILIENCE,
+        "root" to MasvsCategory.RESILIENCE,
         "inline_hook_sample" to MasvsCategory.RESILIENCE,
         "memory_patch_sample" to MasvsCategory.RESILIENCE
     )

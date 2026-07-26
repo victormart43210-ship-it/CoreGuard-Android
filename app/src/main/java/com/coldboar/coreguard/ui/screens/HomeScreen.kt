@@ -46,7 +46,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -58,23 +57,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.coldboar.coreguard.BuildTypeCheckEvaluator
 import com.coldboar.coreguard.CpuUsageCalculator
-import com.coldboar.coreguard.DebuggerCheckEvaluator
-import com.coldboar.coreguard.EmulatorCheckEvaluator
 import com.coldboar.coreguard.GuardianRank
 import com.coldboar.coreguard.GuardianScore
 import com.coldboar.coreguard.MemoryUsageCalculator
-import com.coldboar.coreguard.RootCheckEvaluator
 import com.coldboar.coreguard.SecurityCheckResult
+import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
-import com.coldboar.coreguard.SecurityUtils
-import com.coldboar.coreguard.BuildConfig
-import com.coldboar.coreguard.SignatureCheckEvaluator
-import com.coldboar.coreguard.SpywareScanEvaluator
+import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
-import com.coldboar.coreguard.ui.theme.BackgroundDeepTeal
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -96,21 +88,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     var checksLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        val results = withContext(Dispatchers.IO) {
-            val certSha256 = SecurityUtils.getAppCertSha256(context)
-            val evaluators = listOf(
-                SpywareScanEvaluator(),
-                DebuggerCheckEvaluator(),
-                EmulatorCheckEvaluator(),
-                RootCheckEvaluator(),
-                BuildTypeCheckEvaluator(),
-                SignatureCheckEvaluator(
-                    actualSha256 = { certSha256 },
-                    expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
-                )
-            )
-            evaluators.map { it.evaluate() }
-        }
+        val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
         securityResults = results
         scoreTarget = GuardianScore.compute(results).toFloat()
         checksLoading = false
@@ -137,41 +115,27 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
     val needsAttention = warnCount + failCount > 0
 
-    Column(
+    ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
             .verticalScroll(rememberScrollState())
-            .background(BackgroundDeepBlack)
-            .padding(bottom = 24.dp)
     ) {
         // ── Hero Header ──────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            BackgroundDeepTeal.copy(alpha = 0.55f),
-                            SurfacePewter,
-                            BackgroundDeepBlack
-                        )
-                    )
-                )
-                .padding(horizontal = 24.dp, vertical = 32.dp),
+                .padding(horizontal = 8.dp, vertical = 16.dp),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
                     text = "CoreGuard",
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        letterSpacing = 2.sp
-                    ),
+                    style = MaterialTheme.typography.displayLarge,
                     color = ElectricTeal,
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "See clearly. Decide boldly. Protect what matters.",
+                    text = "On-device privacy intelligence",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )

@@ -36,6 +36,7 @@ object SecurityCheckRunner {
                 expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
             ),
             StrongBoxCheckEvaluator(level = keyLevel),
+            ProcessLineageEvaluator(),
             SpywareScanEvaluator()
         )
     }

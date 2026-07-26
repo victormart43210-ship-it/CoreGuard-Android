@@ -8,6 +8,14 @@ import android.os.Build
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
+import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -15,6 +23,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
@@ -31,14 +40,20 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import com.coldboar.coreguard.mvt.NemesisShield
 import com.coldboar.coreguard.mvt.ShieldState
+import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -101,15 +116,16 @@ fun ShieldScreen() {
         launchVpnConsentOrStart()
     }
 
-    Column(
+    ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        accent = if (shieldActive) SafeGreen else ElectricTeal
     ) {
         Text(
             text = "Privacy Shield",
             style = MaterialTheme.typography.headlineLarge,
+            color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
         Text(
@@ -118,7 +134,9 @@ fun ShieldScreen() {
             color = MutedText
         )
 
-        Spacer(modifier = Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(16.dp))
+        ShieldPresence(active = shieldActive, blocked = totalBlocked)
+        Spacer(modifier = Modifier.height(16.dp))
 
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -183,6 +201,77 @@ fun ShieldScreen() {
                     color = MutedText
                 )
             }
+        }
+    }
+}
+
+@Composable
+private fun ShieldPresence(active: Boolean, blocked: Int) {
+    val transition = rememberInfiniteTransition(label = "shieldPresence")
+    val pulse by transition.animateFloat(
+        initialValue = 0.65f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = if (active) 1800 else 3200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+    val ring by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 7000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "ring"
+    )
+    val accent = if (active) SafeGreen else ElectricTeal
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(200.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(180.dp)) {
+            val r = size.minDimension / 2f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        accent.copy(alpha = if (active) 0.28f * pulse else 0.1f),
+                        Color.Transparent
+                    )
+                ),
+                radius = r
+            )
+            drawCircle(
+                color = accent.copy(alpha = 0.35f),
+                radius = r * 0.62f,
+                style = Stroke(width = 3.dp.toPx())
+            )
+            if (active) {
+                drawArc(
+                    color = accent.copy(alpha = 0.7f),
+                    startAngle = ring,
+                    sweepAngle = 48f,
+                    useCenter = false,
+                    style = Stroke(width = 4.dp.toPx())
+                )
+            }
+        }
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Text(
+                text = if (active) "ARMED" else "STANDBY",
+                style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 3.sp),
+                color = accent,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = if (active) "$blocked blocked" else "Awaiting arm",
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
+            )
         }
     }
 }

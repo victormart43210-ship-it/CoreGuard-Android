@@ -3,9 +3,17 @@ package com.coldboar.coreguard.ui.screens
 import android.os.Handler
 import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,10 +21,12 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -24,18 +34,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import kotlinx.coroutines.delay
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
@@ -60,9 +78,17 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import java.util.concurrent.Executors
+import com.coldboar.coreguard.ui.theme.ElectricCyan
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+
+private val scanStages = listOf(
+    "Enumerating installed packages",
+    "Reading process signals",
+    "Matching Amnesty / MVT indicators",
+    "Composing privacy verdict"
+)
 
 @Composable
 fun ScannerScreen(
@@ -77,6 +103,8 @@ fun ScannerScreen(
     val feedExecutor = remember { Executors.newSingleThreadExecutor() }
 
     var isScanning by remember { mutableStateOf(false) }
+    var stageIndex by remember { mutableIntStateOf(0) }
+    var stageProgress by remember { mutableFloatStateOf(0f) }
     var isRefreshing by remember { mutableStateOf(false) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var scanError by remember { mutableStateOf<String?>(null) }
@@ -97,11 +125,13 @@ fun ScannerScreen(
 
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
-            title = "Privacy check",
+            title = "Nemesis Scanner",
             subtitle = "Looks for known spyware indicators and suspicious signs on this device. Scans stay local; optional Premium signature refresh uses HTTPS."
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(Modifier.height(16.dp))
+        ScannerOrb(active = isScanning)
+        Spacer(Modifier.height(12.dp))
 
         if (showEmptyState) {
             CoreGuardCard {
@@ -125,23 +155,33 @@ fun ScannerScreen(
             enter = fadeIn(),
             exit = fadeOut()
         ) {
-            Column {
-                Row(
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .semantics { liveRegion = LiveRegionMode.Polite }
+            ) {
+                Text(
+                    text = scanStages.getOrElse(stageIndex) { "Checking this device…" },
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricCyan
+                )
+                Spacer(Modifier.height(8.dp))
+                LinearProgressIndicator(
+                    progress = { stageProgress.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
-                        .semantics { liveRegion = LiveRegionMode.Polite },
-                    horizontalArrangement = Arrangement.Center,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    CircularProgressIndicator(color = ElectricTeal)
-                    Text(
-                        text = "Checking this device…",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedText,
-                        modifier = Modifier.padding(start = 12.dp)
-                    )
-                }
-                Spacer(Modifier.height(16.dp))
+                        .height(6.dp)
+                        .clip(RoundedCornerShape(50)),
+                    color = ElectricTeal,
+                    trackColor = Color.White.copy(alpha = 0.08f)
+                )
+                Spacer(modifier.height(6.dp))
+                Text(
+                    text = "Stage ${stageIndex + 1} of ${scanStages.size}",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(modifier.height(16.dp))
             }
         }
 
@@ -150,19 +190,31 @@ fun ScannerScreen(
             enabled = !isScanning && !isRefreshing,
             onClick = {
                 isScanning = true
+                stageIndex = 0
+                stageProgress = 0f
                 scanError = null
                 justCompleted = false
                 scope.launch {
                     try {
-                        val report = withContext(Dispatchers.IO) {
+                        val scanJob = launch(Dispatchers.IO) {
                             val result = DeviceScanner.scan(context)
                             ScanHistoryStore.append(context, result)
-                            result
+                            withContext(Dispatchers.Main) {
+                                LastScan.report = result
+                                scanReport = result
+                                lastHistory = null
+                                justCompleted = true
+                            }
                         }
-                        LastScan.report = report
-                        scanReport = report
-                        lastHistory = null
-                        justCompleted = true
+                        for (i in scanStages.indices) {
+                            stageIndex = i
+                            stageProgress = 0f
+                            repeat(10) {
+                                stageProgress = (it + 1) / 10f
+                                delay(60)
+                            }
+                        }
+                        scanJob.join()
                     } catch (_: Throwable) {
                         scanError =
                             "We couldn’t finish the check. Try again, or restart the app if this keeps happening."
@@ -401,6 +453,69 @@ private fun DetectionRow(detection: Detection) {
         Text(text = detection.detail, style = MaterialTheme.typography.bodySmall, color = MutedText)
         detection.indicator.reference?.takeIf { it.isNotBlank() }?.let { ref ->
             Text(text = ref, style = MaterialTheme.typography.bodySmall, color = MutedText)
+        }
+    }
+}
+
+@Composable
+private fun ScannerOrb(active: Boolean) {
+    val transition = rememberInfiniteTransition(label = "scannerOrb")
+    val sweep by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 2400, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "sweep"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.7f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 1600, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "pulse"
+    )
+
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(150.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Canvas(modifier = Modifier.size(140.dp)) {
+            val radius = size.minDimension / 2f
+            drawCircle(
+                brush = Brush.radialGradient(
+                    colors = listOf(
+                        ElectricTeal.copy(alpha = if (active) 0.22f * pulse else 0.08f),
+                        Color.Transparent
+                    )
+                ),
+                radius = radius
+            )
+            drawCircle(
+                color = Color.White.copy(alpha = 0.08f),
+                radius = radius * 0.72f,
+                style = Stroke(width = 2.dp.toPx())
+            )
+            if (active) {
+                drawArc(
+                    color = ElectricCyan,
+                    startAngle = sweep,
+                    sweepAngle = 70f,
+                    useCenter = false,
+                    style = Stroke(width = 3.dp.toPx())
+                )
+            } else {
+                drawCircle(
+                    color = ElectricTeal.copy(alpha = 0.45f),
+                    radius = 6.dp.toPx(),
+                    center = Offset(size.width / 2f, size.height / 2f)
+                )
+            }
         }
     }
 }
