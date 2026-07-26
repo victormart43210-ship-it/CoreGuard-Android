@@ -49,6 +49,8 @@ class SwarmCoordinatorTest {
 
     @Before
     fun setUp() {
+        // Counter is process-wide; reset so broadcast tests stay isolated.
+        SwarmModule.resetAlertCounter()
         coordinator = SwarmCoordinator(maxAlerts = 10)
         agentA = StubAgent("agent-a")
         agentB = StubAgent("agent-b")

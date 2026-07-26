@@ -75,13 +75,17 @@ open class SwarmCoordinator(private val maxAlerts: Int = 50) {
      * @param sender  The agent that produced the signal (excluded from broadcasts).
      */
     open fun broadcast(signal: SwarmSignal, sender: SwarmAgent) {
+        // 1) Persist WARN+ into the coordinator ring (UI / Quilla inspection).
         if (signal.severity >= SwarmSeverity.WARN) {
             appendAlert(signal)
+            // 2) Feed the Redux-style Counter via the module façade (UI never mutates).
+            SwarmModule.onAlertRouted(signal)
         }
 
-        // Continuity-preserving signed telemetry for Quilla (on-device only).
+        // 3) Continuity-preserving signed telemetry for Quilla (on-device only).
         runCatching { TelemetryBridge.onSwarmSignal(signal) }
 
+        // 4) CRITICAL handoff: notify every peer except the sender.
         if (signal.severity == SwarmSeverity.CRITICAL) {
             val peers = synchronized(lock) { agents.filter { it !== sender } }
             peers.forEach { peer ->
