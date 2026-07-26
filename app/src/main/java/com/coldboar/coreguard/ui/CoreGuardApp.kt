@@ -185,6 +185,12 @@ fun CoreGuardApp(
                         },
                         onNavigateToTimeline = {
                             navController.navigate(CoreGuardRoute.Timeline.route)
+                        },
+                        onNavigateToShield = {
+                            navigateToTab(CoreGuardRoute.Shield.route)
+                        },
+                        onNavigateToTools = {
+                            navController.navigate(CoreGuardRoute.Tools.route)
                         }
                     )
                 }
