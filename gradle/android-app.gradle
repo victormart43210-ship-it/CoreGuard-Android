@@ -40,15 +40,22 @@ android {
 
     ndkVersion "26.1.10909125"
 
-    def storeFile = System.getenv("SIGNING_STORE_FILE")
-    def storePass = System.getenv("SIGNING_STORE_PASSWORD")
-    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS")
-    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD")
+    // Prefer CI env secrets; fall back to local gitignored keystore.properties.
+    def localKeystoreProps = new Properties()
+    def localKeystoreFile = rootProject.file("keystore.properties")
+    if (localKeystoreFile.exists()) {
+        localKeystoreFile.withInputStream { localKeystoreProps.load(it) }
+    }
 
-    if (storeFile != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
+    def storeFilePath = System.getenv("SIGNING_STORE_FILE") ?: localKeystoreProps.getProperty("storeFile")
+    def storePass = System.getenv("SIGNING_STORE_PASSWORD") ?: localKeystoreProps.getProperty("storePassword")
+    def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: localKeystoreProps.getProperty("keyAlias")
+    def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD") ?: localKeystoreProps.getProperty("keyPassword")
+
+    if (storeFilePath != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
         signingConfigs {
             release {
-                storeFile file(storeFile)
+                storeFile rootProject.file(storeFilePath)
                 storePassword storePass
                 keyAlias signingKeyAlias
                 keyPassword signingKeyPass
