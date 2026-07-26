@@ -134,6 +134,44 @@ object QuillaReadyTopics {
                 "no limits on quilla"
             ),
             chipLabel = "Unbounded defense"
+        ),
+        Topic(
+            prompt = "angelic defense blessings",
+            entryId = "angelic-defense-blessings",
+            aliases = setOf(
+                "angelic blessings",
+                "defense blessings",
+                "quilla blessings",
+                "choir blessings",
+                "bless the app",
+                "angelic defense"
+            ),
+            chipLabel = "Angelic blessings"
+        ),
+        Topic(
+            prompt = "unauthorized instrumentation",
+            entryId = "defense-against-unauthorized-instrumentation",
+            aliases = setOf(
+                "frida defense",
+                "red team defense",
+                "red-team defense",
+                "unauthorized pentest defense",
+                "hook defense",
+                "michael blessing"
+            ),
+            chipLabel = "Anti-instrumentation"
+        ),
+        Topic(
+            prompt = "trojan intrusion defense",
+            entryId = "defense-against-trojan-intrusion",
+            aliases = setOf(
+                "trojan defense",
+                "intrusive trojan",
+                "overlay accessibility sideload",
+                "sandalphon blessing",
+                "banking trojan defense"
+            ),
+            chipLabel = "Anti-Trojan"
         )
     )
 

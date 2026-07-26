@@ -217,6 +217,18 @@ fun QuillaAgentPanel(
                         style = MaterialTheme.typography.labelMedium,
                         color = RestrainedGold
                     )
+                    val seal = remember(answer) {
+                        runCatching {
+                            QuillaMemoryFactory.memorySnapshot(context).blessingSeal
+                        }.getOrNull()
+                    }
+                    if (!seal.isNullOrBlank()) {
+                        Text(
+                            text = seal,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = ElectricTeal
+                        )
+                    }
                 }
                 Text(
                     text = if (isAsking) "◉‿◉" else "◈‿◈",

@@ -86,7 +86,15 @@ data class QuillaMemorySnapshot(
     /** Signed telemetry frames retained in the on-device ring. */
     val telemetryDeltaCount: Int = 0,
     /** True when any recent telemetry frame is HIGH/CRITICAL. */
-    val telemetryHighSeverity: Boolean = false
+    val telemetryHighSeverity: Boolean = false,
+    /** Angelic Defense Blessings seal line (evidence-backed choir status). */
+    val blessingSeal: String? = null,
+    /** Short per-angel blessing lines for Quilla voice. */
+    val blessingLines: List<String> = emptyList(),
+    /** Count of BREACHED angelic blessings (needs human attention). */
+    val blessingsBreached: Int = 0,
+    /** Count of ACTIVE angelic blessings. */
+    val blessingsActive: Int = 0
 )
 
 /** Short follow-up prompts Quilla offers after an answer. */

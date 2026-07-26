@@ -1,6 +1,8 @@
 package com.coldboar.coreguard.quilla
 
 import android.content.Context
+import com.coldboar.coreguard.SecurityCheckRunner
+import com.coldboar.coreguard.defense.AngelicDefenseBlessings
 import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.ScanHistoryStore
@@ -59,7 +61,7 @@ object QuillaMemoryFactory {
         val highTelemetry = telemetry.any {
             it.delta.severity == RiskSeverity.HIGH || it.delta.severity == RiskSeverity.CRITICAL
         }
-        return QuillaMemorySnapshot(
+        val base = QuillaMemorySnapshot(
             lastScanVerdict = last?.verdict?.name ?: newest?.verdict?.name,
             lastScanDetections = last?.detections?.size ?: newest?.detectionCount,
             lastScanDetectionTitles = last?.detections?.map { it.title }
@@ -75,6 +77,15 @@ object QuillaMemoryFactory {
             correlatorIndicatorCount = sharedCorrelation.indicatorCount(),
             telemetryDeltaCount = telemetry.size,
             telemetryHighSeverity = highTelemetry
+        )
+        // Angelic choir — evidence from Guardian Score checks + Memory/Research.
+        val checks = runCatching { SecurityCheckRunner.run(context) }.getOrDefault(emptyList())
+        val choir = AngelicDefenseBlessings.evaluate(checks, base, cachedResearch)
+        return base.copy(
+            blessingSeal = choir.sealLine,
+            blessingLines = AngelicDefenseBlessings.summaryLines(choir),
+            blessingsBreached = choir.breachedCount,
+            blessingsActive = choir.activeCount
         )
     }
 

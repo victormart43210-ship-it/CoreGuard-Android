@@ -103,6 +103,15 @@ object QuillaPriorityEngine {
             )
         }
 
+        if (memory.blessingsBreached > 0) {
+            score += 12 + (memory.blessingsBreached - 1).coerceAtMost(3) * 4
+            moves += PriorityMove(
+                "angelic_breach",
+                "Restore breached angelic blessings",
+                "${memory.blessingsBreached} defense blessings BREACHED — Michael/Sandalphon surfaces need attention."
+            )
+        }
+
         if (!research.synced && research.indicatorCount == 0) {
             moves += PriorityMove(
                 QuillaActionSuggestion.SYNC_INTEL,
@@ -166,7 +175,8 @@ object QuillaPriorityEngine {
             add("MASVS-NETWORK" to "MASVS-NETWORK")
             add("Tree" to "explain the tree of life")
             add("Loving awareness" to "loving awareness")
-            add("Care loop" to "care loop")
+            add("Angelic blessings" to "angelic defense blessings")
+            add("Anti-Trojan" to "trojan intrusion defense")
         }.distinctBy { it.second }.take(QuillaAwareness.CHIP_VOICE)
 
         return Briefing(

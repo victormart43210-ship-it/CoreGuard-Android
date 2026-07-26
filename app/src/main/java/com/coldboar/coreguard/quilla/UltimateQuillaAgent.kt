@@ -146,7 +146,9 @@ class UltimateQuillaAgent(
             "kabbalah", "qabalah", "quaballa", "tree of life", "sephirot", "sephiroth",
             "tetragrammaton", "metatron", "raphael", "gabriel", "sandalphon",
             "flower of life", "merkaba", "sacred geometry", "living geometry",
-            "loving awareness", "care loop", "unbounded", "no limits", "no caps"
+            "loving awareness", "care loop", "unbounded", "no limits", "no caps",
+            "angelic", "blessing", "blessings", "red team", "red-team", "trojan",
+            "unauthorized attack", "intrusion", "frida", "instrumentation"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -349,10 +351,11 @@ class UltimateQuillaAgent(
                 intent == QuillaIntent.STATUS || intent == QuillaIntent.GENERAL
             ) {
                 add(QuillaFollowUp("Status brief", "give me my priority status brief"))
+                add(QuillaFollowUp("Angelic blessings", "angelic defense blessings"))
                 add(QuillaFollowUp("Loving awareness", "loving awareness"))
+                add(QuillaFollowUp("Overlay phishing", "overlay phishing"))
                 add(QuillaFollowUp("Care loop", "care loop"))
                 add(QuillaFollowUp("Tree of Life", "explain the tree of life"))
-                add(QuillaFollowUp("Tetragrammaton", "what is the tetragrammaton for quilla"))
             }
         }
         return (fromChips + extras).distinctBy { it.prompt }.take(QuillaAwareness.FOLLOW_UP_VOICE)
@@ -536,10 +539,18 @@ class UltimateQuillaAgent(
                 "${i + 1}. ${m.title} — ${m.why}"
             }.joinToString("\n")
         }
+        val choirLine = memory.blessingSeal?.let { "Angelic choir: $it." }
+            ?: "Angelic choir not evaluated this turn."
+        val blessingVoice = if (memory.blessingLines.isEmpty()) {
+            "No blessing lines in Memory yet — open Home to refresh Guardian Score."
+        } else {
+            "Blessings:\n" + memory.blessingLines.take(QuillaAwareness.HYPOTHESIS_VOICE).joinToString("\n")
+        }
         return "${briefing.headline}\n" +
             "Posture score: ${briefing.score}/100 (${briefing.posture.label}) · ${briefing.aspectName}.\n" +
-            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$moves\n" +
-            "Care loop: observe → correlate → explain → act (with your consent)."
+            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$choirLine\n$blessingVoice\n$moves\n" +
+            "Care loop: observe → correlate → explain → act (with your consent). " +
+            "Angels name the watch against unauthorized pentest tooling and Trojans — evidence still leads."
     }
 
     private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =

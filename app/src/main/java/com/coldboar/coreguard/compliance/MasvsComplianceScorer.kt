@@ -77,6 +77,9 @@ object MasvsComplianceScorer {
         // PLATFORM
         "emulator" to MasvsCategory.PLATFORM,
         "build_type" to MasvsCategory.PLATFORM,
+        "overlay_abuse" to MasvsCategory.PLATFORM,
+        "accessibility_abuse" to MasvsCategory.PLATFORM,
+        "sideload_risk" to MasvsCategory.PLATFORM,
 
         // CODE
         "signature" to MasvsCategory.CODE,
