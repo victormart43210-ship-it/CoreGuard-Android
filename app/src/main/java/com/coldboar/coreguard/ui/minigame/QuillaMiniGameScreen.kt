@@ -14,13 +14,16 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.widthIn
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -34,14 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Rect
-import androidx.compose.ui.geometry.RoundRect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.input.pointer.pointerInput
@@ -58,41 +59,31 @@ import kotlinx.coroutines.isActive
 import kotlin.math.cos
 import kotlin.math.sin
 
-// Dragon Quest–inspired classic JRPG palette (homage look, not licensed assets).
-private val DqSkyTop = Color(0xFF6EB6E8)
-private val DqSkyBottom = Color(0xFFC8E7F8)
-private val DqHillFar = Color(0xFF5EAF5E)
-private val DqHillNear = Color(0xFF3F9B3F)
-private val DqGrass = Color(0xFF2F8F2F)
-private val DqGrassDark = Color(0xFF246B24)
-private val DqWindowNavy = Color(0xFF0B1F6B)
-private val DqWindowNavyDeep = Color(0xFF071448)
-private val DqGold = Color(0xFFE6C34A)
-private val DqGoldDark = Color(0xFFB8922A)
-private val DqCream = Color(0xFFFFF6D8)
-private val DqStone = Color(0xFF9A9080)
-private val DqStoneDark = Color(0xFF6E6558)
-private val DqStoneLight = Color(0xFFC4B9A6)
-private val DqSlime = Color(0xFF4C9BE0)
-private val DqSlimeDark = Color(0xFF2E6FAE)
-private val DqSlimeShine = Color(0xFFB8E0FF)
-private val DqDracky = Color(0xFF5C3D8F)
-private val DqDrackyWing = Color(0xFF3A245C)
-private val DqHeroBlue = Color(0xFF2F5DBB)
-private val DqHeroBlueDark = Color(0xFF1E3F86)
-private val DqSkin = Color(0xFFFFD2A8)
-private val DqHair = Color(0xFF5A3A1E)
-private val DqSpell = Color(0xFFFFF1A0)
-private val DqSpellCore = Color(0xFFFFFDF2)
-private val DqDanger = Color(0xFFE24B4B)
-private val DqShadow = Color(0x55000000)
+// Cyber-fantasy pixel palette (Audit Keep / Quilla reference look).
+private val CxVoid = Color(0xFF0B0B18)
+private val CxDeep = Color(0xFF12122A)
+private val CxPanel = Color(0xFF1A1A34)
+private val CxPanelEdge = Color(0xFF2E2E55)
+private val CxTeal = Color(0xFF2EE6D6)
+private val CxTealDim = Color(0xFF149B96)
+private val CxTealGlow = Color(0xFF7CFFF2)
+private val CxCyan = Color(0xFF39F3FF)
+private val CxGold = Color(0xFFE7C35A)
+private val CxDanger = Color(0xFFFF4D6D)
+private val CxWorm = Color(0xFF9B5CFF)
+private val CxWormDark = Color(0xFF5A2E99)
+private val CxOrb = Color(0xFF2BC4A8)
+private val CxOrbDark = Color(0xFF167A6A)
+private val CxCircuit = Color(0xFF1F6F75)
+private val CxWhite = Color(0xFFE8F7FF)
+private val CxShadow = Color(0x88000000)
 
 /**
  * Hidden Quilla purge mini-game — Flappy-style flight + spell shots.
  * Educational / fun only; not a security claim or detector.
  *
- * Visual homage to classic Dragon Quest JRPG presentation (windows, slimes,
- * castle pillars, chibi hero). Not affiliated with Square Enix.
+ * Visual direction: cyber-fantasy pixel Audit Keep (hooded Quilla, circuit
+ * vault walls, data-shard HUD). Homage styling only.
  */
 @Composable
 fun QuillaMiniGameScreen(
@@ -100,7 +91,7 @@ fun QuillaMiniGameScreen(
     modifier: Modifier = Modifier
 ) {
     val engine = remember { QuillaGameEngine() }
-    val paths = remember { DqPaths() }
+    val paths = remember { PixelPaths() }
 
     var frame by remember { mutableIntStateOf(0) }
     var hudScore by remember { mutableIntStateOf(0) }
@@ -146,7 +137,7 @@ fun QuillaMiniGameScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(DqSkyTop)
+            .background(CxVoid)
             .onSizeChanged {
                 val w = it.width.toFloat().coerceAtLeast(2f)
                 val h = it.height.toFloat().coerceAtLeast(2f)
@@ -173,170 +164,110 @@ fun QuillaMiniGameScreen(
             frame
 
             val blink = engine.invulnerable && ((frame / 3) % 2 == 0)
-            drawDqWorld(scrollX = engine.scrollX)
+            drawAuditKeepBg(scrollX = engine.scrollX, frame = frame)
 
             engine.pipes.forEach { pipe ->
-                drawCastlePillar(
+                drawCircuitVault(
                     x = engine.renderPipeX(pipe),
-                    gate = pipe
+                    gate = pipe,
+                    frame = frame
                 )
             }
+            // Floating data shards near pipes (cosmetic collectible sparkle)
+            engine.pipes.forEachIndexed { index, pipe ->
+                if (!pipe.scored) {
+                    val sx = engine.renderPipeX(pipe) + pipe.width * 0.5f
+                    val sy = pipe.gapY + pipe.gapHeight * 0.5f + sin((frame + index * 20) * 0.1f) * 6f
+                    drawDataShard(sx, sy, frame + index * 7)
+                }
+            }
             engine.spells.forEach { spell ->
-                drawDqSpell(
+                drawCyanFireball(
                     x = engine.renderSpellX(spell),
                     y = engine.renderSpellY(spell),
-                    frame = frame,
-                    paths = paths
+                    frame = frame
                 )
             }
             engine.enemies.forEach { enemy ->
                 if (enemy.isWorm) {
-                    drawDracky(
+                    drawPurpleWorm(
+                        x = engine.renderEnemyX(enemy),
+                        y = engine.renderEnemyY(enemy),
+                        frame = frame
+                    )
+                } else {
+                    drawSpikyOrb(
                         x = engine.renderEnemyX(enemy),
                         y = engine.renderEnemyY(enemy),
                         frame = frame,
                         paths = paths
                     )
-                } else {
-                    drawSlime(
-                        x = engine.renderEnemyX(enemy),
-                        y = engine.renderEnemyY(enemy),
-                        bob = sin((frame + enemy.x) * 0.12f) * 3f,
-                        paths = paths
-                    )
                 }
             }
             if (!blink) {
-                drawDqHero(
+                drawHoodedQuilla(
                     x = QuillaGameEngine.QUILLA_X,
                     y = engine.renderQuillaY(),
                     frame = frame,
                     paths = paths
                 )
             }
+
+            // Corner portrait medallion (reference right-panel homage, phone-sized)
+            drawPortraitMedallion(
+                cx = size.width - 72f,
+                cy = size.height - 96f,
+                frame = frame,
+                paths = paths
+            )
         }
 
-        // Classic DQ command / status windows
-        Column(
+        AuditKeepHud(
+            shield = hudShield,
+            score = hudScore,
+            onDismiss = onDismiss,
             modifier = Modifier
                 .fillMaxWidth()
                 .statusBarsPadding()
-                .padding(12.dp)
-        ) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Top
-            ) {
-                DqWindow(
-                    modifier = Modifier.weight(1.2f)
-                ) {
-                    Text(
-                        text = "Alefgard · Floor 1-3",
-                        color = DqGold,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Quilla the Mage",
-                        color = DqCream,
-                        fontSize = 14.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = if (hudShield < 30) "HP  $hudShield  !!DANGER!!" else "HP  $hudShield / 100",
-                        color = if (hudShield < 30) DqDanger else DqCream,
-                        fontSize = 13.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                DqWindow(
-                    modifier = Modifier.weight(0.9f)
-                ) {
-                    Text(
-                        text = "GOLD",
-                        color = DqGold,
-                        fontSize = 11.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "$hudScore",
-                        color = DqCream,
-                        fontSize = 18.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Text(
-                        text = "Tap: Jump + Woosh",
-                        color = DqCream.copy(alpha = 0.85f),
-                        fontSize = 10.sp,
-                        fontFamily = FontFamily.Serif
-                    )
-                }
-
-                IconButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .background(DqWindowNavy, RoundedCornerShape(8.dp))
-                        .border(2.dp, DqGold, RoundedCornerShape(8.dp))
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Close,
-                        contentDescription = "Close mini-game",
-                        tint = DqCream
-                    )
-                }
-            }
-        }
+                .padding(10.dp)
+        )
 
         if (gameOver) {
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.55f)),
+                    .background(Color.Black.copy(alpha = 0.72f)),
                 contentAlignment = Alignment.Center
             ) {
-                DqWindow(
+                Column(
                     modifier = Modifier
                         .padding(24.dp)
-                        .widthIn(max = 340.dp)
-                        .fillMaxWidth(0.88f)
+                        .widthIn(max = 360.dp)
+                        .fillMaxWidth()
+                        .background(CxPanel, RoundedCornerShape(10.dp))
+                        .border(2.dp, CxTeal, RoundedCornerShape(10.dp))
+                        .padding(20.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Thou art defeated…",
-                        color = DqDanger,
-                        fontSize = 22.sp,
-                        fontFamily = FontFamily.Serif,
-                        fontWeight = FontWeight.Bold,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        text = "PURGE FAILED",
+                        color = CxDanger,
+                        fontSize = 26.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "A slime feast was held.\nGOLD carried: $hudScore",
-                        color = DqCream,
-                        fontSize = 15.sp,
-                        fontFamily = FontFamily.Serif,
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        text = "The Audit Keep holds.\nData shards secured: $hudScore",
+                        color = CxWhite,
+                        fontSize = 14.sp,
+                        fontFamily = FontFamily.Monospace,
+                        textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(18.dp))
-                    DqMenuButton(
-                        label = "Try again",
-                        filled = true,
-                        onClick = { resetRun() }
-                    )
+                    CyberButton("RESTART PURGE", filled = true) { resetRun() }
                     Spacer(modifier = Modifier.height(10.dp))
-                    DqMenuButton(
-                        label = "Return to title",
-                        filled = false,
-                        onClick = onDismiss
-                    )
+                    CyberButton("EXIT KEEP", filled = false, onClick = onDismiss)
                 }
             }
         }
@@ -344,422 +275,384 @@ fun QuillaMiniGameScreen(
 }
 
 @Composable
-private fun DqWindow(
-    modifier: Modifier = Modifier,
-    content: @Composable () -> Unit
+private fun AuditKeepHud(
+    shield: Int,
+    score: Int,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    Box(
-        modifier = modifier
-            .background(
-                brush = Brush.verticalGradient(listOf(DqWindowNavy, DqWindowNavyDeep)),
-                shape = RoundedCornerShape(6.dp)
-            )
-            .border(3.dp, DqGold, RoundedCornerShape(6.dp))
-            .border(1.dp, DqGoldDark, RoundedCornerShape(6.dp))
-            .padding(horizontal = 12.dp, vertical = 10.dp)
-    ) {
-        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-            content()
+    val shardsProgress = (score / 50f).coerceIn(0f, 1f)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Level 1-3: The Audit Keep",
+            color = CxWhite,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Bold,
+            fontFamily = FontFamily.Monospace
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Shield / shards bar
+            Column(modifier = Modifier.weight(1.2f)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Canvas(modifier = Modifier.size(18.dp)) {
+                        drawRoundRect(
+                            color = CxTeal,
+                            size = size,
+                            cornerRadius = CornerRadius(3f, 3f)
+                        )
+                        drawCircle(CxVoid, radius = size.minDimension * 0.22f, center = center)
+                    }
+                    Spacer(modifier = Modifier.width(6.dp))
+                    LinearProgressIndicator(
+                        progress = { shield / 100f },
+                        modifier = Modifier
+                            .weight(1f)
+                            .height(10.dp),
+                        color = if (shield < 30) CxDanger else CxCyan,
+                        trackColor = CxPanelEdge,
+                        strokeCap = StrokeCap.Round
+                    )
+                }
+                Text(
+                    text = "Data Shards Collected",
+                    color = CxTealDim,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+                LinearProgressIndicator(
+                    progress = { shardsProgress },
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(6.dp),
+                    color = CxTealGlow,
+                    trackColor = CxDeep,
+                    strokeCap = StrokeCap.Round
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Canvas(modifier = Modifier.size(14.dp)) {
+                        drawRect(CxCyan, size = size)
+                    }
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = "$score",
+                        color = CxCyan,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Black,
+                        fontFamily = FontFamily.Monospace
+                    )
+                }
+                Text(
+                    text = "Score",
+                    color = CxTealDim,
+                    fontSize = 10.sp,
+                    fontFamily = FontFamily.Monospace
+                )
+            }
+
+            // Mini-map
+            Box(
+                modifier = Modifier
+                    .size(64.dp, 40.dp)
+                    .background(CxDeep, RoundedCornerShape(4.dp))
+                    .border(1.dp, CxTealDim, RoundedCornerShape(4.dp))
+                    .padding(4.dp)
+            ) {
+                Canvas(modifier = Modifier.fillMaxSize()) {
+                    // Rooms
+                    drawRoundRect(CxPanelEdge, Offset(2f, 8f), Size(18f, 14f), CornerRadius(2f, 2f))
+                    drawRoundRect(Color(0xFF4A2A6A), Offset(24f, 4f), Size(20f, 18f), CornerRadius(2f, 2f))
+                    drawRoundRect(CxPanelEdge, Offset(48f, 10f), Size(14f, 12f), CornerRadius(2f, 2f))
+                    // Player marker
+                    drawCircle(CxTealGlow, 3.5f, Offset(34f, 12f))
+                }
+                Text(
+                    text = "?",
+                    color = CxGold,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(2.dp)
+                )
+            }
+
+            IconButton(
+                onClick = onDismiss,
+                modifier = Modifier
+                    .size(36.dp)
+                    .background(CxPanel, RoundedCornerShape(6.dp))
+                    .border(1.dp, CxTeal, RoundedCornerShape(6.dp))
+            ) {
+                Icon(Icons.Filled.Close, contentDescription = "Close mini-game", tint = CxWhite)
+            }
         }
     }
 }
 
 @Composable
-private fun DqMenuButton(
-    label: String,
-    filled: Boolean,
-    onClick: () -> Unit
-) {
+private fun CyberButton(label: String, filled: Boolean, onClick: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
-            .background(
-                color = if (filled) DqGold else DqWindowNavyDeep,
-                shape = RoundedCornerShape(4.dp)
-            )
-            .border(2.dp, if (filled) DqGoldDark else DqGold, RoundedCornerShape(4.dp))
+            .background(if (filled) CxTeal else CxDeep, RoundedCornerShape(6.dp))
+            .border(2.dp, CxTeal, RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
             .padding(vertical = 12.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "> $label",
-            color = if (filled) DqWindowNavyDeep else DqCream,
-            fontSize = 16.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Bold
+            text = label,
+            color = if (filled) CxVoid else CxTealGlow,
+            fontWeight = FontWeight.Black,
+            fontFamily = FontFamily.Monospace,
+            fontSize = 15.sp
         )
     }
 }
 
-private class DqPaths {
-    val body = Path()
-    val hat = Path()
-    val slime = Path()
-    val wingL = Path()
-    val wingR = Path()
-    val star = Path()
-    val battlement = Path()
+private class PixelPaths {
+    val robe = Path()
+    val hood = Path()
+    val spike = Path()
+    val wing = Path()
 }
 
-private fun DrawScope.drawDqWorld(scrollX: Float) {
-    // Sky wash
+private fun DrawScope.drawAuditKeepBg(scrollX: Float, frame: Int) {
     drawRect(
-        brush = Brush.verticalGradient(
-            colors = listOf(DqSkyTop, DqSkyBottom),
-            startY = 0f,
-            endY = size.height * 0.55f
-        ),
-        size = Size(size.width, size.height * 0.55f)
+        brush = Brush.verticalGradient(listOf(CxVoid, CxDeep, Color(0xFF1A1030)))
     )
-
-    // Soft clouds
-    val cloudShift = (scrollX * 0.15f) % (size.width + 200f)
-    drawCloud(-80f + cloudShift, size.height * 0.12f, 1.1f)
-    drawCloud(size.width * 0.45f - cloudShift * 0.6f, size.height * 0.08f, 0.85f)
-    drawCloud(size.width * 0.8f + cloudShift * 0.3f, size.height * 0.18f, 1.0f)
-
-    // Rolling hills
-    val hillBase = size.height * 0.52f
-    drawHillBand(hillBase, DqHillFar, amplitude = 28f, wavelength = 180f, scroll = scrollX * 0.25f)
-    drawHillBand(hillBase + 36f, DqHillNear, amplitude = 34f, wavelength = 140f, scroll = scrollX * 0.45f)
-
-    // Ground strip with checker tufts
-    val groundY = size.height * 0.78f
+    // Circuit mesh
+    val step = 48f
+    val ox = scrollX % step
+    var x = -ox
+    while (x < size.width + step) {
+        drawLine(CxCircuit.copy(alpha = 0.35f), Offset(x, 0f), Offset(x, size.height), 1.2f)
+        x += step
+    }
+    var y = 0f
+    while (y < size.height) {
+        drawLine(CxCircuit.copy(alpha = 0.28f), Offset(0f, y), Offset(size.width, y), 1.2f)
+        y += step
+    }
+    // Occasional node pulses
+    val pulse = 0.35f + 0.25f * sin(frame * 0.08f)
+    for (i in 0..6) {
+        val nx = ((i * 137f + scrollX * 0.4f) % (size.width + 40f))
+        val ny = 80f + (i * 97f) % (size.height - 160f)
+        drawCircle(CxTeal.copy(alpha = pulse * 0.5f), 3f, Offset(nx, ny))
+        drawCircle(CxTealGlow.copy(alpha = pulse), 1.5f, Offset(nx, ny))
+    }
+    // Floor platform band
+    val floor = size.height * 0.88f
     drawRect(
-        brush = Brush.verticalGradient(listOf(DqGrass, DqGrassDark)),
-        topLeft = Offset(0f, groundY),
-        size = Size(size.width, size.height - groundY)
+        brush = Brush.verticalGradient(listOf(Color(0xFF1C1638), Color(0xFF0E0A1C))),
+        topLeft = Offset(0f, floor),
+        size = Size(size.width, size.height - floor)
     )
-    val tuft = 28f
-    val offset = scrollX % tuft
-    var x = -offset
-    var toggle = false
-    while (x < size.width + tuft) {
-        if (toggle) {
-            drawRect(
-                color = DqGrassDark.copy(alpha = 0.35f),
-                topLeft = Offset(x, groundY),
-                size = Size(tuft, 18f)
-            )
-        }
-        toggle = !toggle
-        x += tuft
-    }
-
-    // Horizon path line (classic overworld feel)
-    drawLine(
-        color = Color.White.copy(alpha = 0.25f),
-        start = Offset(0f, groundY),
-        end = Offset(size.width, groundY),
-        strokeWidth = 2f
-    )
+    drawLine(CxTealDim, Offset(0f, floor), Offset(size.width, floor), 2f)
 }
 
-private fun DrawScope.drawCloud(cx: Float, cy: Float, scale: Float) {
-    val r = 28f * scale
-    drawCircle(Color.White.copy(alpha = 0.85f), radius = r, center = Offset(cx, cy))
-    drawCircle(Color.White.copy(alpha = 0.85f), radius = r * 0.85f, center = Offset(cx + r * 0.9f, cy + 4f))
-    drawCircle(Color.White.copy(alpha = 0.85f), radius = r * 0.75f, center = Offset(cx - r * 0.8f, cy + 6f))
-}
-
-private fun DrawScope.drawHillBand(
-    baseY: Float,
-    color: Color,
-    amplitude: Float,
-    wavelength: Float,
-    scroll: Float
-) {
-    val path = Path()
-    path.moveTo(0f, size.height)
-    path.lineTo(0f, baseY)
-    var x = 0f
-    while (x <= size.width) {
-        val y = baseY + sin((x + scroll) / wavelength * Math.PI.toFloat() * 2f) * amplitude
-        path.lineTo(x, y)
-        x += 12f
-    }
-    path.lineTo(size.width, size.height)
-    path.close()
-    drawPath(path, color)
-}
-
-private fun DrawScope.drawCastlePillar(
-    x: Float,
-    gate: PipeObstacle
-) {
+private fun DrawScope.drawCircuitVault(x: Float, gate: PipeObstacle, frame: Int) {
     val w = gate.width
-    // Top tower
-    drawStoneBlock(x, 0f, w, gate.gapY)
-    drawBattlements(x, gate.gapY - 16f, w)
-
-    // Bottom tower
+    drawVaultBlock(x, 0f, w, gate.gapY, frame)
     val bottomY = gate.gapY + gate.gapHeight
-    drawStoneBlock(x, bottomY, w, size.height - bottomY)
-    drawBattlements(x, bottomY, w)
-
-    // Gold trim rim at gap edges
-    drawRect(DqGold, topLeft = Offset(x - 2f, gate.gapY - 6f), size = Size(w + 4f, 6f))
-    drawRect(DqGoldDark, topLeft = Offset(x - 2f, bottomY), size = Size(w + 4f, 6f))
+    drawVaultBlock(x, bottomY, w, size.height - bottomY, frame + 3)
+    // Neon rim at gap
+    drawRect(CxTealGlow, Offset(x - 2f, gate.gapY - 5f), Size(w + 4f, 5f))
+    drawRect(CxTeal, Offset(x - 2f, bottomY), Size(w + 4f, 5f))
 }
 
-private fun DrawScope.drawStoneBlock(x: Float, y: Float, w: Float, h: Float) {
-    if (h <= 0f) return
+private fun DrawScope.drawVaultBlock(x: Float, y: Float, w: Float, h: Float, seed: Int) {
+    if (h <= 1f) return
     drawRect(
-        brush = Brush.horizontalGradient(listOf(DqStoneLight, DqStone, DqStoneDark)),
+        brush = Brush.horizontalGradient(listOf(CxPanel, CxDeep, CxPanelEdge)),
         topLeft = Offset(x, y),
         size = Size(w, h)
     )
-    drawRect(
-        color = DqStoneDark,
-        topLeft = Offset(x, y),
-        size = Size(w, h),
-        style = Stroke(3f)
-    )
-    // Brick courses
-    var row = y + 12f
-    var stagger = false
+    drawRect(CxTealDim.copy(alpha = 0.7f), Offset(x, y), Size(w, h), style = Stroke(2f))
+    // Pixel brick / plate seams
+    var row = y + 10f
     while (row < y + h - 4f) {
-        drawLine(
-            color = DqStoneDark.copy(alpha = 0.55f),
-            start = Offset(x + 2f, row),
-            end = Offset(x + w - 2f, row),
-            strokeWidth = 1.5f
-        )
-        val brickW = w / 2.2f
-        val x0 = x + if (stagger) brickW * 0.5f else 0f
-        var cx = x0
-        while (cx < x + w - 6f) {
-            drawLine(
-                color = DqStoneDark.copy(alpha = 0.4f),
-                start = Offset(cx, row - 12f),
-                end = Offset(cx, row),
-                strokeWidth = 1.5f
-            )
-            cx += brickW
+        drawLine(CxCircuit.copy(alpha = 0.55f), Offset(x + 3f, row), Offset(x + w - 3f, row), 1f)
+        row += 12f
+    }
+    // Vertical bus lines
+    val bus1 = x + w * 0.3f
+    val bus2 = x + w * 0.7f
+    drawLine(CxTeal.copy(alpha = 0.45f), Offset(bus1, y + 4f), Offset(bus1, y + h - 4f), 2f)
+    drawLine(CxCyan.copy(alpha = 0.35f), Offset(bus2, y + 4f), Offset(bus2, y + h - 4f), 1.5f)
+    // Chip pads
+    val padY = y + 16f + (seed % 5) * 10f
+    if (padY < y + h - 12f) {
+        drawRoundRect(CxTealDim, Offset(x + 8f, padY), Size(w - 16f, 8f), CornerRadius(2f, 2f))
+    }
+}
+
+private fun DrawScope.drawDataShard(x: Float, y: Float, phase: Int) {
+    val s = 7f + sin(phase * 0.2f) * 1.5f
+    rotate(45f, Offset(x, y)) {
+        drawRect(CxCyan.copy(alpha = 0.9f), Offset(x - s, y - s), Size(s * 2f, s * 2f))
+        drawRect(CxTealGlow, Offset(x - s * 0.45f, y - s * 0.45f), Size(s * 0.9f, s * 0.9f))
+    }
+}
+
+private fun DrawScope.drawCyanFireball(x: Float, y: Float, frame: Int) {
+    val pulse = 10f + sin(frame * 0.4f) * 2f
+    drawCircle(CxTeal.copy(alpha = 0.35f), pulse + 8f, Offset(x, y))
+    drawCircle(CxCyan, pulse, Offset(x, y))
+    drawCircle(CxWhite, pulse * 0.35f, Offset(x - 2f, y - 2f))
+    // Trail
+    drawCircle(CxTealGlow.copy(alpha = 0.5f), 5f, Offset(x - 14f, y))
+    drawCircle(CxTeal.copy(alpha = 0.35f), 3f, Offset(x - 24f, y + 2f))
+}
+
+private fun DrawScope.drawSpikyOrb(x: Float, y: Float, frame: Int, paths: PixelPaths) {
+    val rot = (frame * 4f) % 360f
+    rotate(rot, Offset(x, y)) {
+        paths.spike.rewind()
+        for (i in 0 until 8) {
+            val a = (Math.PI * 2 * i / 8).toFloat()
+            val outer = 22f
+            val ix = x + cos(a) * 10f
+            val iy = y + sin(a) * 10f
+            val ox = x + cos(a) * outer
+            val oy = y + sin(a) * outer
+            val a1 = a + 0.22f
+            val a2 = a - 0.22f
+            paths.spike.moveTo(ix, iy)
+            paths.spike.lineTo(ox, oy)
+            paths.spike.lineTo(x + cos(a1) * 10f, y + sin(a1) * 10f)
+            paths.spike.close()
+            paths.spike.moveTo(ix, iy)
+            paths.spike.lineTo(ox, oy)
+            paths.spike.lineTo(x + cos(a2) * 10f, y + sin(a2) * 10f)
+            paths.spike.close()
         }
-        stagger = !stagger
-        row += 14f
+        drawPath(paths.spike, CxOrb)
     }
-}
-
-private fun DrawScope.drawBattlements(x: Float, y: Float, w: Float) {
-    val merlon = w / 4.5f
-    var mx = x
-    var i = 0
-    while (mx < x + w - 2f) {
-        if (i % 2 == 0) {
-            drawRect(
-                color = DqStoneLight,
-                topLeft = Offset(mx, y - 10f),
-                size = Size(merlon * 0.85f, 12f)
-            )
-            drawRect(
-                color = DqStoneDark,
-                topLeft = Offset(mx, y - 10f),
-                size = Size(merlon * 0.85f, 12f),
-                style = Stroke(1.5f)
-            )
-        }
-        mx += merlon
-        i++
-    }
-}
-
-private fun DrawScope.drawSlime(
-    x: Float,
-    y: Float,
-    bob: Float,
-    paths: DqPaths
-) {
-    val cy = y + bob
-    // Soft shadow
-    drawOval(
-        color = DqShadow,
-        topLeft = Offset(x - 22f, cy + 18f),
-        size = Size(44f, 12f)
-    )
-    paths.slime.rewind()
-    // Teardrop slime silhouette
-    paths.slime.moveTo(x, cy - 26f)
-    paths.slime.cubicTo(x + 28f, cy - 22f, x + 30f, cy + 10f, x + 18f, cy + 20f)
-    paths.slime.quadraticBezierTo(x, cy + 28f, x - 18f, cy + 20f)
-    paths.slime.cubicTo(x - 30f, cy + 10f, x - 28f, cy - 22f, x, cy - 26f)
-    paths.slime.close()
-    drawPath(
-        path = paths.slime,
-        brush = Brush.verticalGradient(listOf(DqSlimeShine, DqSlime, DqSlimeDark))
-    )
-    drawPath(path = paths.slime, color = DqSlimeDark, style = Stroke(3f))
-    // Face
-    drawCircle(Color.White, radius = 5f, center = Offset(x - 7f, cy - 2f))
-    drawCircle(Color.White, radius = 5f, center = Offset(x + 7f, cy - 2f))
-    drawCircle(Color.Black, radius = 2.2f, center = Offset(x - 6f, cy - 1f))
-    drawCircle(Color.Black, radius = 2.2f, center = Offset(x + 8f, cy - 1f))
-    // Smile
-    val smile = Path().apply {
-        moveTo(x - 8f, cy + 8f)
-        quadraticBezierTo(x, cy + 14f, x + 8f, cy + 8f)
-    }
-    drawPath(smile, Color.Black, style = Stroke(2.2f))
-    // Antenna sparkle
-    drawCircle(DqGold, radius = 3f, center = Offset(x, cy - 30f))
-}
-
-private fun DrawScope.drawDracky(
-    x: Float,
-    y: Float,
-    frame: Int,
-    paths: DqPaths
-) {
-    val flap = sin(frame * 0.25f) * 12f
-    paths.wingL.rewind()
-    paths.wingL.moveTo(x, y)
-    paths.wingL.quadraticBezierTo(x - 34f, y - 10f - flap, x - 40f, y + 8f)
-    paths.wingL.quadraticBezierTo(x - 20f, y + 6f, x, y)
-    paths.wingL.close()
-    paths.wingR.rewind()
-    paths.wingR.moveTo(x, y)
-    paths.wingR.quadraticBezierTo(x + 34f, y - 10f - flap, x + 40f, y + 8f)
-    paths.wingR.quadraticBezierTo(x + 20f, y + 6f, x, y)
-    paths.wingR.close()
-    drawPath(paths.wingL, DqDrackyWing)
-    drawPath(paths.wingR, DqDrackyWing)
     drawCircle(
-        brush = Brush.verticalGradient(listOf(DqDracky, Color(0xFF2A1744))),
-        radius = 16f,
+        brush = Brush.radialGradient(listOf(CxTealGlow, CxOrb, CxOrbDark), center = Offset(x, y), radius = 14f),
+        radius = 13f,
         center = Offset(x, y)
     )
-    drawCircle(Color.White, 4f, Offset(x - 5f, y - 2f))
-    drawCircle(Color.White, 4f, Offset(x + 5f, y - 2f))
-    drawCircle(Color.Black, 2f, Offset(x - 4f, y - 1f))
-    drawCircle(Color.Black, 2f, Offset(x + 6f, y - 1f))
-    drawCircle(DqDanger, 2.5f, Offset(x, y + 6f))
-}
-
-private fun DrawScope.drawDqSpell(
-    x: Float,
-    y: Float,
-    frame: Int,
-    paths: DqPaths
-) {
-    val rot = (frame * 8f) % 360f
-    rotate(rot, Offset(x, y)) {
-        paths.star.rewind()
-        val spikes = 4
-        for (i in 0 until spikes * 2) {
-            val angle = Math.PI.toFloat() * i / spikes - Math.PI.toFloat() / 2f
-            val radius = if (i % 2 == 0) 16f else 7f
-            val px = x + cos(angle) * radius
-            val py = y + sin(angle) * radius
-            if (i == 0) paths.star.moveTo(px, py) else paths.star.lineTo(px, py)
-        }
-        paths.star.close()
-        drawPath(paths.star, DqSpell)
-        drawPath(paths.star, DqGoldDark, style = Stroke(2f))
-    }
-    drawCircle(DqSpellCore, radius = 5f, center = Offset(x, y))
-}
-
-private fun DrawScope.drawDqHero(
-    x: Float,
-    y: Float,
-    frame: Int,
-    paths: DqPaths
-) {
-    val bob = sin(frame * 0.15f) * 2f
-    val cy = y + bob
-
-    // Shadow
-    drawOval(
-        color = DqShadow,
-        topLeft = Offset(x - 18f, cy + 26f),
-        size = Size(36f, 10f)
-    )
-
-    // Cape
-    paths.body.rewind()
-    paths.body.moveTo(x - 6f, cy - 4f)
-    paths.body.lineTo(x - 28f, cy + 18f)
-    paths.body.quadraticBezierTo(x - 10f, cy + 10f, x - 4f, cy + 8f)
-    paths.body.close()
-    drawPath(paths.body, Color(0xFF9B2D2D))
-
-    // Tunic
-    paths.body.rewind()
-    paths.body.moveTo(x - 16f, cy + 4f)
-    paths.body.lineTo(x + 16f, cy + 4f)
-    paths.body.lineTo(x + 12f, cy + 28f)
-    paths.body.lineTo(x - 12f, cy + 28f)
-    paths.body.close()
-    drawPath(
-        paths.body,
-        brush = Brush.verticalGradient(listOf(DqHeroBlue, DqHeroBlueDark))
-    )
-    drawPath(paths.body, DqWindowNavyDeep, style = Stroke(2f))
-
-    // Belt
-    drawRect(DqGold, topLeft = Offset(x - 14f, cy + 12f), size = Size(28f, 5f))
-
-    // Head
-    drawCircle(DqSkin, radius = 15f, center = Offset(x, cy - 10f))
-    drawCircle(DqWindowNavyDeep.copy(alpha = 0.15f), radius = 15f, center = Offset(x, cy - 10f), style = Stroke(1.5f))
-
-    // Spiky DQ hair
-    paths.hat.rewind()
-    paths.hat.moveTo(x - 16f, cy - 12f)
-    paths.hat.lineTo(x - 10f, cy - 28f)
-    paths.hat.lineTo(x - 2f, cy - 16f)
-    paths.hat.lineTo(x + 4f, cy - 32f)
-    paths.hat.lineTo(x + 10f, cy - 14f)
-    paths.hat.lineTo(x + 18f, cy - 26f)
-    paths.hat.lineTo(x + 16f, cy - 10f)
-    paths.hat.close()
-    drawPath(paths.hat, DqHair)
-    drawPath(paths.hat, Color.Black.copy(alpha = 0.35f), style = Stroke(1.5f))
-
-    // Eyes
-    drawCircle(Color.White, 3.5f, Offset(x - 5f, cy - 10f))
-    drawCircle(Color.White, 3.5f, Offset(x + 5f, cy - 10f))
-    drawCircle(Color.Black, 1.8f, Offset(x - 4.5f, cy - 9.5f))
-    drawCircle(Color.Black, 1.8f, Offset(x + 5.5f, cy - 9.5f))
-    // Smile
+    // Mean face
+    drawCircle(CxVoid, 2.5f, Offset(x - 4f, y - 2f))
+    drawCircle(CxVoid, 2.5f, Offset(x + 4f, y - 2f))
     drawPath(
         Path().apply {
-            moveTo(x - 4f, cy - 3f)
-            quadraticBezierTo(x, cy + 1f, x + 4f, cy - 3f)
+            moveTo(x - 5f, y + 5f)
+            quadraticBezierTo(x, y + 9f, x + 5f, y + 5f)
         },
-        Color(0xFF8B4513),
-        style = Stroke(1.8f)
+        CxVoid,
+        style = Stroke(2f)
     )
+}
 
-    // Mage hat (Quilla flair on DQ hero)
-    paths.hat.rewind()
-    paths.hat.moveTo(x - 20f, cy - 18f)
-    paths.hat.lineTo(x + 18f, cy - 16f)
-    paths.hat.lineTo(x + 2f, cy - 48f)
-    paths.hat.close()
-    drawPath(paths.hat, DqHeroBlue)
-    drawPath(paths.hat, DqGold, style = Stroke(2.2f))
-    drawCircle(DqGold, 3f, Offset(x + 1f, cy - 28f))
+private fun DrawScope.drawPurpleWorm(x: Float, y: Float, frame: Int) {
+    val wobble = sin(frame * 0.2f)
+    val segments = listOf(
+        Offset(x, y),
+        Offset(x + 14f, y + wobble * 4f),
+        Offset(x + 26f, y - wobble * 3f),
+        Offset(x + 38f, y + wobble * 2f)
+    )
+    for (i in segments.indices.reversed()) {
+        val r = 12f - i * 2f
+        drawCircle(
+            brush = Brush.radialGradient(listOf(CxWorm, CxWormDark), center = segments[i], radius = r),
+            radius = r,
+            center = segments[i]
+        )
+        drawCircle(CxPanelEdge, r, segments[i], style = Stroke(1.5f))
+    }
+    // Eyes on head
+    drawCircle(CxCyan, 2.5f, Offset(x - 3f, y - 3f))
+    drawCircle(CxCyan, 2.5f, Offset(x + 3f, y - 3f))
+    drawCircle(CxVoid, 1.2f, Offset(x - 3f, y - 3f))
+    drawCircle(CxVoid, 1.2f, Offset(x + 3f, y - 3f))
+}
+
+private fun DrawScope.drawHoodedQuilla(x: Float, y: Float, frame: Int, paths: PixelPaths) {
+    val bob = sin(frame * 0.14f) * 2f
+    val cy = y + bob
+
+    drawOval(CxShadow, Offset(x - 16f, cy + 28f), Size(34f, 9f))
+
+    // Robe
+    paths.robe.rewind()
+    paths.robe.moveTo(x - 18f, cy + 6f)
+    paths.robe.lineTo(x + 16f, cy + 6f)
+    paths.robe.lineTo(x + 14f, cy + 30f)
+    paths.robe.lineTo(x - 16f, cy + 30f)
+    paths.robe.close()
+    drawPath(
+        paths.robe,
+        brush = Brush.verticalGradient(listOf(CxTeal, CxTealDim, Color(0xFF0D4A4A)))
+    )
+    drawPath(paths.robe, CxTealGlow.copy(alpha = 0.5f), style = Stroke(1.5f))
+    // Circuit trim on robe
+    drawLine(CxCyan.copy(alpha = 0.7f), Offset(x - 8f, cy + 12f), Offset(x + 8f, cy + 12f), 2f)
+    drawCircle(CxTealGlow, 3f, Offset(x, cy + 18f))
+
+    // Hood / hat void face
+    paths.hood.rewind()
+    paths.hood.moveTo(x - 22f, cy - 6f)
+    paths.hood.lineTo(x + 20f, cy - 4f)
+    paths.hood.lineTo(x + 6f, cy - 42f)
+    paths.hood.lineTo(x - 8f, cy - 36f)
+    paths.hood.close()
+    drawPath(
+        paths.hood,
+        brush = Brush.verticalGradient(listOf(CxTealGlow, CxTeal, CxTealDim))
+    )
+    drawPath(paths.hood, CxCyan.copy(alpha = 0.6f), style = Stroke(2f))
+    // Eye of providence mark
+    drawCircle(CxGold, 3.5f, Offset(x - 2f, cy - 22f))
+    drawCircle(CxVoid, 1.6f, Offset(x - 2f, cy - 22f))
+
+    // Face void + glowing eyes
+    drawCircle(CxVoid, 13f, Offset(x, cy - 8f))
+    drawCircle(CxCyan, 3.2f, Offset(x - 5f, cy - 8f))
+    drawCircle(CxCyan, 3.2f, Offset(x + 5f, cy - 8f))
+    drawCircle(CxTealGlow, 1.4f, Offset(x - 5f, cy - 8f))
+    drawCircle(CxTealGlow, 1.4f, Offset(x + 5f, cy - 8f))
 
     // Staff
-    drawLine(
-        color = Color(0xFF8B5A2B),
-        start = Offset(x + 18f, cy + 24f),
-        end = Offset(x + 26f, cy - 34f),
-        strokeWidth = 4f
-    )
-    drawCircle(DqSpell, radius = 8f, center = Offset(x + 27f, cy - 38f))
-    drawCircle(DqGold, radius = 8f, center = Offset(x + 27f, cy - 38f), style = Stroke(2f))
-    drawCircle(DqSpellCore, radius = 3f, center = Offset(x + 27f, cy - 38f))
+    drawLine(Color(0xFF6B3F1F), Offset(x + 16f, cy + 26f), Offset(x + 24f, cy - 30f), 3.5f)
+    drawCircle(CxTeal, 9f, Offset(x + 25f, cy - 34f))
+    drawCircle(CxCyan, 9f, Offset(x + 25f, cy - 34f), style = Stroke(2f))
+    drawCircle(CxTealGlow, 3f, Offset(x + 25f, cy - 34f))
+}
 
-    // Tiny shield badge
-    drawRoundRect(
-        color = DqGold,
-        topLeft = Offset(x - 22f, cy + 6f),
-        size = Size(12f, 14f),
-        cornerRadius = CornerRadius(3f, 3f)
+private fun DrawScope.drawPortraitMedallion(cx: Float, cy: Float, frame: Int, paths: PixelPaths) {
+    val r = 48f
+    drawCircle(CxPanel, r + 4f, Offset(cx, cy))
+    drawCircle(CxTeal, r + 4f, Offset(cx, cy), style = Stroke(2.5f))
+    drawCircle(
+        brush = Brush.radialGradient(listOf(CxDeep, CxVoid), center = Offset(cx, cy), radius = r),
+        radius = r,
+        center = Offset(cx, cy)
     )
-    drawCircle(DqHeroBlue, 3f, Offset(x - 16f, cy + 12f))
+    // Mini hooded bust
+    paths.hood.rewind()
+    paths.hood.moveTo(cx - 26f, cy + 8f)
+    paths.hood.lineTo(cx + 24f, cy + 10f)
+    paths.hood.lineTo(cx + 8f, cy - 34f)
+    paths.hood.lineTo(cx - 10f, cy - 28f)
+    paths.hood.close()
+    drawPath(paths.hood, CxTeal)
+    drawCircle(CxVoid, 14f, Offset(cx, cy - 2f))
+    drawCircle(CxCyan, 3.5f, Offset(cx - 5f, cy - 2f))
+    drawCircle(CxCyan, 3.5f, Offset(cx + 5f, cy - 2f))
+    drawCircle(CxGold, 3f, Offset(cx - 2f, cy - 16f))
+    // Pulse ring
+    val pulse = 0.4f + 0.3f * sin(frame * 0.1f)
+    drawCircle(CxTealGlow.copy(alpha = pulse), r + 8f, Offset(cx, cy), style = Stroke(1.5f))
 }
