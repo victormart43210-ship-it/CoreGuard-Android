@@ -90,6 +90,16 @@ object ForensicJournal {
 
     fun all(context: Context): List<Entry> = lock.withLock { loadUnlocked(context) }
 
+    /** Deletes all journal entries (user retention control). Irreversible. */
+    fun clear(context: Context) = lock.withLock {
+        memoryStore?.clear()
+        val f = file(context)
+        if (f.exists()) {
+            f.delete()
+        }
+        Log.i(TAG, "Forensic journal cleared")
+    }
+
     fun verifyChain(context: Context): Boolean = lock.withLock {
         val entries = loadUnlocked(context)
         var prev = sha256Hex(GENESIS.toByteArray())

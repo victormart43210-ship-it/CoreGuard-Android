@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ScamGuardEngine
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
 import com.coldboar.coreguard.ui.theme.AttentionAmber
@@ -61,8 +62,14 @@ fun ScamGuardScreen(onBack: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Enable Notification access for CoreGuard to inspect incoming message " +
-                "notifications locally. No cloud upload. Paste a suspicious link anytime.",
+            text = "Before enabling Notification access, know what CoreGuard does:\n" +
+                "• Reads notification title/text locally to extract URLs only\n" +
+                "• Scoring is heuristic (IOC + URL patterns) — not guaranteed detection\n" +
+                "• Processing stays on-device; nothing is uploaded\n" +
+                "• Forensic journal may store host, score, and reason codes — not full message bodies\n" +
+                "• Clear findings anytime via Settings → Delete local security data\n" +
+                "• Revoke access anytime in system Notification access settings\n" +
+                "Paste a suspicious link below without granting access if you prefer.",
             color = MutedText,
             style = MaterialTheme.typography.bodySmall
         )
@@ -74,7 +81,7 @@ fun ScamGuardScreen(onBack: () -> Unit) {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
             }
-        ) { Text("Open notification access settings") }
+        ) { Text("I understand — open notification access settings") }
 
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(
@@ -99,14 +106,28 @@ fun ScamGuardScreen(onBack: () -> Unit) {
         }
 
         Spacer(modifier = Modifier.height(16.dp))
-        Text("Recent findings", color = ElectricTeal, style = MaterialTheme.typography.titleSmall)
-        recent.value.take(10).forEach { f ->
+        Text(
+            "Recent findings",
+            color = ElectricTeal,
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.semantics { heading() }
+        )
+        if (recent.value.isEmpty() && last == null) {
             Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                "${f.score} · ${f.host}",
-                color = if (f.score >= 50) AttentionAmber else SafeGreen,
-                style = MaterialTheme.typography.bodySmall
+            EmptyStatePanel(
+                title = "No findings yet",
+                body = "Paste a suspicious link above, or enable notification access so Scam Guard " +
+                    "can score URLs from alerts on-device. Heuristics are not guaranteed detection."
             )
+        } else {
+            recent.value.take(10).forEach { f ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "${f.score} · ${f.host}",
+                    color = if (f.score >= 50) AttentionAmber else SafeGreen,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
         }
     }
 }

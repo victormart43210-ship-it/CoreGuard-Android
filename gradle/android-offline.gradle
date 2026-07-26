@@ -1,44 +1,86 @@
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
+/**
+ * Sandbox-only helper. Applied only when coreguard.androidBuild=false.
+ *
+ * Intentionally does NOT produce artifacts under outputs/apk/.
+ */
+
 apply plugin: "base"
 
-def apkFile = layout.buildDirectory.file("outputs/apk/debug/app-debug.apk")
-def metadataFile = layout.buildDirectory.file("outputs/apk/debug/output-metadata.json")
+def placeholderZip = layout.buildDirectory.file("placeholder-artifacts/coreguard-offline-placeholder.zip")
+def placeholderMeta = layout.buildDirectory.file("placeholder-artifacts/placeholder-metadata.json")
 
-tasks.register("assembleDebug") {
+tasks.register("generatePlaceholderArtifact") {
     group = "build"
-    description = "Creates an offline placeholder debug APK when Android build tooling is unavailable."
-    outputs.files(apkFile, metadataFile)
+    description = "Writes an explicitly named offline placeholder ZIP (NOT a real APK). " +
+        "Never use this artifact for Play, CI gates, or device installs."
+    outputs.files(placeholderZip, placeholderMeta)
 
     doLast {
-        def apk = apkFile.get().asFile
-        apk.parentFile.mkdirs()
-        new ZipOutputStream(apk.newOutputStream()).withCloseable { zip ->
+        def zipFile = placeholderZip.get().asFile
+        zipFile.parentFile.mkdirs()
+        new ZipOutputStream(zipFile.newOutputStream()).withCloseable { zip ->
             def readme = """\
-CoreGuard-Android offline placeholder artifact
+CoreGuard-Android offline PLACEHOLDER (not an APK)
 
-This sandbox cannot resolve the Android Gradle Plugin and SDK dependencies needed
-for a real Android build. Run with -Pcoreguard.androidBuild=true (or
-COREGUARD_ANDROID_BUILD=true) in an Android-capable environment with a JDK
-compatible with the project's Java 17 target plus the Android SDK installed to
-produce a functional APK.
+This is not a functional Android package. Do not install it, upload it to Play,
+or treat it as a CI success signal.
+
+To build the real app:
+  1. Install JDK 17+, Android SDK (compileSdk 35), NDK 26.1.10909125, CMake 3.22.1
+  2. Set sdk.dir in local.properties
+  3. Run: ./gradlew :app:assembleDebug
+     (Android build is on by default; do not pass -Pcoreguard.androidBuild=false)
 """.stripIndent()
             zip.putNextEntry(new ZipEntry("README.txt"))
             zip.write(readme.getBytes("UTF-8"))
             zip.closeEntry()
         }
 
-        metadataFile.get().asFile.text = """\
+        placeholderMeta.get().asFile.text = """\
 {
-  "offlineFallback": true,
-  "applicationId": "com.coldboar.coreguard.debug",
-  "outputFile": "app-debug.apk"
+  "placeholder": true,
+  "notAnApk": true,
+  "outputFile": "coreguard-offline-placeholder.zip",
+  "forbiddenPath": "app/build/outputs/apk/debug/app-debug.apk"
 }
 """
+        logger.lifecycle("Wrote placeholder artifact to ${zipFile.absolutePath}")
     }
 }
 
-tasks.named("assemble") {
-    dependsOn("assembleDebug")
+def failRealAndroid = { String taskName ->
+    """Task :app:${taskName} requires the real Android build.
+Unset -Pcoreguard.androidBuild=false / COREGUARD_ANDROID_BUILD=false,
+install the Android SDK (compileSdk 35, NDK 26.1.10909125, CMake 3.22.1),
+then re-run ./gradlew :app:${taskName}.
+For a non-APK sandbox stub only: ./gradlew :app:generatePlaceholderArtifact"""
+}
+
+// Replace or register standard Android task names so they fail clearly.
+[
+    "assembleDebug", "assembleRelease", "bundleRelease",
+    "lintDebug", "lintRelease", "testDebugUnitTest", "test"
+].each { taskName ->
+    if (tasks.findByName(taskName) != null) {
+        tasks.named(taskName).configure {
+            actions.clear()
+            doLast { throw new GradleException(failRealAndroid(taskName)) }
+        }
+    } else {
+        tasks.register(taskName) {
+            group = "build"
+            description = "Unavailable when coreguard.androidBuild=false — real Android SDK build required."
+            doLast { throw new GradleException(failRealAndroid(taskName)) }
+        }
+    }
+}
+
+// base plugin already provides "assemble" — make it fail instead of succeeding empty.
+tasks.named("assemble").configure {
+    actions.clear()
+    dependsOn.clear()
+    doLast { throw new GradleException(failRealAndroid("assemble")) }
 }

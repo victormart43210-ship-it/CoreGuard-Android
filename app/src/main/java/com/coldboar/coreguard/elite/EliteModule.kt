@@ -128,6 +128,11 @@ object EliteModule {
     fun exportJournalCsv(context: Context): String =
         ForensicJournal.exportCsv(context)
 
+    /** User-initiated wipe of the on-device forensic journal. */
+    fun clearJournal(context: Context) {
+        ForensicJournal.clear(context)
+    }
+
     /** UI / tests: reset Elite Counter without clearing the journal file. */
     fun resetThreatCounter() {
         threatCounter.dispatch(EliteThreatCounterStore.Action.Reset)

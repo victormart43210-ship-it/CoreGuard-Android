@@ -150,6 +150,11 @@ class GuardVpnService : VpnService() {
         }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
     }
 
+    /**
+     * Prefer the active network's system **IPv4** DNS (the shield tunnel forwards
+     * IPv4 UDP DNS). Private DNS / IPv6 resolution remains an OS concern outside
+     * this path. Hardcoded 8.8.8.8 is last-resort only when no system DNS exists.
+     */
     private fun resolveUpstreamDns(): InetAddress {
         val system = runCatching {
             val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

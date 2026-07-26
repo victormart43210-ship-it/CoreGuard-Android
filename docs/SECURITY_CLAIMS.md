@@ -27,7 +27,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | “Live continuous threat intel” for Quilla Research | Optional pull of public Amnesty/MVT STIX archives, not a live feed |
 | Quilla Research sync refreshes Nemesis Scanner signatures | Separate Premium Scanner path (`IocFeedFetcher`); Research is correlator-only |
 | “Release-ready” / Play approval guaranteed | External Console, signing, device, and policy reviews remain |
-| DemoBilling is the production path | Production uses `PlayBillingProvider`; Demo is tests/previews only |
+| DemoBilling is the production path | Production uses `PlayBillingProvider`; unavailable billing fails closed (`FailClosedBillingProvider`) |
 | MASVS “compliance certified” | Educational mapping / coverage scores only |
 
 ## Premium honesty

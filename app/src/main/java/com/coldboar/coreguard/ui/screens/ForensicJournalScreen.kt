@@ -28,6 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.elite.ForensicJournal
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -86,7 +87,14 @@ fun ForensicJournalScreen(onBack: () -> Unit) {
         }
         Spacer(modifier = Modifier.height(16.dp))
         if (entries.isEmpty()) {
-            Text("No journal entries yet — run Overlay Matrix or raise a threat score.", color = MutedText)
+            EmptyStatePanel(
+                title = "No journal entries yet",
+                body = "The Forensic Journal records Overlay Matrix findings and Dynamic Threat Score events " +
+                    "in an append-only SHA-256 chain on this device. Run Overlay Matrix or wait for a " +
+                    "threat-score refresh to create the first entry.",
+                actionLabel = "Refresh",
+                onAction = { refresh() }
+            )
         }
         val fmt = remember { SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US) }
         entries.take(40).forEach { e ->

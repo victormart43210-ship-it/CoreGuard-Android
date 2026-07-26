@@ -43,6 +43,31 @@ enum class GuardianRank {
  * PASS earns the full share, WARN earns half, FAIL earns nothing.
  * An empty result list scores 0 (nothing verified means nothing earned).
  */
+/**
+ * How a single check result should be interpreted in the UI.
+ * Lore/branding labels must never appear here as technical evidence.
+ */
+enum class EvidenceKind {
+    /** Cryptographic or OS-attested signal (e.g. signing cert match). */
+    VERIFIED,
+    /** Best-effort heuristic (root paths, overlays, behavioral samples). */
+    HEURISTIC,
+    /** Teaching / policy guidance, not a live detection. */
+    EDUCATIONAL
+}
+
+/** Per-check explanation for Guardian Score transparency. */
+data class GuardianScoreEvidence(
+    val checkId: String,
+    val displayName: String,
+    val state: SecurityCheckState,
+    val explanation: String,
+    val severity: SecurityCheckState,
+    val confidence: EvidenceKind,
+    val recommendedAction: String,
+    val timestampMs: Long
+)
+
 object GuardianScore {
 
     fun compute(results: List<SecurityCheckResult>): Int {
@@ -63,4 +88,36 @@ object GuardianScore {
         score >= 35 -> GuardianRank.EXPOSED
         else -> GuardianRank.BREACHED
     }
+
+    /**
+     * Builds explainable evidence rows. Confidence is heuristic by default;
+     * signature / attestation-style ids are marked VERIFIED.
+     */
+    fun explain(
+        results: List<SecurityCheckResult>,
+        timestampMs: Long = System.currentTimeMillis()
+    ): List<GuardianScoreEvidence> =
+        results.map { r ->
+            val kind = when {
+                r.id.contains("signature") || r.id.contains("attestation") ||
+                    r.id.contains("play_integrity") -> EvidenceKind.VERIFIED
+                r.id.contains("guide") || r.id.contains("policy") -> EvidenceKind.EDUCATIONAL
+                else -> EvidenceKind.HEURISTIC
+            }
+            val action = when (r.state) {
+                SecurityCheckState.PASS -> "No action needed for this check."
+                SecurityCheckState.WARN -> "Review the explanation and harden if the risk applies."
+                SecurityCheckState.FAIL -> "Address this finding before handling sensitive data."
+            }
+            GuardianScoreEvidence(
+                checkId = r.id,
+                displayName = r.displayName,
+                state = r.state,
+                explanation = r.explanation,
+                severity = r.state,
+                confidence = kind,
+                recommendedAction = action,
+                timestampMs = timestampMs
+            )
+        }
 }

@@ -32,7 +32,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -71,6 +75,10 @@ fun SettingsScreen(
     onOpenTimeline: () -> Unit = {}
 ) {
     val isPremium by billingProvider.premiumState.collectAsState()
+    val context = LocalContext.current
+    val wipeScope = rememberCoroutineScope()
+    var wipeStatus by remember { mutableStateOf<String?>(null) }
+    var wipeBusy by remember { mutableStateOf(false) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     var hardeningOpen by remember { mutableStateOf(false) }
@@ -326,6 +334,54 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "On-device security data",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Delete scan history, forensic journal entries, Scam Guard findings, " +
+                        "downloaded threat-intel feeds, and Quilla hypotheses stored on this device. " +
+                        "Play purchases and OS permissions are unchanged.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    enabled = !wipeBusy,
+                    onClick = {
+                        wipeBusy = true
+                        wipeStatus = null
+                        wipeScope.launch {
+                            // Room clearAllTables must not run on the main thread.
+                            val result = withContext(Dispatchers.IO) {
+                                com.coldboar.coreguard.LocalSecurityData.wipeAll(context)
+                            }
+                            wipeStatus = result.summary()
+                            wipeBusy = false
+                        }
+                    }
+                ) {
+                    Text(if (wipeBusy) "Deleting…" else "Delete local security data")
+                }
+                wipeStatus?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (it.startsWith("Deleted with issues")) AttentionAmber else SafeGreen
+                    )
+                }
+            }
+        }
 
         // ── About ─────────────────────────────────────────────────────────────
         Card(
