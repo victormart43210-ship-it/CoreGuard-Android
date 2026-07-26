@@ -69,7 +69,7 @@ fun ToolsScreen(
             color = MutedText
         )
 
-        Spacer(modifier.height(20.dp))
+        Spacer(Modifier.height(20.dp))
 
         Card(
             modifier = Modifier
