@@ -5,8 +5,14 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import com.coldboar.coreguard.ui.CoreGuardApp
+import com.coldboar.coreguard.ui.minigame.QuillaMiniGameScreen
 import com.coldboar.coreguard.ui.theme.CoreGuardTheme
 
 /**
@@ -31,12 +37,28 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val launchMiniGame =
+            BuildConfig.DEBUG && intent?.getBooleanExtra(EXTRA_QUILLA_MINIGAME, false) == true
         setContent {
             CoreGuardTheme {
+                var showMiniGame by remember { mutableStateOf(launchMiniGame) }
                 CoreGuardApp(
                     billingProvider = billingProvider,
                     secretPortalVisible = secretPortalVisible
                 )
+                // Debug-only shortcut for screenshots / QA (adb --ez quilla_minigame true).
+                if (showMiniGame) {
+                    Dialog(
+                        onDismissRequest = { showMiniGame = false },
+                        properties = DialogProperties(
+                            usePlatformDefaultWidth = false,
+                            dismissOnBackPress = true,
+                            dismissOnClickOutside = false
+                        )
+                    ) {
+                        QuillaMiniGameScreen(onDismiss = { showMiniGame = false })
+                    }
+                }
             }
         }
         billingProvider.attach(this)
@@ -76,5 +98,6 @@ class MainActivity : AppCompatActivity() {
 
     private companion object {
         const val TAG = "CoreGuard"
+        const val EXTRA_QUILLA_MINIGAME = "quilla_minigame"
     }
 }
