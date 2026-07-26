@@ -263,6 +263,7 @@ Validation: `:app:testDebugUnitTest` → **354** tests, 0 failures (includes tim
 | Vuln agent | 0 FAIL / 7 WARN (launcher exported MAIN+LAUNCHER known) |
 | Quilla emulator gate | PASS (2+1 instrumented + smoke) |
 | Merge vs `main` | 0 behind / ahead only (no rebase conflicts) |
+| GitHub CI (PR #80) | **SUCCESS** — Android validation, Instrumentation ATD, Security Swarm (MASVS+vuln+RASP+gatekeeper), Dependency review, Go CLI |
 
 ### Changed files (this PR branch)
 
