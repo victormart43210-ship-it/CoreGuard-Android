@@ -11,7 +11,7 @@ import org.junit.Test
 import java.io.File
 
 /**
- * Product readiness: the five advertised Quilla prompts must always resolve.
+ * Product readiness: the advertised Quilla ready prompts must always resolve.
  */
 class QuillaReadyQueriesTest {
 
@@ -89,6 +89,18 @@ class QuillaReadyQueriesTest {
             "Permission",
             "Nemesis"
         )
+    }
+
+    @Test
+    fun `external security toolkit is ready`() {
+        assertReady(
+            "external security toolkit",
+            "external-security-toolkit",
+            "VirusTotal",
+            "Nemesis",
+            "Shield"
+        )
+        assertReady("virustotal", "external-security-toolkit", "VirusTotal")
     }
 
     @Test

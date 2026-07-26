@@ -107,7 +107,10 @@ class UltimateQuillaAgent(
             "zero day", "rules of engagement", "kill chain", "t16", "t14", "t15",
             "masvs-", "explain ", "what is ", "how does ", "define ",
             "observatory", "sky-watcher", "sky watcher", "maya", "calendar cycle",
-            "relay", "lunar", "ancient", "codex"
+            "relay", "lunar", "ancient", "codex",
+            "virustotal", "virus total", "privnote", "temp mail", "disposable",
+            "archive.ph", "downdetector", "tineye", "fast.com", "external toolkit",
+            "privacy toolkit", "file.io"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -260,7 +263,8 @@ class UltimateQuillaAgent(
             "• Research — sync Amnesty STIX threat intel\n" +
             "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
             "• Actions — propose scan / shield / timeline / intel sync\n" +
-            "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
+            "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline, External Security Toolkit " +
+            "(VirusTotal, disposable mail, evidence archive, outage/speed checks)\n" +
             "I do not call ChatGPT/Claude/Zapier. I teach defense and correlate CoreGuard evidence.\n" +
             "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } + "."
     }

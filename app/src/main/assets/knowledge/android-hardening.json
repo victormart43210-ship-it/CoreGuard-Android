@@ -132,6 +132,41 @@
       "references": [
         "https://www.cisa.gov/MFA"
       ]
+    },
+    {
+      "id": "external-security-toolkit",
+      "title": "External security & privacy toolkit",
+      "category": "android-hardening",
+      "tags": [
+        "virustotal",
+        "virus total",
+        "privnote",
+        "temp mail",
+        "disposable email",
+        "file.io",
+        "archive.ph",
+        "downdetector",
+        "fast.com",
+        "tineye",
+        "reverse image",
+        "privacy toolkit",
+        "external tools",
+        "useful websites",
+        "self-destructing",
+        "malware scan online"
+      ],
+      "summary": "Browser helpers that complement on-device Nemesis + Shield — malware recheck, disposable identity, evidence capture, outage/speed checks.",
+      "body": "CoreGuard keeps scanning and DNS shield on-device. When you need a second opinion or a privacy workflow the OS does not provide, open Tools \u2192 External Security Toolkit. Useful complements: VirusTotal (multi-engine file/URL scan \u2014 never upload private documents), Privnote / Temp Mail / 10 Minute Mail / file.io (short-lived sharing and disposable inboxes for low-trust signups), archive.ph (snapshot phishing pages before they vanish), Downdetector + Fast.com (is it an outage or your link?), TinEye (reverse image search for stolen profile photos), SimilarSites (hunt safer alternatives carefully). These are third-party sites with their own policies; CoreGuard does not proxy uploads or store their credentials.",
+      "defense": "Run Nemesis first. Use VirusTotal only for samples you accept sharing with AV vendors. Prefer disposable mail for junk signups, not banking. Archive public scam pages, not pages that contain your personal data.",
+      "references": [
+        "https://www.virustotal.com/",
+        "https://privnote.com/",
+        "https://temp-mail.org/",
+        "https://archive.ph/",
+        "https://downdetector.com/",
+        "https://fast.com/",
+        "https://tineye.com/"
+      ]
     }
   ]
 }

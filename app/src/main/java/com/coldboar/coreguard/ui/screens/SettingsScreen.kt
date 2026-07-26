@@ -59,6 +59,7 @@ import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
+import androidx.compose.material.icons.filled.TravelExplore
 
 @Composable
 fun SettingsScreen(
@@ -73,6 +74,7 @@ fun SettingsScreen(
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     var hardeningOpen by remember { mutableStateOf(false) }
+    var toolkitOpen by remember { mutableStateOf(false) }
     val priceLabel = billingProvider.premiumPriceLabel()
     val subscribeLabel =
         if (priceLabel.isNotBlank()) "Yes — Go Premium Now · $priceLabel" else "Yes — Go Premium Now"
@@ -235,9 +237,6 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-
-        Spacer(Modifier.height(16.dp))
-
         // ── Device Hardening Guide ────────────────────────────────────────────
         Card(
             modifier = Modifier
@@ -284,6 +283,52 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        // ── External Security Toolkit ────────────────────────────────────────
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { toolkitOpen = !toolkitOpen },
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.TravelExplore,
+                        contentDescription = null,
+                        tint = ElectricTeal,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(Modifier.size(8.dp))
+                    Text(
+                        "External Security Toolkit",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = ElectricTeal,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        if (toolkitOpen) "Close" else "Open",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
+                }
+                if (!toolkitOpen) {
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        "Browser helpers from useful-website shortlists: VirusTotal, disposable mail, " +
+                            "evidence archive, Downdetector, Fast.com, TinEye.",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            }
+        }
+
+        AnimatedVisibility(visible = toolkitOpen) {
+            ExternalSecurityToolkitPanel(modifier = Modifier.padding(top = 8.dp))
+        }
+
+        Spacer(Modifier.height(16.dp))
+
         // ── Tools shortcut ───────────────────────────────────────────────────
         Card(
             modifier = Modifier
@@ -296,7 +341,7 @@ fun SettingsScreen(
                 Text("Tools", style = MaterialTheme.typography.titleMedium, color = ElectricTeal)
                 Spacer(Modifier.height(4.dp))
                 Text(
-                    "Open the Quilla tools workspace with ready-topic coaching and action buttons.",
+                    "Open the Quilla tools workspace with ready-topic coaching, external toolkit, and action buttons.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )

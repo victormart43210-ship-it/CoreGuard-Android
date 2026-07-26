@@ -76,6 +76,22 @@ object QuillaReadyTopics {
                 "permission audit"
             ),
             chipLabel = "Permission hygiene"
+        ),
+        Topic(
+            prompt = "external security toolkit",
+            entryId = "external-security-toolkit",
+            aliases = setOf(
+                "privacy toolkit",
+                "virustotal",
+                "virus total",
+                "disposable email",
+                "temp mail",
+                "privnote",
+                "useful websites",
+                "external tools",
+                "online malware scan"
+            ),
+            chipLabel = "External toolkit"
         )
     )
 
