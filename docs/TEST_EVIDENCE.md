@@ -1,39 +1,44 @@
 # Test evidence (Cloud Agent session)
 
-Branch: `cursor/premium-ui-atmosphere-6db1`  
+Branch: `cursor/swarm-module-redux-counter-6db1`  
 Date: 2026-07-26  
-Version: **1.0.9** (`versionCode` 10)
+Version: **1.0.11** (`versionCode` 12)
 
-> Milestone results are posted as PR comments on [#70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
-> (GitHub Milestone API returns 403 for the agent token).
+> Milestone results are posted as PR comments (GitHub Milestone API returns 403).
 
-## Milestone M13 · Quantum Correlate (classical + magick gates)
+## Milestone M15 · Swarm module + Redux Counter + ATD emulator gate
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **293** tests |
-| `:app:assembleDebug` | **PASS** | Debug APK |
-| Honesty | **PASS** | Classical sim only — not a QPU, not occult detection |
+| `:app:testDebugUnitTest` | **PASS** | **304** tests |
+| Emulator | **PASS** | `CoreGuard_ATD35` still running (google_atd, no KVM) |
+| Instrumented (`am instrument`) | **PASS** | Quantum **2/2** · MainActivity launch **1/1** |
+| `scripts/smoke-adb.sh` | **PASS** | pid alive, focus on MainActivity, no fatal |
+| Gradle wrapper | **8.13** | Pin restores kapt after 9.6.1 breakage on `main` |
 
-### Landed
+### Landed (this branch)
 
-- `QuillaQuantumCorrelate` — H·Metatron → CNOT entangle → Rz·Raphael/BlackCross → M·Sandalphon
-- Wired into `QuillaCorrelationEngine` (evidence amplitudes → collapse → hypothesis JSON)
-- Classical confidence ladder preserved when already above threshold; quantum blend only lifts borderline hard evidence
-- Memory / priority status cite `quantumSeal` + disclaimer
-- Knowledge: `quilla-quantum-correlate.json`; ask: `quantum correlate` · `magick gates`
+- `SwarmModule` façade + Redux-style `SwarmAlertCounterStore` / UI Counter
+- External Security Toolkit rescued from conflicting PR #68
+- Emulator harness prefers ATD + `am instrument` path
+
+### Re-run
+
+```bash
+HEADLESS=1 ./scripts/quilla-emulator-tests.sh
+```
 
 ## Prior milestones
 
 | Milestone | Result |
 |-----------|--------|
-| M1–M11 | PASS |
-| M12 Enochian + Kabbalah lattice | PASS — 288 tests |
-| **M13 Quantum Correlate** | **PASS — 293 tests** |
+| M1–M13 | PASS (via #70) |
+| M14 Emulator Gate | PASS (PR #71) |
+| **M15 Swarm + Redux Counter + ATD gate** | **PASS — 304 unit + 3 instrumented + smoke** |
 
 ## Play Console next (human)
 
-1. Merge PR #70 → Internal Testing AAB upload  
-2. Privacy: `https://raw.githubusercontent.com/victormart43210-ship-it/CoreGuard-Android/main/docs/privacy-policy.html`  
+1. Merge PR #72 (then #71 if still needed) → Internal Testing AAB  
+2. Privacy policy URL on Play listing  
 3. VPN + `QUERY_ALL_PACKAGES` declarations  
 4. `coreguard_premium_monthly` + license tester  
