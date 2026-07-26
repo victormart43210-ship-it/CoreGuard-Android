@@ -224,9 +224,29 @@ Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
 | 9 Hardening | Signed release mapping file + R8 consumer rules spot-check |
 | 10 Final | Promote only after external evidence |
 
+### Finalize / finishing touches
+
+| Item | Change |
+|------|--------|
+| Prod composable defaults | Screens require explicit `BillingProvider` + nav callbacks; `CoreGuardApp` no longer defaults billing |
+| Billing helper | Renamed to `rememberFailClosedBillingProvider` (not used by production screens) |
+| Route wiring | `CoreGuardNavGraph` + unit tests |
+| Quilla actions | `QuillaActionRouter` pure outcomes + unit tests |
+| Premium gating | `PremiumGatingMatrixTest` for free / premium / fail-closed |
+| Copy / comments | Removed ambiguous demo/preview defaults language |
+
+### Finalize validation (actually run)
+
+```bash
+./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest :app:lintDebug
+# BUILD SUCCESSFUL — 349 unit tests, 0 failures
+# lint: 0 Error/Fatal; 70 Warning, 3 Information
+```
+
 ### Changed files (this PR branch)
 
 - `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`
 - `scripts/run-emulator.sh`, `scripts/smoke-adb.sh`
 - `gradle/libs.versions.toml`, `build.gradle.kts`, `core/model/build.gradle.kts`
 - Telemetry signer/bridge; Scanner/Shield/Home UI; `Motion.kt`; layout tools text
+- Nav graph / Quilla action router / premium matrix tests; required composable params
