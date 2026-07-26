@@ -23,13 +23,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.withFrameNanos
+import androidx.compose.runtime.withFrameMillis
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -45,10 +43,8 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import java.util.UUID
-import kotlin.math.max
-import kotlin.random.Random
 
 // Teal cyber-medieval palette (local to the easter-egg game).
 private val TealBackground = Color(0xFF031A1C)
@@ -58,189 +54,101 @@ private val GoldAccent = Color(0xFFFFD700)
 private val MalwareRed = Color(0xFFFF3366)
 private val GridColor = Color(0xFF003840)
 
-internal data class Enemy(
-    val id: String = UUID.randomUUID().toString(),
-    var x: Float,
-    var y: Float,
-    val size: Float = 40f,
-    val speed: Float = 3f,
-    val isWorm: Boolean = false
-)
-
-internal data class Spell(
-    val id: String = UUID.randomUUID().toString(),
-    var x: Float,
-    var y: Float,
-    val speed: Float = 14f
-)
-
-internal data class PipeObstacle(
-    val x: Float,
-    val gapY: Float,
-    val gapHeight: Float = 240f,
-    val width: Float = 70f
-)
-
 /**
  * Hidden Quilla purge mini-game — Flappy-style flight + spell shots.
  * Educational / fun only; not a security claim or detector.
+ *
+ * Physics runs in [QuillaGameEngine] (non-Snapshot). Compose invalidates once
+ * per frame via [frame], avoiding the ANR-prone state thrash of updating many
+ * mutableState fields inside `withFrameNanos`.
  */
 @Composable
 fun QuillaMiniGameScreen(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    var worldW by remember { mutableFloatStateOf(1080f) }
-    var worldH by remember { mutableFloatStateOf(1920f) }
+    val engine = remember { QuillaGameEngine() }
 
-    var quillaY by remember { mutableFloatStateOf(400f) }
-    var velocityY by remember { mutableFloatStateOf(0f) }
-    var score by remember { mutableIntStateOf(0) }
-    var shieldHp by remember { mutableIntStateOf(100) }
+    // Canvas invalidation only — not a source of physics truth.
+    var frame by remember { mutableIntStateOf(0) }
+    var hudScore by remember { mutableIntStateOf(0) }
+    var hudShield by remember { mutableIntStateOf(100) }
     var gameOver by remember { mutableStateOf(false) }
+    var sized by remember { mutableStateOf(false) }
 
-    val gravity = 0.65f
-    val jumpPower = -12f
-    val quillaX = 200f
-
-    val enemies = remember { mutableStateListOf<Enemy>() }
-    val spells = remember { mutableStateListOf<Spell>() }
-    val pipes = remember { mutableStateListOf<PipeObstacle>() }
+    fun syncHud() {
+        hudScore = engine.score
+        hudShield = engine.shieldHp
+        gameOver = engine.gameOver
+    }
 
     fun resetRun() {
-        shieldHp = 100
-        score = 0
-        quillaY = worldH * 0.35f
-        velocityY = 0f
-        enemies.clear()
-        spells.clear()
-        pipes.clear()
-        pipes.add(PipeObstacle(x = worldW * 0.75f, gapY = worldH * 0.25f))
-        pipes.add(PipeObstacle(x = worldW * 1.2f, gapY = worldH * 0.4f))
-        gameOver = false
+        engine.reset()
+        syncHud()
+        frame++
     }
 
-    LaunchedEffect(worldW, worldH) {
-        if (pipes.isEmpty() && worldW > 1f && worldH > 1f) {
-            resetRun()
-        }
-    }
+    // Re-enter when Restart clears gameOver so the frame loop resumes.
+    LaunchedEffect(sized, gameOver) {
+        if (!sized || gameOver) return@LaunchedEffect
+        if (engine.pipes.isEmpty()) resetRun()
+        // Let the first Compose layout/draw finish before physics starts (avoids startup jank).
+        delay(FRAME_BUDGET_MS)
 
-    LaunchedEffect(gameOver, worldW, worldH) {
-        if (gameOver || worldW < 2f || worldH < 2f) return@LaunchedEffect
-
-        var lastSpawn = System.currentTimeMillis()
-
-        while (isActive) {
-            withFrameNanos {
-                velocityY += gravity
-                quillaY += velocityY
-
-                if (quillaY < 0f) {
-                    quillaY = 0f
-                    velocityY = 0f
+        var lastFrameMs = 0L
+        while (isActive && !engine.gameOver) {
+            withFrameMillis { now ->
+                if (engine.gameOver) return@withFrameMillis
+                val dt = if (lastFrameMs == 0L) {
+                    QuillaGameEngine.REF_DT_MS
+                } else {
+                    (now - lastFrameMs).toFloat()
                 }
-                if (quillaY > worldH) {
-                    shieldHp = 0
-                    gameOver = true
-                    return@withFrameNanos
-                }
-
-                val now = System.currentTimeMillis()
-                if (now - lastSpawn > 1800) {
-                    val spawnY = Random.nextFloat() * max(1f, worldH - 120f) + 60f
-                    enemies.add(
-                        Enemy(
-                            x = worldW + 40f,
-                            y = spawnY,
-                            isWorm = Random.nextBoolean()
-                        )
-                    )
-                    lastSpawn = now
-                }
-
-                val spellIterator = spells.iterator()
-                while (spellIterator.hasNext()) {
-                    val s = spellIterator.next()
-                    s.x += s.speed
-                    if (s.x > worldW + 40f) spellIterator.remove()
-                }
-
-                for (i in pipes.indices) {
-                    val p = pipes[i]
-                    val newX = p.x - 4f
-                    val active = if (newX < -p.width) {
-                        score += 5
-                        PipeObstacle(
-                            x = worldW + 40f,
-                            gapY = Random.nextFloat() * max(1f, worldH * 0.45f) + worldH * 0.12f,
-                            gapHeight = (worldH * 0.22f).coerceIn(180f, 280f)
-                        )
-                    } else {
-                        p.copy(x = newX)
-                    }
-                    pipes[i] = active
-
-                    if (active.x < quillaX + 20f && active.x + active.width > quillaX - 20f) {
-                        if (quillaY < active.gapY || quillaY > active.gapY + active.gapHeight) {
-                            shieldHp -= 2
-                            if (shieldHp <= 0) gameOver = true
-                        }
-                    }
-                }
-
-                val enemyIterator = enemies.iterator()
-                while (enemyIterator.hasNext()) {
-                    val enemy = enemyIterator.next()
-                    enemy.x -= enemy.speed
-
-                    val hitBySpell = spells.find { spell ->
-                        val dx = spell.x - enemy.x
-                        val dy = spell.y - enemy.y
-                        dx * dx + dy * dy < 1600f
-                    }
-                    if (hitBySpell != null) {
-                        spells.remove(hitBySpell)
-                        enemyIterator.remove()
-                        score += 10
-                        continue
-                    }
-
-                    val dx = quillaX - enemy.x
-                    val dy = quillaY - enemy.y
-                    if (dx * dx + dy * dy < 1800f) {
-                        shieldHp -= 15
-                        enemyIterator.remove()
-                        if (shieldHp <= 0) gameOver = true
-                    } else if (enemy.x < -50f) {
-                        enemyIterator.remove()
-                    }
-                }
+                lastFrameMs = now
+                val hudChanged = engine.tick(dt)
+                frame++
+                // HUD Text is expensive to recompose on soft GPUs — only on real changes.
+                if (hudChanged) syncHud()
             }
+            // Cap ~30 FPS so Compose + Canvas do not starve System UI on software renderers.
+            delay(FRAME_BUDGET_MS)
         }
+        syncHud()
     }
 
     Box(
-        modifier = Modifier
+        modifier = modifier
             .fillMaxSize()
             .background(TealBackground)
             .onSizeChanged {
-                worldW = it.width.toFloat().coerceAtLeast(2f)
-                worldH = it.height.toFloat().coerceAtLeast(2f)
+                val w = it.width.toFloat().coerceAtLeast(2f)
+                val h = it.height.toFloat().coerceAtLeast(2f)
+                val changed = engine.worldW != w || engine.worldH != h
+                engine.worldW = w
+                engine.worldH = h
+                if (changed && engine.pipes.isEmpty()) {
+                    engine.reset()
+                    syncHud()
+                }
+                sized = true
             }
             .semantics { contentDescription = "Quilla mini-game. Tap to jump and cast." }
             .clickable(enabled = !gameOver) {
-                velocityY = jumpPower
-                spells.add(Spell(x = quillaX + 20f, y = quillaY))
+                engine.jumpAndCast()
+                frame++
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            // Subscribe to frame so Canvas redraws without Snapshot lists.
+            @Suppress("UNUSED_EXPRESSION")
+            frame
             drawCyberGrid()
-            pipes.forEach { drawSecurityGate(it) }
-            spells.forEach {
+            engine.pipes.forEach { drawSecurityGate(it) }
+            engine.spells.forEach {
                 drawCircle(color = TealPrimary, radius = 10f, center = Offset(it.x, it.y))
             }
-            enemies.forEach { drawMalware(it) }
-            drawQuilla(y = quillaY, x = quillaX)
+            engine.enemies.forEach { drawMalware(it) }
+            drawQuilla(y = engine.quillaY, x = QuillaGameEngine.QUILLA_X)
         }
 
         Row(
@@ -260,8 +168,8 @@ fun QuillaMiniGameScreen(
                     fontFamily = FontFamily.Monospace
                 )
                 Text(
-                    text = "SHIELD: $shieldHp%",
-                    color = if (shieldHp < 30) MalwareRed else TealPrimary,
+                    text = "SHIELD: $hudShield%",
+                    color = if (hudShield < 30) MalwareRed else TealPrimary,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.ExtraBold,
                     fontFamily = FontFamily.Monospace
@@ -283,7 +191,7 @@ fun QuillaMiniGameScreen(
             }
 
             Text(
-                text = "DATA SHARDS: $score",
+                text = "DATA SHARDS: $hudScore",
                 color = GoldAccent,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
@@ -317,7 +225,7 @@ fun QuillaMiniGameScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "FINAL SCORE: $score",
+                        text = "FINAL SCORE: $hudScore",
                         color = GoldAccent,
                         fontSize = 20.sp,
                         fontFamily = FontFamily.Monospace
@@ -356,8 +264,11 @@ fun QuillaMiniGameScreen(
     }
 }
 
+private const val FRAME_BUDGET_MS = 33L
+
 private fun DrawScope.drawCyberGrid() {
-    val gridSize = 60f
+    // Sparse grid — soft GPUs choke on dense line meshes every frame.
+    val gridSize = 120f
     var x = 0f
     while (x < size.width) {
         drawLine(

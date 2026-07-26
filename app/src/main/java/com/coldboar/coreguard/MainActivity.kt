@@ -5,12 +5,9 @@ import android.util.Log
 import android.view.KeyEvent
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
-import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.Modifier
 import com.coldboar.coreguard.ui.CoreGuardApp
 import com.coldboar.coreguard.ui.minigame.QuillaMiniGameScreen
 import com.coldboar.coreguard.ui.theme.CoreGuardTheme
@@ -26,6 +23,9 @@ import com.coldboar.coreguard.ui.theme.CoreGuardTheme
  *
  * Key combination: **Shift + Alt + S** toggles the hidden [SecretPortalScreen] overlay,
  * mirroring the web-layer secret-portal toggle pattern.
+ *
+ * Debug-only: `adb shell am start … --ez quilla_minigame true` opens the mini-game
+ * alone (skips NavHost cold start) for screenshots / QA on slow emulators.
  */
 class MainActivity : AppCompatActivity() {
 
@@ -41,23 +41,16 @@ class MainActivity : AppCompatActivity() {
             BuildConfig.DEBUG && intent?.getBooleanExtra(EXTRA_QUILLA_MINIGAME, false) == true
         setContent {
             CoreGuardTheme {
-                var showMiniGame by remember { mutableStateOf(launchMiniGame) }
-                CoreGuardApp(
-                    billingProvider = billingProvider,
-                    secretPortalVisible = secretPortalVisible
-                )
-                // Debug-only shortcut for screenshots / QA (adb --ez quilla_minigame true).
-                if (showMiniGame) {
-                    Dialog(
-                        onDismissRequest = { showMiniGame = false },
-                        properties = DialogProperties(
-                            usePlatformDefaultWidth = false,
-                            dismissOnBackPress = true,
-                            dismissOnClickOutside = false
-                        )
-                    ) {
-                        QuillaMiniGameScreen(onDismiss = { showMiniGame = false })
-                    }
+                if (launchMiniGame) {
+                    QuillaMiniGameScreen(
+                        onDismiss = { finish() },
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    CoreGuardApp(
+                        billingProvider = billingProvider,
+                        secretPortalVisible = secretPortalVisible
+                    )
                 }
             }
         }
