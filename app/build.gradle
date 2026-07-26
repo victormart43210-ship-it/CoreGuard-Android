@@ -1,30 +1,38 @@
-// buildscript MUST be top-level in this project file. Putting it only inside
-// gradle/android-app.gradle (applied via apply from:) registers plugins on an
-// isolated script classpath, which caused CI to fail with:
-//   Plugin with id 'com.android.application' not found
-buildscript {
-    def enableAndroidBuild = (
+// Real Android application build is the default.
+// Opt out only with -Pcoreguard.androidBuild=false (or COREGUARD_ANDROID_BUILD=false)
+// for generatePlaceholderArtifact — never for assemble*.
+
+def resolveAndroidBuildEnabled() {
+    def prop = (
         findProperty("coreguard.androidBuild")
             ?: System.getenv("COREGUARD_ANDROID_BUILD")
-            ?: "false"
-    ).toString().equalsIgnoreCase("true")
+            ?: "true"
+    ).toString().trim()
+    return !prop.equalsIgnoreCase("false")
+}
 
-    if (enableAndroidBuild) {
-        repositories {
-            google()
-            mavenCentral()
-        }
+def enableAndroidBuild = resolveAndroidBuildEnabled()
+
+// buildscript MUST be top-level so AGP resolves on the project PluginManager.
+buildscript {
+    def enable = !(
+        (
+            findProperty("coreguard.androidBuild")
+                ?: System.getenv("COREGUARD_ANDROID_BUILD")
+                ?: "true"
+        ).toString().trim().equalsIgnoreCase("false")
+    )
+    repositories {
+        google()
+        mavenCentral()
+    }
+    if (enable) {
         dependencies {
             classpath "com.android.tools.build:gradle:8.5.2"
             classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
         }
     }
 }
-
-def enableAndroidBuild = providers.gradleProperty("coreguard.androidBuild")
-    .orElse(providers.environmentVariable("COREGUARD_ANDROID_BUILD"))
-    .map { it.equalsIgnoreCase("true") }
-    .getOrElse(false)
 
 if (enableAndroidBuild) {
     apply plugin: "com.android.application"

@@ -64,7 +64,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 
 ```bash
 ./scripts/setup-android-sdk.sh          # SDK + AVD CoreGuard_API35
-./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug
+./gradlew :app:assembleDebug
 ./scripts/run-emulator.sh               # boot AVD, install, launch debug app
 ./scripts/prepare-upload-keystore.sh    # once — then :app:bundleRelease for Play
 ```
@@ -76,10 +76,7 @@ Debug package id is `com.coldboar.coreguard.debug`. Release / Play package is `c
 ## Build and lint
 
 By default, `./gradlew :app:assembleDebug` stays sandbox-friendly: if the Android Gradle Plugin and
-Android SDK are not available, it emits an offline placeholder artifact at
-`app/build/outputs/apk/debug/app-debug.apk` so constrained environments can still complete the task.
-To run the real Android build, install the Android toolchain below and opt in with
-`-Pcoreguard.androidBuild=true` or `COREGUARD_ANDROID_BUILD=true`.
+Android SDK are not available, normal tasks (`assembleDebug`, `test`, `lint`, `bundleRelease`) **fail clearly**. For a non-APK sandbox stub only, run `./gradlew -Pcoreguard.androidBuild=false :app:generatePlaceholderArtifact` (writes under `app/build/placeholder-artifacts/`, never `outputs/apk/`).
 
 ### Project versions
 
@@ -109,7 +106,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin"
 yes | sdkmanager --licenses >/dev/null
-sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 ```
 
 Ubuntu / Debian:
@@ -126,7 +123,7 @@ export ANDROID_HOME="$HOME/android-sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
 yes | sdkmanager --licenses >/dev/null
-sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 ```
 
 Windows (PowerShell):
@@ -136,7 +133,7 @@ Windows (PowerShell):
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:PATH += ";$env:ANDROID_HOME\cmdline-tools\latest\bin;$env:ANDROID_HOME\platform-tools;$env:JAVA_HOME\bin"
 sdkmanager --licenses
-sdkmanager "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 ```
 
 Persist `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT` in your shell profile after setup.
@@ -190,7 +187,7 @@ Reports:
 Debug validation (real Android build):
 
 ```bash
-./gradlew -Pcoreguard.androidBuild=true :app:test :app:assembleDebug
+./gradlew :app:testDebugUnitTest :app:assembleDebug
 ```
 
 Debug outputs:
@@ -245,12 +242,12 @@ go build -o ../coreguard ./cmd/coreguard
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"   # macOS example
 export ANDROID_HOME="$HOME/Android/Sdk"              # adjust per OS
-sdkmanager --install "platforms;android-34" "build-tools;34.0.0" "platform-tools"
+sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
 git clone <repository-url>
 cd CoreGuard-Android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
 chmod +x ./gradlew
-./gradlew -Pcoreguard.androidBuild=true :app:lint :app:test :app:assembleDebug
+./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug
 ls app/build/reports/
 ls app/build/outputs/apk/debug/
 ```
@@ -261,9 +258,9 @@ ls app/build/outputs/apk/debug/
 |---|---|
 | `Unsupported class file major version 61` | Use a host JDK compatible with the project's Java 17 target; JDK 21 works for the sandbox fallback build, while the real Android build path remains Java-17-targeted. |
 | `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
-| `Plugin [id: 'com.android.application' ...] was not found` | Use the default offline placeholder build in restricted sandboxes, or rerun with `-Pcoreguard.androidBuild=true` on a machine that can reach Google Maven / `dl.google.com`. |
-| `build-tools;34.0.0` missing | Run `sdkmanager --install "build-tools;34.0.0"`. |
-| `SDK platform android-34 not found` | Run `sdkmanager --install "platforms;android-34"`. |
+| `Plugin [id: 'com.android.application' ...] was not found` | Install the Android SDK / enable network to Google Maven, then rerun `./gradlew :app:assembleDebug`. Do not use `generatePlaceholderArtifact` for CI or Play. |
+| `build-tools;35.0.0` missing | Run `sdkmanager --install "build-tools;35.0.0"`. |
+| `SDK platform android-35 not found` | Run `sdkmanager --install "platforms;android-35"`. |
 | Android SDK licenses not accepted | Run `yes | sdkmanager --licenses`. |
 | Compose compiler / Kotlin mismatch | Keep Kotlin `1.9.25` aligned with Compose Compiler `1.5.15` unless both are upgraded together. |
 | `gradlew: Permission denied` | Run `chmod +x ./gradlew`. |
@@ -271,7 +268,7 @@ ls app/build/outputs/apk/debug/
 
 ### Notes
 
-- No instrumentation tests are currently wired in under `app/src/androidTest/`.
+- Instrumentation tests: `app/src/androidTest/` (MainActivity launch + Quilla on-device). Harness: `HEADLESS=1 ./scripts/quilla-emulator-tests.sh` (API 35 ATD preferred).
 - The Play special-use justification for `FOREGROUND_SERVICE_SPECIAL_USE` must be documented separately.
 - `release.sh` is for release workflow automation and should only be run live when you intend to publish.
 
@@ -288,7 +285,7 @@ CoreGuard-Android is a Kotlin-based Android security application focused on dete
 #### Required Before Each Commit
 - Run `./gradlew lint`
 - Run `./gradlew test`
-- Ensure the app builds with `./gradlew assembleDebug` (or `./gradlew -Pcoreguard.androidBuild=true assembleDebug` for the real Android APK)
+- Ensure the app builds with `./gradlew :app:assembleDebug` (real Android APK by default)
 - Update `README.md` when adding or changing features
 - Keep repository structure and Copilot instructions accurate
 
@@ -312,7 +309,7 @@ CoreGuard-Android is a Kotlin-based Android security application focused on dete
 - Add defensive error handling for security checks and scanning flows
 
 ### Development Flow
-- Build debug app: `./gradlew assembleDebug` (placeholder-safe) or `./gradlew -Pcoreguard.androidBuild=true assembleDebug` (real Android build)
+- Build debug app: `./gradlew :app:assembleDebug` (real Android build; placeholder path removed)
 - Run tests: `./gradlew test`
 - Run lint: `./gradlew lint`
 

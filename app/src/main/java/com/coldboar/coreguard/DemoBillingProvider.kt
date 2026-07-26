@@ -21,6 +21,10 @@ class DemoBillingProvider(private var startAsPremium: Boolean = false) : Billing
     override fun isPremium(): Boolean = premium.value
 
     override fun launchPurchaseFlow(productId: String, onResult: (PurchaseResult) -> Unit) {
+        if (productId != BillingProvider.PREMIUM_PRODUCT_ID) {
+            onResult(PurchaseResult.Error("Unknown product ID"))
+            return
+        }
         premium.value = true
         onResult(PurchaseResult.Success)
     }

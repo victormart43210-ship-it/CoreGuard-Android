@@ -105,13 +105,13 @@ def main():
     if not reports:
         print(
             "[security_gate] No report files found in"
-            f" {REPORTS_DIR} — nothing to aggregate.",
+            f" {REPORTS_DIR} — refusing empty pass.",
             file=sys.stderr,
         )
         # Emit a minimal summary so the gate-summary.md is never empty.
         print("# 🛡️ CoreGuard Security Swarm — PR Gate Report\n")
-        print("_No agent reports were available for this run._")
-        sys.exit(0)
+        print("_No agent reports were available for this run — gate FAILS._")
+        sys.exit(1)
 
     markdown = build_markdown(reports)
     print(markdown)

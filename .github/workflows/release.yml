@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -16,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      COREGUARD_ANDROID_BUILD: "true"
+      COREGUARD_REQUIRE_RELEASE_SIGNING: "true"
 
     steps:
       - name: Checkout repository
@@ -43,8 +46,26 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Run unit tests
-        run: ./gradlew -Pcoreguard.androidBuild=true test --no-daemon --stacktrace
+      - name: Require signing secrets for production release
+        env:
+          KEYSTORE_BASE64: ${{ secrets.RELEASE_KEYSTORE_BASE64 }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        run: |
+          missing=0
+          for v in KEYSTORE_BASE64 SIGNING_KEY_ALIAS SIGNING_KEY_PASSWORD SIGNING_STORE_PASSWORD; do
+            if [ -z "${!v}" ]; then
+              echo "Missing required secret: $v" >&2
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+
+      - name: Run unit tests + lintRelease
+        run: ./gradlew :app:testDebugUnitTest :app:lintRelease --no-daemon --stacktrace
 
       - name: Decode signing keystore
         env:
@@ -52,7 +73,7 @@ jobs:
         run: |
           echo "$KEYSTORE_BASE64" | base64 --decode > "${{ runner.temp }}/release.jks"
 
-      - name: Build release AAB
+      - name: Build release APK + AAB
         env:
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
@@ -60,11 +81,13 @@ jobs:
           SIGNING_STORE_FILE: ${{ runner.temp }}/release.jks
           EXPECTED_CERT_SHA256: ${{ secrets.EXPECTED_CERT_SHA256 }}
         run: |
-          ./gradlew -Pcoreguard.androidBuild=true bundleRelease \
+          ./gradlew :app:assembleRelease :app:bundleRelease \
             --no-daemon --stacktrace
+
       - name: Compute SHA-256 checksum
         run: |
           AAB=$(find app/build/outputs/bundle/release -name "*.aab" | head -n 1)
+          test -n "$AAB"
           echo "AAB_PATH=$AAB" >> "$GITHUB_ENV"
           sha256sum "$AAB" | tee app/build/outputs/bundle/release/checksums-sha256.txt
 
@@ -73,16 +96,19 @@ jobs:
         with:
           subject-path: ${{ env.AAB_PATH }}
 
-      - name: Upload release AAB and checksum
+      - name: Upload release AAB, mapping, native symbols
         uses: actions/upload-artifact@v7
         with:
           name: release-aab-${{ github.ref_name }}
           path: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/bundle/release/checksums-sha256.txt
-          if-no-files-found: error
+            app/build/outputs/mapping/release/mapping.txt
+            app/build/outputs/native-debug-symbols/release/**
+          if-no-files-found: warn
 
       - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
@@ -96,16 +122,15 @@ jobs:
 
             **Package name:** `com.coldboar.coreguard`
 
-            Verify the SHA-256 checksum published in `checksums-sha256.txt` against the downloaded AAB
-            before installing. A GitHub artifact attestation is available for this build — run:
+            Verify the SHA-256 checksum in `checksums-sha256.txt` against the downloaded AAB.
+            Artifact attestation:
 
             ```
             gh attestation verify <AAB file> --repo ${{ github.repository }}
             ```
 
-            This release was built from tag `${{ github.ref_name }}` by the CI pipeline. See the
-            [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
-            for full build logs and provenance details.
+            Built from `${{ github.ref_name }}` —
+            [Actions run](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}).
 
             See [SECURITY.md](https://github.com/${{ github.repository }}/blob/main/SECURITY.md)
-            for the official distribution and signing-key custody policy.
+            and [docs/CERTIFICATES.md](https://github.com/${{ github.repository }}/blob/main/docs/CERTIFICATES.md).

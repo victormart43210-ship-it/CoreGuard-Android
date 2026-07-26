@@ -71,6 +71,8 @@ fun SettingsScreen(
     onOpenTimeline: () -> Unit = {}
 ) {
     val isPremium by billingProvider.premiumState.collectAsState()
+    val context = LocalContext.current
+    var wipeStatus by remember { mutableStateOf<String?>(null) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     var hardeningOpen by remember { mutableStateOf(false) }
@@ -326,6 +328,41 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(16.dp))
+
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "On-device security data",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Delete scan history, forensic journal entries, Scam Guard findings, " +
+                        "downloaded threat-intel feeds, and Quilla hypotheses stored on this device. " +
+                        "Play purchases and OS permissions are unchanged.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    onClick = {
+                        com.coldboar.coreguard.LocalSecurityData.wipeAll(context)
+                        wipeStatus = "Local security data deleted"
+                    }
+                ) {
+                    Text("Delete local security data")
+                }
+                wipeStatus?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(it, style = MaterialTheme.typography.bodySmall, color = SafeGreen)
+                }
+            }
+        }
 
         // ── About ─────────────────────────────────────────────────────────────
         Card(

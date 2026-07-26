@@ -61,8 +61,14 @@ fun ScamGuardScreen(onBack: () -> Unit) {
         )
         Spacer(modifier = Modifier.height(12.dp))
         Text(
-            text = "Enable Notification access for CoreGuard to inspect incoming message " +
-                "notifications locally. No cloud upload. Paste a suspicious link anytime.",
+            text = "Before enabling Notification access, know what CoreGuard does:\n" +
+                "• Reads notification title/text locally to extract URLs only\n" +
+                "• Scoring is heuristic (IOC + URL patterns) — not guaranteed detection\n" +
+                "• Processing stays on-device; nothing is uploaded\n" +
+                "• Forensic journal may store host, score, and reason codes — not full message bodies\n" +
+                "• Clear findings anytime via Settings → Delete local security data\n" +
+                "• Revoke access anytime in system Notification access settings\n" +
+                "Paste a suspicious link below without granting access if you prefer.",
             color = MutedText,
             style = MaterialTheme.typography.bodySmall
         )
@@ -74,7 +80,7 @@ fun ScamGuardScreen(onBack: () -> Unit) {
                         .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                 )
             }
-        ) { Text("Open notification access settings") }
+        ) { Text("I understand — open notification access settings") }
 
         Spacer(modifier = Modifier.height(16.dp))
         OutlinedTextField(

@@ -115,13 +115,15 @@ object ScamGuardEngine {
         while (recent.size > 40) recent.removeAt(0)
         if (finding.score >= 50) {
             runCatching {
+                // Privacy: journal host + score + reason codes only — never full
+                // notification body or complete URL path/query.
                 ForensicJournal.append(
                     context,
                     ForensicJournal.EventKind.SCAM_URL,
                     packageName = finding.source,
                     details = "Scam Guard hit ${finding.host} score=${finding.score}",
                     metadata = mapOf(
-                        "url" to finding.url,
+                        "host" to finding.host,
                         "score" to finding.score.toString(),
                         "reasons" to finding.reasons.joinToString(";")
                     )
