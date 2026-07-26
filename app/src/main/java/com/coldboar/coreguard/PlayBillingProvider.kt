@@ -39,7 +39,8 @@ class PlayBillingProvider(
 
     companion object {
         private const val TAG = "PlayBilling"
-        const val PREMIUM_PRODUCT_ID = "coreguard_premium_monthly"
+        /** @see BillingProvider.PREMIUM_PRODUCT_ID */
+        const val PREMIUM_PRODUCT_ID = BillingProvider.PREMIUM_PRODUCT_ID
     }
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -179,6 +180,10 @@ class PlayBillingProvider(
     }
 
     private fun handlePurchase(purchase: Purchase) {
+        if (!purchase.products.contains(PREMIUM_PRODUCT_ID)) {
+            Log.w(TAG, "Ignoring purchase for unexpected products: ${purchase.products}")
+            return
+        }
         if (purchase.purchaseState == Purchase.PurchaseState.PURCHASED) {
             if (!purchase.isAcknowledged) {
                 val ackParams = AcknowledgePurchaseParams.newBuilder()
@@ -222,6 +227,11 @@ class PlayBillingProvider(
     }
 
     override fun launchPurchaseFlow(productId: String, onResult: (PurchaseResult) -> Unit) {
+        if (productId != PREMIUM_PRODUCT_ID) {
+            onResult(PurchaseResult.Error("Unknown product: $productId"))
+            return
+        }
+
         val activity = currentActivity
         if (activity == null || activity.isFinishing) {
             onResult(PurchaseResult.Error("No active screen to show billing UI."))
@@ -235,7 +245,7 @@ class PlayBillingProvider(
         }
 
         val details = cachedProductDetails
-        if (details == null) {
+        if (details == null || details.productId != PREMIUM_PRODUCT_ID) {
             onResult(PurchaseResult.Error("Product details unavailable. Please try again."))
             queryProductDetails()
             return

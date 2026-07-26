@@ -127,52 +127,33 @@ To build a debug APK for quick testing:
 
 ## 5. Data Safety & Privacy
 
-CoreGuard v1 collects **no personal data** and makes **no network requests**.
+CoreGuard v1 does **not** create user accounts and does **not** upload scan results to a CoreGuard backend.
+Scans and Quilla Q&A run on-device. The app **does** use the network when you enable:
 
-In the Data Safety form on Play Console:
+- optional Premium threat signature refresh (HTTPS)
+- optional Quilla Research STIX sync (HTTPS)
+- Google Play Billing
+- Privacy Shield DNS forwarding for allowed queries
 
-| Question | Answer |
-|----------|--------|
-| Does your app collect or share user data? | No |
-| Does the app use encryption in transit? | N/A (no network) |
-| Does the app provide a way to delete user data? | N/A |
+In the Data Safety form on Play Console, follow `docs/PLAY_CONSOLE_CHECKLIST.md` (not an absolute “no network” answer).
 
-> If a backend is added in a later version, revisit and update this section and
-> the Data Safety form before publishing that version.
-
-**Privacy Policy**: Even with no data collection, Google Play may require a
-privacy policy URL. Host a simple policy stating no data is collected.
+**Privacy Policy**: Host a policy that matches the above. In-app screen + `docs/privacy-policy.html` are the source of truth.
 
 ---
 
 ## 6. Billing Setup
 
-**Current state**: `DemoBillingProvider` — no real billing. **Do not charge users.**
+**Current state**: Production path is `PlayBillingProvider` (wired from `CoreGuardApplication` / `MainActivity` / `PaywallActivity`).
+`DemoBillingProvider` is for JVM unit tests and Compose previews only — never ship it as production billing.
 
-### Steps to Integrate Real Billing
+Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`.
 
-1. Add the Play Billing Library dependency to `app/build.gradle.kts`:
-   ```kotlin
-   implementation("com.android.billingclient:billing-ktx:7.0.0")
-   ```
+### Still required before charging real users
 
-2. Create a `PlayBillingProvider` that implements `BillingProvider`:
-   - Connect `BillingClient` in `onCreate`
-   - Query existing purchases on connect
-   - Implement `launchPurchaseFlow` using `BillingClient.launchBillingFlow`
-   - Verify purchase tokens server-side before granting entitlement
-
-3. Define a subscription product in the Play Console:
-   - **Product ID**: `coreguard_premium_monthly` (matches `PaywallActivity.PRODUCT_ID_PREMIUM`)
-   - Set price, billing period, and free trial if desired.
-
-4. **Replace** `DemoBillingProvider` with `PlayBillingProvider` in `MainActivity`
-   and `PaywallActivity`.
-
-5. **Server-side verification** (required for production):
-   - Use the [Google Play Developer API](https://developers.google.com/android-publisher)
-     to verify purchase tokens before unlocking premium features.
-   - Store the entitlement server-side; don't trust the device alone.
+1. Create the subscription in Play Console with product ID `coreguard_premium_monthly`.
+2. Add license testers and verify purchase → entitlement → export/refresh/timeline on a device.
+3. Prefer server-side Google Play Developer API verification before high-trust entitlement gating
+   (client-side ack alone is what ships today).
 
 ---
 
@@ -198,22 +179,25 @@ privacy policy URL. Host a simple policy stating no data is collected.
 
 ## 8. Pre-Launch Checklist
 
-- [ ] All unit tests pass: `./gradlew test`
-- [ ] Debug APK builds cleanly: `./gradlew assembleDebug`
-- [ ] Release AAB builds cleanly: `./gradlew bundleRelease`
+- [ ] All unit tests pass: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
+- [ ] Debug APK builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
+- [ ] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease`
 - [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
-- [x] CPU metric is no longer labeled "simulated" or is removed from release UI
-- [ ] `DemoBillingProvider` replaced with `PlayBillingProvider`
-- [ ] Server-side purchase token verification implemented
-- [ ] `expectedSha256` in `SignatureCheckEvaluator` set to real cert hash
+- [x] Production billing path is `PlayBillingProvider` (Demo is tests/previews only)
+- [x] Authoritative SKU is `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`
+- [ ] Play Console subscription created + license-tester purchase verified on device
+- [ ] Server-side purchase token verification implemented (recommended)
+- [ ] `EXPECTED_CERT_SHA256` / signature check set to real cert hash
 - [ ] ProGuard/R8 release build tested (check no critical classes stripped)
-- [ ] App icon (512×512 px) created and set
-- [ ] Play Console store listing completed
+- [x] App icon (512×512 px) present under `store/`
+- [ ] Play Console store listing completed (real device screenshots)
 - [ ] Privacy policy URL added to Play Console
-- [ ] Data Safety form completed
+- [ ] Data Safety form completed (see `PLAY_CONSOLE_CHECKLIST.md`)
 - [ ] Target audience / content rating questionnaire completed
-- [ ] App tested on at least one physical device (not only emulator)
+- [ ] App tested on at least one physical device (not only emulator) — see `MANUAL_RELEASE_TEST.md`
 - [ ] Security Dashboard shows expected PASS/WARN states on a non-rooted device
+
+Claims matrix: [`SECURITY_CLAIMS.md`](SECURITY_CLAIMS.md). Quality-pass notes: [`NINE_TEN_PASS_SUMMARY.md`](NINE_TEN_PASS_SUMMARY.md).
 
 ---
 

@@ -3,29 +3,22 @@
 ## Cursor Cloud specific instructions
 
 ### Current repository state
-This repository is currently a **placeholder**. It contains only `README.md` and
-`LICENSE`. There is **no application code, no Gradle/Android project, and no
-dependency manifests** committed yet. As a result there is nothing to build,
-lint, test, or run at this time, and no end-to-end flow can be exercised.
-
-`README.md` describes the intended product: **CoreGuard-Android**, a native
-Kotlin Android security and device-monitoring application.
+This repository contains the **CoreGuard-Android** Kotlin/Compose app under `app/`,
+plus docs, store assets, CLI, and CI scripts. Prefer `docs/RELEASE_READINESS.md`,
+`docs/SECURITY_CLAIMS.md`, and `docs/NINE_TEN_PASS_SUMMARY.md` for honest ship status.
 
 ### Toolchain already available in the VM
 - **JDK 21** (`java -version` → OpenJDK 21) is pre-installed.
-- **Not** pre-installed: Gradle, the Kotlin compiler (`kotlinc`), and the
-  Android SDK (`ANDROID_HOME`/`ANDROID_SDK_ROOT` are unset; no `sdkmanager`/`adb`).
+- **Gradle wrapper** exists (`./gradlew`).
+- **Not** always pre-installed: full Android SDK (`ANDROID_HOME` / `ANDROID_SDK_ROOT`
+  may be unset). Real Android builds need:
+  `./gradlew -Pcoreguard.androidBuild=true …` with SDK platforms/build-tools installed.
 
-### When the Android project is scaffolded
-Once an actual Android/Gradle project is added, the standard workflow will be
-driven by the Gradle wrapper (`./gradlew`), e.g.:
-- Build: `./gradlew assembleDebug`
-- Unit tests: `./gradlew test`
-- Lint: `./gradlew lint` (and/or `ktlint`/`detekt` if configured)
+### When validating changes
+- Unit tests: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
+- Debug APK: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
+- Lint: `./gradlew -Pcoreguard.androidBuild=true :app:lintDebug`
+- Manual device smoke: `docs/MANUAL_RELEASE_TEST.md`
 
-Building/running an Android app additionally requires installing the Android SDK
-(command-line tools + platform + build-tools) and, for on-device runs, an
-emulator (AVD) or connected device via `adb`. None of that is set up yet because
-there is no project to validate it against — add it as part of scaffolding the app.
-The startup update script is intentionally a guarded no-op until a Gradle wrapper
-(`./gradlew`) exists.
+If the Android SDK is missing, **do not fabricate** build/test/device results — record
+the limitation and keep release-readiness wording honest.

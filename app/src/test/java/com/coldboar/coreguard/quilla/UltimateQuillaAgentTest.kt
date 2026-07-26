@@ -71,10 +71,11 @@ class UltimateQuillaAgentTest {
     }
 
     @Test
-    fun `scan intent suggests nemesis action`() {
+    fun `scan intent suggests open scanner action`() {
         val answer = agent.answer("please run a nemesis scan")
         assertEquals(QuillaIntent.SCAN, answer.intent)
         assertTrue(answer.actions.any { it.id == QuillaActionSuggestion.RUN_SCAN })
+        assertEquals("Open Scanner", answer.actions.first { it.id == QuillaActionSuggestion.RUN_SCAN }.label)
         assertTrue(answer.modulesUsed.contains(QuillaModule.TOOLS))
     }
 
@@ -92,6 +93,7 @@ class UltimateQuillaAgentTest {
         assertEquals(QuillaIntent.RESEARCH, answer.intent)
         assertTrue(answer.text.contains("12"))
         assertTrue(answer.text.contains("Amnesty STIX2"))
+        assertTrue(answer.text.contains("cached") || answer.text.contains("Research"))
         assertTrue(answer.modulesUsed.contains(QuillaModule.RESEARCH))
     }
 

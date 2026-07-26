@@ -1,5 +1,11 @@
 # CoreGuard UI Merge Audit
 
+> **STALE (2026-07-26):** This audit describes a pre-Compose View/XML stack.
+> The app now launches a Jetpack Compose `CoreGuardApp` NavHost
+> (Home / Scanner / Shield / Compliance / Settings + secondary Tools/Timeline/…).
+> Production billing is `PlayBillingProvider`. Prefer `docs/NINE_TEN_PASS_SUMMARY.md`
+> and current source under `app/src/main/java/.../ui/` over this file.
+
 Generated: 2026-07-23  
 Branch: UI unification — Phase 1
 

@@ -70,9 +70,9 @@ class EntitlementPolicyTest {
     }
 
     @Test
-    fun `EntitlementPolicy canAccessAdvancedMonitoring is false for FREE tier`() {
+    fun `EntitlementPolicy canUseQuillaRecommendations is false for FREE tier`() {
         val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = false))
-        assertFalse(policy.canAccessAdvancedMonitoring())
+        assertFalse(policy.canUseQuillaRecommendations())
     }
 
     @Test
@@ -110,9 +110,9 @@ class EntitlementPolicyTest {
     }
 
     @Test
-    fun `EntitlementPolicy canAccessAdvancedMonitoring is true for PREMIUM tier`() {
+    fun `EntitlementPolicy canUseQuillaRecommendations is true for PREMIUM tier`() {
         val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = true))
-        assertTrue(policy.canAccessAdvancedMonitoring())
+        assertTrue(policy.canUseQuillaRecommendations())
     }
 
     @Test

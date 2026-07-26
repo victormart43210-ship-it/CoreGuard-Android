@@ -42,6 +42,7 @@ import com.coldboar.coreguard.quilla.QuillaActionSuggestion
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
 import com.coldboar.coreguard.quilla.QuillaMemoryFactory
 import com.coldboar.coreguard.quilla.QuillaModule
+import com.coldboar.coreguard.quilla.QuillaSalesCoach
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -56,18 +57,23 @@ import kotlinx.coroutines.withContext
 private const val QUILLA_RESPONSE_DELAY_MS = 500L
 
 /**
- * Shared Ultimate Quilla panel: Brain / Memory / Research / Knowledge / Actions / Tools.
+ * Shared Quilla panel: Brain / Memory / Research / Knowledge / Actions / Tools.
+ *
+ * Basic Q&A stays free. Optional Research sync may use HTTPS.
+ * Action buttons navigate to tools — they do not silently execute scans or VPN.
  */
 @Composable
 fun QuillaAgentPanel(
     modifier: Modifier = Modifier,
     onRunScan: (() -> Unit)? = null,
     onOpenShield: (() -> Unit)? = null,
-    onOpenTimeline: (() -> Unit)? = null
+    onOpenTimeline: (() -> Unit)? = null,
+    isPremium: Boolean = false
 ) {
     val context = LocalContext.current
     var question by remember { mutableStateOf("") }
     var answer by remember { mutableStateOf<QuillaAgentAnswer?>(null) }
+    var coachTip by remember { mutableStateOf<String?>(null) }
     var isAsking by remember { mutableStateOf(false) }
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
     val hasQuestion = question.isNotBlank()
@@ -89,9 +95,10 @@ fun QuillaAgentPanel(
         val result = withContext(Dispatchers.IO) {
             CyberKnowledgeAssets.ensureLoaded(context)
             val wantsResearch = prompt.lowercase().let {
-                it.contains("research") || it.contains("intel") || it.contains("stix") ||
-                    it.contains("amnesty") || it.contains("sync") ||
-                    (it.contains("ioc") && it.contains("sync"))
+                it.contains("research") || it.contains("stix") || it.contains("amnesty") ||
+                    (it.contains("intel") && it.contains("sync")) ||
+                    (it.contains("ioc") && it.contains("sync")) ||
+                    it.contains("sync threat") || it.contains("sync quilla")
             }
             if (wantsResearch) {
                 QuillaMemoryFactory.syncResearch()
@@ -102,6 +109,24 @@ fun QuillaAgentPanel(
             ).answer(prompt)
         }
         answer = result
+        // Honest Premium coaching tips (SalesCoach) — Quilla Q&A itself stays free.
+        val coach = QuillaSalesCoach.answer(
+            prompt,
+            QuillaSalesCoach.DeviceContext(
+                isPremium = isPremium,
+                timelineCount = QuillaMemoryFactory.memorySnapshot(context).historyCount,
+                shieldActive = QuillaMemoryFactory.memorySnapshot(context).shieldActive,
+                shieldBlocked = QuillaMemoryFactory.memorySnapshot(context).shieldBlocked
+            )
+        )
+        coachTip = when {
+            isPremium && coach.premiumPitch == null &&
+                (prompt.contains("premium", true) || prompt.contains("export", true) ||
+                    prompt.contains("signature", true) || prompt.contains("timeline", true)) ->
+                coach.text
+            !isPremium && coach.suggestPremium -> coach.premiumPitch
+            else -> null
+        }
         isAsking = false
         pendingPrompt = null
     }
@@ -119,7 +144,7 @@ fun QuillaAgentPanel(
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = "Ultimate Quilla Agent",
+                text = "Quilla",
                 style = MaterialTheme.typography.titleMedium,
                 color = ElectricTeal,
                 modifier = Modifier.semantics { heading() }
@@ -130,7 +155,7 @@ fun QuillaAgentPanel(
                 color = MutedText
             )
             Text(
-                text = "On-device cyber codex: OWASP · MITRE ATT&CK Mobile · pentest · IR",
+                text = "On-device cyber codex + local evidence. Optional Research sync uses HTTPS.",
                 style = MaterialTheme.typography.bodySmall,
                 color = MutedText
             )
@@ -151,7 +176,7 @@ fun QuillaAgentPanel(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            ModuleChipRow(answer)
+            ModuleChipRow(answer, isAsking)
 
             Spacer(modifier = Modifier.height(10.dp))
 
@@ -190,7 +215,7 @@ fun QuillaAgentPanel(
             OutlinedTextField(
                 value = question,
                 onValueChange = { question = it },
-                label = { Text("Ask Ultimate Quilla…") },
+                label = { Text("Ask Quilla…") },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -207,7 +232,7 @@ fun QuillaAgentPanel(
                 enabled = !isAsking && hasQuestion,
                 modifier = Modifier.fillMaxWidth()
             ) {
-                Text(if (isAsking) "Consulting all modules…" else "Ask Quilla")
+                Text(if (isAsking) "Thinking…" else "Ask Quilla")
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -217,6 +242,15 @@ fun QuillaAgentPanel(
                 style = MaterialTheme.typography.bodyMedium,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
+
+            coachTip?.let { tip ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (isPremium) "Premium tip: $tip" else tip,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RestrainedGold
+                )
+            }
 
             val actions = answer?.actions.orEmpty()
             if (actions.isNotEmpty()) {
@@ -231,14 +265,20 @@ fun QuillaAgentPanel(
                     OutlinedButton(
                         onClick = {
                             when (action.id) {
-                                QuillaActionSuggestion.RUN_SCAN -> onRunScan?.invoke()
-                                    ?: run { pendingPrompt = "run a nemesis scan" }
-                                QuillaActionSuggestion.OPEN_SHIELD -> onOpenShield?.invoke()
-                                    ?: run { pendingPrompt = "open privacy shield" }
-                                QuillaActionSuggestion.OPEN_TIMELINE -> onOpenTimeline?.invoke()
-                                    ?: run { pendingPrompt = "open scan timeline" }
+                                QuillaActionSuggestion.RUN_SCAN -> {
+                                    if (onRunScan != null) onRunScan()
+                                    else pendingPrompt = "how do I run a nemesis scan"
+                                }
+                                QuillaActionSuggestion.OPEN_SHIELD -> {
+                                    if (onOpenShield != null) onOpenShield()
+                                    else pendingPrompt = "how do I open privacy shield"
+                                }
+                                QuillaActionSuggestion.OPEN_TIMELINE -> {
+                                    if (onOpenTimeline != null) onOpenTimeline()
+                                    else pendingPrompt = "how do I open scan timeline"
+                                }
                                 QuillaActionSuggestion.SYNC_INTEL ->
-                                    pendingPrompt = "sync threat intel research"
+                                    pendingPrompt = "sync quilla research intel"
                             }
                         },
                         enabled = !isAsking,
@@ -258,7 +298,7 @@ fun QuillaAgentPanel(
 }
 
 @Composable
-private fun ModuleChipRow(answer: QuillaAgentAnswer?) {
+private fun ModuleChipRow(answer: QuillaAgentAnswer?, isAsking: Boolean) {
     val used = answer?.modulesUsed?.toSet().orEmpty()
     Row(
         modifier = Modifier
@@ -267,7 +307,8 @@ private fun ModuleChipRow(answer: QuillaAgentAnswer?) {
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         QuillaModule.entries.forEach { module ->
-            val active = module in used || answer == null
+            // While thinking, do not light every module as if all ran.
+            val active = !isAsking && module in used
             SuggestionChip(
                 onClick = {},
                 enabled = false,
@@ -289,3 +330,4 @@ private fun ModuleChipRow(answer: QuillaAgentAnswer?) {
         }
     }
 }
+

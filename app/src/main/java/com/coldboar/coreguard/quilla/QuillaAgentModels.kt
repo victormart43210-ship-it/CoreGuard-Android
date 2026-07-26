@@ -8,9 +8,9 @@ package com.coldboar.coreguard.quilla
 enum class QuillaModule(val label: String, val superpower: String) {
     BRAIN("Brain", "Reason & decide"),
     MEMORY("Memory", "Long-term device context"),
-    RESEARCH("Research", "Live threat intel"),
+    RESEARCH("Research", "Optional STIX pull"),
     KNOWLEDGE("Knowledge", "Cybersecurity codex"),
-    ACTIONS("Actions", "Automate defenses"),
+    ACTIONS("Actions", "Suggest next steps"),
     TOOLS("Tools", "Scanner · Shield · Timeline")
 }
 
@@ -60,8 +60,11 @@ data class QuillaMemorySnapshot(
 
 data class QuillaResearchSnapshot(
     val indicatorCount: Int = 0,
+    /** True only when the last sync attempt completed without throwing. */
     val synced: Boolean = false,
-    val sourceLabel: String = "Amnesty STIX2"
+    /** True when the last sync attempt failed (network/parse). Distinct from empty feed. */
+    val syncFailed: Boolean = false,
+    val sourceLabel: String = "Amnesty STIX2 (campaign archive)"
 )
 
 data class QuillaAgentAnswer(

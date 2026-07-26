@@ -90,13 +90,12 @@
     <string name="paywall_description">You don\'t wait for a crisis to buy insurance for your car. Don\'t wait for a scare to invest in clarity for your phone.</string>
     <string name="paywall_benefit_1">Live threat signature refresh before you rescan</string>
     <string name="paywall_benefit_2">Compliance JSON export for your notes or review</string>
-    <string name="paywall_benefit_3">Longer scan timeline + deeper Quilla coaching</string>
+    <string name="paywall_benefit_3">Longer scan timeline + Premium next-step coaching tips</string>
     <string name="paywall_social_proof">People who value privacy don\'t hope — they decide. Make your decision now.</string>
-    <string name="paywall_demo_disclaimer">Secure checkout through Google Play. CoreGuard never sees your card details.</string>
+    <string name="paywall_billing_disclaimer">Secure checkout through Google Play. CoreGuard never sees your card details.</string>
     <string name="paywall_btn_subscribe_priced">Subscribe · %1$s</string>
     <string name="paywall_btn_subscribe">Yes — Go Premium Now</string>
     <string name="paywall_btn_close">Not yet</string>
-    <string name="paywall_purchase_success_demo">You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>
     <string name="paywall_purchase_cancelled">No problem — your free tools stay ready whenever you are.</string>
     <string name="paywall_purchase_error">Something went wrong: %1$s. Try again when you\'re ready.</string>
     <string name="paywall_purchase_success">You\'re in. Welcome to CoreGuard Premium — thank you for choosing clarity.</string>

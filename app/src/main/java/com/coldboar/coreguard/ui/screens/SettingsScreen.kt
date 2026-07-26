@@ -45,7 +45,6 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.DemoBillingProvider
-import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.PurchaseResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.filled.Bolt
@@ -129,7 +128,7 @@ fun SettingsScreen(
                     )
                 } else {
                     Text(
-                        "Unlock live signature refresh, Compliance JSON export, a longer scan timeline, and deeper Quilla coaching. Core scan + shield stay free.",
+                        "Unlock live signature refresh, Compliance JSON export, and a longer scan timeline. Quilla Q&A stays free — Premium adds coaching tips for next steps. Core scan + shield stay free.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText
                     )
@@ -148,7 +147,7 @@ fun SettingsScreen(
 
                     Button(
                         onClick = {
-                            billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+                            billingProvider.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) { result ->
                                 when (result) {
                                     is PurchaseResult.Success -> {
                                         purchaseStatus = "Premium unlocked — thank you!"
@@ -185,7 +184,7 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
-        // ── Quilla AI assistant ──────────────────────────────────────────────
+        // ── Quilla (on-device agent) ─────────────────────────────────────────
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -203,7 +202,7 @@ fun SettingsScreen(
                     )
                     Spacer(Modifier.size(8.dp))
                     Text(
-                        "Quilla Intelligence",
+                        "Quilla",
                         style = MaterialTheme.typography.titleMedium,
                         color = ElectricTeal,
                         modifier = Modifier.weight(1f)
@@ -217,7 +216,7 @@ fun SettingsScreen(
                 if (!quillaOpen) {
                     Spacer(Modifier.height(4.dp))
                     Text(
-                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
+                        "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence. Q&A stays free.",
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
@@ -229,12 +228,10 @@ fun SettingsScreen(
                 modifier = Modifier.padding(top = 8.dp),
                 onRunScan = onRunScan,
                 onOpenShield = onOpenShield,
-                onOpenTimeline = onOpenTimeline
+                onOpenTimeline = onOpenTimeline,
+                isPremium = isPremium
             )
         }
-
-        Spacer(Modifier.height(16.dp))
-
 
         Spacer(Modifier.height(16.dp))
 
@@ -321,7 +318,7 @@ fun SettingsScreen(
                 )
                 HorizontalDivider(Modifier.padding(vertical = 8.dp))
                 Text(
-                    text = "CoreGuard collects no personal data. All scans run entirely on-device.",
+                    text = "CoreGuard does not collect personal accounts or chat history. Scans and Quilla Q&A run on-device; optional Premium signature refresh, Quilla Research sync, billing, and Shield DNS forwarding use the network when you enable them.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )

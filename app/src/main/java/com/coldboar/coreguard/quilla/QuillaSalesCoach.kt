@@ -65,8 +65,8 @@ object QuillaSalesCoach {
         }
         return CoachAnswer(
             text = "Premium is for people who want more than a one-off check: live signature refresh, " +
-                "full scan history, Compliance JSON export, and my deeper next-step coaching. " +
-                "Core scan + shield stay free — upgrade when you want the full operating system.",
+                "full scan history, Compliance JSON export, and Premium next-step coaching tips. " +
+                "Quilla Q&A + core scan + shield stay free — upgrade when you want the full toolkit.",
             suggestPremium = true,
             premiumPitch = premiumValuePitch()
         )
@@ -174,6 +174,6 @@ object QuillaSalesCoach {
 
     private fun premiumValuePitch(): String =
         "Premium unlocks: live signature refresh · Compliance JSON export · " +
-            "${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES}-scan timeline · deeper Quilla coaching. " +
-            "Core scan + shield stay free."
+            "${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES}-scan timeline · Premium next-step coaching tips. " +
+            "Quilla Q&A stays free. Core scan + shield stay free."
 }

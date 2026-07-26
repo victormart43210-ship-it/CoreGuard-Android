@@ -11,9 +11,12 @@ import com.coldboar.coreguard.mvt.ShieldState
 object QuillaMemoryFactory {
 
     private val sharedStore = QuillaHypothesisStore()
+    private val sharedCorrelation = QuillaCorrelationEngine(sharedStore)
     private var cachedResearch = QuillaResearchSnapshot()
 
     fun hypothesisStore(): QuillaHypothesisStore = sharedStore
+
+    fun correlationEngine(): QuillaCorrelationEngine = sharedCorrelation
 
     fun memorySnapshot(context: Context): QuillaMemorySnapshot {
         val history = runCatching { ScanHistoryStore.load(context) }.getOrDefault(emptyList())
@@ -36,19 +39,35 @@ object QuillaMemoryFactory {
 
     /**
      * Synchronous intel sync for Research module. Call from a background dispatcher.
+     *
+     * Honesty rules:
+     * - [QuillaResearchSnapshot.synced] is true only when the fetch completed without error.
+     * - Empty feed is success with zero indicators (not a fake "loaded" failure mask).
+     * - Failure leaves [QuillaResearchSnapshot.syncFailed] true and does not claim success.
+     * - This feed feeds Quilla Research only — it does **not** refresh Nemesis Scanner signatures.
      */
     fun syncResearch(): QuillaResearchSnapshot {
-        val indicators = runCatching { AmnestyThreatIntelFetcher.fetchAmnestyIndicators() }
-            .getOrDefault(emptyList())
-        cachedResearch = QuillaResearchSnapshot(
-            indicatorCount = indicators.size,
-            synced = true,
-            sourceLabel = "Amnesty STIX2"
-        )
-        // Keep correlation engine warm with the same feed when available.
-        if (indicators.isNotEmpty()) {
-            QuillaCorrelationEngine(sharedStore).loadIndicators(indicators)
+        val result = runCatching { AmnestyThreatIntelFetcher.fetchAmnestyIndicators() }
+        return if (result.isSuccess) {
+            val indicators = result.getOrDefault(emptyList())
+            cachedResearch = QuillaResearchSnapshot(
+                indicatorCount = indicators.size,
+                synced = true,
+                syncFailed = false,
+                sourceLabel = "Amnesty STIX2 (campaign archive)"
+            )
+            if (indicators.isNotEmpty()) {
+                sharedCorrelation.loadIndicators(indicators)
+            }
+            cachedResearch
+        } else {
+            cachedResearch = QuillaResearchSnapshot(
+                indicatorCount = cachedResearch.indicatorCount,
+                synced = false,
+                syncFailed = true,
+                sourceLabel = cachedResearch.sourceLabel
+            )
+            cachedResearch
         }
-        return cachedResearch
     }
 }
