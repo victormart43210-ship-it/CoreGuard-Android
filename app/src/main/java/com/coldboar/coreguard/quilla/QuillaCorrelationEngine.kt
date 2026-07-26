@@ -182,16 +182,20 @@ class QuillaCorrelationEngine(
             )
         }
 
-        // Prefer constructive blend when the circuit collapses; never invent hits without evidence.
-        val finalConfidence = if (evidenceList.any { !it.startsWith("Quantum") && !it.startsWith("Entangled") }) {
-            maxOf(classicalClamped, quantum.classicalBlend).coerceAtMost(1.0f)
-        } else {
-            classicalClamped
+        // Hypothesis confidence stays on the classical ladder when it already
+        // clears the threshold (stable API / tests). Quantum blend may lift
+        // borderline cases only when the circuit collapses on real evidence.
+        val hardEvidence = iocHit || packageIocHit || dcl || root
+        val finalConfidence = when {
+            classicalClamped >= ACTIVATION_THRESHOLD -> classicalClamped
+            quantum.collapsed && hardEvidence ->
+                maxOf(classicalClamped, quantum.classicalBlend).coerceAtMost(1.0f)
+            else -> classicalClamped
         }
 
         // 3. Persist hypothesis if classical or quantum collapse threshold is met.
         val shouldActivate = finalConfidence >= ACTIVATION_THRESHOLD ||
-            (quantum.collapsed && (iocHit || packageIocHit || dcl || root))
+            (quantum.collapsed && hardEvidence)
         if (shouldActivate) {
             val evidenceJson = JSONObject().apply {
                 put("packageName", packageName)
