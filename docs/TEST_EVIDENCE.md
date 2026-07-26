@@ -2,9 +2,24 @@
 
 Branch: `cursor/swarm-module-redux-counter-6db1`  
 Date: 2026-07-26  
-Version: **1.0.13** (`versionCode` 14)
+Version: **1.0.14** (`versionCode` 15)
 
 > Milestone results are posted as PR comments (GitHub Milestone API returns 403).
+
+## Milestone M18 · Module pattern + Redux Counter separation
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| `:app:compileDebugKotlin` | **PASS** | EliteModule + EliteThreatCounterStore |
+| `:app:testDebugUnitTest` | **PASS** | **318** tests |
+| Redux UI contract | **PASS** | SwarmAlertCounter dispatches only via SwarmModule; Elite Home mirrors EliteModule.threatCounter |
+
+### Landed
+
+- `EliteModule` façade for DTS / Scam Guard / Forensic Journal
+- `EliteThreatCounterStore` Redux Counter (DTS + scam amber)
+- Swarm Counter UI uses `incrementAlertCounter` / `resetAlertCounter` (no Action imports)
+- Thorough module/Redux comments on façades, stores, Counter composable
 
 ## Milestone M17 · CoreGuard Elite zero-trust feature set
 
@@ -37,6 +52,7 @@ Version: **1.0.13** (`versionCode` 14)
 | M15 Swarm + Redux Counter + ATD | PASS — 304 unit + instrumented + smoke |
 | M16 CG Elite Home dashboard | PASS — 304 unit + ATD smoke |
 | **M17 Elite zero-trust features** | **PASS — 315 unit + ATD instrumented + smoke** |
+| **M18 Module + Redux Counter** | **PASS — 318 unit** |
 
 ## Play Console next (human)
 
