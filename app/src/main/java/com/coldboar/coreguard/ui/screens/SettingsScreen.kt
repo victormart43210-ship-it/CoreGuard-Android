@@ -55,6 +55,8 @@ import com.coldboar.coreguard.hardening.HardeningSettingsIntents
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
+import com.coldboar.coreguard.ui.components.ScreenAtmosphere
+import com.coldboar.coreguard.ui.components.ScreenHeader
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
@@ -76,20 +78,18 @@ fun SettingsScreen(
     val subscribeLabel =
         if (priceLabel.isNotBlank()) "Yes — Go Premium Now · $priceLabel" else "Yes — Go Premium Now"
 
-    Column(
+    ScreenAtmosphere(
         modifier = Modifier
             .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        accent = RestrainedGold
     ) {
-        Text(
-            text = "Settings",
-            style = MaterialTheme.typography.headlineLarge,
-            color = ElectricTeal,
-            modifier = Modifier.semantics { heading() }
+        ScreenHeader(
+            title = "Settings",
+            subtitle = "Premium, hardening, Quilla, and privacy."
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         // ── Premium section ─────────────────────────────────────────────────
         Card(

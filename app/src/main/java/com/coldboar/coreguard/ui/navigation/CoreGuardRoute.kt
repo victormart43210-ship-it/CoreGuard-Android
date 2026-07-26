@@ -2,6 +2,7 @@ package com.coldboar.coreguard.ui.navigation
 
 /** All top-level destinations reachable via the canonical NavHost. */
 sealed class CoreGuardRoute(val route: String) {
+    data object Onboarding : CoreGuardRoute("onboarding")
     data object Home : CoreGuardRoute("home")
     data object Scanner : CoreGuardRoute("scanner")
     data object Timeline : CoreGuardRoute("timeline")

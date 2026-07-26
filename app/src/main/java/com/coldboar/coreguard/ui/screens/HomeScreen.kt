@@ -272,8 +272,8 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         if (securityResults.isNotEmpty()) {
             Row(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
+                .fillMaxWidth()
+                    
                     .semantics {
                         contentDescription =
                             "$passCount checks passed, $warnCount need attention, $failCount failed"
@@ -305,9 +305,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         if (needsAttention) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -334,9 +332,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         // ── System Health ─────────────────────────────────────────────────────
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             HealthCard(
@@ -358,9 +354,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         // ── Security Checks Detail ────────────────────────────────────────────
         if (securityResults.isNotEmpty()) {
             Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = SurfacePewter),
                 shape = RoundedCornerShape(16.dp)
             ) {
@@ -401,7 +395,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             onClick = onNavigateToScanner,
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp)
                 .height(54.dp),
             shape = RoundedCornerShape(14.dp),
             colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
@@ -420,9 +413,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         OutlinedButton(
             onClick = onNavigateToTimeline,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+            modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(14.dp)
         ) {
             Text("See My Progress Over Time", color = ElectricTeal)
@@ -492,7 +483,7 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
     val stateLabel = result.state.userLabel
     Row(
         modifier = Modifier
-            .fillMaxWidth()
+                .fillMaxWidth()
             .semantics {
                 contentDescription = "${result.displayName}: $stateLabel. ${result.explanation}"
             },
