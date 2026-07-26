@@ -2,33 +2,33 @@
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
 Date: 2026-07-26  
-Version: **1.0.7** (`versionCode` 8)
+Version: **1.0.9** (`versionCode` 10)
 
 > Milestone results are posted as PR comments on [#70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
 > (GitHub Milestone API returns 403 for the agent token).
 
-## Milestone M11 · Angelic Defense Blessings
+## Milestone M13 · Quantum Correlate (classical + magick gates)
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **282** tests |
-| `:app:assembleDebug` | **PASS** | Debug APK |
-| Honesty | **PASS** | Angels label evidence bundles — not supernatural wards |
+| `:app:testDebugUnitTest` | pending | Run before PR update |
+| `:app:assembleDebug` | pending | Debug APK |
+| Honesty | **PASS** | Classical sim only — not a QPU, not occult detection |
 
 ### Landed
 
-- `AngelicDefenseBlessings` — 10 Sephirot angels → real check/Memory bundles
-- Intrusion evaluators: overlay · Accessibility · sideload (Sandalphon / Trojans)
-- Michael swarm bootstrapped (`MemoryIntegrityAgent` / `NetworkMonitorAgent` / `ProcessLineageAgent`)
-- Quilla Memory + status briefs cite choir seal; priority ranks BREACHED blessings
-- Codex: angelic blessings · anti-instrumentation · anti-Trojan
+- `QuillaQuantumCorrelate` — H·Metatron → CNOT entangle → Rz·Raphael/BlackCross → M·Sandalphon
+- Wired into `QuillaCorrelationEngine` (evidence amplitudes → collapse → hypothesis JSON)
+- Memory / priority status cite `quantumSeal` + disclaimer
+- Knowledge: `quilla-quantum-correlate.json`; ask: `quantum correlate` · `magick gates`
 
 ## Prior milestones
 
 | Milestone | Result |
 |-----------|--------|
-| M1–M10 | PASS |
-| **M11 Angelic Defense Blessings** | **PASS — 282 tests** |
+| M1–M11 | PASS |
+| M12 Enochian + Kabbalah lattice | PASS — 288 tests |
+| **M13 Quantum Correlate** | pending |
 
 ## Play Console next (human)
 

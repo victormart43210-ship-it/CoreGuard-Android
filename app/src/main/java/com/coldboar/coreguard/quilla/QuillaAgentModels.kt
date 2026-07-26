@@ -94,7 +94,13 @@ data class QuillaMemorySnapshot(
     /** Count of BREACHED angelic blessings (needs human attention). */
     val blessingsBreached: Int = 0,
     /** Count of ACTIVE angelic blessings. */
-    val blessingsActive: Int = 0
+    val blessingsActive: Int = 0,
+    /** Last quantum-inspired circuit seal (classical simulation). */
+    val quantumSeal: String? = null,
+    /** Last quantum collapse probability [0,1], if a circuit ran. */
+    val quantumCollapse: Float? = null,
+    /** True when the last circuit measured COLLAPSED. */
+    val quantumCollapsed: Boolean = false
 )
 
 /** Short follow-up prompts Quilla offers after an answer. */

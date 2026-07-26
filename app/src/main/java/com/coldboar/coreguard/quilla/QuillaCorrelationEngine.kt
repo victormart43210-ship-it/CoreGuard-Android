@@ -11,6 +11,10 @@ import java.util.UUID
  * intelligence indicators and generates a [QuillaHypothesis] when the combined
  * confidence score reaches [ACTIVATION_THRESHOLD].
  *
+ * Also runs [QuillaQuantumCorrelate] — a **classical** quantum-inspired circuit
+ * (superposition → entanglement → interference → collapse) labeled with Living
+ * Geometry / Enochian gate names. Not a QPU; not operative magick.
+ *
  * Domain matching follows MVT conventions: exact host or parent-domain of a
  * subdomain (`evil.com` matches `c2.evil.com`).
  *
@@ -33,6 +37,12 @@ class QuillaCorrelationEngine(
 
     private val indicatorLock = Any()
     private val activeIndicators = mutableListOf<AmnestyIndicator>()
+
+    @Volatile
+    private var lastQuantum: QuillaQuantumCorrelate.CircuitReport? = null
+
+    /** Last quantum-inspired circuit report (classical simulation). */
+    fun lastQuantumReport(): QuillaQuantumCorrelate.CircuitReport? = lastQuantum
 
     /** Count of indicators currently loaded for correlation. */
     fun indicatorCount(): Int = synchronized(indicatorLock) { activeIndicators.size }
@@ -105,6 +115,8 @@ class QuillaCorrelationEngine(
     ) {
         var confidenceScore = 0.50f
         val evidenceList = mutableListOf<String>()
+        var iocHit = false
+        var packageIocHit = false
 
         // 1. Check network traffic against Amnesty / MVT IOCs (MVT subdomain rules).
         network?.destinationDomainOrIp?.let { domain ->
@@ -113,6 +125,7 @@ class QuillaCorrelationEngine(
             }
             if (matchingIoc != null) {
                 confidenceScore += 0.40f
+                iocHit = true
                 evidenceList.add(
                     "Matched Amnesty/MVT IOC: ${matchingIoc.patternValue} (${matchingIoc.description})"
                 )
@@ -125,44 +138,87 @@ class QuillaCorrelationEngine(
         }
         if (packageIoc != null) {
             confidenceScore += 0.40f
+            packageIocHit = true
             evidenceList.add(
                 "Matched Amnesty/MVT package IOC: ${packageIoc.patternValue} (${packageIoc.description})"
             )
         }
 
         // 2. Evaluate RASP behavioral indicators.
-        if (rasp?.isDynamicCodeLoaded == true) {
+        val dcl = rasp?.isDynamicCodeLoaded == true
+        if (dcl) {
             confidenceScore += 0.25f
             evidenceList.add("Dynamic Code Loading (DCL) detected in package $packageName")
         }
 
-        if (rasp?.isRootDetected == true) {
+        val root = rasp?.isRootDetected == true
+        if (root) {
             confidenceScore += 0.20f
             evidenceList.add("Device root/privilege escalation environment active")
         }
 
-        if (network?.isUntrustedNetwork == true) {
+        val untrusted = network?.isUntrustedNetwork == true
+        if (untrusted) {
             confidenceScore += 0.10f
             evidenceList.add("Active network connection on untrusted Wi-Fi/Access Point")
         }
 
-        // 3. Persist hypothesis if the activation threshold is met.
-        if (confidenceScore >= ACTIVATION_THRESHOLD) {
+        // 2b. Quantum-inspired classical circuit (magick-labeled gates).
+        val classicalClamped = confidenceScore.coerceAtMost(1.0f)
+        val quantum = QuillaQuantumCorrelate.runCircuit(
+            packageName = packageName,
+            iocHit = iocHit,
+            packageIocHit = packageIocHit,
+            dynamicCode = dcl,
+            root = root,
+            untrustedNetwork = untrusted,
+            classicalConfidence = classicalClamped
+        )
+        lastQuantum = quantum
+        evidenceList.add("Quantum circuit: ${quantum.seal}")
+        if (quantum.entangledPairs > 0) {
+            evidenceList.add(
+                "Entangled evidence pairs=${quantum.entangledPairs} · interference=${"%.2f".format(quantum.interferenceGain)}"
+            )
+        }
+
+        // Prefer constructive blend when the circuit collapses; never invent hits without evidence.
+        val finalConfidence = if (evidenceList.any { !it.startsWith("Quantum") && !it.startsWith("Entangled") }) {
+            maxOf(classicalClamped, quantum.classicalBlend).coerceAtMost(1.0f)
+        } else {
+            classicalClamped
+        }
+
+        // 3. Persist hypothesis if classical or quantum collapse threshold is met.
+        val shouldActivate = finalConfidence >= ACTIVATION_THRESHOLD ||
+            (quantum.collapsed && (iocHit || packageIocHit || dcl || root))
+        if (shouldActivate) {
             val evidenceJson = JSONObject().apply {
                 put("packageName", packageName)
-                put("confidence", confidenceScore)
+                put("confidence", finalConfidence)
+                put("classicalConfidence", classicalClamped)
+                put("quantumCollapse", quantum.collapseProbability)
+                put("quantumSeal", quantum.seal)
+                put("quantumGates", JSONArray(quantum.gatePath))
+                put("entangledPairs", quantum.entangledPairs)
                 put("reasons", JSONArray(evidenceList))
                 put("bytesTransferred", network?.bytesTransferred ?: 0L)
+                put("correlator", "classical+quantum_inspired")
             }.toString()
 
             store.upsert(
                 QuillaHypothesis(
                     id = UUID.randomUUID().toString(),
                     hypothesisType = "AMNESTY_IOC_BEHAVIORAL_MATCH",
-                    summary = "Package $packageName triggered high-risk correlation rule " +
-                        "matching threat intelligence indicators.",
+                    summary = buildString {
+                        append("Package $packageName triggered high-risk correlation ")
+                        append("(classical=${"%.2f".format(classicalClamped)}, ")
+                        append("quantumP=${"%.2f".format(quantum.collapseProbability)}")
+                        if (quantum.collapsed) append(", collapsed")
+                        append(") matching threat intelligence indicators.")
+                    },
                     evidenceJson = evidenceJson,
-                    confidence = confidenceScore.coerceAtMost(1.0f),
+                    confidence = finalConfidence,
                     status = "ACTIVE"
                 )
             )

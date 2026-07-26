@@ -81,11 +81,15 @@ object QuillaMemoryFactory {
         // Angelic choir — evidence from Guardian Score checks + Memory/Research.
         val checks = runCatching { SecurityCheckRunner.run(context) }.getOrDefault(emptyList())
         val choir = AngelicDefenseBlessings.evaluate(checks, base, cachedResearch)
+        val quantum = sharedCorrelation.lastQuantumReport()
         return base.copy(
             blessingSeal = choir.sealLine,
             blessingLines = AngelicDefenseBlessings.summaryLines(choir),
             blessingsBreached = choir.breachedCount,
-            blessingsActive = choir.activeCount
+            blessingsActive = choir.activeCount,
+            quantumSeal = quantum?.seal,
+            quantumCollapse = quantum?.collapseProbability,
+            quantumCollapsed = quantum?.collapsed == true
         )
     }
 

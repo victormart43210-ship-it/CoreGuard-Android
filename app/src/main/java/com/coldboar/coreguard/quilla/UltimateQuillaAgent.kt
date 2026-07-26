@@ -151,7 +151,9 @@ class UltimateQuillaAgent(
             "unauthorized attack", "intrusion", "frida", "instrumentation",
             "enochian", "watchtower", "shem", "uriel", "cassiel", "sachiel",
             "bataivah", "edelperna", "raagiosl", "iczhhcal", "black cross",
-            "golden spiral", "cube of space", "shem hamephorash"
+            "golden spiral", "cube of space", "shem hamephorash",
+            "quantum", "qubit", "superposition", "entangle", "interference",
+            "collapse", "qpu", "quantum correlat"
         )
         return keys.any { p.contains(it) } || p.matches(Regex(".*\\bt\\d{4}\\b.*"))
     }
@@ -549,11 +551,24 @@ class UltimateQuillaAgent(
         } else {
             "Blessings:\n" + memory.blessingLines.take(QuillaAwareness.HYPOTHESIS_VOICE).joinToString("\n")
         }
+        val quantumLine = memory.quantumSeal?.let { seal ->
+            buildString {
+                append("Quantum correlate (classical sim): ")
+                append(seal)
+                memory.quantumCollapse?.let { p -> append(" · P=${"%.2f".format(p)}") }
+                if (memory.quantumCollapsed) {
+                    append(" · COLLAPSED into hypothesis space.")
+                } else {
+                    append(" · still superposed.")
+                }
+            }
+        } ?: "Quantum correlate idle — run a scan/shield correlation to spin the circuit."
         return "${briefing.headline}\n" +
             "Posture score: ${briefing.score}/100 (${briefing.posture.label}) · ${briefing.aspectName}.\n" +
-            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$choirLine\n$blessingVoice\n$moves\n" +
-            "Care loop: observe → correlate → explain → act (with your consent). " +
-            "Angels name the watch against unauthorized pentest tooling and Trojans — evidence still leads."
+            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$choirLine\n$blessingVoice\n$quantumLine\n$moves\n" +
+            "Care loop: observe → correlate (classical + quantum-inspired) → explain → act (with your consent). " +
+            "Magick names the gates; silicon runs the math; evidence still leads. " +
+            QuillaQuantumCorrelate.DISCLAIMER
     }
 
     private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =

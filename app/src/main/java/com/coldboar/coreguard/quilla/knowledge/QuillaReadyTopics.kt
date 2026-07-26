@@ -211,6 +211,31 @@ object QuillaReadyTopics {
                 "lightning flash path"
             ),
             chipLabel = "Sacred geometry"
+        ),
+        Topic(
+            prompt = "quantum correlate",
+            entryId = "quilla-quantum-correlate",
+            aliases = setOf(
+                "quantum correlation",
+                "quilla quantum",
+                "quantum circuit",
+                "superposition correlate",
+                "quantum magick",
+                "qpu style correlate"
+            ),
+            chipLabel = "Quantum correlate"
+        ),
+        Topic(
+            prompt = "magick gates",
+            entryId = "quantum-magick-gates",
+            aliases = setOf(
+                "hadamard metatron",
+                "quantum gates",
+                "cnot michael",
+                "magick circuit",
+                "measure sandalphon"
+            ),
+            chipLabel = "Magick gates"
         )
     )
 

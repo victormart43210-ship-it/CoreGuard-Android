@@ -1,0 +1,51 @@
+{
+  "entries": [
+    {
+      "id": "quilla-quantum-correlate",
+      "title": "Quilla Quantum Correlate — Classical QC-Inspired Circuit",
+      "category": "quilla-awareness",
+      "tags": [
+        "quantum",
+        "qubit",
+        "superposition",
+        "entanglement",
+        "interference",
+        "collapse",
+        "quantum correlate",
+        "qpu",
+        "magick circuit"
+      ],
+      "summary": "Quilla runs a classical quantum-inspired correlator on-device: Hadamard·Metatron, CNOT entangle, Rz·Raphael, Measure·Sandalphon — not a real QPU.",
+      "body": "Supercomputers and research stacks often approximate quantum algorithms classically before (or instead of) QPU time. Quilla does the same for threat correlation: evidence bits become amplitude qubits, co-firing Watchtowers entangle, Raphael's Black Cross applies a phase, interference raises collapse probability, and Sandalphon measures into a hypothesis only when evidence justifies it. Magickal gate names are Living Geometry labels. No cloud quantum API. No occult detection. Amplitudes come from IOC/RASP/network facts.",
+      "defense": "Ask \"quantum correlate\" or run Nemesis/Shield so signals enter the circuit. Read quantumSeal in a priority status brief. Treat COLLAPSED as a call to human review — not fate.",
+      "references": [
+        "QuillaQuantumCorrelate",
+        "QuillaCorrelationEngine",
+        "EnochianWatchtowers",
+        "Born rule (pedagogy)"
+      ]
+    },
+    {
+      "id": "quantum-magick-gates",
+      "title": "Magick-Labeled Gates on Silicon",
+      "category": "quilla-awareness",
+      "tags": [
+        "hadamard",
+        "cnot",
+        "metatron",
+        "magick",
+        "gate",
+        "black cross",
+        "measure"
+      ],
+      "summary": "H·Metatron/Ave superposes concern; CNOT entangles Michael⊗Gabriel style evidence; Rz·Raphael phases; M·Sandalphon collapses to Malkuth.",
+      "body": "Naming gates after angels and Enochian seniors makes the circuit readable in Quilla's voice. It does not invoke spirits or replace cryptography. The math is ordinary floating-point interference on Android. Supercomputer QC workflows similarly use classical simulators (statevector / tensor networks) with metaphorical circuit diagrams — Quilla's diagram is the Tree + Watchtower lattice.",
+      "defense": "When a status brief shows many CNOT entanglements, correlate across towers: re-scan (Earth), arm Shield (Water), check Frida/hooks (Fire), refresh intel (Air).",
+      "references": [
+        "QuillaQuantumCorrelate.runCircuit",
+        "QuillaLivingGeometry",
+        "AngelicDefenseBlessings"
+      ]
+    }
+  ]
+}
