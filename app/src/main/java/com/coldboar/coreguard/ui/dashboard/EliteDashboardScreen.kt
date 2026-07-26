@@ -47,7 +47,6 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -80,7 +79,6 @@ import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
-import com.coldboar.coreguard.swarm.SwarmModule
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBorder
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CyberGreen
@@ -88,6 +86,8 @@ import com.coldboar.coreguard.ui.dashboard.ElitePalette.CyberGreenGlow
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.DarkBackground
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.TextPrimary
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.TextSecondary
+import com.coldboar.coreguard.ui.redux.rememberEliteThreatCounterState
+import com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -108,10 +108,14 @@ import kotlin.math.sin
  *
  * ## Module + Redux boundaries
  *
- * - **Swarm alerts** — read via [SwarmModule.alertCounter] (never own the int).
- * - **DTS / Scam amber Counter** — subscribe to [EliteModule.threatCounter];
- *   refresh DTS only through [EliteModule.evaluateThreatScore].
+ * - **Swarm alerts** — [rememberSwarmAlertCounterState] (never own the int).
+ * - **DTS / Scam amber Counter** — [rememberEliteThreatCounterState]; refresh
+ *   DTS only through [EliteModule.evaluateThreatScore] (side effects stay in
+ *   the module, not in this composable).
  * - **Toggles** below are local UI preferences only — not a cloud LLM switch.
+ *
+ * Counter subscription is centralized in `ui.redux` so Home stays free of
+ * store `DisposableEffect` / `Action` imports (Redux UI separation).
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -134,30 +138,27 @@ fun EliteDashboardScreen(
 
     var score by remember { mutableStateOf<Int?>(null) }
     var evidence by remember { mutableStateOf<List<GuardianScoreEvidence>>(emptyList()) }
-    // Redux mirror for Elite threat Counter (DTS + scam amber).
-    var eliteCounter by remember {
-        mutableStateOf(EliteModule.threatCounter.getState())
-    }
+
+    // -------------------------------------------------------------------------
+    // Redux Counters — subscribe via ui.redux helpers (not inline store wiring).
+    // eliteCounter / swarmCounter are mirrors; engines mutate the stores.
+    // -------------------------------------------------------------------------
+    val eliteCounter by rememberEliteThreatCounterState()
+    val swarmCounter by rememberSwarmAlertCounterState()
+
     var cpuText by remember { mutableStateOf("…") }
     var ramText by remember { mutableStateOf("…") }
     var lastScanLabel by remember { mutableStateOf("No scan yet") }
     var hasScan by remember { mutableStateOf(false) }
     var appsScanned by remember { mutableStateOf("–") }
     var threatsLabel by remember { mutableStateOf("–") }
-    var swarmAlerts by remember { mutableStateOf(0) }
     var shieldOn by remember { mutableStateOf(false) }
-
-    DisposableEffect(Unit) {
-        val unsub = EliteModule.threatCounter.subscribe { eliteCounter = it }
-        onDispose { unsub() }
-    }
 
     LaunchedEffect(Unit) {
         val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
         score = GuardianScore.compute(results)
         evidence = GuardianScore.explain(results)
         shieldOn = ShieldState.isActive
-        swarmAlerts = SwarmModule.alertCounter.getState().count
 
         val report = ScannerModule.latestReport()
         if (report != null) {
@@ -172,6 +173,7 @@ fun EliteDashboardScreen(
             threatsLabel = "0"
         }
 
+        // Module façade: evaluates DTS and dispatches into the Redux Counter.
         withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
 
         var ticks = 0
@@ -181,7 +183,6 @@ fun EliteDashboardScreen(
                 MemoryUsageCalculator.getUsedRamBytes(context)
             )
             shieldOn = ShieldState.isActive
-            swarmAlerts = SwarmModule.alertCounter.getState().count
             ticks++
             if (ticks % 15 == 0) {
                 withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
@@ -190,8 +191,11 @@ fun EliteDashboardScreen(
         }
     }
 
+    // Read Counter fields from Redux mirrors — do not cache ints in local vars
+    // that diverge from the store (that would re-couple UI to Counter logic).
     val dtsBand = eliteCounter.dtsBand
     val dtsScore = eliteCounter.dtsScore
+    val swarmAlerts = swarmCounter.count
     val rank = score?.let { GuardianScore.rankFor(it) }
     val attention = remember(evidence) {
         evidence.filter { it.state == SecurityCheckState.FAIL || it.state == SecurityCheckState.WARN }
