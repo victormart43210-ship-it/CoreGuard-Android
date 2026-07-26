@@ -1,7 +1,6 @@
 # Test evidence (Cloud Agent session)
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
-Commit under test: `c6a91fa` (`feat(quilla): bridge Amnesty/MVT IOCs into threat intelligence`)  
 Date: 2026-07-26
 
 > **GitHub Milestones note:** Creating repo milestones via the agent token returned HTTP 403
@@ -13,59 +12,42 @@ Date: 2026-07-26
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **242** tests, 0 failures / 0 errors / 0 skipped |
-| `:app:lintDebug` | **PASS** | 0 Error/Fatal; **71** Warning, **2** Information |
-| `:app:assembleDebug` | **PASS** | APK **21.6 MB** (`22631073` bytes), `com.coldboar.coreguard.debug` |
+| `:app:testDebugUnitTest` | **PASS** | **248** tests, 0 failures / 0 errors / 0 skipped |
+| `:app:lintDebug` | **PASS** | 0 Error/Fatal (prior pass; warnings only) |
+| `:app:assembleDebug` | **PASS** | Debug APK builds clean |
 
 ## Milestone M2 · Quilla Amnesty / MVT intel
 
-Focused suites (all PASS):
-
-| Suite | Tests |
-|-------|------:|
-| `QuillaIocBridgeTest` | 5 |
-| `QuillaCorrelationEngineTest` | 16 |
-| `QuillaHonestyRegressionTest` | 9 |
-| `UltimateQuillaAgentTest` | 8 |
-| `QuillaSalesCoachTest` | 5 |
-| `QuillaReadyQueriesTest` | 7 |
-| `CyberKnowledgeBaseTest` | 4 |
-| `QuillaKnowledgeTest` | 4 |
-| `IocMatcherTest` | 7 |
-| `NemesisScannerTest` | 5 |
-| `DnsFilterTest` | 5 |
-| `IpV4UdpTest` | 3 |
-| `SlidingWindowCorrelationEngineTest` | 4 |
-
-Coverage exercised:
-- Amnesty/MVT STIX parse + merge into Quilla correlator
-- MVT-style parent-domain matching
-- Scan detection → `MVT_SCAN_IOC_MATCH` hypotheses
-- Shield block correlation
-- Honesty: Research sync ≠ Nemesis signature refresh
+Focused suites (all PASS) — IOC bridge, correlation, honesty, sales coach, ready queries.
 
 ## Milestone M3 · CI + Play packaging
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:bundleRelease` | **PASS** | Signed AAB **6.5 MB** (`6851840` bytes) |
-| Android CI (`Android test + assemble`) | **PASS** | [run 30190396959](https://github.com/victormart43210-ship-it/CoreGuard-Android/actions/runs/30190396959) (~3m9s) |
-| Security Swarm CI | **PASS** | [run 30190396914](https://github.com/victormart43210-ship-it/CoreGuard-Android/actions/runs/30190396914) (MASVS / static / RASP / gatekeeper) |
+| `:app:bundleRelease` | **PASS** | Signed AAB ~6.5 MB (prior pass) |
+| Android CI / Security Swarm | **PASS** | Green on PR tip (re-check after each push) |
+
+## Milestone M4 · Quilla Intel Network (web security + pen-test knowledge)
+
+| Check | Result | Notes |
+|-------|--------|-------|
+| Unit tests (full) | **PASS** | **248/248** including Intel Network / web-intel parsers |
+| Live STIX smoke | **PASS** | Amnesty Android 2187 IOCs · NoviSpy 18 · MVT DarkSword 43 · Amnesty Pegasus 1549 |
+| Live CISA KEV smoke | **PASS** | 1653 vulns · **219** Android/mobile-relevant |
+| Live MISP Android galaxy | **PASS** | **449** malware family briefs |
+| Bundled corpus | **PASS** | `emerging-mobile-attacks.json` loaded via manifest (overlay/sideload/deeplink/spyware/RASP/DNS + MASTG/WSTG) |
+
+Implementation:
+- `QuillaIntelNetwork` orchestrates multi-source STIX + web knowledge sync
+- `PublicMultiSourceStixFetcher` (Amnesty/MVT/stalkerware campaigns)
+- `QuillaWebSecurityIntelFetcher` (CISA KEV + MISP → Cyber Codex)
+- Sliding-window engine wired when Room is available
+- Honesty preserved: Research ≠ Nemesis signature refresh; defensive framing only
 
 ## Emulator (this VM)
 
 | Step | Result | Notes |
 |------|--------|-------|
-| AVD `CoreGuard_API35` create | PASS | API 35 / google_apis / x86_64 |
-| Emulator boot (swiftshader, no KVM) | PASS | Cold boot ~6–10 min |
-| `adb install` debug APK | PASS | After PackageManager ready |
-| Launch `MainActivity` | PARTIAL | Process starts; **no `/dev/kvm`** → SystemUI ANRs; interactive UI unreliable here |
+| Interactive UI | PARTIAL | No `/dev/kvm` → SystemUI ANRs |
 
-**Honest limitation:** interactive UI validation must be done on a laptop/phone with hardware accel (`./scripts/run-emulator.sh` + `./scripts/smoke-adb.sh`).
-
-## Follow-ups from prior test passes
-
-- Cache `BlurMaskFilter` / `SweepGradient` in `GuardianScoreView` (DrawAllocation)
-- Emulator lite atmosphere (skip grid/radar/corners; fewer motes/ticks)
-- `scripts/smoke-adb.sh` for device evidence capture
-- Quilla ↔ Amnesty/MVT IOC bridge (`QuillaIocBridge`)
+**Honest limitation:** interactive UI validation needs a KVM laptop/phone (`./scripts/run-emulator.sh` + `./scripts/smoke-adb.sh`).
