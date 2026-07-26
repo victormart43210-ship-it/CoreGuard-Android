@@ -68,6 +68,27 @@ class UltimateQuillaAgentTest {
         assertTrue(answer.text.contains("SUSPICIOUS"))
         assertTrue(answer.text.contains("Shield is OFF"))
         assertTrue(answer.actions.any { it.id == QuillaActionSuggestion.RUN_SCAN })
+        assertEquals("CRITICAL", answer.postureLabel)
+        assertTrue((answer.postureScore ?: 0) >= 80)
+        assertTrue(answer.followUps.isNotEmpty())
+        assertTrue(answer.text.contains("Priority posture"))
+    }
+
+    @Test
+    fun `priority status brief routes to status with ranked moves`() {
+        val answer = agent.answer("give me my priority status brief")
+        assertEquals(QuillaIntent.STATUS, answer.intent)
+        assertTrue(answer.text.contains("Priority moves") || answer.text.contains("Priority posture"))
+        assertTrue(answer.modulesUsed.contains(QuillaModule.RESEARCH))
+        assertFalse(answer.postureLabel.isNullOrBlank())
+    }
+
+    @Test
+    fun `capabilities include posture headline`() {
+        val answer = agent.answer("what can you do")
+        assertEquals(QuillaIntent.CAPABILITIES, answer.intent)
+        assertTrue(answer.text.contains("posture", ignoreCase = true))
+        assertEquals("CRITICAL", answer.postureLabel)
     }
 
     @Test

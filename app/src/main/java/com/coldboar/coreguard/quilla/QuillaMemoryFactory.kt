@@ -5,6 +5,8 @@ import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ShieldState
+import com.coreguard.security.telemetry.RiskSeverity
+import com.coreguard.security.telemetry.TelemetryBridge
 
 /**
  * Builds [QuillaMemorySnapshot] / [QuillaResearchSnapshot] from live CoreGuard state.
@@ -53,6 +55,10 @@ object QuillaMemoryFactory {
         val last = LastScan.report
         val newest = history.firstOrNull()
         val iocCount = runCatching { IocRepository.indicators(context).size }.getOrDefault(0)
+        val telemetry = TelemetryBridge.ringBuffer().snapshot()
+        val highTelemetry = telemetry.any {
+            it.delta.severity == RiskSeverity.HIGH || it.delta.severity == RiskSeverity.CRITICAL
+        }
         return QuillaMemorySnapshot(
             lastScanVerdict = last?.verdict?.name ?: newest?.verdict?.name,
             lastScanDetections = last?.detections?.size ?: newest?.detectionCount,
@@ -64,7 +70,10 @@ object QuillaMemoryFactory {
             activeHypotheses = sharedStore.all()
                 .filter { it.status.equals("ACTIVE", ignoreCase = true) }
                 .map { it.summary },
-            mvtIocInventoryCount = iocCount
+            mvtIocInventoryCount = iocCount,
+            correlatorIndicatorCount = sharedCorrelation.indicatorCount(),
+            telemetryDeltaCount = telemetry.size,
+            telemetryHighSeverity = highTelemetry
         )
     }
 

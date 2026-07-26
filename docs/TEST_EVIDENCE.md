@@ -2,25 +2,25 @@
 
 Branch: `cursor/premium-ui-atmosphere-6db1`  
 Date: 2026-07-26  
-Version: **1.0.2** (`versionCode` 3)
+Version: **1.0.3** (`versionCode` 4)
 
 > Milestone results are posted as PR comments on [#70](https://github.com/victormart43210-ship-it/CoreGuard-Android/pull/70)
 > (GitHub Milestone API returns 403 for the agent token).
 
-## Milestone M6 · Signed telemetry + Quilla evaluator
+## Milestone M7 · Quilla top-tier upgrade
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | **PASS** | **255** tests (includes telemetry suite) |
+| `:app:testDebugUnitTest` | **PASS** | **261** tests (priority engine + agent follow-ups) |
 | `:app:assembleDebug` | **PASS** | Debug APK |
-| `quilla_hypothesis_evaluator.py --demo` | **PASS** | Local mode ACCEPTED for Frida CRITICAL sample |
-| Honesty | **PASS** | On-device path has no cloud LLM; LangGraph is optional server-side |
+| Honesty | **PASS** | No silent scan/VPN; Research ≠ Scanner signature refresh; no cloud LLM |
 
 ### Landed
 
-- `com.coreguard.security.telemetry` — `TelemetryDelta`, Keystore ECDSA `TelemetrySigner`, continuity factory, ring buffer
-- SwarmCoordinator → TelemetryBridge → Quilla hypotheses (HIGH+)
-- `scripts/agents/quilla_hypothesis_evaluator.py` — generator/red-team loop (local default; `--llm` optional)
+- `QuillaPriorityEngine` — CRITICAL→STEADY posture, ranked moves, contextual chips
+- Memory cites correlator IOC count + signed telemetry ring (HIGH/CRITICAL flag)
+- `UltimateQuillaAgent` — priority status brief, posture score, follow-ups, research-aware status
+- `QuillaAgentPanel` — posture strip, transcript history, context/follow-up chips, priority actions
 
 ## Prior milestones
 
@@ -28,6 +28,7 @@ Version: **1.0.2** (`versionCode` 3)
 |-----------|--------|
 | M1–M4 | PASS (unit/lint, Quilla IOC, CI, Intel Network) |
 | M5 Play repairs | PASS (billing, legacy manifest, privacy URL, cert pin) |
+| M6 Signed telemetry | PASS (ECDSA ring + Quilla evaluator) |
 
 ## Play Console next (human)
 

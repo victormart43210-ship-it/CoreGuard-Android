@@ -6,16 +6,17 @@ import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
 
 /**
- * Ultimate Quilla — a local multi-module security agent.
+ * Ultimate Quilla — a local multi-module security agent (top-tier posture lead).
  *
  * Formula (adapted for CoreGuard, no ChatGPT/Claude/Zapier keys):
  * - **Brain** — intent classification + evidence-based answer composition
- * - **Memory** — last scan, timeline size, shield state, hypotheses
+ * - **Memory** — last scan, timeline size, shield state, hypotheses, telemetry
  * - **Research** — Amnesty / MVT STIX indicator sync + on-device IOC correlation
  * - **Knowledge** — on-device cyber codex (OWASP, MITRE ATT&CK Mobile, pentest, IR)
  *   plus optional Observatory Codex metaphors (never treated as detection)
  * - **Actions** — suggested automations (scan, shield, timeline, intel sync)
  * - **Tools** — Nemesis Scanner, Privacy Shield, Scan Timeline
+ * - **Priority** — [QuillaPriorityEngine] ranks posture and next moves
  *
  * Quilla never claims supernatural detection or silent VPN enablement.
  */
@@ -39,21 +40,23 @@ class UltimateQuillaAgent(
 
         val intent = classify(trimmed)
         val memory = memoryProvider()
-        val research = if (intent == QuillaIntent.RESEARCH || intent == QuillaIntent.CAPABILITIES) {
-            researchProvider()
-        } else {
-            QuillaResearchSnapshot()
-        }
+        // Cached research is always available for posture / status / capabilities.
+        val research = researchProvider()
+        val briefing = QuillaPriorityEngine.brief(memory, research)
         val modulesUsed = modulesFor(intent)
         val statuses = moduleStatuses(memory, research)
-        val actions = actionsFor(intent, memory)
-        val text = compose(trimmed, intent, memory, research, actions)
+        val actions = actionsFor(intent, memory, briefing)
+        val followUps = followUpsFor(intent, briefing, memory)
+        val text = compose(trimmed, intent, memory, research, actions, briefing)
         return QuillaAgentAnswer(
             text = text,
             intent = intent,
             modulesUsed = modulesUsed,
             moduleStatuses = statuses,
-            actions = actions
+            actions = actions,
+            followUps = followUps,
+            postureLabel = briefing.posture.label,
+            postureScore = briefing.score
         )
     }
 
@@ -87,8 +90,11 @@ class UltimateQuillaAgent(
             p.contains("nemesis") || (p.contains("scan") && !isKnowledgeHeavy(p)) ||
                 (p.contains("pegasus") && p.contains("scan")) ->
                 QuillaIntent.SCAN
-            p.contains("safe") || p.contains("status") || p.contains("how am i") ||
-                p.contains("my risk") || p.contains("protect me") -> QuillaIntent.STATUS
+            p.contains("priority status") || p.contains("status brief") ||
+                p.contains("priority brief") || p.contains("my posture") ||
+                p.contains("posture score") || p.contains("safe") || p.contains("status") ||
+                p.contains("how am i") || p.contains("my risk") || p.contains("protect me") ->
+                QuillaIntent.STATUS
 
             QuillaKnowledge.matchFragment(p) != null ||
                 isKnowledgeHeavy(p) ||
@@ -116,7 +122,9 @@ class UltimateQuillaAgent(
 
     private fun modulesFor(intent: QuillaIntent): List<QuillaModule> = when (intent) {
         QuillaIntent.CAPABILITIES -> QuillaModule.entries
-        QuillaIntent.STATUS -> listOf(QuillaModule.BRAIN, QuillaModule.MEMORY, QuillaModule.TOOLS)
+        QuillaIntent.STATUS -> listOf(
+            QuillaModule.BRAIN, QuillaModule.MEMORY, QuillaModule.RESEARCH, QuillaModule.TOOLS
+        )
         QuillaIntent.SCAN -> listOf(QuillaModule.BRAIN, QuillaModule.ACTIONS, QuillaModule.TOOLS)
         QuillaIntent.SHIELD -> listOf(QuillaModule.BRAIN, QuillaModule.MEMORY, QuillaModule.ACTIONS, QuillaModule.TOOLS)
         QuillaIntent.TIMELINE -> listOf(QuillaModule.BRAIN, QuillaModule.MEMORY, QuillaModule.TOOLS)
@@ -132,7 +140,7 @@ class UltimateQuillaAgent(
         memory: QuillaMemorySnapshot,
         research: QuillaResearchSnapshot
     ): List<QuillaModuleStatus> = listOf(
-        QuillaModuleStatus(QuillaModule.BRAIN, true, "On-device reasoning ready"),
+        QuillaModuleStatus(QuillaModule.BRAIN, true, "On-device priority reasoning ready"),
         QuillaModuleStatus(
             QuillaModule.MEMORY,
             true,
@@ -148,11 +156,15 @@ class UltimateQuillaAgent(
                     append(memory.activeHypotheses.size)
                     append(" hypotheses")
                 }
+                if (memory.telemetryDeltaCount > 0) {
+                    append(" · telemetry=")
+                    append(memory.telemetryDeltaCount)
+                }
             }
         ),
         QuillaModuleStatus(
             QuillaModule.RESEARCH,
-            research.synced || research.indicatorCount > 0,
+            research.synced || research.indicatorCount > 0 || memory.correlatorIndicatorCount > 0,
             when {
                 research.syncFailed ->
                     "Intel sync failed — still using prior cache (${research.indicatorCount} indicators)"
@@ -160,6 +172,8 @@ class UltimateQuillaAgent(
                     "Synced empty campaign archive — not a Nemesis signature refresh"
                 research.synced || research.indicatorCount > 0 ->
                     "${research.indicatorCount} ${research.sourceLabel} indicators cached"
+                memory.correlatorIndicatorCount > 0 ->
+                    "${memory.correlatorIndicatorCount} correlator IOCs loaded (local)"
                 else ->
                     "Intel idle — optional STIX pull (does not refresh Scanner signatures)"
             }
@@ -190,37 +204,102 @@ class UltimateQuillaAgent(
         )
     )
 
-    private fun actionsFor(intent: QuillaIntent, memory: QuillaMemorySnapshot): List<QuillaActionSuggestion> {
-        val scan = QuillaActionSuggestion(
+    private fun actionsFor(
+        intent: QuillaIntent,
+        memory: QuillaMemorySnapshot,
+        briefing: QuillaPriorityEngine.Briefing
+    ): List<QuillaActionSuggestion> {
+        val catalog = actionCatalog(memory)
+        // Keep catalog honesty copy (no silent scan / no signature refresh); priority only ranks order.
+        val fromPriority = briefing.moves.mapNotNull { move ->
+            when (move.id) {
+                QuillaActionSuggestion.RUN_SCAN -> catalog[QuillaActionSuggestion.RUN_SCAN]
+                QuillaActionSuggestion.OPEN_SHIELD -> catalog[QuillaActionSuggestion.OPEN_SHIELD]
+                QuillaActionSuggestion.OPEN_TIMELINE -> catalog[QuillaActionSuggestion.OPEN_TIMELINE]
+                QuillaActionSuggestion.SYNC_INTEL -> catalog[QuillaActionSuggestion.SYNC_INTEL]
+                else -> null
+            }
+        }
+        val byIntent = when (intent) {
+            QuillaIntent.SCAN -> listOfNotNull(
+                catalog[QuillaActionSuggestion.RUN_SCAN],
+                catalog[QuillaActionSuggestion.OPEN_TIMELINE]
+            )
+            QuillaIntent.SHIELD -> listOfNotNull(
+                catalog[QuillaActionSuggestion.OPEN_SHIELD],
+                catalog[QuillaActionSuggestion.RUN_SCAN]
+            )
+            QuillaIntent.TIMELINE -> listOfNotNull(
+                catalog[QuillaActionSuggestion.OPEN_TIMELINE],
+                catalog[QuillaActionSuggestion.RUN_SCAN]
+            )
+            QuillaIntent.RESEARCH -> listOfNotNull(
+                catalog[QuillaActionSuggestion.SYNC_INTEL],
+                catalog[QuillaActionSuggestion.RUN_SCAN]
+            )
+            QuillaIntent.STATUS -> fromPriority.ifEmpty {
+                listOfNotNull(
+                    catalog[QuillaActionSuggestion.RUN_SCAN],
+                    catalog[QuillaActionSuggestion.OPEN_SHIELD],
+                    catalog[QuillaActionSuggestion.OPEN_TIMELINE]
+                )
+            }
+            QuillaIntent.KNOWLEDGE -> listOfNotNull(
+                catalog[QuillaActionSuggestion.RUN_SCAN],
+                catalog[QuillaActionSuggestion.OPEN_SHIELD]
+            )
+            QuillaIntent.ETHICS_REFUSAL -> emptyList()
+            QuillaIntent.CAPABILITIES, QuillaIntent.GENERAL -> listOfNotNull(
+                catalog[QuillaActionSuggestion.RUN_SCAN],
+                catalog[QuillaActionSuggestion.OPEN_SHIELD],
+                catalog[QuillaActionSuggestion.OPEN_TIMELINE],
+                catalog[QuillaActionSuggestion.SYNC_INTEL]
+            )
+        }
+        return (fromPriority + byIntent).distinctBy { it.id }.take(4)
+    }
+
+    private fun actionCatalog(memory: QuillaMemorySnapshot): Map<String, QuillaActionSuggestion> = mapOf(
+        QuillaActionSuggestion.RUN_SCAN to QuillaActionSuggestion(
             QuillaActionSuggestion.RUN_SCAN,
             "Open Scanner",
             "Opens the Nemesis Scanner screen so you can start a scan. Quilla does not run scans silently."
-        )
-        val shield = QuillaActionSuggestion(
+        ),
+        QuillaActionSuggestion.OPEN_SHIELD to QuillaActionSuggestion(
             QuillaActionSuggestion.OPEN_SHIELD,
             if (memory.shieldActive) "Manage Privacy Shield" else "Open Privacy Shield",
             "Shield start still requires Android VPN consent — Quilla will not bypass that."
-        )
-        val timeline = QuillaActionSuggestion(
+        ),
+        QuillaActionSuggestion.OPEN_TIMELINE to QuillaActionSuggestion(
             QuillaActionSuggestion.OPEN_TIMELINE,
             "Open Scan Timeline",
             "Review prior scan history on this device."
-        )
-        val intel = QuillaActionSuggestion(
+        ),
+        QuillaActionSuggestion.SYNC_INTEL to QuillaActionSuggestion(
             QuillaActionSuggestion.SYNC_INTEL,
             "Sync Quilla Intel Network",
             "Pulls Amnesty/MVT STIX, CISA KEV, and MISP Android intel into Quilla for defensive correlation — does not refresh Nemesis Scanner signatures."
         )
-        return when (intent) {
-            QuillaIntent.SCAN -> listOf(scan, timeline)
-            QuillaIntent.SHIELD -> listOf(shield, scan)
-            QuillaIntent.TIMELINE -> listOf(timeline, scan)
-            QuillaIntent.RESEARCH -> listOf(intel, scan)
-            QuillaIntent.STATUS -> listOf(scan, shield, timeline)
-            QuillaIntent.KNOWLEDGE -> listOf(scan, shield)
-            QuillaIntent.ETHICS_REFUSAL -> emptyList()
-            QuillaIntent.CAPABILITIES, QuillaIntent.GENERAL -> listOf(scan, shield, timeline, intel)
+    )
+
+    private fun followUpsFor(
+        intent: QuillaIntent,
+        briefing: QuillaPriorityEngine.Briefing,
+        memory: QuillaMemorySnapshot
+    ): List<QuillaFollowUp> {
+        if (intent == QuillaIntent.ETHICS_REFUSAL) return emptyList()
+        val fromChips = briefing.chipPrompts.map { (label, prompt) ->
+            QuillaFollowUp(label, prompt)
         }
+        val extras = buildList {
+            if (memory.activeHypotheses.isNotEmpty()) {
+                add(QuillaFollowUp("Hypotheses", "review my quilla hypotheses and status"))
+            }
+            if (intent == QuillaIntent.KNOWLEDGE || intent == QuillaIntent.CAPABILITIES) {
+                add(QuillaFollowUp("Status brief", "give me my priority status brief"))
+            }
+        }
+        return (fromChips + extras).distinctBy { it.prompt }.take(5)
     }
 
     private fun compose(
@@ -228,30 +307,34 @@ class UltimateQuillaAgent(
         intent: QuillaIntent,
         memory: QuillaMemorySnapshot,
         research: QuillaResearchSnapshot,
-        actions: List<QuillaActionSuggestion>
+        actions: List<QuillaActionSuggestion>,
+        briefing: QuillaPriorityEngine.Briefing
     ): String {
         val header = if (prompt.isBlank()) {
-            "Quilla online."
+            "Quilla online — priority lead engaged."
         } else {
             "Quilla hears you: \"$prompt\"."
         }
         val body = when (intent) {
-            QuillaIntent.CAPABILITIES -> capabilitiesBlurb()
-            QuillaIntent.STATUS -> statusBlurb(memory)
-            QuillaIntent.SCAN -> scanBlurb(memory)
+            QuillaIntent.CAPABILITIES -> capabilitiesBlurb(briefing)
+            QuillaIntent.STATUS -> statusBlurb(memory, briefing, research)
+            QuillaIntent.SCAN -> scanBlurb(memory, briefing)
             QuillaIntent.SHIELD -> shieldBlurb(memory)
             QuillaIntent.TIMELINE -> timelineBlurb(memory)
             QuillaIntent.RESEARCH -> researchBlurb(research, memory)
             QuillaIntent.KNOWLEDGE -> knowledgeBlurb(prompt, memory)
             QuillaIntent.ETHICS_REFUSAL -> QuillaEthicsGuard.refusalMessage()
-            QuillaIntent.GENERAL -> generalBlurb(prompt, memory)
+            QuillaIntent.GENERAL -> generalBlurb(prompt, memory, briefing, research)
         }
         val actionLine = if (actions.isEmpty()) {
             ""
         } else {
             "\n\nSuggested actions: " + actions.joinToString(" · ") { it.label } + "."
         }
-        val usedResearch = intent == QuillaIntent.RESEARCH || research.synced || research.syncFailed
+        val usedResearch = intent == QuillaIntent.RESEARCH ||
+            intent == QuillaIntent.STATUS ||
+            research.synced ||
+            research.syncFailed
         val footer = if (usedResearch) {
             "Modules: Brain · Memory · Research · Knowledge · Actions · Tools — " +
                 "reasoning stays on-device; Research may use HTTPS when you sync. Evidence first."
@@ -267,19 +350,20 @@ class UltimateQuillaAgent(
         }
     }
 
-    private fun capabilitiesBlurb(): String {
+    private fun capabilitiesBlurb(briefing: QuillaPriorityEngine.Briefing): String {
         val corpus = if (CyberKnowledgeBase.isLoaded()) {
             "${CyberKnowledgeBase.size()} local cyber codex entries"
         } else {
             "cyber codex loading on first open"
         }
-        return "I run as a local agent stack (no cloud LLM):\n" +
-            "• Brain — classify intent and decide next checks\n" +
-            "• Memory — cite last scan, timeline, shield, hypotheses\n" +
+        return "I run as a top-tier local agent stack (no cloud LLM):\n" +
+            "• Brain — classify intent, rank posture, decide next checks\n" +
+            "• Memory — cite last scan, timeline, shield, hypotheses, signed telemetry\n" +
             "• Research — Quilla Intel Network: optional Amnesty/MVT STIX + CISA KEV + MISP Android briefs + on-device IOC correlation (not live continuous intel; not Scanner signature refresh)\n" +
             "• Knowledge — $corpus (OWASP MASVS/MASTG, MITRE ATT&CK Mobile, pentest methodology, IR, Android hardening)\n" +
             "• Actions — suggest open Scanner / Shield / Timeline / optional intel sync\n" +
             "• Tools — Nemesis Scanner, Privacy Shield, Scan Timeline\n" +
+            "Current posture: ${briefing.posture.label} (score ${briefing.score}/100). ${briefing.headline}\n" +
             "I do not call ChatGPT/Claude/Zapier. I teach defense and cite CoreGuard evidence.\n" +
             "Ready prompts: " + QuillaReadyTopics.suggestionPrompts().joinToString(" · ") { "\"$it\"" } + "."
     }
@@ -294,7 +378,7 @@ class UltimateQuillaAgent(
             return "Knowledge found no strong codex match yet. Try a ready prompt: " +
                 QuillaReadyTopics.suggestionPrompts().joinToString(", ") +
                 " — or ask about Observatory cycles / relays in the Secret Portal.\n" +
-                statusBlurb(memory)
+                statusBlurb(memory, QuillaPriorityEngine.brief(memory), QuillaResearchSnapshot())
         }
         val primary = hits.first()
         val readyId = QuillaReadyTopics.resolveEntryId(prompt)
@@ -310,12 +394,17 @@ class UltimateQuillaAgent(
             else ->
                 "\n\nDevice bridge: last scan=${memory.lastScanVerdict}" +
                     (memory.lastScanDetections?.let { " ($it detections)" } ?: "") +
-                    "; shield=${if (memory.shieldActive) "ON" else "OFF"}."
+                    "; shield=${if (memory.shieldActive) "ON" else "OFF"}" +
+                    "; correlator=${memory.correlatorIndicatorCount}."
         }
         return "$header$articles$deviceBridge"
     }
 
-    private fun statusBlurb(memory: QuillaMemorySnapshot): String {
+    private fun statusBlurb(
+        memory: QuillaMemorySnapshot,
+        briefing: QuillaPriorityEngine.Briefing,
+        research: QuillaResearchSnapshot
+    ): String {
         val scanLine = if (memory.lastScanVerdict == null) {
             "No recent Nemesis scan in Memory — run a scan before claiming the device is clean."
         } else {
@@ -333,10 +422,24 @@ class UltimateQuillaAgent(
         } else {
             "Privacy Shield is OFF — DNS IOC/tracker filtering is idle until you enable it with VPN consent."
         }
-        val iocLine = if (memory.mvtIocInventoryCount > 0) {
-            "MVT-style on-device IOC inventory: ${memory.mvtIocInventoryCount} indicators available to Quilla correlation."
+        val iocLine = buildString {
+            if (memory.mvtIocInventoryCount > 0) {
+                append("MVT-style on-device IOC inventory: ${memory.mvtIocInventoryCount}.")
+            } else {
+                append("MVT-style on-device IOC inventory not loaded yet.")
+            }
+            if (memory.correlatorIndicatorCount > 0) {
+                append(" Correlator armed with ${memory.correlatorIndicatorCount} indicators.")
+            }
+            if (research.synced || research.indicatorCount > 0) {
+                append(" Research cache: ${research.indicatorCount} (${research.sourceLabel}).")
+            }
+        }
+        val telemetryLine = if (memory.telemetryDeltaCount == 0) {
+            "Signed telemetry ring is empty."
         } else {
-            "MVT-style on-device IOC inventory not loaded yet."
+            "Signed telemetry: ${memory.telemetryDeltaCount} frames" +
+                if (memory.telemetryHighSeverity) " — HIGH/CRITICAL signals present." else "."
         }
         val hyp = if (memory.activeHypotheses.isEmpty()) {
             "No active Quilla hypotheses stored."
@@ -344,16 +447,28 @@ class UltimateQuillaAgent(
             "Active hypotheses: " + memory.activeHypotheses.take(3).joinToString("; ") +
                 if (memory.activeHypotheses.size > 3) "…" else "."
         }
-        return "$scanLine\n$shieldLine\n$iocLine\n$hyp\nObserve → correlate → explain before you escalate."
+        val moves = if (briefing.moves.isEmpty()) {
+            "No ranked moves — maintain cadence."
+        } else {
+            "Priority moves:\n" + briefing.moves.mapIndexed { i, m ->
+                "${i + 1}. ${m.title} — ${m.why}"
+            }.joinToString("\n")
+        }
+        return "${briefing.headline}\n" +
+            "Posture score: ${briefing.score}/100 (${briefing.posture.label}).\n" +
+            "$scanLine\n$shieldLine\n$iocLine\n$telemetryLine\n$hyp\n$moves\n" +
+            "Observe → correlate → explain before you escalate."
     }
 
-    private fun scanBlurb(memory: QuillaMemorySnapshot): String =
+    private fun scanBlurb(memory: QuillaMemorySnapshot, briefing: QuillaPriorityEngine.Briefing): String =
         if (memory.lastScanVerdict == null) {
             "Tools → Nemesis Scanner can collect packages, processes, and file IOCs. " +
-                "I will not invent a clean bill of health without that evidence."
+                "I will not invent a clean bill of health without that evidence. " +
+                briefing.headline
         } else {
             "Memory still holds last verdict ${memory.lastScanVerdict}. " +
-                "Run another scan if you changed apps, networks, or suspect new residue."
+                "Run another scan if you changed apps, networks, or suspect new residue. " +
+                "Posture ${briefing.posture.label} (${briefing.score}/100)."
         }
 
     private fun shieldBlurb(memory: QuillaMemorySnapshot): String =
@@ -405,13 +520,18 @@ class UltimateQuillaAgent(
             "Ask Knowledge about emerging mobile attacks, CISA KEV CVEs, or \"what is T1636\"."
     }
 
-    private fun generalBlurb(prompt: String, memory: QuillaMemorySnapshot): String {
+    private fun generalBlurb(
+        prompt: String,
+        memory: QuillaMemorySnapshot,
+        briefing: QuillaPriorityEngine.Briefing,
+        research: QuillaResearchSnapshot
+    ): String {
         val hits = CyberKnowledgeBase.search(prompt, limit = 2)
         return if (hits.isNotEmpty()) {
             knowledgeBlurb(prompt, memory)
         } else {
             "Brain routed this as a general security question.\n" +
-                statusBlurb(memory) +
+                statusBlurb(memory, briefing, research) +
                 "\nAsk about scan, shield, timeline, research, MASVS, MITRE techniques, or my capabilities."
         }
     }

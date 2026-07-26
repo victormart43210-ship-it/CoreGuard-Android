@@ -1,17 +1,28 @@
 package com.coldboar.coreguard.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -24,12 +35,16 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
@@ -47,21 +62,29 @@ import com.coldboar.coreguard.quilla.QuillaSalesCoach
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
+import com.coldboar.coreguard.ui.theme.AttentionAmber
+import com.coldboar.coreguard.ui.theme.AtmosphereTeal
 import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import com.coldboar.coreguard.ui.theme.SurfaceMid
+import com.coldboar.coreguard.ui.theme.SurfacePewter
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 
 private const val QUILLA_RESPONSE_DELAY_MS = 500L
 
+private data class QuillaTurn(
+    val user: String,
+    val answer: QuillaAgentAnswer
+)
+
 /**
- * Shared Quilla panel: Brain / Memory / Research / Knowledge / Actions / Tools.
- *
- * Basic Q&A stays free. Optional Research sync may use HTTPS.
- * Action buttons navigate to tools — they do not silently execute scans or VPN.
+ * Top-tier Quilla HUD: posture strip, conversation history, contextual chips,
+ * priority follow-ups, and action navigation (no silent scan/VPN).
  */
 @Composable
 fun QuillaAgentPanel(
@@ -77,16 +100,21 @@ fun QuillaAgentPanel(
     var coachTip by remember { mutableStateOf<String?>(null) }
     var isAsking by remember { mutableStateOf(false) }
     var pendingPrompt by remember { mutableStateOf<String?>(null) }
+    val history = remember { mutableStateListOf<QuillaTurn>() }
     val hasQuestion = question.isNotBlank()
+    val transcriptScroll = rememberScrollState()
 
     LaunchedEffect(Unit) {
         withContext(Dispatchers.IO) {
             CyberKnowledgeAssets.ensureLoaded(context)
         }
-        answer = UltimateQuillaAgent(
+        val boot = UltimateQuillaAgent(
             memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
             researchProvider = { QuillaMemoryFactory.cachedResearch() }
-        ).answer("what can you do")
+        ).answer("give me my priority status brief")
+        answer = boot
+        history.clear()
+        history.add(QuillaTurn("priority status brief", boot))
     }
 
     LaunchedEffect(pendingPrompt) {
@@ -111,6 +139,8 @@ fun QuillaAgentPanel(
             ).answer(prompt)
         }
         answer = result
+        history.add(QuillaTurn(prompt, result))
+        while (history.size > 8) history.removeAt(0)
         // Honest Premium coaching tips (SalesCoach) — Quilla Q&A itself stays free.
         val memory = QuillaMemoryFactory.memorySnapshot(context)
         val coach = QuillaSalesCoach.answer(
@@ -135,57 +165,75 @@ fun QuillaAgentPanel(
         pendingPrompt = null
     }
 
+    LaunchedEffect(history.size, answer?.text) {
+        if (history.isNotEmpty()) {
+            transcriptScroll.animateScrollTo(transcriptScroll.maxValue)
+        }
+    }
+
     val faceScale by animateFloatAsState(
-        targetValue = if (isAsking) 1.3f else 1f,
+        targetValue = if (isAsking) 1.25f else 1f,
         animationSpec = tween(durationMillis = 450),
         label = "quillaFaceScale"
     )
 
     Card(
         modifier = modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        shape = RoundedCornerShape(12.dp)
+        colors = CardDefaults.cardColors(containerColor = SurfacePewter),
+        shape = RoundedCornerShape(16.dp)
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = "Quilla",
-                style = MaterialTheme.typography.titleMedium,
-                color = ElectricTeal,
-                modifier = Modifier.semantics { heading() }
-            )
-            Text(
-                text = "Brain · Memory · Research · Knowledge · Actions · Tools",
-                style = MaterialTheme.typography.bodySmall,
-                color = MutedText
-            )
-            Text(
-                text = "On-device cyber codex + local evidence. Optional Research sync uses HTTPS.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MutedText
-            )
+        Column(
+            modifier = Modifier
+                .background(
+                    Brush.verticalGradient(
+                        listOf(AtmosphereTeal.copy(alpha = 0.55f), SurfacePewter, SurfaceMid.copy(alpha = 0.9f))
+                    )
+                )
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = "Quilla",
+                        style = MaterialTheme.typography.titleLarge,
+                        color = ElectricTeal,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Text(
+                        text = "Priority security lead · on-device",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText
+                    )
+                }
+                Text(
+                    text = if (isAsking) "◉‿◉" else "◈‿◈",
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier
+                        .scale(faceScale)
+                        .semantics {
+                            contentDescription = if (isAsking) "Quilla is thinking" else "Quilla face"
+                        }
+                )
+            }
 
             Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "◉‿◉",
-                style = MaterialTheme.typography.displaySmall,
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier
-                    .align(Alignment.CenterHorizontally)
-                    .scale(faceScale)
-                    .semantics {
-                        contentDescription = if (isAsking) "Quilla is thinking" else "Quilla face"
-                    }
-            )
+            PostureStrip(answer)
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             ModuleChipRow(answer, isAsking)
 
             Spacer(modifier = Modifier.height(10.dp))
 
             Text(
-                text = "Ready topics",
+                text = "Context chips",
                 style = MaterialTheme.typography.labelLarge,
                 color = RestrainedGold
             )
@@ -196,7 +244,10 @@ fun QuillaAgentPanel(
                     .horizontalScroll(rememberScrollState()),
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                QuillaReadyTopics.suggestionChips().forEach { (label, prompt) ->
+                val chips = answer?.followUps?.map { it.label to it.prompt }
+                    ?.takeIf { it.isNotEmpty() }
+                    ?: QuillaReadyTopics.suggestionChips()
+                chips.forEach { (label, prompt) ->
                     SuggestionChip(
                         onClick = {
                             if (!isAsking) {
@@ -211,6 +262,107 @@ fun QuillaAgentPanel(
                             labelColor = RestrainedGold
                         )
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .heightIn(min = 96.dp, max = 220.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(Color.Black.copy(alpha = 0.28f))
+                    .border(1.dp, ElectricTeal.copy(alpha = 0.22f), RoundedCornerShape(12.dp))
+                    .padding(10.dp)
+                    .verticalScroll(transcriptScroll)
+            ) {
+                if (history.isEmpty()) {
+                    Text(
+                        text = answer?.text ?: "Ask Quilla a question to begin.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                    )
+                } else {
+                    history.forEachIndexed { index, turn ->
+                        Text(
+                            text = "You · ${turn.user}",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = RestrainedGold,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = turn.answer.text,
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            modifier = if (index == history.lastIndex) {
+                                Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                            } else {
+                                Modifier
+                            }
+                        )
+                        if (index != history.lastIndex) {
+                            Spacer(modifier = Modifier.height(12.dp))
+                        }
+                    }
+                }
+            }
+
+            AnimatedVisibility(
+                visible = isAsking,
+                enter = fadeIn(),
+                exit = fadeOut()
+            ) {
+                Text(
+                    text = "Correlating Memory · Research · Tools…",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = ElectricTeal,
+                    modifier = Modifier.padding(top = 6.dp)
+                )
+            }
+
+            coachTip?.let { tip ->
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = if (isPremium) "Premium tip: $tip" else tip,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = RestrainedGold
+                )
+            }
+
+            val followUps = answer?.followUps.orEmpty()
+            if (followUps.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    "Follow-ups",
+                    style = MaterialTheme.typography.labelLarge,
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    followUps.forEach { fu ->
+                        SuggestionChip(
+                            onClick = {
+                                if (!isAsking) {
+                                    question = ""
+                                    pendingPrompt = fu.prompt
+                                }
+                            },
+                            enabled = !isAsking,
+                            label = { Text(fu.label) },
+                            colors = SuggestionChipDefaults.suggestionChipColors(
+                                containerColor = ElectricTeal.copy(alpha = 0.12f),
+                                labelColor = ElectricTeal
+                            )
+                        )
+                    }
                 }
             }
 
@@ -239,28 +391,11 @@ fun QuillaAgentPanel(
                 Text(if (isAsking) "Thinking…" else "Ask Quilla")
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Text(
-                text = answer?.text ?: "Ask Quilla a question to begin.",
-                style = MaterialTheme.typography.bodyMedium,
-                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
-            )
-
-            coachTip?.let { tip ->
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = if (isPremium) "Premium tip: $tip" else tip,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = RestrainedGold
-                )
-            }
-
             val actions = answer?.actions.orEmpty()
             if (actions.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(10.dp))
                 Text(
-                    "Actions",
+                    "Priority actions",
                     style = MaterialTheme.typography.titleSmall,
                     color = RestrainedGold
                 )
@@ -302,6 +437,62 @@ fun QuillaAgentPanel(
 }
 
 @Composable
+private fun PostureStrip(answer: QuillaAgentAnswer?) {
+    val label = answer?.postureLabel ?: "—"
+    val score = answer?.postureScore
+    val color = when (label.uppercase()) {
+        "CRITICAL" -> HighRed
+        "ELEVATED" -> AttentionAmber
+        "WATCH" -> AttentionAmber.copy(alpha = 0.85f)
+        "STEADY" -> SafeGreen
+        else -> MutedText
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(color.copy(alpha = 0.12f))
+            .border(1.dp, color.copy(alpha = 0.45f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 12.dp, vertical = 10.dp)
+            .semantics {
+                contentDescription = "Quilla posture $label" +
+                    (score?.let { " score $it" } ?: "")
+            },
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Box(
+            modifier = Modifier
+                .size(10.dp)
+                .clip(CircleShape)
+                .background(color)
+        )
+        Spacer(modifier = Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = "Posture $label",
+                style = MaterialTheme.typography.titleSmall,
+                color = color,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = score?.let { "Priority score $it/100 · evidence-ranked moves" }
+                    ?: "Ask for a priority status brief",
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
+            )
+        }
+        if (score != null) {
+            Text(
+                text = "$score",
+                style = MaterialTheme.typography.titleMedium,
+                color = color,
+                fontWeight = FontWeight.Bold
+            )
+        }
+    }
+}
+
+@Composable
 private fun ModuleChipRow(answer: QuillaAgentAnswer?, isAsking: Boolean) {
     val used = answer?.modulesUsed?.toSet().orEmpty()
     Row(
@@ -318,7 +509,7 @@ private fun ModuleChipRow(answer: QuillaAgentAnswer?, isAsking: Boolean) {
                 enabled = false,
                 label = {
                     Text(
-                        text = "${module.label}: ${module.superpower}",
+                        text = module.label,
                         style = MaterialTheme.typography.labelLarge
                     )
                 },
@@ -334,4 +525,3 @@ private fun ModuleChipRow(answer: QuillaAgentAnswer?, isAsking: Boolean) {
         }
     }
 }
-

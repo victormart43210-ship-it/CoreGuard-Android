@@ -59,7 +59,19 @@ data class QuillaMemorySnapshot(
     val lastBlockedDomain: String? = null,
     val activeHypotheses: List<String> = emptyList(),
     /** On-device MVT/Nemesis IOC inventory size available to Quilla correlation. */
-    val mvtIocInventoryCount: Int = 0
+    val mvtIocInventoryCount: Int = 0,
+    /** Correlator IOC count currently loaded for Amnesty/MVT matching. */
+    val correlatorIndicatorCount: Int = 0,
+    /** Signed telemetry frames retained in the on-device ring. */
+    val telemetryDeltaCount: Int = 0,
+    /** True when any recent telemetry frame is HIGH/CRITICAL. */
+    val telemetryHighSeverity: Boolean = false
+)
+
+/** Short follow-up prompts Quilla offers after an answer. */
+data class QuillaFollowUp(
+    val label: String,
+    val prompt: String
 )
 
 data class QuillaResearchSnapshot(
@@ -84,5 +96,8 @@ data class QuillaAgentAnswer(
     val intent: QuillaIntent,
     val modulesUsed: List<QuillaModule>,
     val moduleStatuses: List<QuillaModuleStatus>,
-    val actions: List<QuillaActionSuggestion>
+    val actions: List<QuillaActionSuggestion>,
+    val followUps: List<QuillaFollowUp> = emptyList(),
+    val postureLabel: String? = null,
+    val postureScore: Int? = null
 )
