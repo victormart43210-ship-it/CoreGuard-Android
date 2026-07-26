@@ -104,7 +104,7 @@ object IocFeedFetcher {
             IocRepository.invalidate()
             // Quilla correlator should re-read the refreshed on-device inventory.
             runCatching {
-                com.coldboar.coreguard.quilla.QuillaMemoryFactory.invalidateLocalIntel()
+                com.coldboar.coreguard.quilla.QuillaMemoryModule.invalidateLocalIntel()
             }
             Log.i(TAG, "Fetched ${indicators.size} indicators from $url")
             FetchResult.Success(indicators.size)

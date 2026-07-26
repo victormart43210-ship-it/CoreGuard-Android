@@ -590,7 +590,7 @@ class UltimateQuillaAgent(
                 "I will not invent a clean bill of health without that evidence. " +
                 briefing.headline
         } else {
-            val bridge = QuillaMemoryFactory.lastScanBridge()?.let { " Last bridge: ${it.scannerBlurb()}" }.orEmpty()
+            val bridge = QuillaMemoryModule.lastScanBridge()?.let { " Last bridge: ${it.scannerBlurb()}" }.orEmpty()
             "Gabriel's Memory still holds last verdict ${memory.lastScanVerdict} " +
                 "(${memory.lastScanDetections ?: 0} detection(s); choir seal ${memory.blessingSeal ?: "pending"}). " +
                 "Tzadkiel's Mercy Scan and the choir refresh from that Nemesis evidence. " +

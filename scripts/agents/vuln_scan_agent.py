@@ -109,10 +109,24 @@ _PATH_TRAVERSAL_PATTERNS: List[Tuple[re.Pattern, str]] = [
     (re.compile(r'File\(\w+\.path\b'), "File constructed directly from URI path — canonicalize and validate before use."),
 ]
 
-# Exported Activity/Service/Receiver without permission (basic check via AndroidManifest)
-_UNPROTECTED_EXPORT_PATTERN = re.compile(
-    r'<(activity|service|receiver)[^>]+android:exported="true"(?![^>]*android:permission)'
+# Opening tag for exported components (permission may appear on the same tag).
+_EXPORTED_COMPONENT_OPEN = re.compile(
+    r'<(activity|service|receiver)\b([^>]*)>',
+    re.IGNORECASE | re.DOTALL,
 )
+
+# Standard Android launcher intent — exported MAIN/LAUNCHER activities are expected
+# and must NOT receive a restrictive signature permission (would break home-screen launch).
+_LAUNCHER_ACTION = re.compile(
+    r'<action\b[^>]*android:name\s*=\s*"android\.intent\.action\.MAIN"',
+    re.IGNORECASE,
+)
+_LAUNCHER_CATEGORY = re.compile(
+    r'<category\b[^>]*android:name\s*=\s*"android\.intent\.category\.LAUNCHER"',
+    re.IGNORECASE,
+)
+_PERMISSION_ATTR = re.compile(r'\bandroid:permission\s*=', re.IGNORECASE)
+_EXPORTED_TRUE = re.compile(r'\bandroid:exported\s*=\s*"true"', re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -198,19 +212,66 @@ def scan_path_traversal(root: Path, report: AgentReport):
                     )
 
 
+def _component_block(text: str, open_match: re.Match) -> str:
+    """Return the component XML block starting at open_match (self-closing or paired)."""
+    start = open_match.start()
+    open_tag = open_match.group(0)
+    if open_tag.rstrip().endswith("/>"):
+        return open_tag
+    kind = open_match.group(1).lower()
+    close = re.search(rf'</{kind}\s*>', text[open_match.end():], re.IGNORECASE)
+    if not close:
+        return open_tag
+    return text[start: open_match.end() + close.end()]
+
+
+def is_safe_launcher_activity(component_kind: str, block: str) -> bool:
+    """
+    True only for an <activity> that is a normal launcher entry point:
+    both MAIN action and LAUNCHER category present in the same component block.
+    Narrow exemption — does not suppress other exported components.
+    """
+    if component_kind.lower() != "activity":
+        return False
+    return bool(_LAUNCHER_ACTION.search(block) and _LAUNCHER_CATEGORY.search(block))
+
+
+def iter_unprotected_exports(manifest_text: str):
+    """
+    Yield (line_number, kind, snippet) for exported components lacking android:permission,
+    excluding MAIN/LAUNCHER activities (false positives for launcher MainActivity).
+    """
+    for match in _EXPORTED_COMPONENT_OPEN.finditer(manifest_text):
+        attrs = match.group(2) or ""
+        if not _EXPORTED_TRUE.search(attrs):
+            continue
+        if _PERMISSION_ATTR.search(attrs):
+            continue
+        kind = match.group(1)
+        block = _component_block(manifest_text, match)
+        if is_safe_launcher_activity(kind, block):
+            continue
+        line = manifest_text[: match.start()].count("\n") + 1
+        yield line, kind.lower(), match.group(0)[:120]
+
+
 def scan_unprotected_components(root: Path, report: AgentReport):
     for manifest in root.rglob("AndroidManifest.xml"):
+        # Skip build intermediates / merged manifests under build/
+        rel = str(manifest.relative_to(root))
+        if "/build/" in f"/{rel}" or rel.startswith("build/"):
+            continue
         text = manifest.read_text(errors="replace")
-        for match in _UNPROTECTED_EXPORT_PATTERN.finditer(text):
-            line = text[: match.start()].count("\n") + 1
+        for line, kind, snippet in iter_unprotected_exports(text):
             report.add(
                 rule="VULN-IMPLICIT",
                 severity="WARN",
-                file=str(manifest.relative_to(root)),
+                file=rel,
                 line=line,
                 message=(
-                    f"Exported component without android:permission — consider adding a "
-                    f"signature-level permission: {match.group(0)[:120]}"
+                    f"Exported {kind} without android:permission — consider adding a "
+                    f"signature-level permission (launcher MAIN/LAUNCHER activities are exempt): "
+                    f"{snippet}"
                 ),
             )
 

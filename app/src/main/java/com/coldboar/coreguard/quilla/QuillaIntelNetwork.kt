@@ -75,7 +75,7 @@ object QuillaIntelNetwork {
 
         val fromStix = stix.map { it.toAmnestyIndicator() }
         val merged = QuillaIocBridge.mergeUnique(fromStix, onDevice)
-        QuillaMemoryFactory.correlationEngine().loadIndicators(merged)
+        QuillaMemoryModule.correlationEngine().loadIndicators(merged)
 
         // Warm / sync sliding-window engine when Room is available.
         runCatching {

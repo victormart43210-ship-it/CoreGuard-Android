@@ -1,7 +1,7 @@
 package com.coldboar.coreguard.mvt
 
 import android.content.Context
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import com.coldboar.coreguard.quilla.QuillaScanBridgeResult
 
 /**
@@ -11,7 +11,7 @@ import com.coldboar.coreguard.quilla.QuillaScanBridgeResult
  * scanner internals ([NemesisScanner], IOC loaders, `/proc` walkers).
  *
  * Scan completion is connected to Quilla Memory + the angelic choir via
- * [QuillaMemoryFactory.onScanCompleted] (hypotheses, correlator, Elite DTS,
+ * [QuillaMemoryModule.onScanCompleted] (hypotheses, correlator, Elite DTS,
  * Forensic Journal on hits, swarm alert on WARN+).
  */
 object ScannerModule {
@@ -25,7 +25,7 @@ object ScannerModule {
         // Persist timeline for Gabriel / SpywareScanEvaluator process-death fallback.
         recordHistory(context, report)
         // Bridge Nemesis evidence → Quilla + choir (+ Elite/Swarm side effects).
-        lastBridge = QuillaMemoryFactory.onScanCompleted(context, report)
+        lastBridge = QuillaMemoryModule.onScanCompleted(context, report)
         return report
     }
 
@@ -33,7 +33,7 @@ object ScannerModule {
 
     /** Choir / Quilla bridge result from the most recent [scanDevice] in this process. */
     fun lastQuillaBridge(): QuillaScanBridgeResult? =
-        lastBridge ?: QuillaMemoryFactory.lastScanBridge()
+        lastBridge ?: QuillaMemoryModule.lastScanBridge()
 
     fun loadHistory(context: Context): List<ScanHistoryStore.ScanRecord> =
         ScanHistoryStore.load(context)
