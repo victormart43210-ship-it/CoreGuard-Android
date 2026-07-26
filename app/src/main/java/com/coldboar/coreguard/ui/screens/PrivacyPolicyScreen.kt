@@ -74,9 +74,10 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
             PolicySection(
                 title = "Our Commitment",
-                body = "CoreGuard is designed from the ground up to protect your privacy, not exploit it. " +
-                    "We do not collect, sell, or share your personal data. " +
-                    "The app operates entirely on your device."
+                body = "CoreGuard is designed to protect your privacy, not exploit it. " +
+                    "We do not sell personal data or show ads. " +
+                    "Security scans and local reports stay on your device; optional threat-intel " +
+                    "downloads and Privacy Shield DNS forwarding are described below."
             )
 
             PolicySection(
@@ -105,10 +106,12 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
             PolicySection(
                 title = "Privacy Shield (VPN)",
-                body = "The Privacy Shield feature uses Android's VPN API entirely on-device to filter " +
-                    "DNS queries against a blocklist of known surveillance domains. " +
-                    "No traffic content is stored or transmitted to CoreGuard or any third party. " +
-                    "The VPN terminates on your device."
+                body = "Privacy Shield uses Android's local VPN API as a DNS filter against known " +
+                    "surveillance / tracker domains. Blocked domains receive an NXDOMAIN-style response " +
+                    "on-device. Allowed DNS queries are forwarded to your device's system DNS resolver, " +
+                    "or to a public resolver fallback (8.8.8.8) if none is available. " +
+                    "CoreGuard does not inspect or store the contents of your other app traffic, and " +
+                    "does not route all traffic through CoreGuard servers."
             )
 
             PolicySection(
@@ -121,9 +124,18 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
 
             PolicySection(
                 title = "Subscriptions & Billing",
-                body = "Premium subscriptions are processed entirely by Google Play. " +
-                    "CoreGuard does not receive or store your payment details. " +
-                    "Purchase receipts are verified through Google's secure infrastructure."
+                body = "Premium subscriptions are processed entirely by Google Play Billing. " +
+                    "CoreGuard does not receive or store your payment card details. " +
+                    "Entitlement is determined on-device from Play purchase state " +
+                    "(active acknowledged subscription). Server-side receipt verification " +
+                    "may be added in a future release."
+            )
+
+            PolicySection(
+                title = "Hosted Privacy Policy",
+                body = "The canonical web copy of this policy is published at:\n" +
+                    "https://victormart43210-ship-it.github.io/CoreGuard-Android/privacy-policy.html\n" +
+                    "Use that URL in the Google Play Console Data safety / Privacy policy fields."
             )
 
             PolicySection(

@@ -1,6 +1,10 @@
 package com.coldboar.coreguard.ui
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AssuredWorkload
@@ -22,6 +26,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
@@ -39,6 +44,7 @@ import com.coldboar.coreguard.ui.screens.ScannerScreen
 import com.coldboar.coreguard.ui.screens.SecretPortalScreen
 import com.coldboar.coreguard.ui.screens.SettingsScreen
 import com.coldboar.coreguard.ui.screens.ShieldScreen
+import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -46,16 +52,21 @@ import com.coldboar.coreguard.ui.theme.MutedText
 private data class NavItem(
     val route: String,
     val label: String,
-    val icon: ImageVector,
-    val contentDescription: String
+    val icon: ImageVector
 )
 
 private val bottomNavItems = listOf(
-    NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home, "Home"),
-    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch, "Scanner"),
-    NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield, "Shield"),
-    NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload, "Compliance"),
-    NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings, "Settings")
+    NavItem(CoreGuardRoute.Home.route, "Home", Icons.Filled.Home),
+    NavItem(CoreGuardRoute.Scanner.route, "Scanner", Icons.Filled.ManageSearch),
+    NavItem(CoreGuardRoute.Shield.route, "Shield", Icons.Filled.Shield),
+    NavItem(CoreGuardRoute.Compliance.route, "Compliance", Icons.Filled.AssuredWorkload),
+    NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
+)
+
+private val routesWithoutBottomBar = setOf(
+    CoreGuardRoute.PrivacyPolicy.route,
+    CoreGuardRoute.Timeline.route,
+    CoreGuardRoute.SupplyChain.route
 )
 
 /**
@@ -65,7 +76,7 @@ private val bottomNavItems = listOf(
  * primary destinations. All screens are reachable through this single graph.
  *
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider The active [BillingProvider] instance. Defaults to demo mode.
+ * @param billingProvider Production [BillingProvider] from MainActivity. Demo default is for previews/tests only.
  */
 @Composable
 fun CoreGuardApp(
@@ -73,10 +84,27 @@ fun CoreGuardApp(
     billingProvider: BillingProvider = remember { DemoBillingProvider() }
 ) {
     val navController = rememberNavController()
+    val backStackEntry by navController.currentBackStackEntryAsState()
+    val currentRoute = backStackEntry?.destination?.route
+    val showBottomBar = currentRoute !in routesWithoutBottomBar
+
+    fun navigateToTab(route: String) {
+        navController.navigate(route) {
+            popUpTo(navController.graph.findStartDestination().id) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
 
     Box {
         Scaffold(
-            bottomBar = { CoreGuardBottomBar(navController) },
+            bottomBar = {
+                if (showBottomBar) {
+                    CoreGuardBottomBar(navController)
+                }
+            },
             containerColor = MaterialTheme.colorScheme.background
         ) { paddingValues ->
             NavHost(
@@ -87,13 +115,7 @@ fun CoreGuardApp(
                 composable(CoreGuardRoute.Home.route) {
                     HomeScreen(
                         onNavigateToScanner = {
-                            navController.navigate(CoreGuardRoute.Scanner.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navigateToTab(CoreGuardRoute.Scanner.route)
                         },
                         onNavigateToTimeline = {
                             navController.navigate(CoreGuardRoute.Timeline.route)
@@ -104,13 +126,7 @@ fun CoreGuardApp(
                     ScannerScreen(
                         billingProvider = billingProvider,
                         onUpgrade = {
-                            navController.navigate(CoreGuardRoute.Settings.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navigateToTab(CoreGuardRoute.Settings.route)
                         }
                     )
                 }
@@ -121,27 +137,28 @@ fun CoreGuardApp(
                     ComplianceScreen(
                         billingProvider = billingProvider,
                         onUpgrade = {
-                            navController.navigate(CoreGuardRoute.Settings.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navigateToTab(CoreGuardRoute.Settings.route)
+                        },
+                        onNavigateToSettings = {
+                            navigateToTab(CoreGuardRoute.Settings.route)
+                        },
+                        onNavigateToSupplyChain = {
+                            navController.navigate(CoreGuardRoute.SupplyChain.route)
                         }
                     )
+                }
+                composable(CoreGuardRoute.SupplyChain.route) {
+                    SupplyChainScreen()
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen(
                         billingProvider = billingProvider,
                         onUpgrade = {
-                            navController.navigate(CoreGuardRoute.Settings.route) {
-                                popUpTo(navController.graph.findStartDestination().id) {
-                                    saveState = true
-                                }
-                                launchSingleTop = true
-                                restoreState = true
-                            }
+                            navigateToTab(CoreGuardRoute.Settings.route)
+                        },
+                        onBack = { navController.popBackStack() },
+                        onNavigateToScanner = {
+                            navigateToTab(CoreGuardRoute.Scanner.route)
                         }
                     )
                 }
@@ -150,6 +167,15 @@ fun CoreGuardApp(
                         billingProvider = billingProvider,
                         onNavigateToPrivacyPolicy = {
                             navController.navigate(CoreGuardRoute.PrivacyPolicy.route)
+                        },
+                        onRunScan = {
+                            navigateToTab(CoreGuardRoute.Scanner.route)
+                        },
+                        onOpenShield = {
+                            navigateToTab(CoreGuardRoute.Shield.route)
+                        },
+                        onOpenTimeline = {
+                            navController.navigate(CoreGuardRoute.Timeline.route)
                         }
                     )
                 }
@@ -170,36 +196,48 @@ private fun CoreGuardBottomBar(navController: NavController) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentDestination = backStackEntry?.destination
 
-    NavigationBar(containerColor = MaterialTheme.colorScheme.surface) {
-        bottomNavItems.forEach { item ->
-            val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
-            NavigationBarItem(
-                icon = {
-                    Icon(
-                        imageVector = item.icon,
-                        contentDescription = item.contentDescription
-                    )
-                },
-                label = { Text(item.label) },
-                selected = selected,
-                onClick = {
-                    navController.navigate(item.route) {
-                        popUpTo(navController.graph.findStartDestination().id) {
-                            saveState = true
+    Column {
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(1.dp)
+                .background(ElectricTeal.copy(alpha = 0.22f))
+        )
+        NavigationBar(
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 0.dp
+        ) {
+            bottomNavItems.forEach { item ->
+                val selected = currentDestination?.hierarchy?.any { it.route == item.route } == true
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            imageVector = item.icon,
+                            contentDescription = null
+                        )
+                    },
+                    label = {
+                        Text(item.label, style = MaterialTheme.typography.labelSmall)
+                    },
+                    selected = selected,
+                    onClick = {
+                        navController.navigate(item.route) {
+                            popUpTo(navController.graph.findStartDestination().id) {
+                                saveState = true
+                            }
+                            launchSingleTop = true
+                            restoreState = true
                         }
-                        launchSingleTop = true
-                        restoreState = true
-                    }
-                },
-                colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = ElectricTeal,
-                    selectedTextColor = ElectricTeal,
-                    unselectedIconColor = MutedText,
-                    unselectedTextColor = MutedText,
-                    indicatorColor = ElectricTeal.copy(alpha = 0.15f)
+                    },
+                    colors = NavigationBarItemDefaults.colors(
+                        selectedIconColor = ElectricTeal,
+                        selectedTextColor = ElectricTeal,
+                        unselectedIconColor = MutedText,
+                        unselectedTextColor = MutedText,
+                        indicatorColor = ElectricTeal.copy(alpha = 0.2f)
+                    )
                 )
-            )
+            }
         }
     }
 }
-

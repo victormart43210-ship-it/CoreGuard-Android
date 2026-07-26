@@ -2,7 +2,6 @@ package com.coldboar.coreguard.ui.screens
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -29,6 +28,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -36,7 +36,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -53,13 +55,17 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 @Composable
 fun SettingsScreen(
     billingProvider: BillingProvider = remember { DemoBillingProvider() },
-    onNavigateToPrivacyPolicy: () -> Unit = {}
+    onNavigateToPrivacyPolicy: () -> Unit = {},
+    onRunScan: () -> Unit = {},
+    onOpenShield: () -> Unit = {},
+    onOpenTimeline: () -> Unit = {}
 ) {
-    var isPremium by remember { mutableStateOf(billingProvider.isPremium()) }
+    val isPremium by billingProvider.premiumState.collectAsState()
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     val priceLabel = billingProvider.premiumPriceLabel()
-    val subscribeLabel = if (priceLabel.isNotBlank()) "Subscribe · $priceLabel" else "Subscribe"
+    val subscribeLabel =
+        if (priceLabel.isNotBlank()) "Subscribe · $priceLabel" else "Subscribe with Google Play"
 
     Column(
         modifier = Modifier
@@ -70,10 +76,11 @@ fun SettingsScreen(
         Text(
             text = "Settings",
             style = MaterialTheme.typography.headlineLarge,
+            color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier.height(20.dp))
 
         // ── Premium section ─────────────────────────────────────────────────
         Card(
@@ -86,7 +93,7 @@ fun SettingsScreen(
             ),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.Star,
@@ -106,50 +113,57 @@ fun SettingsScreen(
 
                 if (isPremium) {
                     Text(
-                        "✓ Premium active — thank you for your support.",
+                        "Premium active — thank you for your support.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = RestrainedGold
                     )
                 } else {
                     Text(
                         "Unlock live signature refresh, Compliance JSON export, a longer scan timeline, and deeper Quilla coaching. Core scan + shield stay free.",
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
                     )
 
                     purchaseStatus?.let { status ->
                         Spacer(Modifier.height(4.dp))
-                        Text(status, style = MaterialTheme.typography.bodySmall, color = ElectricTeal)
+                        Text(
+                            status,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = ElectricTeal,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                        )
                     }
 
                     Spacer(Modifier.height(12.dp))
 
-                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(
-                            onClick = {
-                                billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
-                                    when (result) {
-                                        is PurchaseResult.Success -> {
-                                            isPremium = true
-                                            purchaseStatus = "Premium unlocked — thank you!"
-                                        }
-                                        is PurchaseResult.Cancelled -> {
-                                            purchaseStatus = null
-                                        }
-                                        is PurchaseResult.Error -> {
-                                            purchaseStatus = result.message
-                                        }
+                    Button(
+                        onClick = {
+                            billingProvider.launchPurchaseFlow(EntitlementPolicy.PREMIUM_PRODUCT_ID) { result ->
+                                when (result) {
+                                    is PurchaseResult.Success -> {
+                                        purchaseStatus = "Premium unlocked — thank you!"
+                                    }
+                                    is PurchaseResult.Cancelled -> {
+                                        purchaseStatus = "Purchase cancelled — nothing was charged."
+                                    }
+                                    is PurchaseResult.Error -> {
+                                        purchaseStatus =
+                                            "Google Play couldn’t complete the purchase. Try again later."
                                     }
                                 }
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = RestrainedGold)
-                        ) {
-                            Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp), tint = Color.Black)
-                            Spacer(Modifier.size(6.dp))
-                            Text(subscribeLabel, color = Color.Black, fontWeight = FontWeight.Bold)
-                        }
+                            }
+                        },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = RestrainedGold,
+                            contentColor = Color.Black
+                        )
+                    ) {
+                        Icon(Icons.Filled.Lock, contentDescription = null, modifier = Modifier.size(16.dp))
+                        Spacer(Modifier.size(6.dp))
+                        Text(subscribeLabel, fontWeight = FontWeight.Bold)
                     }
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(modifier.height(6.dp))
                     Text(
                         "Payment & cancellation are handled by Google Play.",
                         style = MaterialTheme.typography.bodySmall,
@@ -159,7 +173,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier.height(16.dp))
 
         // ── Quilla AI assistant ──────────────────────────────────────────────
         Card(
@@ -169,7 +183,7 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(modifier.padding(16.dp)) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
                         Icons.Filled.AutoAwesome,
@@ -191,7 +205,7 @@ fun SettingsScreen(
                     )
                 }
                 if (!quillaOpen) {
-                    Spacer(Modifier.height(4.dp))
+                    Spacer(modifier.height(4.dp))
                     Text(
                         "On-device cyber force: OWASP, MITRE ATT&CK Mobile, pentest methodology, IR, and your device evidence.",
                         style = MaterialTheme.typography.bodyMedium
@@ -201,10 +215,15 @@ fun SettingsScreen(
         }
 
         AnimatedVisibility(visible = quillaOpen) {
-            QuillaAgentPanel(modifier = Modifier.padding(top = 8.dp))
+            QuillaAgentPanel(
+                modifier = Modifier.padding(top = 8.dp),
+                onRunScan = onRunScan,
+                onOpenShield = onOpenShield,
+                onOpenTimeline = onOpenTimeline
+            )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier.height(16.dp))
 
         // ── Privacy & Legal ──────────────────────────────────────────────────
         Card(
@@ -214,13 +233,13 @@ fun SettingsScreen(
         ) {
             Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
                 Text("Privacy & Legal", style = MaterialTheme.typography.titleSmall, color = MutedText)
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier.padding(vertical = 8.dp))
                 SettingsLink(
                     label = "Privacy Policy",
                     icon = { Icon(Icons.Filled.Policy, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(18.dp)) },
                     onClick = onNavigateToPrivacyPolicy
                 )
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier.padding(vertical = 8.dp))
                 Text(
                     text = "CoreGuard collects no personal data. All scans run entirely on-device.",
                     style = MaterialTheme.typography.bodySmall,
@@ -237,13 +256,13 @@ fun SettingsScreen(
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
             shape = RoundedCornerShape(16.dp)
         ) {
-            Column(Modifier.padding(16.dp)) {
+            Column(modifier.padding(16.dp)) {
                 Text("About", style = MaterialTheme.typography.titleSmall, color = MutedText)
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier.height(8.dp))
                 SettingsRow(label = "Version", value = BuildConfig.VERSION_NAME)
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier.padding(vertical = 8.dp))
                 SettingsRow(label = "Build type", value = if (BuildConfig.DEBUG) "Debug" else "Release")
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier.padding(vertical = 8.dp))
                 Text(
                     text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
                         "CoreGuard is an independent project and is not affiliated with Amnesty International.",
@@ -253,7 +272,7 @@ fun SettingsScreen(
             }
         }
 
-        Spacer(Modifier.height(24.dp))
+        Spacer(modifier.height(24.dp))
     }
 }
 

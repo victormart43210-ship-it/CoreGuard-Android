@@ -31,7 +31,7 @@ permits forks and redistribution — always verify origin before installing on a
 | CPU usage | **Simulated** (labeled in UI) |
 | Security dashboard | Local heuristic checks (debugger / root / emulator / signature) |
 | Network Defense Lab | Educational 16-node BFS/DFS + defense simulation |
-| Premium unlock | **Demo only** on this branch — not Play Billing verification |
+| Premium unlock | Google Play Billing (`PlayBillingProvider` / `coreguard_premium_monthly`) |
 | Companion CLI | Go/Cobra under [`cli/`](cli/) |
 
 ## Network Defense Lab

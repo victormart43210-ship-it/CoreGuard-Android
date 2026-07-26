@@ -21,13 +21,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.BatteryFull
 import androidx.compose.material.icons.filled.Memory
 import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -50,6 +51,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -67,10 +69,12 @@ import com.coldboar.coreguard.RootCheckEvaluator
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.SecurityUtils
+import com.coldboar.coreguard.BuildConfig
 import com.coldboar.coreguard.SignatureCheckEvaluator
 import com.coldboar.coreguard.SpywareScanEvaluator
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
+import com.coldboar.coreguard.ui.theme.BackgroundDeepTeal
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -89,32 +93,49 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
     var cpuText by remember { mutableStateOf("Measuring…") }
     var securityResults by remember { mutableStateOf<List<SecurityCheckResult>>(emptyList()) }
     var scoreTarget by remember { mutableFloatStateOf(0f) }
+    var checksLoading by remember { mutableStateOf(true) }
 
     LaunchedEffect(Unit) {
-        val certSha256 = withContext(Dispatchers.IO) { SecurityUtils.getAppCertSha256(context) }
-        val evaluators = listOf(
-            SpywareScanEvaluator(),
-            DebuggerCheckEvaluator(),
-            EmulatorCheckEvaluator(),
-            RootCheckEvaluator(),
-            BuildTypeCheckEvaluator(),
-            SignatureCheckEvaluator(actualSha256 = { certSha256 })
-        )
-        securityResults = evaluators.map { it.evaluate() }
-        scoreTarget = GuardianScore.compute(securityResults).toFloat()
+        val results = withContext(Dispatchers.IO) {
+            val certSha256 = SecurityUtils.getAppCertSha256(context)
+            val evaluators = listOf(
+                SpywareScanEvaluator(),
+                DebuggerCheckEvaluator(),
+                EmulatorCheckEvaluator(),
+                RootCheckEvaluator(),
+                BuildTypeCheckEvaluator(),
+                SignatureCheckEvaluator(
+                    actualSha256 = { certSha256 },
+                    expectedSha256 = BuildConfig.EXPECTED_CERT_SHA256
+                )
+            )
+            evaluators.map { it.evaluate() }
+        }
+        securityResults = results
+        scoreTarget = GuardianScore.compute(results).toFloat()
+        checksLoading = false
 
         CpuUsageCalculator.reset()
         while (true) {
-            val usedRam = MemoryUsageCalculator.getUsedRamBytes(context)
-            val totalRam = MemoryUsageCalculator.getTotalRamBytes(context)
-            ramText = if (usedRam != null && totalRam != null) {
-                "${MemoryUsageCalculator.formatBytes(usedRam)} / ${MemoryUsageCalculator.formatBytes(totalRam)}"
-            } else "–"
-            val cpu = CpuUsageCalculator.getUsagePercent()
-            cpuText = if (cpu != null) "$cpu%" else "Measuring…"
+            val sample = withContext(Dispatchers.IO) {
+                val usedRam = MemoryUsageCalculator.getUsedRamBytes(context)
+                val totalRam = MemoryUsageCalculator.getTotalRamBytes(context)
+                val ram = if (usedRam != null && totalRam != null) {
+                    "${MemoryUsageCalculator.formatBytes(usedRam)} / ${MemoryUsageCalculator.formatBytes(totalRam)}"
+                } else "–"
+                val cpu = CpuUsageCalculator.getUsagePercent()
+                ram to if (cpu != null) "$cpu%" else "Measuring…"
+            }
+            ramText = sample.first
+            cpuText = sample.second
             delay(2_000)
         }
     }
+
+    val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
+    val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
+    val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
+    val needsAttention = warnCount + failCount > 0
 
     Column(
         modifier = Modifier
@@ -130,6 +151,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 .background(
                     Brush.verticalGradient(
                         colors = listOf(
+                            BackgroundDeepTeal.copy(alpha = 0.55f),
                             SurfacePewter,
                             BackgroundDeepBlack
                         )
@@ -149,14 +171,13 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = "Mobile Security Intelligence",
+                    text = "On-device protection for this phone",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
 
                 Spacer(Modifier.height(28.dp))
 
-                // ── Guardian Score Ring ─────────────────────────────────────
                 val score = scoreTarget.toInt()
                 val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
                 val ringColor = rankColor(rank)
@@ -167,7 +188,16 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     label = "scoreRing"
                 )
 
-                Box(contentAlignment = Alignment.Center) {
+                Box(
+                    contentAlignment = Alignment.Center,
+                    modifier = Modifier.semantics {
+                        contentDescription = if (checksLoading) {
+                            "Protection score loading"
+                        } else {
+                            "Protection score $score out of 100, ${rank?.userLabel ?: "unknown"}"
+                        }
+                    }
+                ) {
                     Canvas(modifier = Modifier.size(180.dp)) {
                         val strokeWidth = 14.dp.toPx()
                         val radius = (size.minDimension - strokeWidth) / 2f
@@ -177,7 +207,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                         val arcSize = Size(2 * radius, 2 * radius)
 
-                        // Track ring
                         drawArc(
                             color = Color.White.copy(alpha = 0.08f),
                             startAngle = -90f,
@@ -188,33 +217,18 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                         )
 
-                        // Score arc with glow effect
                         if (animatedProgress > 0f) {
-                            // Glow layer
                             drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0f),
-                                        ringColor.copy(alpha = 0.4f),
-                                        ringColor
-                                    )
-                                ),
+                                color = ringColor.copy(alpha = 0.25f),
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
                                 topLeft = topLeft,
                                 size = arcSize,
-                                style = Stroke(width = strokeWidth * 2.2f, cap = StrokeCap.Round)
+                                style = Stroke(width = strokeWidth * 2.1f, cap = StrokeCap.Round)
                             )
-                            // Main arc
                             drawArc(
-                                brush = Brush.sweepGradient(
-                                    colors = listOf(
-                                        ringColor.copy(alpha = 0.3f),
-                                        ringColor.copy(alpha = 0.7f),
-                                        ringColor
-                                    )
-                                ),
+                                color = ringColor,
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
@@ -226,18 +240,26 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     }
 
                     Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                        if (checksLoading) {
+                            CircularProgressIndicator(
+                                color = ElectricTeal,
+                                modifier = Modifier.size(36.dp),
+                                strokeWidth = 3.dp
+                            )
+                        } else {
+                            Text(
+                                text = "$score",
+                                style = MaterialTheme.typography.headlineLarge.copy(
+                                    fontWeight = FontWeight.Bold,
+                                    fontSize = 42.sp
+                                ),
+                                color = ringColor
+                            )
+                        }
                         Text(
-                            text = if (securityResults.isEmpty()) "–" else "$score",
-                            style = MaterialTheme.typography.headlineLarge.copy(
-                                fontWeight = FontWeight.Bold,
-                                fontSize = 42.sp
-                            ),
-                            color = ringColor
-                        )
-                        Text(
-                            text = "GUARDIAN",
+                            text = "PROTECTION",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
+                                letterSpacing = 2.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             color = MutedText
@@ -245,7 +267,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         Text(
                             text = "SCORE",
                             style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 3.sp,
+                                letterSpacing = 2.sp,
                                 fontWeight = FontWeight.SemiBold
                             ),
                             color = MutedText
@@ -255,7 +277,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
                 Spacer(Modifier.height(12.dp))
 
-                // Rank badge
                 if (rank != null) {
                     Box(
                         modifier = Modifier
@@ -264,50 +285,86 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             .padding(horizontal = 20.dp, vertical = 6.dp)
                     ) {
                         Text(
-                            text = rank.name,
-                            style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 2.sp),
+                            text = rank.userLabel,
+                            style = MaterialTheme.typography.labelLarge,
                             color = ringColor,
                             fontWeight = FontWeight.Bold
                         )
                     }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        text = rank.userGuidance,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(horizontal = 12.dp)
+                    )
                 }
             }
         }
 
         Spacer(Modifier.height(20.dp))
 
-        // ── Quick Stats ──────────────────────────────────────────────────────
         if (securityResults.isNotEmpty()) {
-            val passCount = securityResults.count { it.state == SecurityCheckState.PASS }
-            val warnCount = securityResults.count { it.state == SecurityCheckState.WARN }
-            val failCount = securityResults.count { it.state == SecurityCheckState.FAIL }
-
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
+                    .padding(horizontal = 16.dp)
+                    .semantics {
+                        contentDescription =
+                            "$passCount checks passed, $warnCount need attention, $failCount failed"
+                    },
                 horizontalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 StatBadge(
-                    label = "PASS",
+                    label = "Passed",
                     value = "$passCount",
                     color = SafeGreen,
                     modifier = Modifier.weight(1f)
                 )
                 StatBadge(
-                    label = "WARN",
+                    label = "Attention",
                     value = "$warnCount",
                     color = AttentionAmber,
                     modifier = Modifier.weight(1f)
                 )
                 StatBadge(
-                    label = "FAIL",
+                    label = "Failed",
                     value = "$failCount",
                     color = HighRed,
                     modifier = Modifier.weight(1f)
                 )
             }
 
+            Spacer(Modifier.height(16.dp))
+        }
+
+        if (needsAttention) {
+            Card(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(Modifier.padding(16.dp)) {
+                    Text(
+                        "What to do next",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = AttentionAmber
+                    )
+                    Spacer(Modifier.height(6.dp))
+                    Text(
+                        text = if (failCount > 0) {
+                            "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
+                        } else {
+                            "Review the warnings below. A privacy check can catch spyware indicators these checks miss."
+                        },
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MutedText
+                    )
+                }
+            }
             Spacer(Modifier.height(16.dp))
         }
 
@@ -325,7 +382,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 modifier = Modifier.weight(1f)
             )
             HealthCard(
-                icon = { Icon(Icons.Filled.BatteryFull, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
+                icon = { Icon(Icons.Filled.Speed, contentDescription = null, tint = ElectricTeal, modifier = Modifier.size(20.dp)) },
                 label = "CPU",
                 value = cpuText,
                 modifier = Modifier.weight(1f)
@@ -353,7 +410,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            "Security Checks",
+                            "Device checks",
                             style = MaterialTheme.typography.titleMedium,
                             color = ElectricTeal
                         )
@@ -376,7 +433,6 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         Spacer(Modifier.height(20.dp))
 
-        // ── CTA ───────────────────────────────────────────────────────────────
         Button(
             onClick = onNavigateToScanner,
             modifier = Modifier
@@ -389,7 +445,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             Icon(Icons.Filled.Shield, contentDescription = null, tint = BackgroundDeepBlack, modifier = Modifier.size(20.dp))
             Spacer(Modifier.width(10.dp))
             Text(
-                "Run Nemesis Scanner",
+                "Check for spyware risks",
                 color = BackgroundDeepBlack,
                 fontWeight = FontWeight.Bold,
                 style = MaterialTheme.typography.titleMedium
@@ -405,7 +461,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 .padding(horizontal = 16.dp),
             shape = RoundedCornerShape(14.dp)
         ) {
-            Text("View Scan Timeline", color = ElectricTeal)
+            Text("View scan history", color = ElectricTeal)
         }
     }
 }
@@ -431,7 +487,7 @@ private fun StatBadge(label: String, value: String, color: Color, modifier: Modi
             )
             Text(
                 text = label,
-                style = MaterialTheme.typography.bodySmall.copy(letterSpacing = 1.sp),
+                style = MaterialTheme.typography.bodySmall,
                 color = color.copy(alpha = 0.8f),
                 textAlign = TextAlign.Center,
                 modifier = Modifier.fillMaxWidth()
@@ -469,8 +525,13 @@ private fun HealthCard(
 
 @Composable
 private fun SecurityCheckRow(result: SecurityCheckResult) {
+    val stateLabel = result.state.userLabel
     Row(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics {
+                contentDescription = "${result.displayName}: $stateLabel. ${result.explanation}"
+            },
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
@@ -505,13 +566,20 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
                 .padding(horizontal = 8.dp, vertical = 2.dp)
         ) {
             Text(
-                text = result.state.name,
+                text = stateLabel,
                 style = MaterialTheme.typography.labelLarge,
                 color = result.state.toColor()
             )
         }
     }
 }
+
+private val SecurityCheckState.userLabel: String
+    get() = when (this) {
+        SecurityCheckState.PASS -> "OK"
+        SecurityCheckState.WARN -> "Review"
+        SecurityCheckState.FAIL -> "Risk"
+    }
 
 private fun SecurityCheckState.toColor(): Color = when (this) {
     SecurityCheckState.PASS -> SafeGreen
@@ -526,4 +594,3 @@ private fun rankColor(rank: GuardianRank?): Color = when (rank) {
     GuardianRank.BREACHED -> HighRed
     null -> RestrainedGold
 }
-

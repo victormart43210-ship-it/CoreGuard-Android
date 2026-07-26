@@ -15,7 +15,25 @@ enum class GuardianRank {
     EXPOSED,
 
     /** 0–34: high-risk indicators present. */
-    BREACHED
+    BREACHED;
+
+    /** Plain-language status for first-time users. */
+    val userLabel: String
+        get() = when (this) {
+            AEGIS -> "Strong protection"
+            WARDED -> "Mostly protected"
+            EXPOSED -> "Needs attention"
+            BREACHED -> "High risk"
+        }
+
+    /** One-line guidance tied to the rank. */
+    val userGuidance: String
+        get() = when (this) {
+            AEGIS -> "Your device looks solid. Keep scanning periodically."
+            WARDED -> "A few checks need review — open the list below."
+            EXPOSED -> "Important gaps found. Review warnings and run a privacy check."
+            BREACHED -> "Serious risks detected. Review failed checks and run a privacy check now."
+        }
 }
 
 /**
