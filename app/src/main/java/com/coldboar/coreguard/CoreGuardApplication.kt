@@ -3,12 +3,13 @@ package com.coldboar.coreguard
 import android.app.Application
 import android.util.Log
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
-import com.coldboar.coreguard.swarm.MemoryIntegrityAgent
-import com.coldboar.coreguard.swarm.NetworkMonitorAgent
-import com.coldboar.coreguard.swarm.ProcessLineageAgent
 import com.coldboar.coreguard.swarm.SwarmCoordinator
+import com.coldboar.coreguard.swarm.SwarmModule
 import com.coreguard.android.data.local.QuillaDatabase
 import com.coreguard.security.telemetry.TelemetryBridge
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -40,6 +41,9 @@ class CoreGuardApplication : Application() {
      */
     val swarmCoordinator: SwarmCoordinator by lazy { SwarmCoordinator() }
 
+    /** Application-scoped work for BAE / Elite correlators (not UI). */
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         instance.set(this)
@@ -49,6 +53,14 @@ class CoreGuardApplication : Application() {
 
         // Warm the billing client early so entitlement queries are ready.
         billingProvider
+
+        // Dynamic Threat Score feeds on continuous BAE samples (on-device only).
+        try {
+            BehavioralAnomalyEngine.start(appScope)
+            Log.i(TAG, "Behavioral anomaly engine started for Elite DTS")
+        } catch (t: Throwable) {
+            Log.w(TAG, "BAE start failed: ${t.message}")
+        }
 
         // Provision the hardware key without blocking the main thread. A tiny
         // round-trip confirms the key is usable and records its security level.
@@ -79,12 +91,11 @@ class CoreGuardApplication : Application() {
                 Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
             }
             try {
-                // Michael (Hod) — register swarm agents once for collaborative RASP watch.
-                val swarm = swarmCoordinator
-                swarm.register(MemoryIntegrityAgent())
-                swarm.register(NetworkMonitorAgent())
-                swarm.register(ProcessLineageAgent())
-                Log.i(TAG, "Angelic swarm registered (Michael · memory/network/process)")
+                // Michael (Hod) — register swarm peers via module façade (not UI).
+                // See docs/SWARM_ARCHITECTURE.md: Kotlin swarm = background handoff;
+                // microsecond RASP stays in native TamperGuard.
+                SwarmModule.registerDefaultAgents(swarmCoordinator)
+                Log.i(TAG, "Angelic swarm registered via SwarmModule (memory/network/process)")
             } catch (t: Throwable) {
                 Log.w(TAG, "Swarm registration failed: ${t.message}")
             }

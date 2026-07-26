@@ -12,4 +12,7 @@ sealed class CoreGuardRoute(val route: String) {
     data object SupplyChain : CoreGuardRoute("supply_chain")
     data object Compliance : CoreGuardRoute("compliance")
     data object PrivacyPolicy : CoreGuardRoute("privacy_policy")
+    data object OverlayMatrix : CoreGuardRoute("overlay_matrix")
+    data object ForensicJournal : CoreGuardRoute("forensic_journal")
+    data object ScamGuard : CoreGuardRoute("scam_guard")
 }

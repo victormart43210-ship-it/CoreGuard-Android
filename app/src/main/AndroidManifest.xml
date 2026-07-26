@@ -59,6 +59,17 @@
             </intent-filter>
         </service>
 
+        <!-- Optional Scam Guard: user must grant Notification access in system settings. -->
+        <service
+            android:name=".elite.ScamGuardNotificationListener"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE">
+            <intent-filter>
+                <action android:name="android.service.notification.NotificationListenerService" />
+            </intent-filter>
+        </service>
+
     </application>
 
 </manifest>

@@ -48,7 +48,8 @@ a substitute for fleet-wide TI swarming.
 | Layer | Role | Location |
 |-------|------|----------|
 | Native TamperGuard | Microsecond-path probes: Frida ports, hook libs, tracer PID, text integrity, ptrace protect | `app/src/main/cpp/tamperguard.cpp` via `NativeTamperGuard` |
-| Kotlin swarm agents | Background polling, signal broadcast, peer handoff for isolation / escalation | `app/src/main/java/com/coldboar/coreguard/swarm/` |
+| Kotlin swarm agents | Background polling, signal broadcast, peer handoff for isolation / escalation | `app/src/main/java/com/coldboar/coreguard/swarm/` (`SwarmModule` façade) |
+| Redux-style alert Counter | UI-facing WARN+ count separated from Compose | `SwarmAlertCounterStore` + `SwarmAlertCounter` |
 
 Rules of engagement for on-device agents:
 

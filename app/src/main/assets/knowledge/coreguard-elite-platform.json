@@ -1,0 +1,71 @@
+{
+  "entries": [
+    {
+      "id": "coreguard-elite-platform",
+      "title": "CoreGuard Elite — Zero-Trust Mobile Endpoint Platform",
+      "category": "quilla-awareness",
+      "tags": [
+        "elite",
+        "dynamic threat score",
+        "dts",
+        "overlay matrix",
+        "forensic journal",
+        "scam guard",
+        "zero trust",
+        "on-device ai"
+      ],
+      "summary": "Elite adds on-device Dynamic Threat Score (Quilla quantum-inspired), Overlay Protection Matrix, StrongBox forensic journal, and Scam Guard — not a cloud LLM or Play Protect clone.",
+      "body": "CoreGuard Elite correlates RASP/BAE hooks, overlay and Accessibility surfaces, Nemesis detections, and swarm alerts into a Dynamic Threat Score using classical weights plus QuillaQuantumCorrelate. The Overlay Protection Matrix audits draw-over-apps and third-party Accessibility holders and journals elevated findings; Play apps cannot silently kill other apps' overlays. The Forensic Journal is an append-only SHA-256 chain encrypted at rest with HardwareKeyManager (StrongBox→TEE). Scam Guard parses notification text locally for phishing URLs when the user grants Notification access. No raw logs leave the device for these features.",
+      "defense": "Open Overlay Matrix after new installs. Export Forensic Journal JSON/CSV for IT after an incident. Enable Notification access for Scam Guard. Ask Quilla \"dynamic threat score\" or \"elite platform\" for this brief. Treat DTS as a correlator — not zero-day omniscience.",
+      "references": [
+        "DynamicThreatEngine",
+        "ForensicJournal",
+        "ScamGuardEngine",
+        "OverlayAbuseEvaluator",
+        "QuillaQuantumCorrelate"
+      ]
+    },
+    {
+      "id": "elite-dynamic-threat-score",
+      "title": "Dynamic Threat Score — On-Device Correlation",
+      "category": "quilla-awareness",
+      "tags": [
+        "dynamic threat score",
+        "dts",
+        "behavioral",
+        "bae",
+        "correlator",
+        "npu",
+        "slm"
+      ],
+      "summary": "DTS is a weighted on-device correlator with Quilla quantum-inspired collapse — not an NPU small language model and not a signature-only AV.",
+      "body": "Traditional mobile AV leans on static hashes. Elite DTS watches live signals: hook pressure, overlay/a11y abuse, Nemesis scan pressure, swarm alerts, and BehavioralAnomalyEngine samples. Quilla's classical H·Metatron → CNOT → Rz·Raphael → Measure·Sandalphon circuit blends amplitudes when evidence co-fires. Scores map to CLEAR / WATCH / ELEVATED / CRITICAL. Elevated bands append to the Forensic Journal once per band transition.",
+      "defense": "If DTS is ELEVATED or CRITICAL, stop sensitive banking, run Nemesis, open Overlay Matrix, revoke untrusted Accessibility, and arm Privacy Shield.",
+      "references": [
+        "DynamicThreatEngine",
+        "BehavioralAnomalyEngine",
+        "QuillaQuantumCorrelate"
+      ]
+    },
+    {
+      "id": "elite-scam-guard",
+      "title": "Scam Guard — On-Device Smishing Heuristics",
+      "category": "defense",
+      "tags": [
+        "scam guard",
+        "smishing",
+        "phishing",
+        "notification",
+        "url"
+      ],
+      "summary": "Scam Guard inspects notification text and pasted URLs locally against IOC domains and zero-trust heuristics — amber pill on the Elite dashboard when score ≥ 50.",
+      "body": "Phishing in SMS, WhatsApp, and Telegram often arrives as links. With Notification Listener access granted by the user, CoreGuard parses title/text locally, extracts URLs, and scores IP literals, deep subdomain chains, credential-bait paths, risky TLDs, brand-spoof hosts, and on-device IOC hits. Findings can be journaled. No cloud LLM reads your messages.",
+      "defense": "Grant Notification access only if you want live inspection. Paste suspicious links into Scam Guard. Never enter credentials on amber-flagged hosts.",
+      "references": [
+        "ScamGuardEngine",
+        "ScamGuardNotificationListener",
+        "IocRepository"
+      ]
+    }
+  ]
+}
