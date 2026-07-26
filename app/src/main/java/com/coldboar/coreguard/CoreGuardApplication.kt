@@ -2,6 +2,7 @@ package com.coldboar.coreguard
 
 import android.app.Application
 import android.util.Log
+import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -33,6 +34,11 @@ class CoreGuardApplication : Application() {
                 Log.i(TAG, "Master key ready (level=${keyManager.securityLevel})")
             } catch (t: Throwable) {
                 Log.w(TAG, "Key provisioning failed: ${t.message}")
+            }
+            try {
+                CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
+            } catch (t: Throwable) {
+                Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
             }
         }.apply { isDaemon = true }.start()
     }

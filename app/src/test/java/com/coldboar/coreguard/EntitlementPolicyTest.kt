@@ -75,6 +75,18 @@ class EntitlementPolicyTest {
         assertFalse(policy.canAccessAdvancedMonitoring())
     }
 
+    @Test
+    fun `EntitlementPolicy free tier cannot refresh signatures`() {
+        val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = false))
+        assertFalse(policy.canRefreshThreatSignatures())
+    }
+
+    @Test
+    fun `EntitlementPolicy free timeline is short`() {
+        val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = false))
+        assertEquals(EntitlementPolicy.FREE_TIMELINE_ENTRIES, policy.maxTimelineEntries())
+    }
+
     // -----------------------------------------------------------------------
     // EntitlementPolicy – PREMIUM tier
     // -----------------------------------------------------------------------
@@ -101,6 +113,14 @@ class EntitlementPolicyTest {
     fun `EntitlementPolicy canAccessAdvancedMonitoring is true for PREMIUM tier`() {
         val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = true))
         assertTrue(policy.canAccessAdvancedMonitoring())
+    }
+
+    @Test
+    fun `EntitlementPolicy premium unlocks signature refresh and longer timeline`() {
+        val policy = EntitlementPolicy(DemoBillingProvider(startAsPremium = true))
+        assertTrue(policy.canRefreshThreatSignatures())
+        assertEquals(EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES, policy.maxTimelineEntries())
+        assertTrue(policy.canUseQuillaRecommendations())
     }
 
     // -----------------------------------------------------------------------

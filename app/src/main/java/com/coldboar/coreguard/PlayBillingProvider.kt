@@ -132,9 +132,23 @@ class PlayBillingProvider(
                 Log.w(TAG, "queryPurchasesAsync failed: ${billingResult.debugMessage}")
                 return@queryPurchasesAsync
             }
-            val hasActive = purchases.any { purchase ->
-                purchase.products.contains(PREMIUM_PRODUCT_ID) &&
-                    purchase.purchaseState == Purchase.PurchaseState.PURCHASED
+            var hasActive = false
+            for (purchase in purchases) {
+                if (!purchase.products.contains(PREMIUM_PRODUCT_ID)) continue
+                if (purchase.purchaseState != Purchase.PurchaseState.PURCHASED) continue
+                hasActive = true
+                if (!purchase.isAcknowledged) {
+                    val ackParams = AcknowledgePurchaseParams.newBuilder()
+                        .setPurchaseToken(purchase.purchaseToken)
+                        .build()
+                    billingClient.acknowledgePurchase(ackParams) { ackResult ->
+                        if (ackResult.responseCode == BillingClient.BillingResponseCode.OK) {
+                            Log.d(TAG, "Backfilled purchase acknowledgement.")
+                        } else {
+                            Log.w(TAG, "Ack backfill failed: ${ackResult.debugMessage}")
+                        }
+                    }
+                }
             }
             premiumCached = hasActive
             Log.d(TAG, "Existing purchases queried – premium=$hasActive")
@@ -192,6 +206,14 @@ class PlayBillingProvider(
     // -----------------------------------------------------------------------
 
     override fun isPremium(): Boolean = premiumCached
+
+    override fun premiumPriceLabel(): String {
+        val details = cachedProductDetails ?: return ""
+        val offer = details.subscriptionOfferDetails?.firstOrNull() ?: return ""
+        val phase = offer.pricingPhases.pricingPhaseList.firstOrNull() ?: return ""
+        val price = phase.formattedPrice
+        return if (price.isNullOrBlank()) "" else "$price/month"
+    }
 
     override fun launchPurchaseFlow(productId: String, onResult: (PurchaseResult) -> Unit) {
         val activity = currentActivity

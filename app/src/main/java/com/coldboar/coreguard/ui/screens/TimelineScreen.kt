@@ -34,8 +34,12 @@ import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -49,8 +53,12 @@ import java.util.Date
 import java.util.Locale
 
 @Composable
-fun TimelineScreen() {
+fun TimelineScreen(
+    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    onUpgrade: () -> Unit = {}
+) {
     val context = LocalContext.current
+    val policy = remember(billingProvider.isPremium()) { EntitlementPolicy(billingProvider) }
     var records by remember { mutableStateOf<List<ScanHistoryStore.ScanRecord>>(emptyList()) }
     var loading by remember { mutableStateOf(true) }
 
@@ -58,6 +66,9 @@ fun TimelineScreen() {
         records = withContext(Dispatchers.IO) { ScanHistoryStore.load(context) }
         loading = false
     }
+
+    val visible = records.take(policy.maxTimelineEntries())
+    val hiddenCount = (records.size - visible.size).coerceAtLeast(0)
 
     Column(
         modifier = Modifier
@@ -71,7 +82,11 @@ fun TimelineScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "Device integrity history — every scan, timestamped.",
+            text = if (policy.isPremium()) {
+                "Your full integrity ledger — up to ${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} scans."
+            } else {
+                "Free shows your last ${EntitlementPolicy.FREE_TIMELINE_ENTRIES} scans. Premium keeps the longer ledger."
+            },
             style = MaterialTheme.typography.bodyMedium,
             color = MutedText
         )
@@ -105,9 +120,18 @@ fun TimelineScreen() {
                 }
             }
             else -> {
-                records.forEachIndexed { index, record ->
-                    ScanTimelineEntry(record = record, isLast = index == records.lastIndex)
-                    if (index < records.lastIndex) Spacer(Modifier.height(2.dp))
+                visible.forEachIndexed { index, record ->
+                    ScanTimelineEntry(record = record, isLast = index == visible.lastIndex && hiddenCount == 0)
+                    if (index < visible.lastIndex) Spacer(Modifier.height(2.dp))
+                }
+                if (hiddenCount > 0 && !policy.isPremium()) {
+                    Spacer(Modifier.height(16.dp))
+                    PremiumUpsellCard(
+                        title = "See the full timeline",
+                        body = "$hiddenCount older scan(s) are hidden on Free. Premium unlocks up to " +
+                            "${EntitlementPolicy.PREMIUM_TIMELINE_ENTRIES} entries so you can spot patterns over time.",
+                        onUpgrade = onUpgrade
+                    )
                 }
             }
         }
@@ -132,7 +156,6 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
     val dateStr = dateFormat.format(Date(record.timestampMs))
 
     Row(modifier = Modifier.fillMaxWidth()) {
-        // Timeline indicator
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(end = 12.dp)
@@ -153,7 +176,6 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
             }
         }
 
-        // Card
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -210,4 +232,3 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
         }
     }
 }
-

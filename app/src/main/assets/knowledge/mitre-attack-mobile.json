@@ -1,0 +1,2637 @@
+{
+  "source": "MITRE ATT&CK Mobile STIX (mitre-attack/attack-stix-data)",
+  "license_note": "Technique IDs and names from MITRE ATT&CK. Descriptions condensed for on-device defensive education. https://attack.mitre.org/",
+  "entries": [
+    {
+      "id": "mitre-t1603",
+      "title": "T1603 \u2014 Scheduled Task/Job",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "execution",
+        "mitre",
+        "mobile",
+        "persistence",
+        "scheduled task/job",
+        "t1603",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1603: Scheduled Task/Job.",
+      "body": "Adversaries may abuse task scheduling functionality to facilitate initial or recurring execution of malicious code. On Android and iOS, APIs and libraries exist to facilitate scheduling tasks to execute at a specified date, time, or interval. On Android, the `WorkManager` API allows asynchronous tasks to be scheduled with the system. `WorkManager` was introduced to unify task scheduling on Android, using `JobScheduler`, `GcmNetworkManager`, and `AlarmManager` internally. `WorkManager` offers a lot of flexibility for scheduling, including periodically, one time, or constraint-based (e.g. only when the device is charging).(Citation: Android Wor",
+      "defense": "Defense focus (execution): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1603 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1603"
+      ]
+    },
+    {
+      "id": "mitre-t1638",
+      "title": "T1638 \u2014 Adversary-in-the-Middle",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "adversary-in-the-middle",
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1638",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1638: Adversary-in-the-Middle.",
+      "body": "Adversaries may attempt to position themselves between two or more networked devices to support follow-on behaviors such as Transmitted Data Manipulation or Endpoint Denial of Service. Adversary-in-the-Middle can be achieved through several mechanisms. For example, a malicious application may register itself as a VPN client, effectively redirecting device traffic to adversary-owned resources. Registering as a VPN client requires user consent on both Android and iOS; additionally, a special entitlement granted by Apple is needed for iOS devices. Alternatively, a malicious application with escalation privileges may utilize those privileges to g",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1638 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1638"
+      ]
+    },
+    {
+      "id": "mitre-t1626",
+      "title": "T1626 \u2014 Abuse Elevation Control Mechanism",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "abuse elevation control mechanism",
+        "att&ck",
+        "attack",
+        "mitre",
+        "mobile",
+        "privilege escalation",
+        "t1626",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1626: Abuse Elevation Control Mechanism.",
+      "body": "Adversaries may circumvent mechanisms designed to control elevated privileges to gain higher-level permissions. Most modern systems contain native elevation control mechanisms that are intended to limit privileges that a user can gain on a machine. Authorization has to be granted to specific users in order to perform tasks that are designated as higher risk. An adversary can use several methods to take advantage of built-in control mechanisms in order to escalate privileges on a system.",
+      "defense": "Defense focus (privilege escalation): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1626 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1626"
+      ]
+    },
+    {
+      "id": "mitre-t1663",
+      "title": "T1663 \u2014 Remote Access Software",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "remote access software",
+        "t1663",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1663: Remote Access Software.",
+      "body": "Adversaries may use legitimate remote access software, such as `VNC`, `TeamViewer`, `AirDroid`, `AirMirror`, etc., to establish an interactive command and control channel to target mobile devices. Remote access applications may be installed and used post-compromise as an alternate communication channel for redundant access or as a way to establish an interactive remote session with the target device. They may also be used as a component of malware to establish a reverse connection to an adversary-controlled system or service. Installation of remote access tools may also include persistence.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1663 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1663"
+      ]
+    },
+    {
+      "id": "mitre-t1630-001",
+      "title": "T1630.001 \u2014 Uninstall Malicious Application",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1630.001",
+        "technique",
+        "uninstall malicious application"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1630.001: Uninstall Malicious Application.",
+      "body": "Adversaries may include functionality in malware that uninstalls the malicious application from the device. This can be achieved by: * Abusing device owner permissions to perform silent uninstallation using device owner API calls.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1630.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1630/001"
+      ]
+    },
+    {
+      "id": "mitre-t1630",
+      "title": "T1630 \u2014 Indicator Removal on Host",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "indicator removal on host",
+        "mitre",
+        "mobile",
+        "t1630",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1630: Indicator Removal on Host.",
+      "body": "Adversaries may delete, alter, or hide generated artifacts on a device, including files, jailbreak status, or the malicious application itself. These actions may interfere with event collection, reporting, or other notifications used to detect intrusion activity. This may compromise the integrity of mobile security solutions by causing notable events or information to go unreported.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1630 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1630"
+      ]
+    },
+    {
+      "id": "mitre-t1474",
+      "title": "T1474 \u2014 Supply Chain Compromise",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "initial access",
+        "mitre",
+        "mobile",
+        "supply chain compromise",
+        "t1474",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1474: Supply Chain Compromise.",
+      "body": "Adversaries may manipulate products or product delivery mechanisms prior to receipt by a final consumer for the purpose of data or system compromise. Supply chain compromise can take place at any stage of the supply chain including:",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1474 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1474"
+      ]
+    },
+    {
+      "id": "mitre-t1430-002",
+      "title": "T1430.002 \u2014 Impersonate SS7 Nodes",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "discovery",
+        "impersonate ss7 nodes",
+        "mitre",
+        "mobile",
+        "t1430.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1430.002: Impersonate SS7 Nodes.",
+      "body": "Adversaries may exploit the lack of authentication in signaling system network nodes to track the location of mobile devices by impersonating a node.(Citation: Engel-SS7)(Citation: Engel-SS7-2008)(Citation: 3GPP-Security)(Citation: Positive-SS7)(Citation: CSRIC5-WG10-FinalReport) By providing the victim\u2019s MSISDN (phone number) and impersonating network internal nodes to query subscriber information from other nodes, adversaries may use data collected from each hop to eventually determine the device\u2019s geographical cell area or nearest cell tower.(Citation: Engel-SS7)",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1430.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1430/002"
+      ]
+    },
+    {
+      "id": "mitre-t1655-001",
+      "title": "T1655.001 \u2014 Match Legitimate Name or Location",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "match legitimate name or location",
+        "mitre",
+        "mobile",
+        "t1655.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1655.001: Match Legitimate Name or Location.",
+      "body": "Adversaries may match or approximate the name or location of legitimate files or resources when naming/placing them. This is done for the sake of evading defenses and observation. This may be done by giving artifacts the name and icon of a legitimate, trusted application (i.e., Settings), or using a package name that matches legitimate, trusted applications (i.e., `com.google.android.gm`). Adversaries may also use the same icon of the file or application they are trying to mimic.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1655.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1655/001"
+      ]
+    },
+    {
+      "id": "mitre-t1636",
+      "title": "T1636 \u2014 Protected User Data",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "accounts",
+        "att&ck",
+        "attack",
+        "calendar",
+        "call log",
+        "collection",
+        "contacts",
+        "mitre",
+        "mitre t1636",
+        "mobile",
+        "privacy",
+        "protected user data",
+        "sms",
+        "t1636",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile T1636 \u2014 adversary collection of protected user data on the device.",
+      "body": "Adversaries may utilize standard operating system APIs to collect data from permission-backed data stores on a device, such as the calendar or contact list. These permissions need to be declared ahead of time. On Android, they must be included in the application\u2019s manifest. On iOS, they must be included in the application\u2019s `Info.plist` file. In almost all cases, the user is required to grant access to the data store that the application is trying to access. In recent OS versions, vendors have introduced additional privacy controls for users, such as the ability to grant permission to an application only while the application is being activel",
+      "defense": "T1636 is Collection of protected user data (calendar, call log, contacts, SMS, accounts, etc.). Defense: audit apps with SMS/contacts/call-log permissions, revoke unused access, run Nemesis after new installs, and treat unexpected data-access prompts as suspicious. Technique IDs classify adversary behavior \u2014 they are not a CoreGuard detection claim by themselves.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636"
+      ]
+    },
+    {
+      "id": "mitre-t1521-002",
+      "title": "T1521.002 \u2014 Asymmetric Cryptography",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "asymmetric cryptography",
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "t1521.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1521.002: Asymmetric Cryptography.",
+      "body": "Adversaries may employ a known asymmetric encryption algorithm to conceal command and control traffic, rather than relying on any inherent protections provided by a communication protocol. Asymmetric cryptography, also known as public key cryptography, uses a keypair per party: one public that can be freely distributed, and one private that should not be distributed. Due to how asymmetric algorithms work, the sender encrypts data with the receiver\u2019s public key and the receiver decrypts the data with their private key. This ensures that only the intended recipient can read the encrypted data. Common public key encryption algorithms include RSA",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1521.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1521/002"
+      ]
+    },
+    {
+      "id": "mitre-t1418",
+      "title": "T1418 \u2014 Software Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "software discovery",
+        "t1418",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1418: Software Discovery.",
+      "body": "Adversaries may attempt to get a listing of applications that are installed on a device. Adversaries may use the information from Software Discovery during automated discovery to shape follow-on behaviors, including whether or not to fully infect the target and/or attempts specific actions. Adversaries may attempt to enumerate applications for a variety of reasons, such as figuring out what security measures are present or to identify the presence of target applications.",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1418 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1418"
+      ]
+    },
+    {
+      "id": "mitre-t1424",
+      "title": "T1424 \u2014 Process Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "process discovery",
+        "t1424",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1424: Process Discovery.",
+      "body": "Adversaries may attempt to get information about running processes on a device. Information obtained could be used to gain an understanding of common software/applications running on devices within a network. Adversaries may use the information from Process Discovery during automated discovery to shape follow-on behaviors, including whether or not the adversary fully infects the target and/or attempts specific actions. Recent Android security enhancements have made it more difficult to obtain a list of running processes. On Android 7 and later, there is no way for an application to obtain the process list without abusing elevated privileges. ",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1424 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1424"
+      ]
+    },
+    {
+      "id": "mitre-t1636-002",
+      "title": "T1636.002 \u2014 Call Log",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "call log",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1636.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1636.002: Call Log.",
+      "body": "Adversaries may utilize standard operating system APIs to gather call log data. On Android, this can be accomplished using the Call Log Content Provider. iOS provides no standard API to access the call log. If the device has been jailbroken or rooted, an adversary may be able to access the Call Log without the user\u2019s knowledge or approval.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636/002"
+      ]
+    },
+    {
+      "id": "mitre-t1418-001",
+      "title": "T1418.001 \u2014 Security Software Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "security software discovery",
+        "t1418.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1418.001: Security Software Discovery.",
+      "body": "Adversaries may attempt to get a listing of security applications and configurations that are installed on a device. This may include things such as mobile security products. Adversaries may use the information from Security Software Discovery during automated discovery to shape follow-on behaviors, including whether or not to fully infect the target and/or attempt specific actions.",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1418.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1418/001"
+      ]
+    },
+    {
+      "id": "mitre-t1631-001",
+      "title": "T1631.001 \u2014 Ptrace System Calls",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "privilege escalation",
+        "ptrace system calls",
+        "t1631.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1631.001: Ptrace System Calls.",
+      "body": "Adversaries may inject malicious code into processes via ptrace (process trace) system calls in order to evade process-based defenses as well as possibly elevate privileges. Ptrace system call injection is a method of executing arbitrary code in the address space of a separate live process. Ptrace system call injection involves attaching to and modifying a running process. The ptrace system call enables a debugging process to observe and control another process (and each individual thread), including changing memory and register values.(Citation: PTRACE man) Ptrace system call injection is commonly performed by writing arbitrary code into a r",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1631.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1631/001"
+      ]
+    },
+    {
+      "id": "mitre-t1629",
+      "title": "T1629 \u2014 Impair Defenses",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "impair defenses",
+        "mitre",
+        "mobile",
+        "t1629",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1629: Impair Defenses.",
+      "body": "Adversaries may maliciously modify components of a victim environment in order to hinder or disable defensive mechanisms. This not only involves impairing preventative defenses, such as anti-virus, but also detection capabilities that defenders can use to audit activity and identify malicious behavior. This may span both native defenses as well as supplemental capabilities installed by users or mobile endpoint administrators.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1629 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1629"
+      ]
+    },
+    {
+      "id": "mitre-t1453",
+      "title": "T1453 \u2014 Abuse Accessibility Features",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "abuse accessibility features",
+        "att&ck",
+        "attack",
+        "collection",
+        "credential access",
+        "mitre",
+        "mobile",
+        "t1453",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1453: Abuse Accessibility Features.",
+      "body": "Adversaries may abuse accessibility features in Android devices to steal sensitive data and to spread malware to other devices. Accessibility features in Android are designed to assist users with disabilities, performing a variety of tasks, such as using Action Blocks to control lightbulbs, and changing the device\u2019s user interface, such as changing the font size and adjusting contract or colors.(Citation: Google_AndroidAcsOverview) One example of how adversaries abuse accessibility features is overlaying an HTML object mimicking a legitimate login screen. The user types their credentials in the overlay HTML object, which is then sent to the a",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1453 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1453"
+      ]
+    },
+    {
+      "id": "mitre-t1428",
+      "title": "T1428 \u2014 Exploitation of Remote Services",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exploitation of remote services",
+        "lateral movement",
+        "mitre",
+        "mobile",
+        "t1428",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1428: Exploitation of Remote Services.",
+      "body": "Adversaries may exploit remote services of enterprise servers, workstations, or other resources to gain unauthorized access to internal systems once inside of a network. Adversaries may exploit remote services by taking advantage of a mobile device\u2019s access to an internal enterprise network through local connectivity or through a Virtual Private Network (VPN). Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in a program, service, or within the operating system software or kernel itself to execute adversary-controlled code. A common goal for post-compromise exploitation of remote service",
+      "defense": "Defense focus (lateral movement): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1428 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1428"
+      ]
+    },
+    {
+      "id": "mitre-t1437-001",
+      "title": "T1437.001 \u2014 Web Protocols",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "t1437.001",
+        "technique",
+        "web protocols"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1437.001: Web Protocols.",
+      "body": "Adversaries may communicate using application layer protocols associated with web protocols traffic to avoid detection/network filtering by blending in with existing traffic. Commands to remote mobile devices, and often the results of those commands, will be embedded within the protocol traffic between the mobile client and server. Web protocols such as HTTP and HTTPS are used for web traffic as well as well as notification services native to mobile messaging services such as Google Cloud Messaging (GCM) and newly, Firebase Cloud Messaging (FCM), (GCM/FCM: two-way communication) and Apple Push Notification Service (APNS; one-way server-to-dev",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1437.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1437/001"
+      ]
+    },
+    {
+      "id": "mitre-t1635",
+      "title": "T1635 \u2014 Steal Application Access Token",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "credential access",
+        "mitre",
+        "mobile",
+        "steal application access token",
+        "t1635",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1635: Steal Application Access Token.",
+      "body": "Adversaries can steal user application access tokens as a means of acquiring credentials to access remote systems and resources. This can occur through social engineering or URI hijacking and typically requires user action to grant access, such as through a system \u201cOpen With\u201d dialogue. Application access tokens are used to make authorized API requests on behalf of a user and are commonly used as a way to access resources in cloud-based applications and software-as-a-service (SaaS).(Citation: Auth0 - Why You Should Always Use Access Tokens to Secure APIs Sept 2019) OAuth is one commonly implemented framework used to issue tokens to users for a",
+      "defense": "Defense focus (credential access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1635 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1635"
+      ]
+    },
+    {
+      "id": "mitre-t1628-002",
+      "title": "T1628.002 \u2014 User Evasion",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1628.002",
+        "technique",
+        "user evasion"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1628.002: User Evasion.",
+      "body": "Adversaries may attempt to avoid detection by hiding malicious behavior from the user. By doing this, an adversary\u2019s modifications would most likely remain installed on the device for longer, allowing the adversary to continue to operate on that device. While there are many ways this can be accomplished, one method is by using the device\u2019s sensors. By utilizing the various motion sensors on a device, such as accelerometer or gyroscope, an application could detect that the device is being interacted with. That way, the application could continue to run while the device is not in use but cease operating while the user is using the device, hidin",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1628.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1628/002"
+      ]
+    },
+    {
+      "id": "mitre-t1633",
+      "title": "T1633 \u2014 Virtualization/Sandbox Evasion",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1633",
+        "technique",
+        "virtualization/sandbox evasion"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1633: Virtualization/Sandbox Evasion.",
+      "body": "Adversaries may employ various means to detect and avoid virtualization and analysis environments. This may include changing behaviors after checking for the presence of artifacts indicative of a virtual machine environment (VME) or sandbox. If the adversary detects a VME, they may alter their malware\u2019s behavior to disengage from the victim or conceal the core functions of the payload. They may also search for VME artifacts before dropping further payloads. Adversaries may use the information learned from Virtualization/Sandbox Evasion during automated discovery to shape follow-on behaviors. Adversaries may use several methods to accomplish V",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1633 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1633"
+      ]
+    },
+    {
+      "id": "mitre-t1661",
+      "title": "T1661 \u2014 Application Versioning",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "application versioning",
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1661",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1661: Application Versioning.",
+      "body": "An adversary may push an update to a previously benign application to add malicious code. This can be accomplished by pushing an initially benign, functional application to a trusted application store, such as the Google Play Store or the Apple App Store. This allows the adversary to establish a trusted userbase that may grant permissions to the application prior to the introduction of malicious code. Then, an application update could be pushed to introduce malicious code.(Citation: android_app_breaking_bad) This technique could also be accomplished by compromising a developer\u2019s account. This would allow an adversary to take advantage of an e",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1661 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1661"
+      ]
+    },
+    {
+      "id": "mitre-t1623",
+      "title": "T1623 \u2014 Command and Scripting Interpreter",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and scripting interpreter",
+        "execution",
+        "mitre",
+        "mobile",
+        "t1623",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1623: Command and Scripting Interpreter.",
+      "body": "Adversaries may abuse command and script interpreters to execute commands, scripts, or binaries. These interfaces and languages provide ways of interacting with computer systems and are a common feature across many different platforms. Most systems come with some built-in command-line interface and scripting capabilities, for example, Android is a UNIX-like OS and includes a basic Unix Shell that can be accessed via the Android Debug Bridge (ADB) or Java\u2019s `Runtime` package. Adversaries may abuse these technologies in various ways as a means of executing arbitrary commands. Commands and scripts can be embedded in Initial Access payloads deliv",
+      "defense": "Defense focus (execution): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1623 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1623"
+      ]
+    },
+    {
+      "id": "mitre-t1629-003",
+      "title": "T1629.003 \u2014 Disable or Modify Tools",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "disable or modify tools",
+        "mitre",
+        "mobile",
+        "t1629.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1629.003: Disable or Modify Tools.",
+      "body": "Adversaries may disable security tools to avoid potential detection of their tools and activities. This can take the form of disabling security software, modifying SELinux configuration, or other methods to interfere with security tools scanning or reporting information. This is typically done by abusing device administrator permissions or using system exploits to gain root access to the device to modify protected system files.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1629.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1629/003"
+      ]
+    },
+    {
+      "id": "mitre-t1544",
+      "title": "T1544 \u2014 Ingress Tool Transfer",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "ingress tool transfer",
+        "mitre",
+        "mobile",
+        "t1544",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1544: Ingress Tool Transfer.",
+      "body": "Adversaries may transfer tools or other files from an external system onto a compromised device to facilitate follow-on actions. Files may be copied from an external adversary-controlled system through the command and control channel or through alternate protocols with another tool such as FTP.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1544 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1544"
+      ]
+    },
+    {
+      "id": "mitre-t1637",
+      "title": "T1637 \u2014 Dynamic Resolution",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "dynamic resolution",
+        "mitre",
+        "mobile",
+        "t1637",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1637: Dynamic Resolution.",
+      "body": "Adversaries may dynamically establish connections to command and control infrastructure to evade common detections and remediations. This may be achieved by using malware that shares a common algorithm with the infrastructure the adversary uses to receive the malware's communications. This algorithm can be used to dynamically adjust parameters such as the domain name, IP address, or port number the malware uses for command and control.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1637 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1637"
+      ]
+    },
+    {
+      "id": "mitre-t1423",
+      "title": "T1423 \u2014 Network Service Scanning",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "network service scanning",
+        "t1423",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1423: Network Service Scanning.",
+      "body": "Adversaries may attempt to get a listing of services running on remote hosts, including those that may be vulnerable to remote software exploitation. Methods to acquire this information include port scans and vulnerability scans from the mobile device. This technique may take advantage of the mobile device's access to an internal enterprise network either through local connectivity or through a Virtual Private Network (VPN).",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1423 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1423"
+      ]
+    },
+    {
+      "id": "mitre-t1646",
+      "title": "T1646 \u2014 Exfiltration Over C2 Channel",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exfiltration",
+        "exfiltration over c2 channel",
+        "mitre",
+        "mobile",
+        "t1646",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1646: Exfiltration Over C2 Channel.",
+      "body": "Adversaries may steal data by exfiltrating it over an existing command and control channel. Stolen data is encoded into the normal communications channel using the same protocol as command and control communications.",
+      "defense": "Defense focus (exfiltration): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1646 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1646"
+      ]
+    },
+    {
+      "id": "mitre-t1636-005",
+      "title": "T1636.005 \u2014 Accounts",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "accounts",
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1636.005",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1636.005: Accounts.",
+      "body": "Adversaries may utilize standard operating system APIs to gather account data. On Android, this can be accomplished by using the AccountManager API. For example, adversaries may use the `getAccounts()` method to list all accounts.(Citation: Android_AccountManager_Feb2025) On iOS, this can be accomplished by using the Keychain services. If the device has been jailbroken or rooted, adversaries may be able to access Accounts without the users\u2019 knowledge or approval.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636.005 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636/005"
+      ]
+    },
+    {
+      "id": "mitre-t1404",
+      "title": "T1404 \u2014 Exploitation for Privilege Escalation",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exploitation for privilege escalation",
+        "mitre",
+        "mobile",
+        "privilege escalation",
+        "t1404",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1404: Exploitation for Privilege Escalation.",
+      "body": "Adversaries may exploit software vulnerabilities in order to elevate privileges. Exploitation of a software vulnerability occurs when an adversary takes advantage of a programming error in an application, service, within the operating system software, or kernel itself to execute adversary-controlled code. Security constructions, such as permission levels, will often hinder access to information and use of certain techniques. Adversaries will likely need to perform privilege escalation to include use of software exploitation to circumvent those restrictions. When initially gaining access to a device, an adversary may be operating within a lowe",
+      "defense": "Defense focus (privilege escalation): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1404 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1404"
+      ]
+    },
+    {
+      "id": "mitre-t1616",
+      "title": "T1616 \u2014 Call Control",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "call control",
+        "collection",
+        "command and control",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1616",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1616: Call Control.",
+      "body": "Adversaries may make, forward, or block phone calls without user authorization. This could be used for adversary goals such as audio surveillance, blocking or forwarding calls from the device owner, or C2 communication. Several permissions may be used to programmatically control phone calls, including:",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1616 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1616"
+      ]
+    },
+    {
+      "id": "mitre-t1639-001",
+      "title": "T1639.001 \u2014 Exfiltration Over Unencrypted Non-C2 Protocol",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exfiltration",
+        "exfiltration over unencrypted non-c2 protocol",
+        "mitre",
+        "mobile",
+        "t1639.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1639.001: Exfiltration Over Unencrypted Non-C2 Protocol.",
+      "body": "Adversaries may steal data by exfiltrating it over an un-encrypted network protocol other than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server. Adversaries may opt to obfuscate this data, without the use of encryption, within network protocols that are natively unencrypted (such as HTTP, FTP, or DNS). Adversaries may employ custom or publicly available encoding/compression algorithms (such as base64) or embed data within protocol headers and fields.",
+      "defense": "Defense focus (exfiltration): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1639.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1639/001"
+      ]
+    },
+    {
+      "id": "mitre-t1624-001",
+      "title": "T1624.001 \u2014 Broadcast Receivers",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "broadcast receivers",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1624.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1624.001: Broadcast Receivers.",
+      "body": "Adversaries may establish persistence using system mechanisms that trigger execution based on specific events. Mobile operating systems have means to subscribe to events such as receiving an SMS message, device boot completion, or other device activities. An intent is a message passed between Android applications or system components. Applications can register to receive broadcast intents at runtime, which are system-wide intents delivered to each app when certain events happen on the device, such as network changes or the user unlocking the screen. Malicious applications can then trigger certain actions within the app based on which broadcas",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1624.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1624/001"
+      ]
+    },
+    {
+      "id": "mitre-t1517",
+      "title": "T1517 \u2014 Access Notifications",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "access notifications",
+        "att&ck",
+        "attack",
+        "collection",
+        "credential access",
+        "mitre",
+        "mobile",
+        "t1517",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1517: Access Notifications.",
+      "body": "Adversaries may collect data within notifications sent by the operating system or other applications. Notifications may contain sensitive data such as one-time authentication codes sent over SMS, email, or other mediums. In the case of Credential Access, adversaries may attempt to intercept one-time code sent to the device. Adversaries can also dismiss notifications to prevent the user from noticing that the notification has arrived and can trigger action buttons contained within notifications.(Citation: ESET 2FA Bypass)",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1517 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1517"
+      ]
+    },
+    {
+      "id": "mitre-t1639",
+      "title": "T1639 \u2014 Exfiltration Over Alternative Protocol",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exfiltration",
+        "exfiltration over alternative protocol",
+        "mitre",
+        "mobile",
+        "t1639",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1639: Exfiltration Over Alternative Protocol.",
+      "body": "Adversaries may steal data by exfiltrating it over a different protocol than that of the existing command and control channel. The data may also be sent to an alternate network location from the main command and control server. Alternate protocols include FTP, SMTP, HTTP/S, DNS, SMB, or any other network protocol not being used as the main command and control channel. Different protocol channels could also include Web services such as cloud storage. Adversaries may opt to also encrypt and/or obfuscate these alternate channels.",
+      "defense": "Defense focus (exfiltration): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1639 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1639"
+      ]
+    },
+    {
+      "id": "mitre-t1422-001",
+      "title": "T1422.001 \u2014 Internet Connection Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "internet connection discovery",
+        "mitre",
+        "mobile",
+        "t1422.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1422.001: Internet Connection Discovery.",
+      "body": "Adversaries may check for Internet connectivity on compromised systems. This may be performed during automated discovery and can be accomplished in numerous ways such as using `adb shell netstat` for Android.(Citation: adb_commands) Adversaries may use the results and responses from these requests to determine if the mobile devices are capable of communicating with adversary-owned C2 servers before attempting to connect to them. The results may also be used to identify routes, redirectors, and proxy servers.",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1422.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1422/001"
+      ]
+    },
+    {
+      "id": "mitre-t1398",
+      "title": "T1398 \u2014 Boot or Logon Initialization Scripts",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "boot or logon initialization scripts",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1398",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1398: Boot or Logon Initialization Scripts.",
+      "body": "Adversaries may use scripts automatically executed at boot or logon initialization to establish persistence. Initialization scripts are part of the underlying operating system and are not accessible to the user unless the device has been rooted or jailbroken.",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1398 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1398"
+      ]
+    },
+    {
+      "id": "mitre-t1627",
+      "title": "T1627 \u2014 Execution Guardrails",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "execution guardrails",
+        "mitre",
+        "mobile",
+        "t1627",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1627: Execution Guardrails.",
+      "body": "Adversaries may use execution guardrails to constrain execution or actions based on adversary supplied and environment specific conditions that are expected to be present on the target. Guardrails ensure that a payload only executes against an intended target and reduces collateral damage from an adversary\u2019s campaign. Values an adversary can provide about a target system or environment to use as guardrails may include environment information such as location.(Citation: SWB Exodus March 2019) Guardrails can be used to prevent exposure of capabilities in environments that are not intended to be compromised or operated within. This use of guardr",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1627 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1627"
+      ]
+    },
+    {
+      "id": "mitre-t1417-002",
+      "title": "T1417.002 \u2014 GUI Input Capture",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "credential access",
+        "gui input capture",
+        "mitre",
+        "mobile",
+        "t1417.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1417.002: GUI Input Capture.",
+      "body": "Adversaries may mimic common operating system GUI components to prompt users for sensitive information with a seemingly legitimate prompt. The operating system and installed applications often have legitimate needs to prompt the user for sensitive information such as account credentials, bank account information, or Personally Identifiable Information (PII). Compared to traditional PCs, the constrained display size of mobile devices may impair the ability to provide users with contextual information, making users more susceptible to this technique\u2019s use.(Citation: Felt-PhishingOnMobileDevices) There are several approaches adversaries may use ",
+      "defense": "Defense focus (credential access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1417.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1417/002"
+      ]
+    },
+    {
+      "id": "mitre-t1645",
+      "title": "T1645 \u2014 Compromise Client Software Binary",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "compromise client software binary",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1645",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1645: Compromise Client Software Binary.",
+      "body": "Adversaries may modify system software binaries to establish persistent access to devices. System software binaries are used by the underlying operating system and users over adb or terminal emulators. Adversaries may make modifications to client software binaries to carry out malicious tasks when those binaries are executed. For example, malware may come with a pre-compiled malicious binary intended to overwrite the genuine one on the device. Since these binaries may be routinely executed by the system or user, the adversary can leverage this for persistent access to the device.",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1645 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1645"
+      ]
+    },
+    {
+      "id": "mitre-t1406-002",
+      "title": "T1406.002 \u2014 Software Packing",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "software packing",
+        "t1406.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1406.002: Software Packing.",
+      "body": "Adversaries may perform software packing to conceal their code. Software packing is a method of compressing or encrypting an executable. Packing an executable changes the file signature in an attempt to avoid signature-based detection. Most decompression techniques decompress the executable code in memory. Utilities used to perform software packing are called packers. An example packer is FTT. A more comprehensive list of known packers is available, but adversaries may create their own packing techniques that do not leave the same artifacts as well-known packers to evade defenses.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1406.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1406/002"
+      ]
+    },
+    {
+      "id": "mitre-t1575",
+      "title": "T1575 \u2014 Native API",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "execution",
+        "mitre",
+        "mobile",
+        "native api",
+        "t1575",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1575: Native API.",
+      "body": "Adversaries may use Android\u2019s Native Development Kit (NDK) to write native functions that can achieve execution of binaries or functions. Like system calls on a traditional desktop operating system, native code achieves execution on a lower level than normal Android SDK calls. The NDK allows developers to write native code in C or C++ that is compiled directly to machine code, avoiding all intermediate languages and steps in compilation that higher level languages, like Java, typically have. The Java Native Interface (JNI) is the component that allows Java functions in the Android app to call functions in a native library.(Citation: Google ND",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1575 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1575"
+      ]
+    },
+    {
+      "id": "mitre-t1658",
+      "title": "T1658 \u2014 Exploitation for Client Execution",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "execution",
+        "exploitation for client execution",
+        "mitre",
+        "mobile",
+        "t1658",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1658: Exploitation for Client Execution.",
+      "body": "Adversaries may exploit software vulnerabilities in client applications to execute code. Vulnerabilities can exist in software due to insecure coding practices that can lead to unanticipated behavior. Adversaries may take advantage of certain vulnerabilities through targeted exploitation for the purpose of arbitrary code execution. Oftentimes the most valuable exploits to an offensive toolkit are those that can be used to obtain code execution on a remote system because they can be used to gain access to that system. Users will expect to see files related to the applications they commonly used to do work, so they are a useful target for explo",
+      "defense": "Defense focus (execution): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1658 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1658"
+      ]
+    },
+    {
+      "id": "mitre-t1604",
+      "title": "T1604 \u2014 Proxy Through Victim",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "proxy through victim",
+        "t1604",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1604: Proxy Through Victim.",
+      "body": "Adversaries may use a compromised device as a proxy server to the Internet. By utilizing a proxy, adversaries hide the true IP address of their C2 server and associated infrastructure from the destination of the network traffic. This masquerades an adversary\u2019s traffic as legitimate traffic originating from the compromised device, which can evade IP-based restrictions and alerts on certain services, such as bank accounts and social media websites.(Citation: Threat Fabric Exobot) The most common type of proxy is a SOCKS proxy. It can typically be implemented using standard OS-level APIs and 3rd party libraries with no indication to the user. On",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1604 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1604"
+      ]
+    },
+    {
+      "id": "mitre-t1541",
+      "title": "T1541 \u2014 Foreground Persistence",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "foreground persistence",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1541",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1541: Foreground Persistence.",
+      "body": "Adversaries may abuse Android's `startForeground()` API method to maintain continuous sensor access. Beginning in Android 9, idle applications running in the background no longer have access to device sensors, such as the camera, microphone, and gyroscope.(Citation: Android-SensorsOverview) Applications can retain sensor access by running in the foreground, using Android\u2019s `startForeground()` API method. This informs the system that the user is actively interacting with the application, and it should not be killed. The only requirement to start a foreground service is showing a persistent notification to the user.(Citation: Android-Foreground",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1541 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1541"
+      ]
+    },
+    {
+      "id": "mitre-t1458",
+      "title": "T1458 \u2014 Replication Through Removable Media",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "initial access",
+        "lateral movement",
+        "mitre",
+        "mobile",
+        "replication through removable media",
+        "t1458",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1458: Replication Through Removable Media.",
+      "body": "Adversaries may move onto devices by exploiting or copying malware to devices connected via USB. In the case of Lateral Movement, adversaries may utilize the physical connection of a device to a compromised or malicious charging station or PC to bypass application store requirements and install malicious applications directly.(Citation: Lau-Mactans) In the case of Initial Access, adversaries may attempt to exploit the device via the connection to gain access to data stored on the device.(Citation: Krebs-JuiceJacking) Examples of this include: * Exploiting insecure bootloaders in a Nexus 6 or 6P device over USB and gaining the ability to perfo",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1458 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1458"
+      ]
+    },
+    {
+      "id": "mitre-t1429",
+      "title": "T1429 \u2014 Audio Capture",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "audio capture",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1429",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1429: Audio Capture.",
+      "body": "Adversaries may capture audio to collect information by leveraging standard operating system APIs of a mobile device. Examples of audio information adversaries may target include user conversations, surroundings, phone calls, or other sensitive information. Android and iOS, by default, require that applications request device microphone access from the user.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1429 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1429"
+      ]
+    },
+    {
+      "id": "mitre-t1625",
+      "title": "T1625 \u2014 Hijack Execution Flow",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "hijack execution flow",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1625",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1625: Hijack Execution Flow.",
+      "body": "Adversaries may execute their own malicious payloads by hijacking the way operating systems run applications. Hijacking execution flow can be for the purposes of persistence since this hijacked execution may reoccur over time. There are many ways an adversary may hijack the flow of execution. A primary way is by manipulating how the operating system locates programs to be executed. How the operating system locates libraries to be used by a program can also be intercepted. Locations where the operating system looks for programs or resources, such as file directories, could also be poisoned to include malicious payloads.",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1625 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1625"
+      ]
+    },
+    {
+      "id": "mitre-t1623-001",
+      "title": "T1623.001 \u2014 Unix Shell",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "execution",
+        "mitre",
+        "mobile",
+        "t1623.001",
+        "technique",
+        "unix shell"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1623.001: Unix Shell.",
+      "body": "Adversaries may abuse Unix shell commands and scripts for execution. Unix shells are the underlying command prompts on Android and iOS devices. Unix shells can control every aspect of a system, with certain commands requiring elevated privileges that are only accessible if the device has been rooted or jailbroken. Unix shells also support scripts that enable sequential execution of commands as well as other typical programming operations such as conditionals and loops. Common uses of shell scripts include long or repetitive tasks, or the need to run the same set of commands on multiple systems.",
+      "defense": "Defense focus (execution): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1623.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1623/001"
+      ]
+    },
+    {
+      "id": "mitre-t1437",
+      "title": "T1437 \u2014 Application Layer Protocol",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "application layer protocol",
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "t1437",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1437: Application Layer Protocol.",
+      "body": "Adversaries may communicate using application layer protocols to avoid detection/network filtering by blending in with existing traffic. Commands to the mobile device, and often the results of those commands, will be embedded within the protocol traffic between the mobile device and server. Adversaries may utilize many different protocols, including those used for web browsing, transferring files, electronic mail, or DNS.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1437 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1437"
+      ]
+    },
+    {
+      "id": "mitre-t1407",
+      "title": "T1407 \u2014 Download New Code at Runtime",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "download new code at runtime",
+        "mitre",
+        "mobile",
+        "t1407",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1407: Download New Code at Runtime.",
+      "body": "Adversaries may download and execute dynamic code not included in the original application package after installation. This technique is primarily used to evade static analysis checks and pre-publication scans in official app stores. In some cases, more advanced dynamic or behavioral analysis techniques could detect this behavior. However, in conjunction with Execution Guardrails techniques, detecting malicious code downloaded after installation could be difficult. On Android, dynamic code could include native code, Dalvik code, or JavaScript code that utilizes Android WebView\u2019s `JavascriptInterface` capability.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1407 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1407"
+      ]
+    },
+    {
+      "id": "mitre-t1664",
+      "title": "T1664 \u2014 Exploitation for Initial Access",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "exploitation for initial access",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1664",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1664: Exploitation for Initial Access.",
+      "body": "Adversaries may exploit software vulnerabilities to gain initial access to a mobile device. This can be accomplished in a variety of ways. Vulnerabilities may be present in the applications, the services, the underlying operating system, or the kernel itself. Several well-known mobile device exploits exist, including FORCEDENTRY, StageFright, and BlueBorne. Furthermore, some exploits may be possible to exploit without any user interaction (i.e. zero-click exploits, see Exploitation for Client Execution), making them particularly dangerous. Mobile operating system vendors are typically very quick to patch such critical bugs, ensuring only a sm",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1664 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1664"
+      ]
+    },
+    {
+      "id": "mitre-t1633-001",
+      "title": "T1633.001 \u2014 System Checks",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "system checks",
+        "t1633.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1633.001: System Checks.",
+      "body": "Adversaries may employ various system checks to detect and avoid virtualization and analysis environments. This may include changing behavior after checking for the presence of artifacts indicative of a virtual environment or sandbox. If the adversary detects a virtual environment, they may alter their malware\u2019s behavior to disengage from the victim or conceal the core functions of the implant. They may also search for virtualization artifacts before dropping secondary or additional payloads. Checks could include generic system properties such as host/domain name and samples of network traffic. Adversaries may also check the network adapters ",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1633.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1633/001"
+      ]
+    },
+    {
+      "id": "mitre-t1409",
+      "title": "T1409 \u2014 Stored Application Data",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "stored application data",
+        "t1409",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1409: Stored Application Data.",
+      "body": "Adversaries may try to access and collect application data resident on the device. Adversaries often target popular applications, such as Facebook, WeChat, and Gmail.(Citation: SWB Exodus March 2019) Due to mobile OS sandboxing, this technique is only possible in three scenarios:",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1409 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1409"
+      ]
+    },
+    {
+      "id": "mitre-t1513",
+      "title": "T1513 \u2014 Screen Capture",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "screen capture",
+        "t1513",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1513: Screen Capture.",
+      "body": "Adversaries may use screen capture to collect additional information about a target device, such as applications running in the foreground, user data, credentials, or other sensitive information. Applications running in the background can capture screenshots or videos of another application running in the foreground by using the Android `MediaProjectionManager` (generally requires the device user to grant consent).(Citation: Fortinet screencap July 2019)(Citation: Android ScreenCap1 2019) Background applications can also use Android accessibility services to capture screen contents being displayed by a foreground application.(Citation: Lookou",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1513 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1513"
+      ]
+    },
+    {
+      "id": "mitre-t1641-001",
+      "title": "T1641.001 \u2014 Transmitted Data Manipulation",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1641.001",
+        "technique",
+        "transmitted data manipulation"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1641.001: Transmitted Data Manipulation.",
+      "body": "Adversaries may alter data en route to storage or other systems in order to manipulate external outcomes or hide activity. By manipulating transmitted data, adversaries may attempt to affect a business process, organizational understanding, or decision making. Manipulation may be possible over a network connection or between system processes where there is an opportunity to deploy a tool that will intercept and change information. The type of modification and the impact it will have depends on the target transmission mechanism as well as the goals and objectives of the adversary. For complex systems, an adversary would likely need special exp",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1641.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1641/001"
+      ]
+    },
+    {
+      "id": "mitre-t1474-001",
+      "title": "T1474.001 \u2014 Compromise Software Dependencies and Development Tools",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "compromise software dependencies and development tools",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1474.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1474.001: Compromise Software Dependencies and Development Tools.",
+      "body": "Adversaries may manipulate products or product delivery mechanisms prior to receipt by a final consumer for the purpose of data or system compromise. Applications often depend on external software to function properly. Popular open source projects that are used as dependencies in many applications may be targeted as a means to add malicious code to users of the dependency.(Citation: Grace-Advertisement)",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1474.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1474/001"
+      ]
+    },
+    {
+      "id": "mitre-t1635-001",
+      "title": "T1635.001 \u2014 URI Hijacking",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "credential access",
+        "mitre",
+        "mobile",
+        "t1635.001",
+        "technique",
+        "uri hijacking"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1635.001: URI Hijacking.",
+      "body": "Adversaries may register Uniform Resource Identifiers (URIs) to intercept sensitive data. Applications regularly register URIs with the operating system to act as a response handler for various actions, such as logging into an app using an external account via single sign-on. This allows redirections to that specific URI to be intercepted by the application. If an adversary were to register for a URI that was already in use by a genuine application, the adversary may be able to intercept data intended for the genuine application or perform a phishing attack against the genuine application. Intercepted data may include OAuth authorization code",
+      "defense": "Defense focus (credential access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1635.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1635/001"
+      ]
+    },
+    {
+      "id": "mitre-t1632",
+      "title": "T1632 \u2014 Subvert Trust Controls",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "subvert trust controls",
+        "t1632",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1632: Subvert Trust Controls.",
+      "body": "Adversaries may undermine security controls that will either warn users of untrusted activity or prevent execution of untrusted applications. Operating systems and security products may contain mechanisms to identify programs or websites as possessing some level of trust. Examples of such features include: an app being allowed to run because it is signed by a valid code signing certificate; an OS prompt alerting the user that an app came from an untrusted source; or getting an indication that you are about to connect to an untrusted site. The method adversaries use will depend on the specific mechanism they seek to subvert.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1632 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1632"
+      ]
+    },
+    {
+      "id": "mitre-t1634-001",
+      "title": "T1634.001 \u2014 Keychain",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "credential access",
+        "keychain",
+        "mitre",
+        "mobile",
+        "t1634.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1634.001: Keychain.",
+      "body": "Adversaries may collect keychain data from an iOS device to acquire credentials. Keychains are the built-in way for iOS to keep track of users' passwords and credentials for many services and features such as Wi-Fi passwords, websites, secure notes, certificates, private keys, and VPN credentials. On the device, the keychain database is stored outside of application sandboxes to prevent unauthorized access to the raw data. Standard iOS APIs allow applications access to their own keychain contained within the database. By utilizing a privilege escalation exploit or existing root access, adversaries can access the entire encrypted database.(Cit",
+      "defense": "Defense focus (credential access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1634.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1634/001"
+      ]
+    },
+    {
+      "id": "mitre-t1670",
+      "title": "T1670 \u2014 Virtualization Solution",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1670",
+        "technique",
+        "virtualization solution"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1670: Virtualization Solution.",
+      "body": "Adversaries may carry out malicious operations using virtualization solutions to escape from Android sandboxes and to avoid detection. Android uses sandboxes to separate resources and code execution between applications and the operating system.(Citation: Android Application Sandbox) There are a few virtualization solutions available on Android, such as the Android Virtualization Framework (AVF).(Citation: Android AVF Overview) Through virtualization solutions, adversaries may execute malicious operations without user knowledge. For example, adversaries may mimic a legitimate banking application\u2019s functionalities in a virtual environment, tha",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1670 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1670"
+      ]
+    },
+    {
+      "id": "mitre-t1481-002",
+      "title": "T1481.002 \u2014 Bidirectional Communication",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "bidirectional communication",
+        "command and control",
+        "mitre",
+        "mobile",
+        "t1481.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1481.002: Bidirectional Communication.",
+      "body": "Adversaries may use an existing, legitimate external Web service channel as a means for sending commands to and receiving output from a compromised system. Compromised systems may leverage popular websites and social media to host command and control (C2) instructions. Those infected systems can then send the output from those commands back over that Web service channel. The return traffic may occur in a variety of ways, depending on the Web service being utilized. For example, the return traffic may take the form of the compromised system posting a comment on a forum, issuing a pull request to development project, updating a document hosted ",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1481.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1481/002"
+      ]
+    },
+    {
+      "id": "mitre-t1509",
+      "title": "T1509 \u2014 Non-Standard Port",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "non-standard port",
+        "t1509",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1509: Non-Standard Port.",
+      "body": "Adversaries may generate network traffic using a protocol and port pairing that are typically not associated. For example, HTTPS over port 8088 or port 587 as opposed to the traditional port 443. Adversaries may make changes to the standard port used by a protocol to bypass filtering or muddle analysis/parsing of network data.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1509 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1509"
+      ]
+    },
+    {
+      "id": "mitre-t1474-003",
+      "title": "T1474.003 \u2014 Compromise Software Supply Chain",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "compromise software supply chain",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1474.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1474.003: Compromise Software Supply Chain.",
+      "body": "Adversaries may manipulate application software prior to receipt by a final consumer for the purpose of data or system compromise. Supply chain compromise of software can take place in a number of ways, including manipulation of the application source code, manipulation of the update/distribution mechanism for that software, or replacing compiled releases with a modified version.",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1474.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1474/003"
+      ]
+    },
+    {
+      "id": "mitre-t1481-001",
+      "title": "T1481.001 \u2014 Dead Drop Resolver",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "dead drop resolver",
+        "mitre",
+        "mobile",
+        "t1481.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1481.001: Dead Drop Resolver.",
+      "body": "Adversaries may use an existing, legitimate external Web service to host information that points to additional command and control (C2) infrastructure. Adversaries may post content, known as a dead drop resolver, on Web services with embedded (and often obfuscated/encoded) domains or IP addresses. Once infected, victims will reach out to and be redirected by these resolvers. Popular websites and social media, acting as a mechanism for C2, may give a significant amount of cover. This is due to the likelihood that hosts within a network are already communicating with them prior to a compromise. Using common services, such as those offered by Go",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1481.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1481/001"
+      ]
+    },
+    {
+      "id": "mitre-t1430",
+      "title": "T1430 \u2014 Location Tracking",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "discovery",
+        "location tracking",
+        "mitre",
+        "mobile",
+        "t1430",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1430: Location Tracking.",
+      "body": "Adversaries may track a device\u2019s physical location through use of standard operating system APIs via malicious or exploited applications on the compromised device. On Android, applications holding the `ACCESS_COAURSE_LOCATION` or `ACCESS_FINE_LOCATION` permissions provide access to the device\u2019s physical location. On Android 10 and up, declaration of the `ACCESS_BACKGROUND_LOCATION` permission in an application\u2019s manifest will allow applications to request location access even when the application is running in the background.(Citation: Android Request Location Permissions) Some adversaries have utilized integration of Baidu map services to re",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1430 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1430"
+      ]
+    },
+    {
+      "id": "mitre-t1626-001",
+      "title": "T1626.001 \u2014 Device Administrator Permissions",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "device administrator permissions",
+        "mitre",
+        "mobile",
+        "privilege escalation",
+        "t1626.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1626.001: Device Administrator Permissions.",
+      "body": "Adversaries may abuse Android\u2019s device administration API to obtain a higher degree of control over the device. By abusing the API, adversaries can perform several nefarious actions, such as resetting the device\u2019s password for Endpoint Denial of Service, factory resetting the device for File Deletion and to delete any traces of the malware, disabling all the device\u2019s cameras, or to make it more difficult to uninstall the app. Device administrators must be approved by the user at runtime, with a system popup showing which actions have been requested by the app. In conjunction with other techniques, such as Input Injection, an app can programma",
+      "defense": "Defense focus (privilege escalation): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1626.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1626/001"
+      ]
+    },
+    {
+      "id": "mitre-t1430-001",
+      "title": "T1430.001 \u2014 Remote Device Management Services",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "discovery",
+        "mitre",
+        "mobile",
+        "remote device management services",
+        "t1430.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1430.001: Remote Device Management Services.",
+      "body": "An adversary may use access to cloud services (e.g. Google's Android Device Manager or Apple iCloud's Find my iPhone) or to an enterprise mobility management (EMM)/mobile device management (MDM) server console to track the location of mobile devices managed by the service.(Citation: Krebs-Location)",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1430.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1430/001"
+      ]
+    },
+    {
+      "id": "mitre-t1662",
+      "title": "T1662 \u2014 Data Destruction",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "data destruction",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1662",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1662: Data Destruction.",
+      "body": "Adversaries may destroy data and files on specific devices or in large numbers to interrupt availability to systems, services, and network resources. Data destruction is likely to render stored data irrecoverable by forensic techniques through overwriting files or data on local and remote drives. To achieve data destruction, adversaries may use the `pm uninstall` command to uninstall packages or the `rm` command to remove specific files. For example, adversaries may first use `pm uninstall` to uninstall non-system apps, and then use `rm (-f) <file(s)>` to delete specific files, further hiding malicious activity.(Citation: rootnik_rooting_tool",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1662 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1662"
+      ]
+    },
+    {
+      "id": "mitre-t1676",
+      "title": "T1676 \u2014 Linked Devices",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "linked devices",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1676",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1676: Linked Devices.",
+      "body": "Adversaries may abuse the \u201clinked devices\u201d feature on messaging applications, such as Signal and WhatsApp, to register the user\u2019s account to an adversary-controlled device. By abusing the \u201clinked devices\u201d feature, adversaries may achieve and maintain persistence through the user\u2019s account, may collect information, such as the user\u2019s messages and contacts list, and may send future messages from the linked device. Signal is a messaging application that uses the open-source Signal Protocol to encrypt messages and calls; similarly, WhatsApp is a messaging application that has end-to-end encryption and other security measures to protect messages a",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1676 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1676"
+      ]
+    },
+    {
+      "id": "mitre-t1451",
+      "title": "T1451 \u2014 SIM Card Swap",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "initial access",
+        "mitre",
+        "mobile",
+        "sim card swap",
+        "t1451",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1451: SIM Card Swap.",
+      "body": "Adversaries may gain access to mobile devices through transfers or swaps from victims\u2019 phone numbers to adversary-controlled SIM cards and mobile devices.(Citation: ATT SIM Swap Scams)(Citation: Verizon SIM Swapping) The typical process is as follows:",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1451 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1451"
+      ]
+    },
+    {
+      "id": "mitre-t1417",
+      "title": "T1417 \u2014 Input Capture",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "credential access",
+        "input capture",
+        "mitre",
+        "mobile",
+        "t1417",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1417: Input Capture.",
+      "body": "Adversaries may use methods of capturing user input to obtain credentials or collect information. During normal device usage, users often provide credentials to various locations, such as login pages/portals or system dialog boxes. Input capture mechanisms may be transparent to the user (e.g. Keylogging) or rely on deceiving the user into providing input into what they believe to be a genuine application prompt (e.g. GUI Input Capture).",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1417 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1417"
+      ]
+    },
+    {
+      "id": "mitre-t1643",
+      "title": "T1643 \u2014 Generate Traffic from Victim",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "generate traffic from victim",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1643",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1643: Generate Traffic from Victim.",
+      "body": "Adversaries may generate outbound traffic from devices. This is typically performed to manipulate external outcomes, such as to achieve carrier billing fraud or to manipulate app store rankings or ratings. Outbound traffic is typically generated as SMS messages or general web traffic, but may take other forms as well. If done via SMS messages, Android apps must hold the `SEND_SMS` permission. Additionally, sending an SMS message requires user consent if the recipient is a premium number. Applications cannot send SMS messages on iOS",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1643 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1643"
+      ]
+    },
+    {
+      "id": "mitre-t1630-003",
+      "title": "T1630.003 \u2014 Disguise Root/Jailbreak Indicators",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "disguise root/jailbreak indicators",
+        "mitre",
+        "mobile",
+        "t1630.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1630.003: Disguise Root/Jailbreak Indicators.",
+      "body": "An adversary could use knowledge of the techniques used by security software to evade detection.(Citation: Brodie)(Citation: Tan) For example, some mobile security products perform compromised device detection by searching for particular artifacts such as an installed \"su\" binary, but that check could be evaded by naming the binary something else. Similarly, polymorphic code techniques could be used to evade signature-based detection.(Citation: Rastogi)",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1630.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1630/003"
+      ]
+    },
+    {
+      "id": "mitre-t1636-001",
+      "title": "T1636.001 \u2014 Calendar Entries",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "calendar entries",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1636.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1636.001: Calendar Entries.",
+      "body": "Adversaries may utilize standard operating system APIs to gather calendar entry data. On Android, this can be accomplished using the Calendar Content Provider. On iOS, this can be accomplished using the `EventKit` framework. If the device has been jailbroken or rooted, an adversary may be able to access Calendar Entries without the user\u2019s knowledge or approval.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636/001"
+      ]
+    },
+    {
+      "id": "mitre-t1630-002",
+      "title": "T1630.002 \u2014 File Deletion",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "file deletion",
+        "mitre",
+        "mobile",
+        "t1630.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1630.002: File Deletion.",
+      "body": "Adversaries may wipe a device or delete individual files in order to manipulate external outcomes or hide activity. An application must have administrator access to fully wipe the device, while individual files may not require special permissions to delete depending on their storage location.(Citation: Android DevicePolicyManager 2019) Stored data could include a variety of file formats, such as Office files, databases, stored emails, and custom file formats. The impact file deletion will have depends on the type of data as well as the goals and objectives of the adversary, but can include deleting update files to evade detection or deleting ",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1630.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1630/002"
+      ]
+    },
+    {
+      "id": "mitre-t1629-002",
+      "title": "T1629.002 \u2014 Device Lockout",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "device lockout",
+        "mitre",
+        "mobile",
+        "t1629.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1629.002: Device Lockout.",
+      "body": "An adversary may seek to inhibit user interaction by locking the legitimate user out of the device. This is typically accomplished by requesting device administrator permissions and then locking the screen using `DevicePolicyManager.lockNow()`. Other novel techniques for locking the user out of the device have been observed, such as showing a persistent overlay, using carefully crafted \u201ccall\u201d notification screens, and locking HTML pages in the foreground. These techniques can be very difficult to get around, and typically require booting the device into safe mode to uninstall the malware.(Citation: Microsoft MalLockerB)(Citation: Talos GPlaye",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1629.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1629/002"
+      ]
+    },
+    {
+      "id": "mitre-t1417-001",
+      "title": "T1417.001 \u2014 Keylogging",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "credential access",
+        "keylogging",
+        "mitre",
+        "mobile",
+        "t1417.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1417.001: Keylogging.",
+      "body": "Adversaries may log user keystrokes to intercept credentials or other information from the user as the user types them. Some methods of keylogging include:",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1417.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1417/001"
+      ]
+    },
+    {
+      "id": "mitre-t1582",
+      "title": "T1582 \u2014 SMS Control",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "impact",
+        "mitre",
+        "mobile",
+        "sms control",
+        "t1582",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1582: SMS Control.",
+      "body": "Adversaries may delete, alter, or send SMS messages without user authorization. This could be used to hide C2 SMS messages, spread malware, or various external effects. This can be accomplished by requesting the `RECEIVE_SMS` or `SEND_SMS` permissions depending on what the malware is attempting to do. If the app is set as the default SMS handler on the device, the `SMS_DELIVER` broadcast intent can be registered, which allows the app to write to the SMS content provider. The content provider directly modifies the messaging database on the device, which could allow malicious applications with this ability to insert, modify, or delete arbitrary",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1582 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1582"
+      ]
+    },
+    {
+      "id": "mitre-t1631",
+      "title": "T1631 \u2014 Process Injection",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "privilege escalation",
+        "process injection",
+        "t1631",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1631: Process Injection.",
+      "body": "Adversaries may inject code into processes in order to evade process-based defenses or even elevate privileges. Process injection is a method of executing arbitrary code in the address space of a separate live process. Running code in the context of another process may allow access to the process's memory, system/network resources, and possibly elevated privileges. Execution via process injection may also evade detection from security products since the execution is masked under a legitimate process. Both Android and iOS have no legitimate way to achieve process injection. The only way this is possible is by abusing existing root access or ex",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1631 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1631"
+      ]
+    },
+    {
+      "id": "mitre-t1521-001",
+      "title": "T1521.001 \u2014 Symmetric Cryptography",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "symmetric cryptography",
+        "t1521.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1521.001: Symmetric Cryptography.",
+      "body": "Adversaries may employ a known symmetric encryption algorithm to conceal command and control traffic, rather than relying on any inherent protections provided by a communication protocol. Symmetric encryption algorithms use the same key for plaintext encryption and ciphertext decryption. Common symmetric encryption algorithms include AES, Blowfish, and RC4.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1521.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1521/001"
+      ]
+    },
+    {
+      "id": "mitre-t1422-002",
+      "title": "T1422.002 \u2014 Wi-Fi Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "t1422.002",
+        "technique",
+        "wi-fi discovery"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1422.002: Wi-Fi Discovery.",
+      "body": "Adversaries may search for information about Wi-Fi networks, such as network names and passwords, on compromised systems. Adversaries may use Wi-Fi information as part of Discovery or Credential Access activity to support both ongoing and future campaigns.",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1422.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1422/002"
+      ]
+    },
+    {
+      "id": "mitre-t1474-002",
+      "title": "T1474.002 \u2014 Compromise Hardware Supply Chain",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "compromise hardware supply chain",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1474.002",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1474.002: Compromise Hardware Supply Chain.",
+      "body": "Adversaries may manipulate hardware components in products prior to receipt by a final consumer for the purpose of data or system compromise. By modifying hardware or firmware in the supply chain, adversaries can insert a backdoor into consumer networks that may be difficult to detect and give the adversary a high degree of control over the system.",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1474.002 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1474/002"
+      ]
+    },
+    {
+      "id": "mitre-t1414",
+      "title": "T1414 \u2014 Clipboard Data",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "clipboard data",
+        "collection",
+        "credential access",
+        "mitre",
+        "mobile",
+        "t1414",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1414: Clipboard Data.",
+      "body": "Adversaries may abuse clipboard manager APIs to obtain sensitive information copied to the device clipboard. For example, passwords being copied and pasted from a password manager application could be captured by a malicious application installed on the device.(Citation: Fahl-Clipboard) On Android, applications can use the `ClipboardManager.OnPrimaryClipChangedListener()` API to register as a listener and monitor the clipboard for changes. However, starting in Android 10, this can only be used if the application is in the foreground, or is set as the device\u2019s default input method editor (IME).(Citation: Github Capture Clipboard 2019)(Citation",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1414 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1414"
+      ]
+    },
+    {
+      "id": "mitre-t1641",
+      "title": "T1641 \u2014 Data Manipulation",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "data manipulation",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1641",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1641: Data Manipulation.",
+      "body": "Adversaries may insert, delete, or alter data in order to manipulate external outcomes or hide activity. By manipulating data, adversaries may attempt to affect a business process, organizational understanding, or decision making. The type of modification and the impact it will have depends on the target application, process, and the goals and objectives of the adversary. For complex systems, an adversary would likely need special expertise and possibly access to specialized software related to the system, typically gained through a prolonged information gathering campaign, in order to have the desired impact.",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1641 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1641"
+      ]
+    },
+    {
+      "id": "mitre-t1636-004",
+      "title": "T1636.004 \u2014 SMS Messages",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "sms messages",
+        "t1636.004",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1636.004: SMS Messages.",
+      "body": "Adversaries may utilize standard operating system APIs to gather SMS messages. On Android, this can be accomplished using the SMS Content Provider. iOS provides no standard API to access SMS messages. If the device has been jailbroken or rooted, an adversary may be able to access SMS Messages without the user\u2019s knowledge or approval.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636.004 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636/004"
+      ]
+    },
+    {
+      "id": "mitre-t1481",
+      "title": "T1481 \u2014 Web Service",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "t1481",
+        "technique",
+        "web service"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1481: Web Service.",
+      "body": "Adversaries may use an existing, legitimate external Web service as a means for relaying data to/from a compromised system. Popular websites and social media, acting as a mechanism for C2, may give a significant amount of cover. This is due to the likelihood that hosts within a network are already communicating with them prior to a compromise. Using common services, such as those offered by Google or Twitter, makes it easier for adversaries to hide in expected noise. Web service providers commonly use SSL/TLS encryption, giving adversaries an added level of protection. Use of Web services may also protect back-end C2 infrastructure from disco",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1481 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1481"
+      ]
+    },
+    {
+      "id": "mitre-t1625-001",
+      "title": "T1625.001 \u2014 System Runtime API Hijacking",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "mitre",
+        "mobile",
+        "persistence",
+        "system runtime api hijacking",
+        "t1625.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1625.001: System Runtime API Hijacking.",
+      "body": "Adversaries may execute their own malicious payloads by hijacking the way an operating system runs applications. Hijacking execution flow can be for the purposes of persistence since this hijacked execution may reoccur at later points in time. On Android, adversaries may overwrite the standard OS API library with a malicious alternative to hook into core functions to achieve persistence. By doing this, the adversary\u2019s code will be executed every time the overwritten API function is called by an app on the infected device.",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1625.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1625/001"
+      ]
+    },
+    {
+      "id": "mitre-t1634",
+      "title": "T1634 \u2014 Credentials from Password Store",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "credential access",
+        "credentials from password store",
+        "mitre",
+        "mobile",
+        "t1634",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1634: Credentials from Password Store.",
+      "body": "Adversaries may search common password storage locations to obtain user credentials. Passwords can be stored in several places on a device, depending on the operating system or application holding the credentials. There are also specific applications that store passwords to make it easier for users to manage and maintain. Once credentials are obtained, they can be used to perform lateral movement and access restricted information.",
+      "defense": "Defense focus (credential access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1634 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1634"
+      ]
+    },
+    {
+      "id": "mitre-t1617",
+      "title": "T1617 \u2014 Hooking",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "hooking",
+        "mitre",
+        "mobile",
+        "t1617",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1617: Hooking.",
+      "body": "Adversaries may utilize hooking to hide the presence of artifacts associated with their behaviors to evade detection. Hooking can be used to modify return values or data structures of system APIs and function calls. This process typically involves using 3rd party root frameworks, such as Xposed or Magisk, with either a system exploit or pre-existing root access. By including custom modules for root frameworks, adversaries can hook system APIs and alter the return value and/or system data structures to alter functionality/visibility of various aspects of the system.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1617 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1617"
+      ]
+    },
+    {
+      "id": "mitre-t1420",
+      "title": "T1420 \u2014 File and Directory Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "file and directory discovery",
+        "mitre",
+        "mobile",
+        "t1420",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1420: File and Directory Discovery.",
+      "body": "Adversaries may enumerate files and directories or search in specific device locations for desired information within a filesystem. Adversaries may use the information from File and Directory Discovery during automated discovery to shape follow-on behaviors, including deciding if the adversary should fully infect the target and/or attempt specific actions. On Android, Linux file permissions and SELinux policies typically stringently restrict what can be accessed by apps without taking advantage of a privilege escalation exploit. The contents of the external storage directory are generally visible, which could present concerns if sensitive dat",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1420 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1420"
+      ]
+    },
+    {
+      "id": "mitre-t1406",
+      "title": "T1406 \u2014 Obfuscated Files or Information",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "obfuscated files or information",
+        "t1406",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1406: Obfuscated Files or Information.",
+      "body": "Adversaries may attempt to make a payload or file difficult to discover or analyze by encrypting, encoding, or otherwise obfuscating its contents on the device or in transit. This is common behavior that can be used across different platforms and the network to evade defenses. Payloads may be compressed, archived, or encrypted in order to avoid detection. These payloads may be used during Initial Access or later to mitigate detection. Portions of files can also be encoded to hide the plaintext strings that would otherwise help defenders with discovery. Payloads may also be split into separate, seemingly benign files that only reveal malicious",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1406 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1406"
+      ]
+    },
+    {
+      "id": "mitre-t1516",
+      "title": "T1516 \u2014 Input Injection",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "impact",
+        "input injection",
+        "mitre",
+        "mobile",
+        "t1516",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1516: Input Injection.",
+      "body": "A malicious application can inject input to the user interface to mimic user interaction through the abuse of Android's accessibility APIs. Input Injection can be achieved using any of the following methods:",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1516 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1516"
+      ]
+    },
+    {
+      "id": "mitre-t1464",
+      "title": "T1464 \u2014 Network Denial of Service",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "impact",
+        "mitre",
+        "mobile",
+        "network denial of service",
+        "t1464",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1464: Network Denial of Service.",
+      "body": "Adversaries may perform Network Denial of Service (DoS) attacks to degrade or block the availability of targeted resources to users. Network DoS can be performed by exhausting the network bandwidth that services rely on, or by jamming the signal going to or coming from devices. A Network DoS will occur when an adversary is able to jam radio signals (e.g. Wi-Fi, cellular, GPS) around a device to prevent it from communicating. For example, to jam cellular signal, an adversary may use a handheld signal jammer, which jam devices within the jammer\u2019s operational range.(Citation: NIST-SP800187)",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1464 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1464"
+      ]
+    },
+    {
+      "id": "mitre-t1577",
+      "title": "T1577 \u2014 Compromise Application Executable",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "compromise application executable",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1577",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1577: Compromise Application Executable.",
+      "body": "Adversaries may modify applications installed on a device to establish persistent access to a victim. These malicious modifications can be used to make legitimate applications carry out adversary tasks when these applications are in use. There are multiple ways an adversary can inject malicious code into applications. One method is by taking advantages of device vulnerabilities, the most well-known being Janus, an Android vulnerability that allows adversaries to add extra bytes to APK (application) and DEX (executable) files without affecting the file's signature. By being able to add arbitrary bytes to valid applications, attackers can seaml",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1577 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1577"
+      ]
+    },
+    {
+      "id": "mitre-t1624",
+      "title": "T1624 \u2014 Event Triggered Execution",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "event triggered execution",
+        "mitre",
+        "mobile",
+        "persistence",
+        "t1624",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1624: Event Triggered Execution.",
+      "body": "Adversaries may establish persistence using system mechanisms that trigger execution based on specific events. Mobile operating systems have means to subscribe to events such as receiving an SMS message, device boot completion, or other device activities. Adversaries may abuse these mechanisms as a means of maintaining persistent access to a victim via automatically and repeatedly executing malicious code. After gaining access to a victim\u2019s system, adversaries may create or modify event triggers to point to malicious content that will be executed whenever the event trigger is invoked.",
+      "defense": "Defense focus (persistence): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1624 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1624"
+      ]
+    },
+    {
+      "id": "mitre-t1422",
+      "title": "T1422 \u2014 System Network Configuration Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "system network configuration discovery",
+        "t1422",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1422: System Network Configuration Discovery.",
+      "body": "Adversaries may look for details about the network configuration and settings, such as IP and/or MAC addresses, of devices they access or through information discovery of remote systems. Adversaries may use the information from System Network Configuration Discovery during automated discovery to shape follow-on behaviors, including determining certain access within the target network and what actions to do next.",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1422 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1422"
+      ]
+    },
+    {
+      "id": "mitre-t1512",
+      "title": "T1512 \u2014 Video Capture",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1512",
+        "technique",
+        "video capture"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1512: Video Capture.",
+      "body": "An adversary can leverage a device\u2019s cameras to gather information by capturing video recordings. Images may also be captured, potentially in specified intervals, in lieu of video files. Malware or scripts may interact with the device cameras through an available API provided by the operating system. Video or image files may be written to disk and exfiltrated later. This technique differs from Screen Capture due to use of the device\u2019s cameras for video recording rather than capturing the victim\u2019s screen.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1512 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1512"
+      ]
+    },
+    {
+      "id": "mitre-t1481-003",
+      "title": "T1481.003 \u2014 One-Way Communication",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "one-way communication",
+        "t1481.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1481.003: One-Way Communication.",
+      "body": "Adversaries may use an existing, legitimate external Web service channel as a means for sending commands to a compromised system without receiving return output. Compromised systems may leverage popular websites and social media to host command and control (C2) instructions. Those infected systems may opt to send the output from those commands back over a different C2 channel, including to another distinct Web service. Alternatively, compromised systems may return no output at all in cases where adversaries want to send instructions to systems and do not want a response. Popular websites and social media, acting as a mechanism for C2, may giv",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1481.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1481/003"
+      ]
+    },
+    {
+      "id": "mitre-t1471",
+      "title": "T1471 \u2014 Data Encrypted for Impact",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "data encrypted for impact",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1471",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1471: Data Encrypted for Impact.",
+      "body": "An adversary may encrypt files stored on a mobile device to prevent the user from accessing them. This may be done in order to extract monetary compensation from a victim in exchange for decryption or a decryption key (ransomware) or to render data permanently inaccessible in cases where the key is not saved or transmitted.",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1471 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1471"
+      ]
+    },
+    {
+      "id": "mitre-t1629-001",
+      "title": "T1629.001 \u2014 Prevent Application Removal",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "prevent application removal",
+        "t1629.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1629.001: Prevent Application Removal.",
+      "body": "Adversaries may abuse the Android device administration API to prevent the user from uninstalling a target application. In earlier versions of Android, device administrator applications needed their administration capabilities explicitly deactivated by the user before the application could be uninstalled. This was later updated so the user could deactivate and uninstall the administrator application in one step. Adversaries may also abuse the device accessibility APIs to prevent removal. This set of APIs allows the application to perform certain actions on behalf of the user and programmatically determine what is being shown on the screen. Th",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1629.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1629/001"
+      ]
+    },
+    {
+      "id": "mitre-t1421",
+      "title": "T1421 \u2014 System Network Connections Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "system network connections discovery",
+        "t1421",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1421: System Network Connections Discovery.",
+      "body": "Adversaries may attempt to get a listing of network connections to or from the compromised device they are currently accessing or from remote systems by querying for information over the network. This is typically accomplished by utilizing device APIs to collect information about nearby networks, such as Wi-Fi, Bluetooth, and cellular tower connections. On Android, this can be done by querying the respective APIs:",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1421 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1421"
+      ]
+    },
+    {
+      "id": "mitre-t1660",
+      "title": "T1660 \u2014 Phishing",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "initial access",
+        "mitre",
+        "mobile",
+        "phishing",
+        "t1660",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1660: Phishing.",
+      "body": "Adversaries may send malicious content to users in order to gain access to their mobile devices. All forms of phishing are electronically delivered social engineering. Adversaries can conduct both non-targeted phishing, such as in mass malware spam campaigns, as well as more targeted phishing tailored for a specific individual, company, or industry, known as \u201cspearphishing.\u201d Phishing often involves social engineering techniques, such as posing as a trusted source, as well as evasion techniques, such as removing or manipulating emails or metadata/headers from compromised accounts being abused to send messages. Mobile phishing may take various ",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1660 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1660"
+      ]
+    },
+    {
+      "id": "mitre-t1521-003",
+      "title": "T1521.003 \u2014 SSL Pinning",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "ssl pinning",
+        "t1521.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1521.003: SSL Pinning.",
+      "body": "Adversaries may use SSL Pinning to protect the C2 traffic from being intercepted and analyzed. SSL Pinning is a technique commonly utilized by legitimate websites to ensure that encrypted communications are only allowed with a pre-defined certificate. If another certificate is presented, it could indicate device compromise, traffic interception, or another upstream issue. While benign usages are common, it is also possible for adversaries to abuse this technology to protect malicious C2 traffic.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1521.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1521/003"
+      ]
+    },
+    {
+      "id": "mitre-t1461",
+      "title": "T1461 \u2014 Lockscreen Bypass",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "initial access",
+        "lockscreen bypass",
+        "mitre",
+        "mobile",
+        "t1461",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1461: Lockscreen Bypass.",
+      "body": "An adversary with physical access to a mobile device may seek to bypass the device\u2019s lockscreen. Several methods exist to accomplish this, including: * Biometric spoofing: If biometric authentication is used, an adversary could attempt to spoof a mobile device\u2019s biometric authentication mechanism. Both iOS and Android partly mitigate this attack by requiring the device\u2019s passcode rather than biometrics to unlock the device after every device restart, and after a set or random amount of time.(Citation: SRLabs-Fingerprint)(Citation: TheSun-FaceID)",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1461 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1461"
+      ]
+    },
+    {
+      "id": "mitre-t1636-003",
+      "title": "T1636.003 \u2014 Contact List",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "contact list",
+        "mitre",
+        "mobile",
+        "t1636.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1636.003: Contact List.",
+      "body": "Adversaries may utilize standard operating system APIs to gather contact list data. On Android, this can be accomplished using the Contacts Content Provider. On iOS, this can be accomplished using the `Contacts` framework. If the device has been jailbroken or rooted, an adversary may be able to access the Contact List without the user\u2019s knowledge or approval.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1636.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1636/003"
+      ]
+    },
+    {
+      "id": "mitre-t1533",
+      "title": "T1533 \u2014 Data from Local System",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "collection",
+        "data from local system",
+        "mitre",
+        "mobile",
+        "t1533",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1533: Data from Local System.",
+      "body": "Adversaries may search local system sources, such as file systems or local databases, to find files of interest and sensitive data prior to exfiltration. Access to local system data, which includes information stored by the operating system, often requires escalated privileges. Examples of local system data include authentication tokens, the device keyboard cache, Wi-Fi passwords, and photos. On Android, adversaries may also attempt to access files from external storage which may require additional storage-related permissions.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1533 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1533"
+      ]
+    },
+    {
+      "id": "mitre-t1640",
+      "title": "T1640 \u2014 Account Access Removal",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "account access removal",
+        "att&ck",
+        "attack",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1640",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1640: Account Access Removal.",
+      "body": "Adversaries may interrupt availability of system and network resources by inhibiting access to accounts utilized by legitimate users. Accounts may be deleted, locked, or manipulated (ex: credentials changed) to remove access to accounts.",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1640 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1640"
+      ]
+    },
+    {
+      "id": "mitre-t1426",
+      "title": "T1426 \u2014 System Information Discovery",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "discovery",
+        "mitre",
+        "mobile",
+        "system information discovery",
+        "t1426",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1426: System Information Discovery.",
+      "body": "Adversaries may attempt to get detailed information about a device\u2019s operating system and hardware, including versions, patches, and architecture. Adversaries may use the information from System Information Discovery during automated discovery to shape follow-on behaviors, including whether or not to fully infects the target and/or attempts specific actions. On Android, much of this information is programmatically accessible to applications through the `android.os.Build` class. (Citation: Android-Build) iOS is much more restrictive with what information is visible to applications. Typically, applications will only be able to query the device ",
+      "defense": "Defense focus (discovery): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1426 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1426"
+      ]
+    },
+    {
+      "id": "mitre-t1532",
+      "title": "T1532 \u2014 Archive Collected Data",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "archive collected data",
+        "att&ck",
+        "attack",
+        "collection",
+        "mitre",
+        "mobile",
+        "t1532",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1532: Archive Collected Data.",
+      "body": "Adversaries may compress and/or encrypt data that is collected prior to exfiltration. Compressing data can help to obfuscate its contents and minimize use of network resources. Encryption can be used to hide information that is being exfiltrated from detection or make exfiltration less conspicuous upon inspection by a defender. Both compression and encryption are done prior to exfiltration, and can be performed using a utility, programming library, or custom algorithm.",
+      "defense": "Defense focus (collection): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1532 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1532"
+      ]
+    },
+    {
+      "id": "mitre-t1627-001",
+      "title": "T1627.001 \u2014 Geofencing",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "geofencing",
+        "mitre",
+        "mobile",
+        "t1627.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1627.001: Geofencing.",
+      "body": "Adversaries may use a device\u2019s geographical location to limit certain malicious behaviors. For example, malware operators may limit the distribution of a second stage payload to certain geographic regions.(Citation: Lookout eSurv) Geofencing is accomplished by persuading the user to grant the application permission to access location services. The application can then collect, process, and exfiltrate the device\u2019s location to perform location-based actions, such as ceasing malicious behavior or showing region-specific advertisements.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1627.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1627/001"
+      ]
+    },
+    {
+      "id": "mitre-t1628-003",
+      "title": "T1628.003 \u2014 Conceal Multimedia Files",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "conceal multimedia files",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1628.003",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1628.003: Conceal Multimedia Files.",
+      "body": "Adversaries may attempt to hide multimedia files from the user. By doing so, adversaries may conceal captured files, such as pictures, videos and/or screenshots, then later exfiltrate those files. Specific to Android devices, if the `.nomedia` file is present in a folder, multimedia files in that folder will not be visible to the user in the Gallery application. Additionally, other applications are asked not to scan the folder with the `.nomedia` file, effectively making the folder appear invisible to the user.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1628.003 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1628/003"
+      ]
+    },
+    {
+      "id": "mitre-t1642",
+      "title": "T1642 \u2014 Endpoint Denial of Service",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "endpoint denial of service",
+        "impact",
+        "mitre",
+        "mobile",
+        "t1642",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1642: Endpoint Denial of Service.",
+      "body": "Adversaries may perform Endpoint Denial of Service (DoS) attacks to degrade or block the availability of services to users. On Android versions prior to 7, apps can abuse Device Administrator access to reset the device lock passcode, preventing the user from unlocking the device. After Android 7, only device or profile owners (e.g. MDMs) can reset the device\u2019s passcode.(Citation: Android resetPassword)",
+      "defense": "Defense focus (impact): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1642 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1642"
+      ]
+    },
+    {
+      "id": "mitre-t1644",
+      "title": "T1644 \u2014 Out of Band Data",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "mitre",
+        "mobile",
+        "out of band data",
+        "t1644",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1644: Out of Band Data.",
+      "body": "Adversaries may communicate with compromised devices using out of band data streams. This could be done for a variety of reasons, including evading network traffic monitoring, as a backup method of command and control, or for data exfiltration if the device is not connected to any Internet-providing networks (i.e. cellular or Wi-Fi). Several out of band data streams exist, such as SMS messages, NFC, and Bluetooth. On Android, applications can read push notifications to capture content from SMS messages, or other out of band data streams. This requires that the user manually grant notification access to the application via the settings menu. H",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1644 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1644"
+      ]
+    },
+    {
+      "id": "mitre-t1521",
+      "title": "T1521 \u2014 Encrypted Channel",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "encrypted channel",
+        "mitre",
+        "mobile",
+        "t1521",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1521: Encrypted Channel.",
+      "body": "Adversaries may explicitly employ a known encryption algorithm to conceal command and control traffic rather than relying on any inherent protections provided by a communication protocol. Despite the use of a secure algorithm, these implementations may be vulnerable to reverse engineering if necessary secret keys are encoded and/or generated within malware samples/configuration files.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1521 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1521"
+      ]
+    },
+    {
+      "id": "mitre-t1628-001",
+      "title": "T1628.001 \u2014 Suppress Application Icon",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "suppress application icon",
+        "t1628.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1628.001: Suppress Application Icon.",
+      "body": "A malicious application could suppress its icon from being displayed to the user in the application launcher. This hides the fact that it is installed, and can make it more difficult for the user to uninstall the application. Hiding the application's icon programmatically does not require any special permissions. This behavior has been seen in the BankBot/Spy Banker family of malware.(Citation: android-trojan-steals-paypal-2fa)(Citation: sunny-stolen-credentials)(Citation: bankbot-spybanker)",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1628.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1628/001"
+      ]
+    },
+    {
+      "id": "mitre-t1655",
+      "title": "T1655 \u2014 Masquerading",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "masquerading",
+        "mitre",
+        "mobile",
+        "t1655",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1655: Masquerading.",
+      "body": "Adversaries may attempt to manipulate features of their artifacts to make them appear legitimate or benign to users and/or security tools. Masquerading occurs when the name, location, or appearance of an object, legitimate or malicious, is manipulated or abused for the sake of evading defenses and observation. This may include manipulating file metadata, tricking users into misidentifying the file type, and giving legitimate task or service names. Renaming abusable system utilities to evade security monitoring is also a form of Masquerading",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1655 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1655"
+      ]
+    },
+    {
+      "id": "mitre-t1406-001",
+      "title": "T1406.001 \u2014 Steganography",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "steganography",
+        "t1406.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1406.001: Steganography.",
+      "body": "Adversaries may use steganography techniques in order to prevent the detection of hidden information. Steganographic techniques can be used to hide data in digital media such as images, audio tracks, video clips, or text files.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1406.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1406/001"
+      ]
+    },
+    {
+      "id": "mitre-t1628",
+      "title": "T1628 \u2014 Hide Artifacts",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "defense evasion",
+        "hide artifacts",
+        "mitre",
+        "mobile",
+        "t1628",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1628: Hide Artifacts.",
+      "body": "Adversaries may attempt to hide artifacts associated with their behaviors to evade detection. Mobile operating systems have features and developer APIs to hide various artifacts, such as an application\u2019s launcher icon. These APIs have legitimate usages, such as hiding an icon to avoid application drawer clutter when an application does not have a usable interface. Adversaries may abuse these features and APIs to hide artifacts from the user to evade detection.",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1628 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1628"
+      ]
+    },
+    {
+      "id": "mitre-t1632-001",
+      "title": "T1632.001 \u2014 Code Signing Policy Modification",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "code signing policy modification",
+        "defense evasion",
+        "mitre",
+        "mobile",
+        "t1632.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1632.001: Code Signing Policy Modification.",
+      "body": "Adversaries may modify code signing policies to enable execution of applications signed with unofficial or unknown keys. Code signing provides a level of authenticity on an app from a developer, guaranteeing that the program has not been tampered with and comes from an official source. Security controls can include enforcement mechanisms to ensure that only valid, signed code can be run on a device. Mobile devices generally enable these security controls by default, such as preventing the installation of unknown applications on Android. Adversaries may modify these policies in a number of ways, including Input Injection or malicious configura",
+      "defense": "Defense focus (defense evasion): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1632.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1632/001"
+      ]
+    },
+    {
+      "id": "mitre-t1637-001",
+      "title": "T1637.001 \u2014 Domain Generation Algorithms",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "command and control",
+        "domain generation algorithms",
+        "mitre",
+        "mobile",
+        "t1637.001",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1637.001: Domain Generation Algorithms.",
+      "body": "Adversaries may use Domain Generation Algorithms (DGAs) to procedurally generate domain names for uses such as command and control communication or malicious application distribution.(Citation: securelist rotexy 2018) DGAs increase the difficulty for defenders to block, track, or take over the command and control channel, as there could potentially be thousands of domains that malware can check for instructions.",
+      "defense": "Defense focus (command and control): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1637.001 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1637/001"
+      ]
+    },
+    {
+      "id": "mitre-t1456",
+      "title": "T1456 \u2014 Drive-By Compromise",
+      "category": "mitre-attack-mobile",
+      "tags": [
+        "att&ck",
+        "attack",
+        "drive-by compromise",
+        "initial access",
+        "mitre",
+        "mobile",
+        "t1456",
+        "technique"
+      ],
+      "summary": "MITRE ATT&CK Mobile technique T1456: Drive-By Compromise.",
+      "body": "Adversaries may gain access to a system through a user visiting a website over the normal course of browsing. With this technique, the user's web browser is typically targeted for exploitation, but adversaries may also use compromised websites for non-exploitation behavior such as acquiring an Application Access Token. Multiple ways of delivering exploit code to a browser exist, including:",
+      "defense": "Defense focus (initial access): monitor for related telemetry, harden the affected Android control, and confirm with CoreGuard scan/shield/compliance evidence. Technique ID T1456 is for classification \u2014 not a detection claim by itself.",
+      "references": [
+        "https://attack.mitre.org/techniques/T1456"
+      ]
+    }
+  ]
+}

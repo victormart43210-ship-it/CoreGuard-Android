@@ -1,5 +1,7 @@
 package com.coldboar.coreguard.ui.screens
 
+import android.os.Handler
+import android.os.Looper
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,6 +18,7 @@ import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -29,30 +32,47 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.coldboar.coreguard.BillingProvider
+import com.coldboar.coreguard.DemoBillingProvider
+import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.DeviceScanner
+import com.coldboar.coreguard.mvt.IocFeedFetcher
 import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
+import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
+import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import java.util.concurrent.Executors
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 @Composable
-fun ScannerScreen() {
+fun ScannerScreen(
+    billingProvider: BillingProvider = remember { DemoBillingProvider() },
+    onUpgrade: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val policy = remember(billingProvider.isPremium()) { EntitlementPolicy(billingProvider) }
+    val mainHandler = remember { Handler(Looper.getMainLooper()) }
+    val feedExecutor = remember { Executors.newSingleThreadExecutor() }
 
     var isScanning by remember { mutableStateOf(false) }
+    var isRefreshing by remember { mutableStateOf(false) }
+    var refreshMessage by remember { mutableStateOf<String?>(null) }
     var scanReport by remember { mutableStateOf(LastScan.report) }
+    var showUpsell by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -66,11 +86,12 @@ fun ScannerScreen() {
             modifier = Modifier.semantics { heading() }
         )
         Text(
-            text = "A privacy integrity check for your device — defending your right to private communication.",
-            style = MaterialTheme.typography.bodyMedium
+            text = "In the next minute, know more about this device's privacy posture — then decide your next move.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MutedText
         )
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         if (isScanning) {
             Row(
@@ -101,24 +122,76 @@ fun ScannerScreen() {
                     isScanning = false
                 }
             },
-            enabled = !isScanning,
+            enabled = !isScanning && !isRefreshing,
             modifier = Modifier.fillMaxWidth(),
             colors = ButtonDefaults.buttonColors(containerColor = ElectricTeal)
         ) {
-            Text("Run Privacy Check", color = Color.Black)
+            Text("Check My Device Now", color = Color.Black, fontWeight = FontWeight.Bold)
+        }
+
+        Spacer(modifier = Modifier.height(10.dp))
+
+        OutlinedButton(
+            onClick = {
+                if (!policy.canRefreshThreatSignatures()) {
+                    showUpsell = true
+                    refreshMessage = "Live signature refresh is a Premium unlock."
+                    return@OutlinedButton
+                }
+                isRefreshing = true
+                refreshMessage = "Pulling the newest threat signatures…"
+                IocFeedFetcher.fetchAsync(context, executor = feedExecutor) { result ->
+                    mainHandler.post {
+                        isRefreshing = false
+                        refreshMessage = when (result) {
+                            is IocFeedFetcher.FetchResult.Success ->
+                                "✓ ${result.indicatorsLoaded} signatures ready — run Check My Device Now."
+                            is IocFeedFetcher.FetchResult.Failure ->
+                                "Refresh failed: ${result.message}"
+                        }
+                    }
+                }
+            },
+            enabled = !isScanning && !isRefreshing,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(
+                if (policy.canRefreshThreatSignatures()) "Refresh threat signatures"
+                else "Refresh signatures (Premium)",
+                color = ElectricTeal
+            )
+        }
+
+        refreshMessage?.let { msg ->
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = msg,
+                style = MaterialTheme.typography.bodySmall,
+                color = if (msg.startsWith("✓")) SafeGreen else AttentionAmber
+            )
+        }
+
+        if (showUpsell && !policy.isPremium()) {
+            Spacer(modifier = Modifier.height(12.dp))
+            PremiumUpsellCard(
+                title = "Keep your intel current",
+                body = "Premium unlocks live signature refresh so you can pull newer open-source IOCs before the next scan. Core scanning stays free.",
+                onUpgrade = onUpgrade
+            )
         }
 
         scanReport?.let { report ->
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             ScanResultCard(report)
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
                 "CoreGuard is an independent project and is not affiliated with Amnesty International.",
-            style = MaterialTheme.typography.bodySmall
+            style = MaterialTheme.typography.bodySmall,
+            color = MutedText
         )
     }
 }
@@ -131,49 +204,41 @@ private fun ScanResultCard(report: ScanReport) {
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "PRIVACY INTACT"
-        ScanVerdict.SUSPICIOUS -> "POSSIBLE PRIVACY RISK"
-        ScanVerdict.INFECTED -> "PRIVACY THREAT FOUND"
+        ScanVerdict.CLEAN -> "LOOKING GOOD"
+        ScanVerdict.SUSPICIOUS -> "NEEDS YOUR ATTENTION"
+        ScanVerdict.INFECTED -> "ACT ON THIS FINDING"
     }
 
     Card(
         modifier = Modifier.fillMaxWidth(),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(16.dp)) {
             Text(
                 text = verdictLabel,
                 style = MaterialTheme.typography.titleLarge,
-                color = verdictColor
+                color = verdictColor,
+                fontWeight = FontWeight.Bold
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = "${report.scannedArtifacts} items checked · " +
-                    "${report.indicatorCount} signatures · " +
-                    "${report.durationMillis} ms",
-                style = MaterialTheme.typography.bodySmall
+                text = "${report.scannedArtifacts} items · ${report.indicatorCount} signatures · ${report.durationMillis} ms",
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
             )
-
+            Spacer(modifier = Modifier.height(12.dp))
             if (report.detections.isEmpty()) {
-                Spacer(Modifier.height(12.dp))
                 Text(
-                    text = "Nothing flagged on this device. A clean result is reassuring but " +
-                        "not a guarantee — a full off-device analysis is more thorough.",
+                    text = "Nothing flagged on this pass. Encouraging — keep checking over time.",
                     style = MaterialTheme.typography.bodyMedium
                 )
             } else {
-                Spacer(Modifier.height(12.dp))
-                Text(
-                    text = "Findings",
-                    style = MaterialTheme.typography.titleMedium
-                )
-                Spacer(Modifier.height(8.dp))
-                report.detections
-                    .sortedBy { it.severity.ordinal }
-                    .forEach { detection ->
-                        DetectionRow(detection)
-                        Spacer(Modifier.height(8.dp))
-                    }
+                Text("What we found for you", style = MaterialTheme.typography.titleSmall, color = ElectricTeal)
+                Spacer(modifier = Modifier.height(8.dp))
+                report.detections.forEach { detection ->
+                    DetectionRow(detection)
+                    Spacer(modifier = Modifier.height(6.dp))
+                }
             }
         }
     }
@@ -181,35 +246,12 @@ private fun ScanResultCard(report: ScanReport) {
 
 @Composable
 private fun DetectionRow(detection: Detection) {
-    val severityColor = when (detection.severity) {
-        ThreatSeverity.CRITICAL -> HighRed
-        ThreatSeverity.HIGH -> AttentionAmber
+    val color = when (detection.severity) {
+        ThreatSeverity.HIGH, ThreatSeverity.CRITICAL -> HighRed
         ThreatSeverity.MEDIUM -> AttentionAmber
     }
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-    ) {
-        Column(Modifier.padding(12.dp)) {
-            Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-                Text(
-                    text = detection.title,
-                    style = MaterialTheme.typography.bodyMedium,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = detection.severity.name,
-                    style = MaterialTheme.typography.labelLarge,
-                    color = severityColor
-                )
-            }
-            Text(text = detection.detail, style = MaterialTheme.typography.bodySmall)
-            detection.indicator.reference?.takeIf { it.isNotBlank() }?.let { ref ->
-                Text(
-                    text = ref,
-                    style = MaterialTheme.typography.bodySmall
-                )
-            }
-        }
+    Column {
+        Text(detection.title, style = MaterialTheme.typography.bodyMedium, color = color, fontWeight = FontWeight.SemiBold)
+        Text(detection.detail, style = MaterialTheme.typography.bodySmall, color = MutedText)
     }
 }

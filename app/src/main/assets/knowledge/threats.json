@@ -1,0 +1,77 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "threat-phishing-mobile",
+      "title": "Mobile phishing & smishing",
+      "category": "threats",
+      "tags": [
+        "phishing",
+        "smishing",
+        "sms",
+        "deep link",
+        "credential theft"
+      ],
+      "summary": "Fraudulent messages push you to malicious apps or credential pages.",
+      "body": "Smishing uses SMS/RCS; phishing uses email/chat. Deep links can open attacker-controlled app routes. Urgency + brand impersonation are hallmarks. Verify via official apps/bookmarks, not message links.",
+      "defense": "Don't install APKs from messages. Scan new apps. Enable Shield for known-bad domains.",
+      "references": [
+        "https://www.cisa.gov/news-events/news/avoiding-social-engineering-and-phishing-attacks"
+      ]
+    },
+    {
+      "id": "threat-banking-trojan",
+      "title": "Android banking trojans & overlays",
+      "category": "threats",
+      "tags": [
+        "banking trojan",
+        "overlay",
+        "accessibility",
+        "malware",
+        "credential"
+      ],
+      "summary": "Malware that steals credentials via overlays or Accessibility abuse.",
+      "body": "Trojans may request Accessibility to read screens or draw overlays over banking apps. They often arrive via sideload or fake stores. Unusual Accessibility prompts are a red flag.",
+      "defense": "Audit Accessibility services; remove unknown ones; rescan.",
+      "references": [
+        "https://attack.mitre.org/"
+      ]
+    },
+    {
+      "id": "threat-supply-chain",
+      "title": "Mobile supply-chain & SDK risk",
+      "category": "threats",
+      "tags": [
+        "supply chain",
+        "sdk",
+        "dependency",
+        "typosquat",
+        "sbom"
+      ],
+      "summary": "Hostile or sloppy third-party code ships inside otherwise legit apps.",
+      "body": "SDKs can exfiltrate data or introduce vulnerabilities. Typosquat packages trick developers. Maintain inventories, prefer maintained libraries, and watch privacy policies for surprising data flows.",
+      "defense": "Review CoreGuard supply-chain tooling when available; minimize unnecessary apps.",
+      "references": [
+        "https://owasp.org/www-project-mobile-top-10/"
+      ]
+    },
+    {
+      "id": "owasp-mobile-top10",
+      "title": "OWASP Mobile Top 10 (orientation)",
+      "category": "threats",
+      "tags": [
+        "owasp",
+        "mobile top 10",
+        "m1",
+        "insecure",
+        "risks"
+      ],
+      "summary": "Common mobile risk themes used in industry conversations.",
+      "body": "Themes typically include improper credential usage, inadequate supply-chain security, insecure authentication/authorization, insufficient input/output validation, insecure communication, inadequate privacy controls, insecure GUI, security misconfiguration, insecure data storage, and insufficient cryptography \u2014 exact labels evolve; MASVS is the durable control map.",
+      "defense": "Use MASVS categories in Compliance rather than chasing Top-10 mnemonics alone.",
+      "references": [
+        "https://owasp.org/www-project-mobile-top-10/"
+      ]
+    }
+  ]
+}

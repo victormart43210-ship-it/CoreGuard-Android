@@ -1,0 +1,12 @@
+{
+  "files": [
+    "owasp-masvs.json",
+    "pentest-methodology.json",
+    "incident-response.json",
+    "android-hardening.json",
+    "threats.json",
+    "network-crypto.json",
+    "mitre-attack-mobile.json"
+  ],
+  "purpose": "On-device cybersecurity knowledge for Quilla. Defensive education only."
+}

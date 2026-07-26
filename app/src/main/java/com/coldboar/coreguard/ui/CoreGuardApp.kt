@@ -101,16 +101,49 @@ fun CoreGuardApp(
                     )
                 }
                 composable(CoreGuardRoute.Scanner.route) {
-                    ScannerScreen()
+                    ScannerScreen(
+                        billingProvider = billingProvider,
+                        onUpgrade = {
+                            navController.navigate(CoreGuardRoute.Settings.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(CoreGuardRoute.Shield.route) {
                     ShieldScreen()
                 }
                 composable(CoreGuardRoute.Compliance.route) {
-                    ComplianceScreen()
+                    ComplianceScreen(
+                        billingProvider = billingProvider,
+                        onUpgrade = {
+                            navController.navigate(CoreGuardRoute.Settings.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(CoreGuardRoute.Timeline.route) {
-                    TimelineScreen()
+                    TimelineScreen(
+                        billingProvider = billingProvider,
+                        onUpgrade = {
+                            navController.navigate(CoreGuardRoute.Settings.route) {
+                                popUpTo(navController.graph.findStartDestination().id) {
+                                    saveState = true
+                                }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        }
+                    )
                 }
                 composable(CoreGuardRoute.Settings.route) {
                     SettingsScreen(

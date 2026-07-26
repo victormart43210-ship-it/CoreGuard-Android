@@ -1,0 +1,89 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "ir-nist-phases",
+      "title": "Incident response phases (NIST-style)",
+      "category": "incident-response",
+      "tags": [
+        "incident response",
+        "nist",
+        "prepare",
+        "detect",
+        "analyze",
+        "contain",
+        "eradicate",
+        "recover",
+        "lessons"
+      ],
+      "summary": "Prepare \u2192 Detect/Analyze \u2192 Contain/Eradicate/Recover \u2192 Lessons learned.",
+      "body": "Preparation builds tooling and playbooks. Detection notices anomalies. Analysis confirms scope. Containment stops spread. Eradication removes cause. Recovery restores trust. Lessons update defenses. Mobile IR often starts with isolate-from-network and preserve evidence.",
+      "defense": "If Nemesis shows PRIVACY THREAT indicators: enable Shield, avoid sensitive logins, capture Compliance/scan notes, and consider factory reset only after evidence needs are met.",
+      "references": [
+        "https://csrc.nist.gov/publications/detail/sp/800-61/rev-2/final"
+      ]
+    },
+    {
+      "id": "ir-mobile-triage",
+      "title": "Mobile device triage checklist",
+      "category": "incident-response",
+      "tags": [
+        "triage",
+        "compromise",
+        "spyware",
+        "pegasus",
+        "isolate",
+        "evidence",
+        "incident",
+        "mobile incident triage",
+        "incident triage",
+        "device triage"
+      ],
+      "summary": "Fast, ordered steps when you suspect Android device compromise.",
+      "body": "Mobile incident triage \u2014 do this in order: (1) Write down symptoms, recent installs, odd links/SMS, and when it started. (2) Isolate if needed (Airplane mode / disable Wi\u2011Fi & data) while you preserve notes. (3) Run an on-device IOC/privacy scan (CoreGuard Nemesis). (4) Enable DNS sinkhole/Shield if available. (5) From a second clean device, change critical passwords and revoke sessions. (6) Audit Accessibility, Notification Listener, Device Admin, and unknown admins. (7) Export Compliance/scan notes before any factory reset. (8) Rebuild only after evidence needs are met. CLEAN is encouraging, not a forever guarantee.",
+      "defense": "CoreGuard play: Scanner \u2192 Shield \u2192 Compliance export (Premium) \u2192 Timeline. Ask Quilla for MASVS or ATT&CK context after you have local evidence.",
+      "references": [
+        "https://www.amnesty.org/en/tech/"
+      ]
+    },
+    {
+      "id": "ir-indicators",
+      "title": "Indicators of compromise (IOCs)",
+      "category": "incident-response",
+      "tags": [
+        "ioc",
+        "indicator",
+        "stix",
+        "hash",
+        "domain",
+        "package",
+        "threat intel"
+      ],
+      "summary": "Observable artifacts that suggest malicious activity.",
+      "body": "IOCs include package names, domains, IPs, file paths, and hashes. STIX packages share them between tools. IOCs go stale; combine with behavior. False positives happen \u2014 treat matches as leads.",
+      "defense": "Premium signature refresh pulls newer open-source IOCs before rescan. Bundled indicators cover offline triage.",
+      "references": [
+        "https://oasis-open.github.io/cti-documentation/"
+      ]
+    },
+    {
+      "id": "ir-containment-android",
+      "title": "Android containment options",
+      "category": "incident-response",
+      "tags": [
+        "containment",
+        "airplane mode",
+        "vpn",
+        "dns",
+        "revoke",
+        "wipe"
+      ],
+      "summary": "Limit attacker reach while you investigate.",
+      "body": "Airplane mode / disable Wi\u2011Fi & mobile data, revoke suspicious app permissions, force-stop/uninstall unknown apps, enable DNS sinkhole/VPN filter, remove unknown device admins, and escalate to wipe if persistence is likely and evidence is secured.",
+      "defense": "CoreGuard Shield is a local DNS sinkhole \u2014 useful containment assist, not a full EDR.",
+      "references": [
+        "https://support.google.com/android/"
+      ]
+    }
+  ]
+}

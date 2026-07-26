@@ -1,0 +1,137 @@
+{
+  "source": "CoreGuard Quilla Cyber Codex (original educational summaries; cites public frameworks)",
+  "entries": [
+    {
+      "id": "android-permissions",
+      "title": "Android permission hygiene",
+      "category": "android-hardening",
+      "tags": [
+        "permissions",
+        "privacy",
+        "microphone",
+        "location",
+        "accessibility",
+        "notification listener",
+        "permission hygiene",
+        "android permissions",
+        "dangerous permissions"
+      ],
+      "summary": "Dangerous permissions and special access are high-value for spyware \u2014 audit them routinely.",
+      "body": "Android permission hygiene means least privilege in practice. High-risk special access: Accessibility (screen control/read), Notification Listener, Device Admin/owner, Display over other apps, Usage access, and VPN apps you did not intend. Dangerous runtime permissions (location, mic, camera, SMS, contacts, call log) should be temporary when possible. Review Permission manager monthly; revoke anything you do not recognize; uninstall first if an app demands Accessibility without a clear need. After denying risky access, rescan with Nemesis.",
+      "defense": "Settings \u2192 Privacy dashboard / Permission manager. Quilla tip: pair this audit with a fresh scan and Shield on hostile networks.",
+      "references": [
+        "https://developer.android.com/guide/topics/permissions/overview"
+      ]
+    },
+    {
+      "id": "android-sideload",
+      "title": "Sideloading & unknown apps risk",
+      "category": "android-hardening",
+      "tags": [
+        "sideload",
+        "unknown sources",
+        "apk",
+        "play protect",
+        "install"
+      ],
+      "summary": "Sideloaded APKs bypass store review \u2014 primary malware path.",
+      "body": "Prefer Play Store or enterprise-managed stores. Disable install-unknown-apps per-source. Verify publisher reputation. Play Protect helps but is not perfect.",
+      "defense": "Scan after any APK install. Uninstall first if verdict is hostile.",
+      "references": [
+        "https://support.google.com/accounts/answer/2812853"
+      ]
+    },
+    {
+      "id": "android-updates",
+      "title": "Patch & OS update discipline",
+      "category": "android-hardening",
+      "tags": [
+        "updates",
+        "patch",
+        "security bulletin",
+        "play system update"
+      ],
+      "summary": "Unpatched devices keep known exploitable bugs alive.",
+      "body": "Install OS, Google Play system, and app updates promptly. Check Security patch level monthly. Older devices that stop receiving patches should be replaced or isolated from sensitive work.",
+      "defense": "Note patch level in your personal security routine alongside Guardian Score.",
+      "references": [
+        "https://source.android.com/docs/security/bulletin"
+      ]
+    },
+    {
+      "id": "android-lock-biometrics",
+      "title": "Strong lock screen & biometrics",
+      "category": "android-hardening",
+      "tags": [
+        "lock screen",
+        "pin",
+        "passphrase",
+        "biometrics",
+        "encryption"
+      ],
+      "summary": "Device encryption strength follows your lock screen.",
+      "body": "Use a strong PIN/passphrase; biometrics are convenience layered on that secret. Avoid weak 4-digit PINs for high-risk users. Auto-lock quickly; disable lock-screen sensitive notifications.",
+      "defense": "Enable lock now; then revisit notification content on the secure lock screen.",
+      "references": [
+        "https://source.android.com/docs/security/features/authentication"
+      ]
+    },
+    {
+      "id": "android-network-hostile",
+      "title": "Hostile network playbook",
+      "category": "android-hardening",
+      "tags": [
+        "wifi",
+        "evil twin",
+        "captive portal",
+        "vpn",
+        "dns",
+        "public wifi"
+      ],
+      "summary": "Public Wi\u2011Fi elevates MITM and phishing risk.",
+      "body": "Prefer cellular or known networks for sensitive tasks. Use VPN when required by policy. Certificate warnings are stop signs. DNS filtering blocks known-bad domains but does not encrypt your traffic alone.",
+      "defense": "Turn on CoreGuard Shield on untrusted Wi\u2011Fi; keep HTTPS sites and updated apps.",
+      "references": [
+        "https://www.cisa.gov/news-events/news/security-tip-st05-003-safeguarding-against-malicious-wireless-hotspots"
+      ]
+    },
+    {
+      "id": "android-spyware-reality",
+      "title": "Commercial spyware reality check",
+      "category": "android-hardening",
+      "tags": [
+        "spyware",
+        "pegasus",
+        "mercenary",
+        "amnesty",
+        "mvt",
+        "zero click"
+      ],
+      "summary": "High-end spyware is rare but severe; hygiene still matters for everyone.",
+      "body": "Mercenary spyware may abuse zero-days and leave subtle artifacts. Most users face phishing, malicious apps, and account takeover. Evidence-based tools (MVT-style indicators, on-device scans) help triage \u2014 they do not prove a clean bill forever.",
+      "defense": "CoreGuard uses open Amnesty/mvt-style indicator ideas for on-device triage. Treat CLEAN as encouraging, not eternal.",
+      "references": [
+        "https://github.com/mvt-project/mvt"
+      ]
+    },
+    {
+      "id": "android-2fa",
+      "title": "Account takeover defenses",
+      "category": "android-hardening",
+      "tags": [
+        "2fa",
+        "mfa",
+        "passkeys",
+        "phishing",
+        "sim swap",
+        "accounts"
+      ],
+      "summary": "Most real-world harm starts with account compromise.",
+      "body": "Prefer passkeys or app-based MFA over SMS where possible. Watch for SIM-swap risk. Review account login sessions after suspicious events. Never enter passwords on pages reached from unexpected links.",
+      "defense": "After a SUSPICIOUS/INFECTED scan, rotate critical accounts from a second clean device.",
+      "references": [
+        "https://www.cisa.gov/MFA"
+      ]
+    }
+  ]
+}
