@@ -22,7 +22,13 @@ android {
         }
 
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            // Emulator gate: -Pcoreguard.emulatorAbi=x86_64 shrinks APK/native load on AVD.
+            def emuAbi = project.findProperty("coreguard.emulatorAbi")?.toString()?.trim()
+            if (emuAbi) {
+                abiFilters emuAbi
+            } else {
+                abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            }
         }
     }
 

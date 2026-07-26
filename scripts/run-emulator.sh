@@ -8,7 +8,14 @@ export ANDROID_HOME="$SDK_ROOT"
 export ANDROID_SDK_ROOT="$SDK_ROOT"
 export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
 
-AVD_NAME="${AVD_NAME:-CoreGuard_API35}"
+# Prefer lean ATD AVD when present (faster instrumented tests without KVM).
+if [[ -z "${AVD_NAME:-}" ]]; then
+  if avdmanager list avd 2>/dev/null | grep -q 'CoreGuard_ATD35'; then
+    AVD_NAME="CoreGuard_ATD35"
+  else
+    AVD_NAME="CoreGuard_API35"
+  fi
+fi
 PACKAGE_DEBUG="com.coldboar.coreguard.debug"
 APK="${APK:-$ROOT/app/build/outputs/apk/debug/app-debug.apk}"
 

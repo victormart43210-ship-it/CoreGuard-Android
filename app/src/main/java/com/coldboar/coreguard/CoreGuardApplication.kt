@@ -44,21 +44,38 @@ class CoreGuardApplication : Application() {
         super.onCreate()
         instance.set(this)
 
-        // Triggers System.loadLibrary + JNI_OnLoad (ptrace guard, baseline).
-        NativeTamperGuard.ensureLoaded()
+        val instrumented = isUnderInstrumentation()
+        if (instrumented) {
+            Log.i(TAG, "Instrumented test process — deferred warm-up (Quilla Emulator Gate)")
+        }
 
-        // Warm the billing client early so entitlement queries are ready.
-        billingProvider
-
-        // Provision the hardware key without blocking the main thread. A tiny
-        // round-trip confirms the key is usable and records its security level.
+        // Never block Application.onCreate on software AVDs (TCG/no-KVM ANRs).
+        // Native ptrace baseline + billing warm on a daemon thread.
         Thread {
+            if (!instrumented) {
+                try {
+                    NativeTamperGuard.ensureLoaded()
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Native tamper load failed: ${t.message}")
+                }
+                try {
+                    billingProvider
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Billing warm-up failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping native/billing preload under instrumentation")
+            }
             try {
                 val token = keyManager.encrypt("coreguard".toByteArray())
                 keyManager.decrypt(token)
                 Log.i(TAG, "Master key ready (level=${keyManager.securityLevel})")
             } catch (t: Throwable) {
                 Log.w(TAG, "Key provisioning failed: ${t.message}")
+            }
+            if (instrumented) {
+                Log.i(TAG, "Skipping knowledge/swarm/telemetry preload under instrumentation")
+                return@Thread
             }
             try {
                 CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
@@ -94,6 +111,27 @@ class CoreGuardApplication : Application() {
     companion object {
         private const val TAG = "CoreGuard"
         private val instance = AtomicReference<CoreGuardApplication?>()
+
+        /**
+         * True when a non-default Instrumentation is attached (AndroidJUnitRunner).
+         * Prefer ActivityThread over Class.forName — test APK classes may not be
+         * visible yet during early Application.onCreate on slow emulators.
+         */
+        fun isUnderInstrumentation(): Boolean {
+            return try {
+                val atClass = Class.forName("android.app.ActivityThread")
+                val current = atClass.getMethod("currentActivityThread").invoke(null) ?: return false
+                val instr = atClass.getMethod("getInstrumentation").invoke(current) ?: return false
+                instr.javaClass.name != "android.app.Instrumentation"
+            } catch (_: Throwable) {
+                try {
+                    Class.forName("androidx.test.platform.app.InstrumentationRegistry")
+                    true
+                } catch (_: ClassNotFoundException) {
+                    false
+                }
+            }
+        }
 
         /** The running application instance, if available. */
         fun get(): CoreGuardApplication? = instance.get()

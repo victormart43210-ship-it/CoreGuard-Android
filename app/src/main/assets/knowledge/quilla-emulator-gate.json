@@ -17,9 +17,9 @@
         "quilla emulator",
         "connected android test"
       ],
-      "summary": "Host script boots CoreGuard_API35 and runs unit + instrumented + smoke tests. On-device Quilla reports emulator presence and smokes Quantum Correlate — she cannot spawn QEMU from the APK.",
-      "body": "Deadline harness: ./scripts/quilla-emulator-tests.sh (HEADLESS=1 on CI). It starts AVD CoreGuard_API35 via run-emulator.sh, then :app:testDebugUnitTest, :app:connectedDebugAndroidTest (MainActivity launch + Quilla quantum on-device), then smoke-adb.sh. QuillaEmulatorGate.probe() detects ranchu/goldfish fingerprints and runs an idle quantum circuit for the status brief. Magick gate names still label classical math only.",
-      "defense": "Use the host harness before Play uploads. Treat emulator PASS as silicon proof, not occult assurance. Prefer KVM hosts — software graphics is slow.",
+      "summary": "Host script boots CoreGuard_ATD35 (lean google_atd) and runs unit + am-instrument + smoke. On-device Quilla reports emulator presence and smokes Quantum Correlate — she cannot spawn QEMU from the APK.",
+      "body": "Deadline harness: HEADLESS=1 ./scripts/quilla-emulator-tests.sh. Prefers AVD CoreGuard_ATD35, builds with -Pcoreguard.emulatorAbi=x86_64, runs :app:testDebugUnitTest, installs debug+androidTest, then adb am instrument for QuillaQuantumOnDeviceTest and MainActivityLaunchTest (Gradle connectedDebugAndroidTest often ANRs on no-KVM TCG), then smoke-adb.sh. QuillaEmulatorGate.probe() detects ranchu/goldfish and runs an idle quantum circuit. Magick gate names still label classical math only.",
+      "defense": "Use the host harness before Play uploads. Treat emulator PASS as silicon proof, not occult assurance. Prefer KVM hosts — software graphics is slow. Application defers native/billing under instrumentation so silicon can finish startup.",
       "related": [
         "QuillaEmulatorGate",
         "QuillaQuantumCorrelate",

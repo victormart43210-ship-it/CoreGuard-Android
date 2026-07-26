@@ -13,7 +13,8 @@ import android.os.Build
 object QuillaEmulatorGate {
 
     const val HOST_SCRIPT = "./scripts/quilla-emulator-tests.sh"
-    const val AVD_NAME = "CoreGuard_API35"
+    /** Prefer lean ATD; fall back to google_apis AVD in older hosts. */
+    const val AVD_NAME = "CoreGuard_ATD35"
 
     data class Status(
         val packageName: String,
