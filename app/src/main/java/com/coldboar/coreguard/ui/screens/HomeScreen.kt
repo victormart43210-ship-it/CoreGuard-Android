@@ -140,7 +140,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     color = MutedText
                 )
 
-                Spacer(Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(28.dp))
 
                 val score = scoreTarget.toInt()
                 val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
@@ -239,7 +239,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     }
                 }
 
-                Spacer(Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 if (rank != null) {
                     Box(
@@ -255,7 +255,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = rank.userGuidance,
                         style = MaterialTheme.typography.bodySmall,
@@ -267,7 +267,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             }
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         if (securityResults.isNotEmpty()) {
             Row(
@@ -300,7 +300,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                 )
             }
 
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         if (needsAttention) {
@@ -317,7 +317,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         style = MaterialTheme.typography.titleMedium,
                         color = AttentionAmber
                     )
-                    Spacer(Modifier.height(6.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     Text(
                         text = if (failCount > 0) {
                             "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
@@ -329,7 +329,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     )
                 }
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         // ── System Health ─────────────────────────────────────────────────────
@@ -353,7 +353,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             )
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         // ── Security Checks Detail ────────────────────────────────────────────
         if (securityResults.isNotEmpty()) {
@@ -380,7 +380,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         )
                     }
 
-                    Spacer(Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     securityResults.forEachIndexed { index, result ->
                         SecurityCheckRow(result)
@@ -395,7 +395,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             }
         }
 
-        Spacer(Modifier.height(20.dp))
+        Spacer(modifier = Modifier.height(20.dp))
 
         Button(
             onClick = onNavigateToScanner,
@@ -416,7 +416,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             )
         }
 
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedButton(
             onClick = onNavigateToTimeline,
@@ -478,7 +478,7 @@ private fun HealthCard(
                 Spacer(Modifier.width(6.dp))
                 Text(label, style = MaterialTheme.typography.bodySmall, color = MutedText)
             }
-            Spacer(Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 value,
                 style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.SemiBold)

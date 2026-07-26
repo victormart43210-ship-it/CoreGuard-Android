@@ -57,7 +57,7 @@ fun ScreenHeader(
             color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,

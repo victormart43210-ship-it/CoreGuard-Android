@@ -129,9 +129,9 @@ fun ScannerScreen(
             subtitle = "Looks for known spyware indicators and suspicious signs on this device. Scans stay local; optional Premium signature refresh uses HTTPS."
         )
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
         ScannerOrb(active = isScanning)
-        Spacer(Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (showEmptyState) {
             CoreGuardCard {
@@ -140,14 +140,14 @@ fun ScannerScreen(
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricTeal
                 )
-                Spacer(Modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MutedText
                 )
             }
-            Spacer(Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         AnimatedVisibility(
@@ -165,7 +165,7 @@ fun ScannerScreen(
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricCyan
                 )
-                Spacer(Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
                     progress = { stageProgress.coerceIn(0f, 1f) },
                     modifier = Modifier
@@ -175,13 +175,13 @@ fun ScannerScreen(
                     color = ElectricTeal,
                     trackColor = Color.White.copy(alpha = 0.08f)
                 )
-                Spacer(modifier.height(6.dp))
+                Spacer(modifier = Modifier.height(6.dp))
                 Text(
                     text = "Stage ${stageIndex + 1} of ${scanStages.size}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
-                Spacer(modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
@@ -225,7 +225,7 @@ fun ScannerScreen(
             }
         )
 
-        Spacer(Modifier.height(10.dp))
+        Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedButton(
             onClick = {
@@ -259,7 +259,7 @@ fun ScannerScreen(
         }
 
         refreshMessage?.let { msg ->
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = msg,
                 style = MaterialTheme.typography.bodySmall,
@@ -269,7 +269,7 @@ fun ScannerScreen(
         }
 
         if (showUpsell && !policy.isPremium()) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             PremiumUpsellCard(
                 title = "Keep your intel current",
                 body = "Premium unlocks live signature refresh so you can pull newer open-source IOCs before the next scan. Core scanning stays free.",
@@ -278,29 +278,29 @@ fun ScannerScreen(
         }
 
         scanError?.let { err ->
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
                 Text(
                     text = "Check couldn’t finish",
                     style = MaterialTheme.typography.titleSmall,
                     color = HighRed
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(text = err, style = MaterialTheme.typography.bodySmall, color = MutedText)
             }
         }
 
         scanReport?.let { report ->
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             AnimatedVisibility(visible = true, enter = fadeIn()) {
                 ScanResultCard(report, showCompletedBanner = justCompleted)
             }
         } ?: lastHistory?.let { record ->
-            Spacer(Modifier.height(20.dp))
+            Spacer(modifier = Modifier.height(20.dp))
             LastScanSummaryCard(record)
         }
 
-        Spacer(Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(16.dp))
 
         Text(
             text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
@@ -329,7 +329,7 @@ private fun LastScanSummaryCard(record: ScanHistoryStore.ScanRecord) {
             style = MaterialTheme.typography.titleMedium,
             color = MutedText
         )
-        Spacer(Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(6.dp))
         Text(
             text = verdictLabel,
             style = MaterialTheme.typography.headlineSmall,
@@ -340,7 +340,7 @@ private fun LastScanSummaryCard(record: ScanHistoryStore.ScanRecord) {
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
-        Spacer(Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(8.dp))
         Text(
             text = "Run a new privacy check to refresh full details.",
             style = MaterialTheme.typography.bodySmall,
@@ -370,14 +370,14 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
                 color = SafeGreen,
                 modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
             )
-            Spacer(Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(4.dp))
         }
         Text(
             text = verdictLabel,
             style = MaterialTheme.typography.headlineSmall,
             color = verdictColor
         )
-        Spacer(Modifier.height(4.dp))
+        Spacer(modifier = Modifier.height(4.dp))
         Text(
             text = "Checked ${report.scannedArtifacts} items in ${report.durationMillis} ms.",
             style = MaterialTheme.typography.bodySmall,
@@ -385,16 +385,16 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
         )
 
         if (report.detections.isEmpty()) {
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(
                 text = "Nothing flagged on this device. A clean result is reassuring but " +
                     "not a guarantee — keep Privacy Shield on and re-check after installing new apps.",
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             Text(text = "Findings", style = MaterialTheme.typography.titleMedium)
-            Spacer(Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(8.dp))
             report.detections
                 .sortedBy { it.severity.ordinal }
                 .forEachIndexed { index, detection ->
@@ -406,14 +406,14 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
                     }
                     DetectionRow(detection)
                 }
-            Spacer(Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             NestedSurface {
                 Text(
                     text = "What to do next",
                     style = MaterialTheme.typography.titleSmall,
                     color = AttentionAmber
                 )
-                Spacer(Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = "Don’t enter passwords or banking details until you understand the finding. " +
                         "Update your device, remove unfamiliar apps, and consider a trusted security professional.",
