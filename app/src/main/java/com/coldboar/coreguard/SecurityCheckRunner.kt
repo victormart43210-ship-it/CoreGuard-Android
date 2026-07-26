@@ -43,7 +43,7 @@ object SecurityCheckRunner {
             ),
             StrongBoxCheckEvaluator(level = keyLevel),
             ProcessLineageEvaluator(),
-            SpywareScanEvaluator(),
+            SpywareScanEvaluator.forContext(context),
             OverlayAbuseEvaluator(context),
             AccessibilityAbuseEvaluator(context),
             SideloadRiskEvaluator(context)

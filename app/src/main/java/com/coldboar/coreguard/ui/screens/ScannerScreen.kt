@@ -50,6 +50,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -116,6 +118,7 @@ fun ScannerScreen(
     var scanReport by remember { mutableStateOf(ScannerModule.latestReport()) }
     var lastHistory by remember { mutableStateOf<ScanHistoryStore.ScanRecord?>(null) }
     var showUpsell by remember { mutableStateOf(false) }
+    var quillaChoirNote by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
         if (scanReport == null) {
@@ -193,12 +196,14 @@ fun ScannerScreen(
                 scope.launch {
                     try {
                         val scanJob = launch(Dispatchers.IO) {
+                            // scanDevice persists history + bridges Quilla/choir/Elite/Swarm.
                             val result = ScannerModule.scanDevice(context)
-                            ScannerModule.recordHistory(context, result)
+                            val bridge = ScannerModule.lastQuillaBridge()
                             withContext(Dispatchers.Main) {
                                 scanReport = result
                                 lastHistory = null
                                 justCompleted = true
+                                quillaChoirNote = bridge?.scannerBlurb()
                             }
                         }
                         for (i in scanStages.indices) {
@@ -289,6 +294,27 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(20.dp))
             AnimatedVisibility(visible = true, enter = fadeIn()) {
                 ScanResultCard(report, showCompletedBanner = justCompleted)
+            }
+            quillaChoirNote?.let { note ->
+                Spacer(modifier = Modifier.height(12.dp))
+                CoreGuardCard {
+                    Text(
+                        text = "Quilla · angelic choir",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = ElectricTeal,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        modifier = Modifier.semantics {
+                            contentDescription = note
+                            liveRegion = LiveRegionMode.Polite
+                        }
+                    )
+                }
             }
         } ?: lastHistory?.let { record ->
             Spacer(modifier = Modifier.height(20.dp))

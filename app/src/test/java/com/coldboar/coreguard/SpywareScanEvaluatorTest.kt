@@ -8,6 +8,7 @@ import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
@@ -33,10 +34,21 @@ class SpywareScanEvaluatorTest {
 
     @Test
     fun `returns WARN when no scan has been run`() {
-        val evaluator = SpywareScanEvaluator(lastReport = { null })
+        val evaluator = SpywareScanEvaluator(lastReport = { null }, historyVerdict = { null })
         val result = evaluator.evaluate()
         assertEquals("spyware_scan", result.id)
         assertEquals(SecurityCheckState.WARN, result.state)
+    }
+
+    @Test
+    fun `falls back to scan history when RAM report missing`() {
+        val evaluator = SpywareScanEvaluator(
+            lastReport = { null },
+            historyVerdict = { ScanVerdict.CLEAN to 0 }
+        )
+        val result = evaluator.evaluate()
+        assertEquals(SecurityCheckState.PASS, result.state)
+        assertTrue(result.explanation.contains("history", ignoreCase = true))
     }
 
     @Test
