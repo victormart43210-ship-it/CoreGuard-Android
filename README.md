@@ -23,6 +23,14 @@ permits forks and redistribution — always verify origin before installing on a
 
 ## Implementation Handoff
 
+Guardian Intelligence roadmap (truth seals, Oracle, pulse, timeline, etc.):
+
+- Blueprint: [`docs/COREGUARD_GUARDIAN_BLUEPRINT.md`](docs/COREGUARD_GUARDIAN_BLUEPRINT.md)
+- Phase 0 architecture audit: [`docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md`](docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md)
+- Product claim honesty: [`docs/SECURITY_CLAIMS.md`](docs/SECURITY_CLAIMS.md)
+
+Phase 0 is documentation only. Phase 1 adds shared evidence types + Truth Seal UI without changing detector outcomes.
+
 ## Features
 
 | Area | Status |
