@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.ui.components
 
+import android.os.Build
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -19,10 +20,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
@@ -35,8 +39,6 @@ import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
 import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -44,6 +46,17 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SoftGold
 import kotlin.math.cos
 import kotlin.math.sin
+
+private fun isLikelyEmulatorHost(): Boolean {
+    val fingerprint = Build.FINGERPRINT.lowercase()
+    val model = Build.MODEL.lowercase()
+    val hardware = Build.HARDWARE.lowercase()
+    return fingerprint.contains("generic") ||
+        fingerprint.contains("emulator") ||
+        model.contains("sdk_gphone") ||
+        hardware.contains("ranchu") ||
+        hardware.contains("goldfish")
+}
 
 /**
  * Small tracked status caption — the “console readout” voice of the UI.
@@ -118,6 +131,7 @@ fun PrecisionScoreRing(
         ),
         label = "counter"
     )
+    val lite = remember { isLikelyEmulatorHost() }
 
     Canvas(modifier = modifier.size(size)) {
         val stroke = 11.dp.toPx()
@@ -125,14 +139,15 @@ fun PrecisionScoreRing(
         val center = Offset(this.size.width / 2f, this.size.height / 2f)
         val topLeft = Offset(center.x - radius, center.y - radius)
         val arcSize = Size(radius * 2f, radius * 2f)
+        val orbitR = radius + 18.dp.toPx()
 
         // Outer orbital track
         drawCircle(
             color = accent.copy(alpha = 0.12f),
-            radius = radius + 18.dp.toPx(),
+            radius = orbitR,
             style = Stroke(width = 1.2.dp.toPx())
         )
-        if (active) {
+        if (active && !lite) {
             rotate(degrees = sweep, pivot = center) {
                 drawArc(
                     brush = Brush.sweepGradient(
@@ -147,18 +162,15 @@ fun PrecisionScoreRing(
                     startAngle = -28f,
                     sweepAngle = 56f,
                     useCenter = false,
-                    topLeft = Offset(
-                        center.x - (radius + 18.dp.toPx()),
-                        center.y - (radius + 18.dp.toPx())
-                    ),
-                    size = Size((radius + 18.dp.toPx()) * 2f, (radius + 18.dp.toPx()) * 2f),
+                    topLeft = Offset(center.x - orbitR, center.y - orbitR),
+                    size = Size(orbitR * 2f, orbitR * 2f),
                     style = Stroke(width = 2.4.dp.toPx(), cap = StrokeCap.Round)
                 )
             }
         }
 
         // Tick marks
-        val ticks = 60
+        val ticks = if (lite) 24 else 60
         for (i in 0 until ticks) {
             val deg = i * 360.0 / ticks - 90.0
             val rad = Math.toRadians(deg)

@@ -31,12 +31,14 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import android.os.Build
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
@@ -59,6 +61,20 @@ import kotlin.math.cos
 import kotlin.math.min
 import kotlin.math.sin
 import kotlin.random.Random
+
+private fun isLikelyEmulator(): Boolean {
+    val fingerprint = Build.FINGERPRINT.lowercase()
+    val model = Build.MODEL.lowercase()
+    val product = Build.PRODUCT.lowercase()
+    val hardware = Build.HARDWARE.lowercase()
+    return fingerprint.contains("generic") ||
+        fingerprint.contains("emulator") ||
+        model.contains("sdk_gphone") ||
+        model.contains("emulator") ||
+        product.contains("sdk") ||
+        hardware.contains("ranchu") ||
+        hardware.contains("goldfish")
+}
 
 @Composable
 fun ScreenHeader(
@@ -307,6 +323,7 @@ fun ScreenAtmosphere(
         ),
         label = "pulse"
     )
+    val liteAtmosphere = remember { isLikelyEmulator() }
     val radar by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
@@ -316,8 +333,9 @@ fun ScreenAtmosphere(
         ),
         label = "radar"
     )
-    val motes = remember {
-        List(22) {
+    val moteCount = if (liteAtmosphere) 6 else 22
+    val motes = remember(moteCount) {
+        List(moteCount) {
             Triple(
                 Random.nextFloat(),
                 Random.nextFloat(),
@@ -341,18 +359,20 @@ fun ScreenAtmosphere(
                     )
                 )
             )
-            // Precision grid — mastery / console feel
-            val gridStep = 28.dp.toPx()
-            val gridInk = accent.copy(alpha = 0.035f + 0.015f * pulse)
-            var gx = 0f
-            while (gx < size.width) {
-                drawLine(gridInk, Offset(gx, 0f), Offset(gx, size.height), strokeWidth = 1f)
-                gx += gridStep
-            }
-            var gy = 0f
-            while (gy < size.height) {
-                drawLine(gridInk, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 1f)
-                gy += gridStep
+            // Precision grid — mastery / console feel (skip on emulators for FPS)
+            if (!liteAtmosphere) {
+                val gridStep = 28.dp.toPx()
+                val gridInk = accent.copy(alpha = 0.035f + 0.015f * pulse)
+                var gx = 0f
+                while (gx < size.width) {
+                    drawLine(gridInk, Offset(gx, 0f), Offset(gx, size.height), strokeWidth = 1f)
+                    gx += gridStep
+                }
+                var gy = 0f
+                while (gy < size.height) {
+                    drawLine(gridInk, Offset(0f, gy), Offset(size.width, gy), strokeWidth = 1f)
+                    gy += gridStep
+                }
             }
 
             drawCircle(
@@ -374,25 +394,27 @@ fun ScreenAtmosphere(
                 radius = size.minDimension * 0.55f
             )
 
-            // Soft radar wedge in the upper field
-            val radarCenter = Offset(size.width * 0.72f, size.height * 0.18f)
-            val radarR = size.minDimension * 0.42f
-            rotate(degrees = radar, pivot = radarCenter) {
-                drawArc(
-                    brush = Brush.sweepGradient(
-                        listOf(
-                            Color.Transparent,
-                            accent.copy(alpha = 0.08f),
-                            Color.Transparent
+            if (!liteAtmosphere) {
+                // Soft radar wedge in the upper field
+                val radarCenter = Offset(size.width * 0.72f, size.height * 0.18f)
+                val radarR = size.minDimension * 0.42f
+                rotate(degrees = radar, pivot = radarCenter) {
+                    drawArc(
+                        brush = Brush.sweepGradient(
+                            listOf(
+                                Color.Transparent,
+                                accent.copy(alpha = 0.08f),
+                                Color.Transparent
+                            ),
+                            center = radarCenter
                         ),
-                        center = radarCenter
-                    ),
-                    startAngle = -40f,
-                    sweepAngle = 70f,
-                    useCenter = true,
-                    topLeft = Offset(radarCenter.x - radarR, radarCenter.y - radarR),
-                    size = androidx.compose.ui.geometry.Size(radarR * 2f, radarR * 2f)
-                )
+                        startAngle = -40f,
+                        sweepAngle = 70f,
+                        useCenter = true,
+                        topLeft = Offset(radarCenter.x - radarR, radarCenter.y - radarR),
+                        size = Size(radarR * 2f, radarR * 2f)
+                    )
+                }
             }
 
             motes.forEachIndexed { index, (x, y, r) ->
@@ -420,7 +442,9 @@ fun ScreenAtmosphere(
                 strokeWidth = 1.8f * density
             )
         }
-        HudCornerOverlay(color = accent)
+        if (!liteAtmosphere) {
+            HudCornerOverlay(color = accent)
+        }
         Column(
             modifier = Modifier
                 .fillMaxWidth()
