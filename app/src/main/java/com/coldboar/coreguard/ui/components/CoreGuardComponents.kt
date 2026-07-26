@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -38,8 +39,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.ui.theme.AtmosphereGold
 import com.coldboar.coreguard.ui.theme.AtmosphereTeal
@@ -48,8 +53,10 @@ import com.coldboar.coreguard.ui.theme.BackgroundInk
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
+import com.coldboar.coreguard.ui.theme.SurfaceMid
 import com.coldboar.coreguard.ui.theme.SurfacePewter
 import kotlin.math.cos
+import kotlin.math.min
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -66,7 +73,18 @@ fun ScreenHeader(
             color = ElectricTeal,
             modifier = Modifier.semantics { heading() }
         )
-        Spacer(modifier = Modifier.height(6.dp))
+        Spacer(modifier = Modifier.height(8.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth(0.28f)
+                .height(2.dp)
+                .background(
+                    Brush.horizontalGradient(
+                        listOf(ElectricTeal, RestrainedGold.copy(alpha = 0.55f), Color.Transparent)
+                    )
+                )
+        )
+        Spacer(modifier = Modifier.height(10.dp))
         Text(
             text = subtitle,
             style = MaterialTheme.typography.bodyMedium,
@@ -75,15 +93,122 @@ fun ScreenHeader(
     }
 }
 
+/**
+ * Geometric brand seal — double ring, heptagram, and hex core.
+ * Decorative only; keep alpha low so content stays primary.
+ */
+@Composable
+fun BrandSeal(
+    modifier: Modifier = Modifier,
+    size: Dp = 220.dp,
+    color: Color = RestrainedGold,
+    alpha: Float = 0.22f,
+    rotate: Boolean = true
+) {
+    val transition = rememberInfiniteTransition(label = "brandSeal")
+    val angle by transition.animateFloat(
+        initialValue = 0f,
+        targetValue = 360f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 140_000, easing = LinearEasing),
+            repeatMode = RepeatMode.Restart
+        ),
+        label = "sealSpin"
+    )
+    val pulse by transition.animateFloat(
+        initialValue = 0.85f,
+        targetValue = 1f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(durationMillis = 5200, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "sealPulse"
+    )
+
+    Canvas(modifier = modifier.size(size)) {
+        val cx = this.size.width / 2f
+        val cy = this.size.height / 2f
+        val r = min(this.size.width, this.size.height) / 2f * 0.96f
+        val stroke = Stroke(width = (r * 0.012f).coerceAtLeast(1.2f))
+        val ink = color.copy(alpha = alpha * pulse)
+
+        fun point(i: Int, n: Int, radius: Float, offsetDeg: Float = -90f): Offset {
+            val rad = Math.toRadians(i * 360.0 / n + offsetDeg)
+            return Offset(cx + cos(rad).toFloat() * radius, cy + sin(rad).toFloat() * radius)
+        }
+
+        rotate(degrees = if (rotate) angle else 0f, pivot = Offset(cx, cy)) {
+            drawCircle(color = ink, radius = r, style = stroke)
+            drawCircle(color = ink.copy(alpha = ink.alpha * 0.85f), radius = r * 0.9f, style = stroke)
+
+            val glyphs = 21
+            for (i in 0 until glyphs) {
+                val outer = point(i, glyphs, r * 0.995f)
+                val inner = point(i, glyphs, r * 0.905f)
+                drawLine(ink, inner, outer, strokeWidth = stroke.width)
+            }
+
+            val star = Path().apply {
+                val pts = 7
+                val step = 3
+                val starR = r * 0.78f
+                moveTo(point(0, pts, starR).x, point(0, pts, starR).y)
+                for (i in 1..pts) {
+                    val p = point((i * step) % pts, pts, starR)
+                    lineTo(p.x, p.y)
+                }
+                close()
+            }
+            drawPath(star, color = ink, style = stroke)
+
+            val hept = Path().apply {
+                val heptR = r * 0.78f
+                moveTo(point(0, 7, heptR).x, point(0, 7, heptR).y)
+                for (i in 1..7) {
+                    val p = point(i % 7, 7, heptR)
+                    lineTo(p.x, p.y)
+                }
+                close()
+            }
+            drawPath(hept, color = ink.copy(alpha = ink.alpha * 0.75f), style = stroke)
+
+            val hexOrder = intArrayOf(0, 3, 1, 4, 2, 5)
+            val hex = Path().apply {
+                hexOrder.forEachIndexed { idx, v ->
+                    val rr = if (v % 2 == 0) r * 0.32f else r * 0.28f
+                    val p = point(v, 6, rr)
+                    if (idx == 0) moveTo(p.x, p.y) else lineTo(p.x, p.y)
+                }
+                close()
+            }
+            drawPath(hex, color = ink, style = stroke)
+            drawCircle(color = ink, radius = r * 0.05f, style = stroke)
+        }
+    }
+}
+
 @Composable
 fun CoreGuardCard(
     modifier: Modifier = Modifier,
-    containerColor: Color = MaterialTheme.colorScheme.surface,
+    containerColor: Color = SurfaceMid.copy(alpha = 0.62f),
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape = MaterialTheme.shapes.large
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.large,
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                brush = Brush.linearGradient(
+                    listOf(
+                        ElectricTeal.copy(alpha = 0.28f),
+                        Color.White.copy(alpha = 0.06f),
+                        RestrainedGold.copy(alpha = 0.18f)
+                    )
+                ),
+                shape = shape
+            ),
+        shape = shape,
         colors = CardDefaults.cardColors(containerColor = containerColor),
         elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
     ) {
@@ -241,10 +366,17 @@ fun NestedSurface(
     modifier: Modifier = Modifier,
     content: @Composable ColumnScope.() -> Unit
 ) {
+    val shape = MaterialTheme.shapes.medium
     Card(
-        modifier = modifier.fillMaxWidth(),
-        shape = MaterialTheme.shapes.medium,
-        colors = CardDefaults.cardColors(containerColor = SurfacePewter)
+        modifier = modifier
+            .fillMaxWidth()
+            .border(
+                width = 1.dp,
+                color = Color.White.copy(alpha = 0.06f),
+                shape = shape
+            ),
+        shape = shape,
+        colors = CardDefaults.cardColors(containerColor = SurfacePewter.copy(alpha = 0.9f))
     ) {
         Column(modifier = Modifier.padding(12.dp), content = content)
     }

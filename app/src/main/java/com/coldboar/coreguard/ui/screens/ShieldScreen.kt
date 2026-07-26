@@ -40,6 +40,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
@@ -236,6 +237,7 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
     ) {
         Canvas(modifier = Modifier.size(180.dp)) {
             val r = size.minDimension / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -250,6 +252,25 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
                 radius = r * 0.62f,
                 style = Stroke(width = 3.dp.toPx())
             )
+            drawCircle(
+                color = accent.copy(alpha = 0.18f),
+                radius = r * 0.78f,
+                style = Stroke(width = 1.5.dp.toPx())
+            )
+            val ticks = 28
+            for (i in 0 until ticks) {
+                val deg = Math.toRadians(i * 360.0 / ticks + ring * 0.15 - 90.0)
+                val c = kotlin.math.cos(deg).toFloat()
+                val s = kotlin.math.sin(deg).toFloat()
+                val inner = r * 0.84f
+                val outer = r * 0.93f
+                drawLine(
+                    color = accent.copy(alpha = if (active) 0.4f * pulse else 0.18f),
+                    start = Offset(center.x + c * inner, center.y + s * inner),
+                    end = Offset(center.x + c * outer, center.y + s * outer),
+                    strokeWidth = 1.6f
+                )
+            }
             if (active) {
                 drawArc(
                     color = accent.copy(alpha = 0.7f),

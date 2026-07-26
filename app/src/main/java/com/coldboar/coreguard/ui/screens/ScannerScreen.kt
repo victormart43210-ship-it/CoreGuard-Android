@@ -487,6 +487,7 @@ private fun ScannerOrb(active: Boolean) {
     ) {
         Canvas(modifier = Modifier.size(140.dp)) {
             val radius = size.minDimension / 2f
+            val center = Offset(size.width / 2f, size.height / 2f)
             drawCircle(
                 brush = Brush.radialGradient(
                     colors = listOf(
@@ -501,6 +502,27 @@ private fun ScannerOrb(active: Boolean) {
                 radius = radius * 0.72f,
                 style = Stroke(width = 2.dp.toPx())
             )
+            drawCircle(
+                color = ElectricTeal.copy(alpha = 0.2f),
+                radius = radius * 0.9f,
+                style = Stroke(width = 1.dp.toPx())
+            )
+            // Geometric tick ring — instrument feel without clutter
+            val ticks = 36
+            for (i in 0 until ticks) {
+                val deg = Math.toRadians(i * 360.0 / ticks - 90.0)
+                val c = kotlin.math.cos(deg).toFloat()
+                val s = kotlin.math.sin(deg).toFloat()
+                val major = i % 3 == 0
+                val inner = radius * (if (major) 0.82f else 0.86f)
+                val outer = radius * 0.92f
+                drawLine(
+                    color = ElectricTeal.copy(alpha = if (major) 0.35f else 0.16f),
+                    start = Offset(center.x + c * inner, center.y + s * inner),
+                    end = Offset(center.x + c * outer, center.y + s * outer),
+                    strokeWidth = if (major) 2f else 1.2f
+                )
+            }
             if (active) {
                 drawArc(
                     color = ElectricCyan,
@@ -509,11 +531,18 @@ private fun ScannerOrb(active: Boolean) {
                     useCenter = false,
                     style = Stroke(width = 3.dp.toPx())
                 )
+                drawArc(
+                    color = RestrainedGold.copy(alpha = 0.55f),
+                    startAngle = sweep + 80f,
+                    sweepAngle = 18f,
+                    useCenter = false,
+                    style = Stroke(width = 2.dp.toPx())
+                )
             } else {
                 drawCircle(
                     color = ElectricTeal.copy(alpha = 0.45f),
                     radius = 6.dp.toPx(),
-                    center = Offset(size.width / 2f, size.height / 2f)
+                    center = center
                 )
             }
         }

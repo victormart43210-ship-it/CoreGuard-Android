@@ -1,10 +1,16 @@
 package com.coldboar.coreguard.ui.screens
 
 import androidx.compose.animation.core.FastOutSlowInEasing
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -43,7 +49,9 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -64,6 +72,8 @@ import com.coldboar.coreguard.MemoryUsageCalculator
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
+import com.coldboar.coreguard.ui.components.BrandSeal
+import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
@@ -72,7 +82,10 @@ import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import com.coldboar.coreguard.ui.theme.SoftGold
 import com.coldboar.coreguard.ui.theme.SurfacePewter
+import kotlin.math.cos
+import kotlin.math.sin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -121,10 +134,17 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
             .verticalScroll(rememberScrollState())
     ) {
         // ── Hero Header ──────────────────────────────────────────────────────
+        val heroReveal by animateFloatAsState(
+            targetValue = if (checksLoading) 0.82f else 1f,
+            animationSpec = tween(durationMillis = 900, easing = FastOutSlowInEasing),
+            label = "heroReveal"
+        )
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 16.dp),
+                .padding(horizontal = 8.dp, vertical = 12.dp)
+                .alpha(0.55f + 0.45f * heroReveal)
+                .scale(0.97f + 0.03f * heroReveal),
             contentAlignment = Alignment.Center
         ) {
             Column(horizontalAlignment = Alignment.CenterHorizontally) {
@@ -140,7 +160,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                     color = MutedText
                 )
 
-                Spacer(modifier = Modifier.height(28.dp))
+                Spacer(modifier = Modifier.height(24.dp))
 
                 val score = scoreTarget.toInt()
                 val rank = if (securityResults.isEmpty()) null else GuardianScore.rankFor(score)
@@ -148,8 +168,18 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
                 val animatedProgress by animateFloatAsState(
                     targetValue = scoreTarget / 100f,
-                    animationSpec = tween(durationMillis = 1400, easing = FastOutSlowInEasing),
+                    animationSpec = tween(durationMillis = 1600, easing = FastOutSlowInEasing),
                     label = "scoreRing"
+                )
+                val tickBreath = rememberInfiniteTransition(label = "scoreTicks")
+                val tickPulse by tickBreath.animateFloat(
+                    initialValue = 0.35f,
+                    targetValue = 0.7f,
+                    animationSpec = infiniteRepeatable(
+                        animation = tween(durationMillis = 2800, easing = LinearEasing),
+                        repeatMode = RepeatMode.Reverse
+                    ),
+                    label = "tickPulse"
                 )
 
                 Box(
@@ -162,14 +192,42 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         }
                     }
                 ) {
-                    Canvas(modifier = Modifier.size(180.dp)) {
-                        val strokeWidth = 14.dp.toPx()
+                    BrandSeal(
+                        size = 236.dp,
+                        color = ringColor,
+                        alpha = 0.14f,
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                    Canvas(modifier = Modifier.size(196.dp)) {
+                        val strokeWidth = 12.dp.toPx()
                         val radius = (size.minDimension - strokeWidth) / 2f
+                        val center = Offset(size.width / 2f, size.height / 2f)
                         val topLeft = Offset(
                             (size.width - 2 * radius) / 2f,
                             (size.height - 2 * radius) / 2f
                         )
                         val arcSize = Size(2 * radius, 2 * radius)
+
+                        // Outer tick marks
+                        val ticks = 48
+                        for (i in 0 until ticks) {
+                            val deg = i * 360.0 / ticks - 90.0
+                            val rad = Math.toRadians(deg)
+                            val major = i % 4 == 0
+                            val innerR = radius + strokeWidth * 0.55f
+                            val outerR = innerR + if (major) 8.dp.toPx() else 4.dp.toPx()
+                            val c = cos(rad).toFloat()
+                            val s = sin(rad).toFloat()
+                            drawLine(
+                                color = ringColor.copy(
+                                    alpha = if (major) tickPulse * 0.85f else tickPulse * 0.4f
+                                ),
+                                start = Offset(center.x + c * innerR, center.y + s * innerR),
+                                end = Offset(center.x + c * outerR, center.y + s * outerR),
+                                strokeWidth = if (major) 2.2f else 1.2f,
+                                cap = StrokeCap.Round
+                            )
+                        }
 
                         drawArc(
                             color = Color.White.copy(alpha = 0.08f),
@@ -183,13 +241,13 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
                         if (animatedProgress > 0f) {
                             drawArc(
-                                color = ringColor.copy(alpha = 0.25f),
+                                color = ringColor.copy(alpha = 0.22f),
                                 startAngle = -90f,
                                 sweepAngle = 360f * animatedProgress,
                                 useCenter = false,
                                 topLeft = topLeft,
                                 size = arcSize,
-                                style = Stroke(width = strokeWidth * 2.1f, cap = StrokeCap.Round)
+                                style = Stroke(width = strokeWidth * 2f, cap = StrokeCap.Round)
                             )
                             drawArc(
                                 color = ringColor,
@@ -199,6 +257,17 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                                 topLeft = topLeft,
                                 size = arcSize,
                                 style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
+                            )
+                            // Soft gold tip on the leading edge for brand warmth
+                            val tipAngle = -90f + 360f * animatedProgress - 8f
+                            drawArc(
+                                color = SoftGold.copy(alpha = 0.75f),
+                                startAngle = tipAngle,
+                                sweepAngle = 10f,
+                                useCenter = false,
+                                topLeft = topLeft,
+                                size = arcSize,
+                                style = Stroke(width = strokeWidth * 0.85f, cap = StrokeCap.Round)
                             )
                         }
                     }
@@ -213,40 +282,38 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
                         } else {
                             Text(
                                 text = "$score",
-                                style = MaterialTheme.typography.headlineLarge.copy(
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 42.sp
+                                style = MaterialTheme.typography.displayLarge.copy(
+                                    fontSize = 48.sp,
+                                    lineHeight = 52.sp
                                 ),
                                 color = ringColor
                             )
                         }
                         Text(
-                            text = "PROTECTION",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 2.sp,
-                                fontWeight = FontWeight.SemiBold
-                            ),
-                            color = MutedText
-                        )
-                        Text(
-                            text = "SCORE",
-                            style = MaterialTheme.typography.bodySmall.copy(
-                                letterSpacing = 2.sp,
-                                fontWeight = FontWeight.SemiBold
+                            text = "PROTECTION SCORE",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                letterSpacing = 2.4.sp
                             ),
                             color = MutedText
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(14.dp))
 
                 if (rank != null) {
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(50))
-                            .background(ringColor.copy(alpha = 0.15f))
-                            .padding(horizontal = 20.dp, vertical = 6.dp)
+                            .border(
+                                width = 1.dp,
+                                color = ringColor.copy(alpha = 0.45f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .background(
+                                ringColor.copy(alpha = 0.12f),
+                                shape = RoundedCornerShape(8.dp)
+                            )
+                            .padding(horizontal = 18.dp, vertical = 6.dp)
                     ) {
                         Text(
                             text = rank.userLabel,
@@ -272,8 +339,7 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         if (securityResults.isNotEmpty()) {
             Row(
                 modifier = Modifier
-                .fillMaxWidth()
-                    
+                    .fillMaxWidth()
                     .semantics {
                         contentDescription =
                             "$passCount checks passed, $warnCount need attention, $failCount failed"
@@ -304,28 +370,22 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
         }
 
         if (needsAttention) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = AttentionAmber.copy(alpha = 0.12f)),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Text(
-                        "What to do next",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = AttentionAmber
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-                    Text(
-                        text = if (failCount > 0) {
-                            "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
-                        } else {
-                            "Review the warnings below. A privacy check can catch spyware indicators these checks miss."
-                        },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedText
-                    )
-                }
+            CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.12f)) {
+                Text(
+                    "What to do next",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AttentionAmber
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    text = if (failCount > 0) {
+                        "Review failed checks below, then run a privacy check. Avoid entering passwords until you understand the risk."
+                    } else {
+                        "Review the warnings below. A privacy check can catch spyware indicators these checks miss."
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MutedText
+                )
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
@@ -353,37 +413,31 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
         // ── Security Checks Detail ────────────────────────────────────────────
         if (securityResults.isNotEmpty()) {
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(Modifier.padding(16.dp)) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Filled.Shield,
-                            contentDescription = null,
-                            tint = ElectricTeal,
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(8.dp))
-                        Text(
-                            "Device checks",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = ElectricTeal
-                        )
-                    }
+            CoreGuardCard(containerColor = SurfacePewter) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Icon(
+                        Icons.Filled.Shield,
+                        contentDescription = null,
+                        tint = ElectricTeal,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        "Device checks",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = ElectricTeal
+                    )
+                }
 
-                    Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
-                    securityResults.forEachIndexed { index, result ->
-                        SecurityCheckRow(result)
-                        if (index < securityResults.lastIndex) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(vertical = 6.dp),
-                                color = Color.White.copy(alpha = 0.06f)
-                            )
-                        }
+                securityResults.forEachIndexed { index, result ->
+                    SecurityCheckRow(result)
+                    if (index < securityResults.lastIndex) {
+                        HorizontalDivider(
+                            modifier = Modifier.padding(vertical = 6.dp),
+                            color = Color.White.copy(alpha = 0.06f)
+                        )
                     }
                 }
             }
@@ -423,10 +477,11 @@ fun HomeScreen(onNavigateToScanner: () -> Unit, onNavigateToTimeline: () -> Unit
 
 @Composable
 private fun StatBadge(label: String, value: String, color: Color, modifier: Modifier = Modifier) {
+    val shape = RoundedCornerShape(12.dp)
     Card(
-        modifier = modifier,
+        modifier = modifier.border(1.dp, color.copy(alpha = 0.28f), shape),
         colors = CardDefaults.cardColors(containerColor = color.copy(alpha = 0.1f)),
-        shape = RoundedCornerShape(12.dp)
+        shape = shape
     ) {
         Column(
             modifier = Modifier.padding(vertical = 12.dp),
@@ -458,12 +513,13 @@ private fun HealthCard(
     value: String,
     modifier: Modifier = Modifier
 ) {
+    val shape = RoundedCornerShape(12.dp)
     Card(
-        modifier = modifier,
-        colors = CardDefaults.cardColors(containerColor = SurfacePewter),
-        shape = RoundedCornerShape(12.dp)
+        modifier = modifier.border(1.dp, ElectricTeal.copy(alpha = 0.16f), shape),
+        colors = CardDefaults.cardColors(containerColor = SurfacePewter.copy(alpha = 0.92f)),
+        shape = shape
     ) {
-        Column(Modifier.padding(12.dp)) {
+        Column(modifier = Modifier.padding(12.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 icon()
                 Spacer(Modifier.width(6.dp))
@@ -483,7 +539,7 @@ private fun SecurityCheckRow(result: SecurityCheckResult) {
     val stateLabel = result.state.userLabel
     Row(
         modifier = Modifier
-                .fillMaxWidth()
+            .fillMaxWidth()
             .semantics {
                 contentDescription = "${result.displayName}: $stateLabel. ${result.explanation}"
             },
