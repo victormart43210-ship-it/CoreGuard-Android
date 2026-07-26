@@ -93,7 +93,7 @@ CoreGuard v1 is a standalone device-monitoring app with no backend.
 
 3. **Heuristic root/emulator detection**: Advanced rooting frameworks (Magisk with MagiskHide, etc.) can defeat file-path checks. The app provides a best-effort indicator, not a guarantee.
 
-4. **No certificate transparency / network hardening**: CoreGuard v1 makes no network calls, so SSL pinning is not yet applicable. Add pinning if a backend is introduced.
+4. **Optional network surfaces**: CoreGuard may use HTTPS for Premium IOC refresh and Quilla Research STIX sync, Google Play Billing, and Shield DNS forwarding for allowed queries. Certificate pinning is not implemented for those calls; treat MITM of optional feeds as a residual risk on hostile networks.
 
 5. **No anti-tampering runtime integrity check beyond signature**: Binary instrumentation frameworks (Frida, etc.) can hook any method. Consider native checks or Play Integrity API in a later version.
 

@@ -78,9 +78,10 @@ To run the real Android build, install the Android toolchain below and opt in wi
 | Kotlin | 1.9.25 |
 | Compose Compiler | 1.5.15 |
 | Compose BOM | 2024.06.00 |
-| `compileSdk` / `targetSdk` | 34 |
+| `compileSdk` / `targetSdk` | 35 |
 | `minSdk` | 24 |
-| Android SDK packages | `platforms;android-34`, `build-tools;34.0.0`, `platform-tools` |
+| `versionCode` / `versionName` | 2 / 1.0.1 |
+| Android SDK packages | `platforms;android-35`, matching build-tools, `platform-tools` |
 
 ### One-time setup
 

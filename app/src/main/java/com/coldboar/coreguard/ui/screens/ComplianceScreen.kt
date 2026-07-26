@@ -80,7 +80,6 @@ fun ComplianceScreen(
     var loadError by remember { mutableStateOf<String?>(null) }
     var reloadToken by remember { mutableStateOf(0) }
     var exportMessage by remember { mutableStateOf<String?>(null) }
-    var showUpsell by remember { mutableStateOf(false) }
 
     LaunchedEffect(securityResults, reloadToken) {
         if (securityResults != null && reloadToken == 0) {

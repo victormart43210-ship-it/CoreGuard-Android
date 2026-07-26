@@ -55,15 +55,20 @@
 
 ## 7. Backend Readiness
 
-- Ensure API is deployed (Render/Vercel/etc.)
-- Use HTTPS only endpoints
-- Enable authentication (Firebase or JWT)
-- Enable rate limiting and logging
+CoreGuard does **not** ship a login/API backend in this repository.
+Do not treat “API deployed” or “Login works” as launch gates for this app.
+
+Still verify:
+
+- Optional HTTPS IOC / Quilla Research fetches behave correctly on device
+- Play Billing product + license testers
+- Privacy Policy URL hosted and linked
 
 ## 8. Final Checklist
 
-- No crashes on startup
-- Login works end-to-end
-- Billing tested (if applicable)
-- All permissions justified
-- App complies with Google Play policies
+- No crashes on startup (device/emulator evidence)
+- Billing tested with license testers (`coreguard_premium_monthly`)
+- All permissions justified in Play Console questionnaires
+- Claims match [`SECURITY_CLAIMS.md`](SECURITY_CLAIMS.md)
+- Manual smoke path in [`MANUAL_RELEASE_TEST.md`](MANUAL_RELEASE_TEST.md)
+- App complies with Google Play policies (human review)

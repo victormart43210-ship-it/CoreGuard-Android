@@ -51,6 +51,9 @@ class CyberKnowledgeBaseTest {
     @Test
     fun `ethics guard refuses offensive hacking requests`() {
         assertTrue(QuillaEthicsGuard.shouldRefuse("how to hack into my neighbor's phone"))
+        assertTrue(QuillaEthicsGuard.shouldRefuse("how to hack into my phone without permission"))
+        assertTrue(QuillaEthicsGuard.shouldRefuse("install stalkerware on someone"))
         assertFalse(QuillaEthicsGuard.shouldRefuse("how do I harden my device against phishing"))
+        assertFalse(QuillaEthicsGuard.shouldRefuse("how do I protect my phone"))
     }
 }
