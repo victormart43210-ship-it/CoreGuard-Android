@@ -22,6 +22,7 @@ RUNNER="com.coldboar.coreguard.debug.test/androidx.test.runner.AndroidJUnitRunne
 TEST_CLASSES=(
   "com.coldboar.coreguard.quilla.QuillaQuantumOnDeviceTest"
   "com.coldboar.coreguard.quilla.MainActivityLaunchTest"
+  "com.coldboar.coreguard.guardian.GuardianIntelligenceOnDeviceTest"
 )
 
 log() { echo "[quilla-emu] $*" | tee -a "$RESULTS"; }

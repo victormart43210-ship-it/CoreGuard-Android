@@ -46,6 +46,7 @@ import com.coldboar.coreguard.FirstRunStore
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.ForensicJournalScreen
+import com.coldboar.coreguard.ui.screens.GuardianIntelligenceScreen
 import com.coldboar.coreguard.ui.screens.HomeScreen
 import com.coldboar.coreguard.ui.screens.OnboardingScreen
 import com.coldboar.coreguard.ui.screens.OverlayProtectionMatrixScreen
@@ -85,7 +86,8 @@ private val routesWithoutBottomBar = setOf(
     CoreGuardRoute.Tools.route,
     CoreGuardRoute.OverlayMatrix.route,
     CoreGuardRoute.ForensicJournal.route,
-    CoreGuardRoute.ScamGuard.route
+    CoreGuardRoute.ScamGuard.route,
+    CoreGuardRoute.GuardianIntelligence.route
 )
 
 private val tabRoutes = bottomNavItems.map { it.route }.toSet()
@@ -206,6 +208,9 @@ fun CoreGuardApp(
                         },
                         onNavigateToScamGuard = {
                             navController.navigate(CoreGuardRoute.ScamGuard.route)
+                        },
+                        onNavigateToGuardian = {
+                            navController.navigate(CoreGuardRoute.GuardianIntelligence.route)
                         }
                     )
                 }
@@ -252,6 +257,9 @@ fun CoreGuardApp(
                         onOpenScamGuard = {
                             navController.navigate(CoreGuardRoute.ScamGuard.route)
                         },
+                        onOpenGuardian = {
+                            navController.navigate(CoreGuardRoute.GuardianIntelligence.route)
+                        },
                         isPremium = billingProvider.isPremium()
                     )
                 }
@@ -263,6 +271,9 @@ fun CoreGuardApp(
                 }
                 composable(CoreGuardRoute.ScamGuard.route) {
                     ScamGuardScreen(onBack = { navController.popBackStack() })
+                }
+                composable(CoreGuardRoute.GuardianIntelligence.route) {
+                    GuardianIntelligenceScreen(onBack = { navController.popBackStack() })
                 }
                 composable(CoreGuardRoute.Timeline.route) {
                     TimelineScreen(
