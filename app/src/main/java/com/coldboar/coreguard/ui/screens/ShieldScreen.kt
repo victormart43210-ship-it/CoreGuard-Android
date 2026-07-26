@@ -51,7 +51,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
-import com.coldboar.coreguard.mvt.NemesisShield
+import com.coldboar.coreguard.mvt.ShieldModule
 import com.coldboar.coreguard.mvt.ShieldState
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
@@ -66,23 +66,23 @@ import com.coldboar.coreguard.ui.theme.SafeGreen
 fun ShieldScreen() {
     val context = LocalContext.current
 
-    var shieldActive by remember { mutableStateOf(ShieldState.isActive) }
-    var totalBlocked by remember { mutableStateOf(ShieldState.totalBlocked) }
+    var shieldActive by remember { mutableStateOf(ShieldModule.isActive) }
+    var totalBlocked by remember { mutableStateOf(ShieldModule.totalBlocked) }
 
     DisposableEffect(Unit) {
         val listener = ShieldState.Listener {
-            shieldActive = ShieldState.isActive
-            totalBlocked = ShieldState.totalBlocked
+            shieldActive = ShieldModule.isActive
+            totalBlocked = ShieldModule.totalBlocked
         }
-        ShieldState.addListener(listener)
-        onDispose { ShieldState.removeListener(listener) }
+        ShieldModule.addListener(listener)
+        onDispose { ShieldModule.removeListener(listener) }
     }
 
     val vpnConsentLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
         if (result.resultCode == Activity.RESULT_OK) {
-            NemesisShield.start(context)
+            ShieldModule.start(context)
         } else {
             shieldActive = false
             Toast.makeText(context, "Privacy Shield needs VPN permission to run.", Toast.LENGTH_SHORT).show()
@@ -94,7 +94,7 @@ fun ShieldScreen() {
         if (prepare != null) {
             vpnConsentLauncher.launch(prepare)
         } else {
-            NemesisShield.start(context)
+            ShieldModule.start(context)
         }
     }
 
@@ -158,10 +158,10 @@ fun ShieldScreen() {
                     Switch(
                         checked = shieldActive,
                         onCheckedChange = { enabled ->
-                            if (enabled && !ShieldState.isActive) {
+                            if (enabled && !ShieldModule.isActive) {
                                 requestEnableShield()
-                            } else if (!enabled && ShieldState.isActive) {
-                                NemesisShield.stop(context)
+                            } else if (!enabled && ShieldModule.isActive) {
+                                ShieldModule.stop(context)
                             }
                         },
                         colors = SwitchDefaults.colors(

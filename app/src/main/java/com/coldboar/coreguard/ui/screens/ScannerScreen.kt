@@ -58,12 +58,11 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.DemoBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
-import com.coldboar.coreguard.mvt.DeviceScanner
 import com.coldboar.coreguard.mvt.IocFeedFetcher
-import com.coldboar.coreguard.mvt.LastScan
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.NestedSurface
@@ -109,14 +108,14 @@ fun ScannerScreen(
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var scanError by remember { mutableStateOf<String?>(null) }
     var justCompleted by remember { mutableStateOf(false) }
-    var scanReport by remember { mutableStateOf(LastScan.report) }
+    var scanReport by remember { mutableStateOf(ScannerModule.latestReport()) }
     var lastHistory by remember { mutableStateOf<ScanHistoryStore.ScanRecord?>(null) }
     var showUpsell by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         if (scanReport == null) {
             lastHistory = withContext(Dispatchers.IO) {
-                ScanHistoryStore.load(context).firstOrNull()
+                ScannerModule.loadHistory(context).firstOrNull()
             }
         }
     }
@@ -198,10 +197,9 @@ fun ScannerScreen(
                 scope.launch {
                     try {
                         val scanJob = launch(Dispatchers.IO) {
-                            val result = DeviceScanner.scan(context)
-                            ScanHistoryStore.append(context, result)
+                            val result = ScannerModule.scanDevice(context)
+                            ScannerModule.recordHistory(context, result)
                             withContext(Dispatchers.Main) {
-                                LastScan.report = result
                                 scanReport = result
                                 lastHistory = null
                                 justCompleted = true
