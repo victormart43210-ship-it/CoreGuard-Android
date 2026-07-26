@@ -56,7 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.IocFeedFetcher
@@ -93,8 +92,8 @@ private val scanStages = listOf(
 
 @Composable
 fun ScannerScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onUpgrade: () -> Unit = {}
+    billingProvider: BillingProvider,
+    onUpgrade: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()

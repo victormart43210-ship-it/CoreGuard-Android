@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckRunner
@@ -66,10 +65,10 @@ import kotlinx.coroutines.withContext
 
 @Composable
 fun ComplianceScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onUpgrade: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToSupplyChain: () -> Unit = {},
+    billingProvider: BillingProvider,
+    onUpgrade: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToSupplyChain: () -> Unit,
     securityResults: List<SecurityCheckResult>? = null
 ) {
     val context = LocalContext.current

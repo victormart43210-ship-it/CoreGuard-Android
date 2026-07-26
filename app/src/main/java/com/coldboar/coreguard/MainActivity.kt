@@ -34,8 +34,8 @@ class MainActivity : AppCompatActivity() {
         setContent {
             CoreGuardTheme {
                 CoreGuardApp(
-                    secretPortalVisible = secretPortalVisible,
-                    billingProvider = billingProvider
+                    billingProvider = billingProvider,
+                    secretPortalVisible = secretPortalVisible
                 )
             }
         }

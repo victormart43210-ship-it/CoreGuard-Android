@@ -48,7 +48,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.PurchaseResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.filled.Bolt
@@ -67,12 +66,12 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 
 @Composable
 fun SettingsScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onNavigateToPrivacyPolicy: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onRunScan: () -> Unit = {},
-    onOpenShield: () -> Unit = {},
-    onOpenTimeline: () -> Unit = {}
+    billingProvider: BillingProvider,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTools: () -> Unit,
+    onRunScan: () -> Unit,
+    onOpenShield: () -> Unit,
+    onOpenTimeline: () -> Unit
 ) {
     val isPremium by billingProvider.premiumState.collectAsState()
     val context = LocalContext.current

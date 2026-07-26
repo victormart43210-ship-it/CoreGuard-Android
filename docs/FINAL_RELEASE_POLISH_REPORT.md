@@ -113,7 +113,7 @@ _Status: first P0 batch landed; residual external blockers remain._
 - `allowBackup=false`, cleartext off, network security config present.
 - Exported only: `MainActivity` (LAUNCHER), `ScamGuardNotificationListener` (system bind).
 - VPN `exported=false` + `BIND_VPN_SERVICE` + `specialUse` FGS property.
-- Production billing path: `PlayBillingProvider` / `FailClosedBillingProvider` (not Demo) via `rememberAppBillingProvider`.
+- Production billing path: explicit `BillingProvider` injection from `MainActivity` (Play / fail-closed; never Demo defaults on screens).
 
 ### Phase 1 validation (actually run)
 

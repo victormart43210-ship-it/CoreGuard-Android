@@ -32,7 +32,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanVerdict
@@ -54,10 +53,10 @@ import java.util.Locale
 
 @Composable
 fun TimelineScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onUpgrade: () -> Unit = {},
-    onBack: () -> Unit = {},
-    onNavigateToScanner: () -> Unit = {}
+    billingProvider: BillingProvider,
+    onUpgrade: () -> Unit,
+    onBack: () -> Unit,
+    onNavigateToScanner: () -> Unit
 ) {
     val context = LocalContext.current
     val isPremium by billingProvider.premiumState.collectAsState()

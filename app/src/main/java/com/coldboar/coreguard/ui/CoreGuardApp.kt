@@ -27,8 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,6 +41,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.FirstRunStore
+import com.coldboar.coreguard.ui.navigation.CoreGuardNavGraph
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.ForensicJournalScreen
@@ -77,18 +76,7 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
 )
 
-private val routesWithoutBottomBar = setOf(
-    CoreGuardRoute.Onboarding.route,
-    CoreGuardRoute.PrivacyPolicy.route,
-    CoreGuardRoute.Timeline.route,
-    CoreGuardRoute.SupplyChain.route,
-    CoreGuardRoute.Tools.route,
-    CoreGuardRoute.OverlayMatrix.route,
-    CoreGuardRoute.ForensicJournal.route,
-    CoreGuardRoute.ScamGuard.route
-)
-
-private val tabRoutes = bottomNavItems.map { it.route }.toSet()
+private val tabRoutes = CoreGuardNavGraph.bottomTabRoutes.toSet()
 
 /**
  * Root composable for the entire app.
@@ -96,19 +84,20 @@ private val tabRoutes = bottomNavItems.map { it.route }.toSet()
  * Contains exactly one [NavHost] and one bottom navigation bar with five
  * primary destinations. All screens are reachable through this single graph.
  *
+ * @param billingProvider Required production [BillingProvider] from MainActivity
+ *   (Play Billing). No demo/preview default — callers must inject explicitly.
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider Production [BillingProvider] from MainActivity (Play Billing).
  */
 @Composable
 fun CoreGuardApp(
-    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
-    billingProvider: BillingProvider = rememberAppBillingProvider()
+    billingProvider: BillingProvider,
+    secretPortalVisible: MutableState<Boolean>
 ) {
     val context = LocalContext.current
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val showBottomBar = currentRoute !in routesWithoutBottomBar
+    val showBottomBar = CoreGuardNavGraph.showsBottomBar(currentRoute)
 
     fun navigateToTab(route: String) {
         navController.navigate(route) {
@@ -147,7 +136,7 @@ fun CoreGuardApp(
         ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = CoreGuardRoute.Home.route,
+                startDestination = CoreGuardNavGraph.startDestination,
                 modifier = Modifier.padding(paddingValues),
                 enterTransition = {
                     if (targetState.destination.route in tabRoutes &&

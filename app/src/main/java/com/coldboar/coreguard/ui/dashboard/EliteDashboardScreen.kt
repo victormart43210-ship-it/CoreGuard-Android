@@ -116,13 +116,13 @@ import kotlin.math.sin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EliteDashboardScreen(
-    onNavigateToScanner: () -> Unit = {},
-    onNavigateToTimeline: () -> Unit = {},
-    onNavigateToShield: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onNavigateToOverlayMatrix: () -> Unit = {},
-    onNavigateToForensicJournal: () -> Unit = {},
-    onNavigateToScamGuard: () -> Unit = {}
+    onNavigateToScanner: () -> Unit,
+    onNavigateToTimeline: () -> Unit,
+    onNavigateToShield: () -> Unit,
+    onNavigateToTools: () -> Unit,
+    onNavigateToOverlayMatrix: () -> Unit,
+    onNavigateToForensicJournal: () -> Unit,
+    onNavigateToScamGuard: () -> Unit
 ) {
     val context = LocalContext.current
 
