@@ -2,6 +2,8 @@ package com.coldboar.coreguard
 
 import android.app.Application
 import android.util.Log
+import android.os.PowerManager
+import com.coldboar.coreguard.monitor.SecurityPulseWorker
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.swarm.SwarmCoordinator
 import com.coldboar.coreguard.swarm.SwarmModule
@@ -54,12 +56,26 @@ class CoreGuardApplication : Application() {
         // Warm the billing client early so entitlement queries are ready.
         billingProvider
 
-        // Dynamic Threat Score feeds on continuous BAE samples (on-device only).
+        // Dynamic Threat Score feeds on BAE samples (on-device only).
+        // Stretch the interval in system power-save to reduce battery cost.
         try {
-            BehavioralAnomalyEngine.start(appScope)
-            Log.i(TAG, "Behavioral anomaly engine started for Elite DTS")
+            val powerSave = (getSystemService(POWER_SERVICE) as? PowerManager)?.isPowerSaveMode == true
+            val interval = if (powerSave) {
+                BehavioralAnomalyEngine.POWER_SAVE_INTERVAL_MS
+            } else {
+                BehavioralAnomalyEngine.DEFAULT_INTERVAL_MS
+            }
+            BehavioralAnomalyEngine.start(appScope, intervalMs = interval)
+            Log.i(TAG, "Behavioral anomaly engine started intervalMs=$interval")
         } catch (t: Throwable) {
             Log.w(TAG, "BAE start failed: ${t.message}")
+        }
+
+        // Hourly Guardian Score pulse via WorkManager (battery-not-low constraint).
+        try {
+            SecurityPulseWorker.schedule(this)
+        } catch (t: Throwable) {
+            Log.w(TAG, "Security pulse schedule failed: ${t.message}")
         }
 
         // Provision the hardware key without blocking the main thread. A tiny

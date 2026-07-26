@@ -243,6 +243,15 @@ Full screen-by-screen UI audit and TalkBack/font-scale matrix still remaining.
 # lint: 0 Error/Fatal; 70 Warning, 3 Information
 ```
 
+### Live score / timeline / motion / a11y / battery pulse
+
+| Feature | Implementation |
+|---------|----------------|
+| Live Security Score | `LiveSecurityScore` on Home; refreshes ~12s while open; polite liveRegion |
+| Timeline viz | `ThreatTimelineChart` + a11y on entries |
+| Premium motion | Shared `premiumTween` / NavHost motion constants; reduced-motion freezes |
+| Background pulse | `SecurityPulseWorker` hourly, `RequiresBatteryNotLow`; BAE 15s / 45s power-save |
+
 ### Changed files (this PR branch)
 
 - `docs/FINAL_RELEASE_POLISH_REPORT.md`, `docs/SECURITY_CLAIMS.md`, `README.md`

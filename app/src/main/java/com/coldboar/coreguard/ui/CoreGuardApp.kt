@@ -58,9 +58,15 @@ import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.MOTION_POP_FADE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_POP_SLIDE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_PUSH_FADE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_PUSH_SLIDE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_TAB_FADE_MS
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SurfacePewter
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 
 private data class NavItem(
     val route: String,
@@ -94,6 +100,12 @@ fun CoreGuardApp(
     secretPortalVisible: MutableState<Boolean>
 ) {
     val context = LocalContext.current
+    val motionEnabled = rememberMotionEnabled()
+    val tabFade = if (motionEnabled) MOTION_TAB_FADE_MS else 0
+    val pushFade = if (motionEnabled) MOTION_PUSH_FADE_MS else 0
+    val pushSlide = if (motionEnabled) MOTION_PUSH_SLIDE_MS else 0
+    val popFade = if (motionEnabled) MOTION_POP_FADE_MS else 0
+    val popSlide = if (motionEnabled) MOTION_POP_SLIDE_MS else 0
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
@@ -142,29 +154,29 @@ fun CoreGuardApp(
                     if (targetState.destination.route in tabRoutes &&
                         initialState.destination.route in tabRoutes
                     ) {
-                        fadeIn(animationSpec = tween(220))
+                        fadeIn(animationSpec = tween(tabFade))
                     } else {
-                        fadeIn(animationSpec = tween(240)) +
+                        fadeIn(animationSpec = tween(pushFade)) +
                             slideIntoContainer(
                                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                                animationSpec = tween(280),
-                                initialOffset = { it / 20 }
+                                animationSpec = tween(pushSlide),
+                                initialOffset = { it / 18 }
                             )
                     }
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(180))
+                    fadeOut(animationSpec = tween((pushFade * 0.7f).toInt().coerceAtLeast(0)))
                 },
                 popEnterTransition = {
-                    fadeIn(animationSpec = tween(220)) +
+                    fadeIn(animationSpec = tween(popFade)) +
                         slideIntoContainer(
                             towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(260),
-                            initialOffset = { it / 20 }
+                            animationSpec = tween(popSlide),
+                            initialOffset = { it / 18 }
                         )
                 },
                 popExitTransition = {
-                    fadeOut(animationSpec = tween(160))
+                    fadeOut(animationSpec = tween((popFade * 0.75f).toInt().coerceAtLeast(0)))
                 }
             ) {
                 composable(CoreGuardRoute.Onboarding.route) {

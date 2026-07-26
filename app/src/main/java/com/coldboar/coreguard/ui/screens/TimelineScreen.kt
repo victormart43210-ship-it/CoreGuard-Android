@@ -29,6 +29,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
@@ -40,6 +43,7 @@ import com.coldboar.coreguard.ui.components.LoadingLine
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
+import com.coldboar.coreguard.ui.components.ThreatTimelineChart
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -102,6 +106,15 @@ fun TimelineScreen(
                 )
             }
             else -> {
+                ThreatTimelineChart(records = visible)
+                Spacer(modifier = Modifier.height(20.dp))
+                Text(
+                    text = "Check history",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onBackground,
+                    modifier = Modifier.semantics { heading() }
+                )
+                Spacer(modifier = Modifier.height(12.dp))
                 visible.forEachIndexed { index, record ->
                     ScanTimelineEntry(
                         record = record,
@@ -135,12 +148,24 @@ private fun ScanTimelineEntry(record: ScanHistoryStore.ScanRecord, isLast: Boole
     val verdictLabel = when (record.verdict) {
         ScanVerdict.CLEAN -> "Looked clean"
         ScanVerdict.SUSPICIOUS -> "Possible risk"
-        ScanVerdict.INFECTED -> "Threat found"
+        ScanVerdict.INFECTED -> "Indicators matched"
     }
     val dateFormat = SimpleDateFormat("MMM d, yyyy · h:mm a", Locale.getDefault())
     val dateStr = dateFormat.format(Date(record.timestampMs))
 
-    Row(modifier = Modifier.fillMaxWidth()) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .semantics(mergeDescendants = true) {
+                contentDescription = buildString {
+                    append("$verdictLabel. ")
+                    append("$dateStr. ")
+                    append("${record.scannedArtifacts} items checked. ")
+                    append("${record.detectionCount} flags. ")
+                    append("Duration ${record.durationMillis} milliseconds.")
+                }
+            }
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.padding(end = 12.dp)

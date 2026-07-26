@@ -8,6 +8,8 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 |-------|-------------------|
 | On-device privacy-integrity / spyware **indicator** checks | Nemesis Scanner matches local artifacts against IOC lists |
 | Aggregate CPU usage is a **BASIC** `/proc/stat` sample | `CpuUsageCalculator`; not per-process and not a security verdict |
+| Live Security Score refreshes on Home and via hourly WorkManager pulse | Weighted local `SecurityCheckRunner` summary; battery-not-low constraint; not cloud threat intel |
+| Threat timeline chart shows past privacy-check verdicts / flag counts | `ScanHistoryStore` history visualization — not continuous network IPS |
 | A clean scan is **reassuring, not a guarantee** | Explicitly disclosed in Scanner UI and store copy |
 | Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent |
 | Guardian Score summarizes local heuristic checks | Root/debugger/emulator/signature/build heuristics |

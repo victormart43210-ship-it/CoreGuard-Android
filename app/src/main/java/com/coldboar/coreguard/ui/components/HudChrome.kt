@@ -44,6 +44,7 @@ import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SoftGold
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -103,8 +104,9 @@ fun PrecisionScoreRing(
     size: Dp = 210.dp,
     active: Boolean = true
 ) {
+    val motionEnabled = rememberMotionEnabled()
     val transition = rememberInfiniteTransition(label = "precisionRing")
-    val sweep by transition.animateFloat(
+    val sweepAnimated by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -113,7 +115,7 @@ fun PrecisionScoreRing(
         ),
         label = "orbit"
     )
-    val tickPulse by transition.animateFloat(
+    val tickPulseAnimated by transition.animateFloat(
         initialValue = 0.4f,
         targetValue = 0.85f,
         animationSpec = infiniteRepeatable(
@@ -122,7 +124,7 @@ fun PrecisionScoreRing(
         ),
         label = "ticks"
     )
-    val counter by transition.animateFloat(
+    val counterAnimated by transition.animateFloat(
         initialValue = 360f,
         targetValue = 0f,
         animationSpec = infiniteRepeatable(
@@ -131,6 +133,9 @@ fun PrecisionScoreRing(
         ),
         label = "counter"
     )
+    val sweep = if (motionEnabled && active) sweepAnimated else 0f
+    val tickPulse = if (motionEnabled && active) tickPulseAnimated else 0.65f
+    val counter = if (motionEnabled && active) counterAnimated else 0f
     val lite = remember { isLikelyEmulatorHost() }
 
     Canvas(modifier = modifier.size(size)) {
