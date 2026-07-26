@@ -11,14 +11,15 @@ Version: **1.0.9** (`versionCode` 10)
 
 | Check | Result | Notes |
 |-------|--------|-------|
-| `:app:testDebugUnitTest` | pending | Run before PR update |
-| `:app:assembleDebug` | pending | Debug APK |
+| `:app:testDebugUnitTest` | **PASS** | **293** tests |
+| `:app:assembleDebug` | **PASS** | Debug APK |
 | Honesty | **PASS** | Classical sim only — not a QPU, not occult detection |
 
 ### Landed
 
 - `QuillaQuantumCorrelate` — H·Metatron → CNOT entangle → Rz·Raphael/BlackCross → M·Sandalphon
 - Wired into `QuillaCorrelationEngine` (evidence amplitudes → collapse → hypothesis JSON)
+- Classical confidence ladder preserved when already above threshold; quantum blend only lifts borderline hard evidence
 - Memory / priority status cite `quantumSeal` + disclaimer
 - Knowledge: `quilla-quantum-correlate.json`; ask: `quantum correlate` · `magick gates`
 
@@ -28,7 +29,7 @@ Version: **1.0.9** (`versionCode` 10)
 |-----------|--------|
 | M1–M11 | PASS |
 | M12 Enochian + Kabbalah lattice | PASS — 288 tests |
-| **M13 Quantum Correlate** | pending |
+| **M13 Quantum Correlate** | **PASS — 293 tests** |
 
 ## Play Console next (human)
 
