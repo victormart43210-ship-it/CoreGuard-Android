@@ -32,7 +32,11 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -72,7 +76,9 @@ fun SettingsScreen(
 ) {
     val isPremium by billingProvider.premiumState.collectAsState()
     val context = LocalContext.current
+    val wipeScope = rememberCoroutineScope()
     var wipeStatus by remember { mutableStateOf<String?>(null) }
+    var wipeBusy by remember { mutableStateOf(false) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     var hardeningOpen by remember { mutableStateOf(false) }
@@ -350,16 +356,29 @@ fun SettingsScreen(
                 )
                 Spacer(modifier = Modifier.height(10.dp))
                 OutlinedButton(
+                    enabled = !wipeBusy,
                     onClick = {
-                        com.coldboar.coreguard.LocalSecurityData.wipeAll(context)
-                        wipeStatus = "Local security data deleted"
+                        wipeBusy = true
+                        wipeStatus = null
+                        wipeScope.launch {
+                            // Room clearAllTables must not run on the main thread.
+                            val result = withContext(Dispatchers.IO) {
+                                com.coldboar.coreguard.LocalSecurityData.wipeAll(context)
+                            }
+                            wipeStatus = result.summary()
+                            wipeBusy = false
+                        }
                     }
                 ) {
-                    Text("Delete local security data")
+                    Text(if (wipeBusy) "Deleting…" else "Delete local security data")
                 }
                 wipeStatus?.let {
                     Spacer(modifier = Modifier.height(6.dp))
-                    Text(it, style = MaterialTheme.typography.bodySmall, color = SafeGreen)
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (it.startsWith("Deleted with issues")) AttentionAmber else SafeGreen
+                    )
                 }
             }
         }

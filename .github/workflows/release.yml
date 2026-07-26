@@ -18,7 +18,9 @@ jobs:
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       COREGUARD_ANDROID_BUILD: "true"
-      COREGUARD_REQUIRE_RELEASE_SIGNING: "true"
+      # COREGUARD_REQUIRE_RELEASE_SIGNING is set only on the signed build step.
+      # Setting it job-wide breaks :app:testDebugUnitTest / :app:lintRelease
+      # because those configure the project before the keystore is decoded.
 
     steps:
       - name: Checkout repository
@@ -75,6 +77,7 @@ jobs:
 
       - name: Build release APK + AAB
         env:
+          COREGUARD_REQUIRE_RELEASE_SIGNING: "true"
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}

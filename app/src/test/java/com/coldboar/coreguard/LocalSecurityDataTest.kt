@@ -37,10 +37,13 @@ class LocalSecurityDataTest {
         assertEquals(1, ForensicJournal.all(context).size)
         assertTrue(EliteModule.threatCounter.getState().scamAmberCount >= 1)
 
-        LocalSecurityData.wipeAll(context)
+        val result = LocalSecurityData.wipeAll(context)
 
         assertTrue(ForensicJournal.all(context).isEmpty())
         assertEquals(0, EliteModule.threatCounter.getState().scamAmberCount)
         assertTrue(ScamGuardEngine.recentFindings().isEmpty())
+        assertTrue(result.forensicJournal)
+        assertTrue(result.scamGuard)
+        assertTrue(result.threatCounter)
     }
 }
