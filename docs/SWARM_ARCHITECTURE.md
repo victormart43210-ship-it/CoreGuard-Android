@@ -34,6 +34,11 @@ Cross-device correlation belongs on a backend, not inside the APK:
 - Aggregate anonymized signals / IOC hits across installations
 - Correlate with STIX / Amnesty-style feeds already consumed on-device
 - Feed refined indicators back to clients
+- Optional hypothesis refine loop: `scripts/agents/quilla_hypothesis_evaluator.py`
+  (local deterministic by default; LangGraph+OpenAI only with `OPENAI_API_KEY` + `--llm`)
+
+On-device path: swarm signals → signed `TelemetryDelta` (`com.coreguard.security.telemetry`)
+stored in an in-memory ring for Quilla — **no automatic upload**, **no on-device LLM**.
 
 On-device Quilla / Nemesis components remain local evidence helpers; they are not
 a substitute for fleet-wide TI swarming.

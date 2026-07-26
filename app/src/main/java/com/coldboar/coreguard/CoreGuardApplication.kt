@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coreguard.android.data.local.QuillaDatabase
+import com.coreguard.security.telemetry.TelemetryBridge
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -60,6 +61,12 @@ class CoreGuardApplication : Application() {
                 quillaDatabase.quillaLearningDao()
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
+            }
+            try {
+                TelemetryBridge.init(this@CoreGuardApplication)
+                TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
+            } catch (t: Throwable) {
+                Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
             }
         }.apply { isDaemon = true }.start()
     }

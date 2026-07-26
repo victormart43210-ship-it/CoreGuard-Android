@@ -11,6 +11,8 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent |
 | Guardian Score summarizes local heuristic checks | Root/debugger/emulator/signature/build heuristics |
 | Quilla is an **on-device** agent (no cloud LLM) | Local knowledge + evidence; no ChatGPT/Claude keys |
+| Signed telemetry deltas stay on-device unless user opt-in export exists | `TelemetryBridge` ring buffer; Keystore ECDSA when available |
+| Optional server-side Quilla hypothesis evaluator may use an LLM | `scripts/agents/quilla_hypothesis_evaluator.py` only; not shipped as on-device Quilla |
 | Quilla Intel Network can pull public Amnesty/MVT STIX, CISA KEV, and MISP Android briefs | `QuillaIntelNetwork` + `PublicMultiSourceStixFetcher`; optional HTTPS; defensive only |
 | Premium unlocks signature refresh, JSON export, longer timeline, coaching tips | Matches `EntitlementPolicy` |
 | Optional HTTPS for IOC/STIX refresh and billing | Documented in Privacy Policy |
