@@ -56,12 +56,12 @@ internal object QuillaPurgeCodex {
     }
 
     fun levelTitle(infinityGeneration: Int, score: Int): String {
+        // Reference mock uses "Level 1-3"; deeper Keep stages unlock with score.
         val stage = when {
-            score >= 80 -> 5
-            score >= 50 -> 4
-            score >= 25 -> 3
-            score >= 10 -> 2
-            else -> 1
+            score >= 80 -> 6
+            score >= 50 -> 5
+            score >= 25 -> 4
+            else -> 3
         }
         return if (infinityGeneration <= 0) {
             "Level 1-$stage: The Audit Keep"

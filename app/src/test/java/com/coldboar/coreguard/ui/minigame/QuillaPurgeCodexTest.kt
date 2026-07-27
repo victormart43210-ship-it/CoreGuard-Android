@@ -48,10 +48,10 @@ class QuillaPurgeCodexTest {
 
     @Test
     fun levelTitle_reflectsScoreAndGeneration() {
-        assertTrue(QuillaPurgeCodex.levelTitle(0, 0).contains("Level 1-1"))
+        assertTrue(QuillaPurgeCodex.levelTitle(0, 0).contains("Level 1-3"))
         assertTrue(QuillaPurgeCodex.levelTitle(3, 0).contains("gen 3"))
-        assertTrue(QuillaPurgeCodex.levelTitle(3, 0).contains("Keep 1"))
-        assertTrue(QuillaPurgeCodex.levelTitle(3, 55).contains("Keep 4"))
+        assertTrue(QuillaPurgeCodex.levelTitle(3, 0).contains("Keep 3"))
+        assertTrue(QuillaPurgeCodex.levelTitle(3, 55).contains("Keep 5"))
     }
 
     @Test
