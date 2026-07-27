@@ -12,7 +12,11 @@ internal data class Enemy(
     var prevY: Float = y,
     val size: Float = 36f,
     val speed: Float = 2.8f,
-    val isWorm: Boolean = false
+    val isWorm: Boolean = false,
+    val knowledgeId: String = "",
+    val label: String = "",
+    val tip: String = "",
+    val angel: String = ""
 )
 
 internal data class Spell(
@@ -32,8 +36,20 @@ internal data class PipeObstacle(
     var prevX: Float = x,
     /** One-shot gate damage so overlap does not melt shield every frame. */
     var damaged: Boolean = false,
-    var scored: Boolean = false
+    var scored: Boolean = false,
+    val knowledgeId: String = "",
+    val label: String = "",
+    val tip: String = "",
+    val angel: String = ""
 )
+
+internal data class PurgeToast(
+    val title: String,
+    val tip: String,
+    val kind: Kind
+) {
+    enum class Kind { THREAT, GATE }
+}
 
 /**
  * Non-Compose physics for the Quilla mini-game.
@@ -61,6 +77,15 @@ internal class QuillaGameEngine(
     val spells = ArrayList<Spell>(16)
     val pipes = ArrayList<PipeObstacle>(4)
 
+    /** Short titles of purged threats / cleared gates (for Infinity debrief). */
+    val purgedTitles = ArrayList<String>(16)
+
+    /** Latest tip toast for the HUD ticker (UI clears after display). */
+    var pendingToast: PurgeToast? = null
+
+    private var flavorDeck: List<PurgeFlavorCard> = QuillaPurgeCodex.fallbackDeck()
+    private var flavorCursor: Int = 0
+
     private var spawnAccumulatorMs = 0f
     private var iFramesMs = 0f
     private var graceMs = 0f
@@ -69,6 +94,11 @@ internal class QuillaGameEngine(
 
     val scrollX: Float
         get() = timeMs * 0.04f
+
+    fun configureFlavor(deck: List<PurgeFlavorCard>) {
+        flavorDeck = deck.ifEmpty { QuillaPurgeCodex.fallbackDeck() }
+        flavorCursor = 0
+    }
 
     fun reset() {
         score = 0
@@ -79,6 +109,9 @@ internal class QuillaGameEngine(
         enemies.clear()
         spells.clear()
         pipes.clear()
+        purgedTitles.clear()
+        pendingToast = null
+        flavorCursor = 0
         spawnAccumulatorMs = 0f
         iFramesMs = 0f
         graceMs = GRACE_MS
@@ -89,22 +122,8 @@ internal class QuillaGameEngine(
         if (worldW > 1f && worldH > 1f) {
             val startGap = (worldH * 0.28f).coerceIn(220f, 320f)
             val gapY = (quillaY - startGap / 2f).coerceIn(worldH * 0.12f, worldH * 0.5f)
-            pipes.add(
-                PipeObstacle(
-                    x = worldW * 0.95f,
-                    gapY = gapY,
-                    gapHeight = startGap,
-                    prevX = worldW * 0.95f
-                )
-            )
-            pipes.add(
-                PipeObstacle(
-                    x = worldW * 1.55f,
-                    gapY = worldH * 0.32f,
-                    gapHeight = startGap,
-                    prevX = worldW * 1.55f
-                )
-            )
+            pipes.add(makePipe(worldW * 0.95f, gapY, startGap))
+            pipes.add(makePipe(worldW * 1.55f, worldH * 0.32f, startGap))
         }
     }
 
@@ -173,6 +192,7 @@ internal class QuillaGameEngine(
     private fun fixedTick(dt: Float): Boolean {
         val beforeScore = score
         val beforeShield = shieldHp
+        val hadToast = pendingToast != null
 
         // Snapshot previous positions for interpolation.
         prevQuillaY = quillaY
@@ -208,17 +228,7 @@ internal class QuillaGameEngine(
         spawnAccumulatorMs += dt
         if (spawnAccumulatorMs >= SPAWN_EVERY_MS && enemies.size < MAX_ENEMIES) {
             spawnAccumulatorMs = 0f
-            val spawnY = random.nextFloat() * max(1f, worldH - 160f) + 80f
-            val x = worldW + 40f
-            enemies.add(
-                Enemy(
-                    x = x,
-                    y = spawnY,
-                    prevX = x,
-                    prevY = spawnY,
-                    isWorm = random.nextBoolean()
-                )
-            )
+            spawnEnemy()
         }
 
         var si = 0
@@ -234,17 +244,14 @@ internal class QuillaGameEngine(
             if (p.x < -p.width) {
                 val gapH = (worldH * 0.26f).coerceIn(200f, 300f)
                 val newX = worldW + 40f
-                pipes[i] = PipeObstacle(
-                    x = newX,
-                    gapY = random.nextFloat() * max(1f, worldH * 0.42f) + worldH * 0.12f,
-                    gapHeight = gapH,
-                    prevX = newX
-                )
+                val gapY = random.nextFloat() * max(1f, worldH * 0.42f) + worldH * 0.12f
+                pipes[i] = makePipe(newX, gapY, gapH)
                 continue
             }
             if (!p.scored && p.x + p.width < QUILLA_X - 10f) {
                 p.scored = true
                 score += 5
+                notePurge(p.label, p.tip, PurgeToast.Kind.GATE)
             }
             // Hitbox uses Quilla body radius, not hat tip.
             val bodyY = quillaY
@@ -268,6 +275,7 @@ internal class QuillaGameEngine(
             }
             if (hitSpellIndex >= 0) {
                 spells.removeAt(hitSpellIndex)
+                notePurge(enemy.label, enemy.tip, PurgeToast.Kind.THREAT)
                 enemies.removeAt(ei)
                 score += 10
                 continue
@@ -287,7 +295,60 @@ internal class QuillaGameEngine(
             ei++
         }
 
-        return gameOver || score != beforeScore || shieldHp != beforeShield
+        return gameOver || score != beforeScore || shieldHp != beforeShield ||
+            pendingToast != null && !hadToast
+    }
+
+    private fun spawnEnemy() {
+        val card = nextFlavor()
+        val spawnY = random.nextFloat() * max(1f, worldH - 160f) + 80f
+        val x = worldW + 40f
+        enemies.add(
+            Enemy(
+                x = x,
+                y = spawnY,
+                prevX = x,
+                prevY = spawnY,
+                isWorm = card.isWorm,
+                knowledgeId = card.id,
+                label = card.shortLabel,
+                tip = card.tip,
+                angel = card.angel
+            )
+        )
+    }
+
+    private fun makePipe(x: Float, gapY: Float, gapH: Float): PipeObstacle {
+        val card = nextFlavor()
+        return PipeObstacle(
+            x = x,
+            gapY = gapY,
+            gapHeight = gapH,
+            prevX = x,
+            knowledgeId = card.id,
+            label = card.shortLabel,
+            tip = card.tip,
+            angel = card.angel
+        )
+    }
+
+    private fun nextFlavor(): PurgeFlavorCard {
+        val card = QuillaPurgeCodex.nextCard(flavorDeck, flavorCursor)
+        flavorCursor++
+        return card
+    }
+
+    private fun notePurge(label: String, tip: String, kind: PurgeToast.Kind) {
+        val title = label.ifBlank {
+            if (kind == PurgeToast.Kind.GATE) "Vault gate" else "Threat"
+        }
+        if (title.isNotBlank() && purgedTitles.none { it.equals(title, ignoreCase = true) }) {
+            purgedTitles += title
+            if (purgedTitles.size > 12) purgedTitles.removeAt(0)
+        }
+        if (tip.isNotBlank()) {
+            pendingToast = PurgeToast(title = title, tip = tip, kind = kind)
+        }
     }
 
     private fun applyDamage(amount: Int) {
