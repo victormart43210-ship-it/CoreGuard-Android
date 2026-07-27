@@ -8,7 +8,7 @@ import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * Observable, process-wide state for the Pegasus domain-blocking shield.
+ * Observable, process-wide state for the Privacy Shield DNS-indicator sinkhole.
  *
  * The VPN sinkhole updates these counters; the UI observes them.
  * Listener callbacks are always dispatched on the main thread.

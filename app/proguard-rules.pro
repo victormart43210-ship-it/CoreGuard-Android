@@ -45,6 +45,19 @@
 -keep class com.coldboar.coreguard.ui.navigation.CoreGuardRoute$* { *; }
 
 # ---------------------------------------------------------------------------
+# WorkManager security pulse
+# ---------------------------------------------------------------------------
+-keep class com.coldboar.coreguard.monitor.SecurityPulseWorker { *; }
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.CoroutineWorker
+-keepclassmembers class * extends androidx.work.Worker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+-keepclassmembers class * extends androidx.work.CoroutineWorker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+
+# ---------------------------------------------------------------------------
 # JNI / native
 # ---------------------------------------------------------------------------
 -keepclasseswithmembernames class * {
