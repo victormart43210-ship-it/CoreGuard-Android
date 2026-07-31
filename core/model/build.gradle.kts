@@ -1,6 +1,6 @@
 plugins {
     // Keep in lockstep with app/build.gradle kotlin-gradle-plugin classpath (1.9.25).
-    id("org.jetbrains.kotlin.jvm") version "1.9.25"
+    id("org.jetbrains.kotlin.jvm") version "2.4.10"
 }
 
 java {
