@@ -19,6 +19,27 @@ the hard boundaries; Kotlin `object` façades enforce the soft ones inside `:app
 | `ShieldModule` | `NemesisShield`, `GuardVpnService` intent wiring | Arm / disarm / observe state |
 | `BillingModule` | `CoreGuardApplication.billingProvider` lookup | Premium checks / `EntitlementPolicy` |
 | `BillingProvider` | Play Billing client details | Injected into Compose screens |
+| `SwarmModule` | `SwarmCoordinator`, agent ctors, Redux alert Counter store | Alerts / agent count / increment / reset Counter |
+| `EliteModule` | DTS engine, Scam Guard, Forensic Journal, Redux threat Counter | Evaluate DTS / inspect scam / journal export / Counter |
+
+### Swarm alert Counter (Redux-style, not React-Redux)
+
+Android has no React-Redux runtime. CoreGuard uses a tiny unidirectional store
+(`SwarmAlertCounterStore`) behind `SwarmModule.alertCounter`:
+
+- **State** — immutable `SwarmAlertCounterState`
+- **Actions** — `AlertObserved` / `Increment` / `Reset`
+- **Reducer** — pure `SwarmAlertCounterStore.reduce`
+- **UI** — `SwarmAlertCounter` Compose only **subscribes** and calls
+  `SwarmModule.incrementAlertCounter()` / `resetAlertCounter()` (no Action imports)
+
+Do not put agent registration or native RASP inside the Counter composable.
+
+### Elite threat Counter (same Redux contract)
+
+`EliteThreatCounterStore` behind `EliteModule.threatCounter` holds Dynamic Threat
+Score + Scam amber count. Elite Home subscribes; engines feed the store only
+through `EliteModule.evaluateThreatScore` / `inspectScamText`.
 
 ## Target modules (post–Internal Testing)
 

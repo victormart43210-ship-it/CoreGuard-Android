@@ -67,22 +67,35 @@ if ! adb devices 2>/dev/null | grep -qE 'emulator-[0-9]+\s+device'; then
 fi
 
 echo "[run] Installing $APK…"
-for attempt in 1 2 3 4 5; do
-  if adb install -r "$APK"; then
-    break
-  fi
-  echo "[run] install attempt $attempt failed — waiting for PackageManager…"
-  sleep 8
-  if [[ "$attempt" == "5" ]]; then
-    echo "[run] Failed to install APK after retries." >&2
-    exit 1
-  fi
-done
+# Prefer component launch; package-only MAIN/LAUNCHER can fail on some images.
+install_debug_apk() {
+  local attempt out
+  for attempt in 1 2 3 4 5; do
+    # -d allows downgrade so gates survive versionCode bumps on shared AVDs.
+    if out="$(adb install -r -d -t "$APK" 2>&1)"; then
+      echo "$out"
+      return 0
+    fi
+    echo "$out"
+    if echo "$out" | grep -q 'INSTALL_FAILED_VERSION_DOWNGRADE'; then
+      echo "[run] VERSION_DOWNGRADE — uninstalling $PACKAGE_DEBUG and retrying…"
+      adb uninstall "$PACKAGE_DEBUG" >/dev/null 2>&1 || true
+    fi
+    echo "[run] install attempt $attempt failed — waiting for PackageManager…"
+    sleep 8
+  done
+  return 1
+}
+if ! install_debug_apk; then
+  echo "[run] Failed to install APK after retries." >&2
+  exit 1
+fi
 echo "[run] Launching $PACKAGE_DEBUG…"
-adb shell am start -a android.intent.action.MAIN \
-  -c android.intent.category.LAUNCHER \
-  -p "$PACKAGE_DEBUG" || \
-  adb shell am start -n "$PACKAGE_DEBUG/com.coldboar.coreguard.MainActivity"
+if ! adb shell am start -n "$PACKAGE_DEBUG/com.coldboar.coreguard.MainActivity"; then
+  adb shell am start -a android.intent.action.MAIN \
+    -c android.intent.category.LAUNCHER \
+    -p "$PACKAGE_DEBUG" || true
+fi
 
 echo "[run] App launched (debug package). Prefer a KVM host for snappy UI testing."
 echo "[run] Logs: adb logcat --pid=\$(adb shell pidof -s $PACKAGE_DEBUG)"

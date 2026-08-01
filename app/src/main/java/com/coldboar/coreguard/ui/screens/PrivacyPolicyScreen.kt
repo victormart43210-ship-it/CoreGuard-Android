@@ -92,7 +92,15 @@ fun PrivacyPolicyScreen(onBack: () -> Unit) {
             body = "• INTERNET — Required only to fetch optional threat signature updates and for the on-device VPN to forward allowed DNS queries.\n" +
                 "• FOREGROUND_SERVICE — Required to run the Privacy Shield VPN as a persistent background service.\n" +
                 "• POST_NOTIFICATIONS — Required to show the VPN status notification.\n" +
-                "• QUERY_ALL_PACKAGES — Required to check installed apps against spyware package indicators on your device. This data never leaves your device."
+                "• QUERY_ALL_PACKAGES — Required to check installed apps against spyware package indicators on your device. This data never leaves your device.\n" +
+                "• Notification access (optional) — Scam Guard may read notification text on-device for smishing / scam URL heuristics only after you enable CoreGuard under system Notification access. Content is not uploaded to a CoreGuard backend."
+        )
+
+        PolicySection(
+            title = "Scam Guard (optional Notification Listener)",
+            body = "Live Scam Guard interception is opt-in. Until you grant Notification access in Android Settings, " +
+                "CoreGuard does not read other apps' notifications. When enabled, processing stays on-device; " +
+                "CoreGuard does not sell or share notification contents."
         )
 
         PolicySection(

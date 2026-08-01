@@ -123,7 +123,12 @@ data class QuillaResearchSnapshot(
     val synced: Boolean = false,
     /** True when the last sync attempt failed (network/parse). Distinct from empty feed. */
     val syncFailed: Boolean = false,
-    val sourceLabel: String = "Quilla Intel Network (Amnesty/MVT · CISA · MISP)"
+    val sourceLabel: String = "Quilla Intel Network (Amnesty/MVT · CISA · MISP)",
+    /** Quilla Infinity angel/swarm training generation (0 = never trained). */
+    val infinityGeneration: Int = 0,
+    val infinityMalwareStudied: Int = 0,
+    val infinityVulnStudied: Int = 0,
+    val infinityCodexDepth: Int = 0
 )
 
 /**

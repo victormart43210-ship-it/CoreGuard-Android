@@ -18,7 +18,7 @@ jobs:
         working-directory: cli
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-go@v7
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
           cache-dependency-path: cli/go.sum
@@ -27,12 +27,14 @@ jobs:
       - run: go build -o /tmp/coreguard-cli ./cmd/coreguard
 
   build:
-    name: Android test + assemble
+    name: Android validation (real build)
     runs-on: ubuntu-latest
     permissions:
       contents: read
     env:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      # Real Android build is default; keep explicit for clarity.
+      COREGUARD_ANDROID_BUILD: "true"
 
     steps:
       - name: Checkout repository
@@ -60,8 +62,22 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Lint, test, and assemble debug APK
-        run: ./gradlew -Pcoreguard.androidBuild=true :app:lintDebug :app:testDebugUnitTest :app:assembleDebug --stacktrace
+      - name: Lint, unit test, assembleDebug, assembleRelease
+        run: |
+          ./gradlew \
+            :app:lintDebug \
+            :app:testDebugUnitTest \
+            :app:assembleDebug \
+            :app:assembleRelease \
+            --stacktrace
+
+      - name: Reject placeholder / tiny fake APK
+        run: |
+          ./gradlew :app:verifyNoPlaceholderApk --stacktrace
+          if grep -R "offlineFallback" app/build/outputs/apk 2>/dev/null; then
+            echo "Placeholder metadata found under outputs/apk" >&2
+            exit 1
+          fi
 
       - name: Upload debug APK
         uses: actions/upload-artifact@v4
@@ -69,3 +85,53 @@ jobs:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
           if-no-files-found: error
+
+  instrumented:
+    name: Instrumentation (API 35 ATD)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      COREGUARD_ANDROID_BUILD: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: gradle
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Install SDK + emulator packages
+        run: |
+          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
+          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+            "platforms;android-35" \
+            "build-tools;35.0.0" \
+            "ndk;26.1.10909125" \
+            "cmake;3.22.1" \
+            "emulator" \
+            "platform-tools" \
+            "system-images;android-35;google_apis_playstore;x86_64"
+      - name: Create AVD and run Quilla emulator gate
+        id: emulator_gate
+        run: |
+          chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh || true
+          echo no | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
+            -n CoreGuard_ATD35 \
+            -k "system-images;android-35;google_apis_playstore;x86_64" \
+            -d pixel_6 --force || true
+          HEADLESS=1 ./scripts/quilla-emulator-tests.sh
+        continue-on-error: true
+      - name: Report emulator gate result
+        if: steps.emulator_gate.outcome == 'failure'
+        run: |
+          echo "::warning title=Emulator Gate Failed::Instrumented tests failed (no KVM, flaky host, or real regression). Check logs above. This job uses continue-on-error to avoid blocking CI on emulator infrastructure, but failures must be investigated."
+          echo "## ⚠️ Emulator Gate: FAILED" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Instrumented tests on API 35 ATD did not pass. This could be:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Emulator host has no KVM acceleration (soft graphics, slow)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- A real test regression that must be investigated before release" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Do not promote to Closed/Open Testing without confirming this passes on a KVM-capable host or real device.**" >> "$GITHUB_STEP_SUMMARY"

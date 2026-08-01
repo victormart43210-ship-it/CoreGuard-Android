@@ -24,6 +24,7 @@ import com.coldboar.coreguard.ui.theme.BackgroundDeepBlack
 import com.coldboar.coreguard.ui.theme.BackgroundInk
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.RestrainedGold
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.random.Random
@@ -31,6 +32,7 @@ import kotlin.random.Random
 /**
  * Full-bleed atmospheric plane used behind primary screens.
  * Soft dual radial washes + drifting gold motes — presence without noise.
+ * Decorative loops freeze when animator duration scale is disabled.
  */
 @Composable
 fun AtmosphereBackground(
@@ -38,8 +40,9 @@ fun AtmosphereBackground(
     accent: Color = ElectricTeal,
     content: @Composable BoxScope.() -> Unit
 ) {
+    val motionEnabled = rememberMotionEnabled()
     val transition = rememberInfiniteTransition(label = "atmosphere")
-    val drift by transition.animateFloat(
+    val driftAnimated by transition.animateFloat(
         initialValue = 0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -48,7 +51,7 @@ fun AtmosphereBackground(
         ),
         label = "drift"
     )
-    val pulse by transition.animateFloat(
+    val pulseAnimated by transition.animateFloat(
         initialValue = 0.55f,
         targetValue = 0.95f,
         animationSpec = infiniteRepeatable(
@@ -57,6 +60,9 @@ fun AtmosphereBackground(
         ),
         label = "pulse"
     )
+    // Freeze decorative loops when the user disables animator duration scale.
+    val drift = if (motionEnabled) driftAnimated else 0f
+    val pulse = if (motionEnabled) pulseAnimated else 0.75f
     val motes = remember {
         List(18) {
             Mote(

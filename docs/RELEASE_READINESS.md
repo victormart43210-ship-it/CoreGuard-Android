@@ -50,21 +50,21 @@ Google Play requires a signed AAB/APK. If you lose the keystore you lose the abi
      -validity 10000 \
      -alias coreguard \
      -storepass <STORE_PASSWORD> \
-     -keypass <KEY_PASSWORD>
+     -keypass <SIGNING_KEY_PASSWORD>
    ```
 
 2. **Store credentials safely** — use environment variables or a secrets manager.
    Never commit the keystore or passwords to the repository.
 
-3. **Configure signing in `app/build.gradle.kts`**:
+3. **Configure signing in `gradle/android-app.gradle`**:
    ```kotlin
    android {
        signingConfigs {
            create("release") {
-               storeFile = file(System.getenv("KEYSTORE_PATH") ?: "coreguard-release.jks")
-               storePassword = System.getenv("KEYSTORE_PASSWORD")
-               keyAlias = System.getenv("KEY_ALIAS") ?: "coreguard"
-               keyPassword = System.getenv("KEY_PASSWORD")
+               // Configured in gradle/android-app.gradle via SIGNING_* env or keystore.properties
+               storePassword = System.getenv("SIGNING_STORE_PASSWORD")
+               keyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: "coreguard"
+               keyPassword = System.getenv("SIGNING_KEY_PASSWORD")
            }
        }
        buildTypes {
@@ -91,10 +91,10 @@ Google Play requires a signed AAB/APK. If you lose the keystore you lose the abi
 
 ```bash
 # Set environment variables first (see Signing section above)
-export KEYSTORE_PATH=/path/to/coreguard-release.jks
-export KEYSTORE_PASSWORD=<store_pass>
-export KEY_ALIAS=coreguard
-export KEY_PASSWORD=<key_pass>
+export SIGNING_STORE_FILE=/path/to/coreguard-release.jks
+export SIGNING_STORE_PASSWORD=<store_pass>
+export SIGNING_KEY_ALIAS=coreguard
+export SIGNING_KEY_PASSWORD=<key_pass>
 
 ./gradlew bundleRelease
 ```
@@ -137,6 +137,7 @@ Scans and Quilla Q&A run on-device. The app **does** use the network when you en
 - Privacy Shield DNS forwarding for allowed queries
 
 In the Data Safety form on Play Console, follow `docs/PLAY_CONSOLE_CHECKLIST.md` (not an absolute “no network” answer).
+Disclose optional Scam Guard **Notification Listener** access: on-device notification text heuristics only when the user grants Notification access; not shared off-device.
 
 **Privacy Policy**: Host a policy that matches the above. In-app screen + `docs/privacy-policy.html` are the source of truth.
 
@@ -182,7 +183,7 @@ Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `c
 
 - [ ] All unit tests pass: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
 - [ ] Debug APK builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
-- [ ] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease`
+- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.15 / versionCode 16)
 - [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [x] Production billing path is `PlayBillingProvider` (Demo is tests/previews only)
 - [x] Authoritative SKU is `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`

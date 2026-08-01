@@ -56,7 +56,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.IocFeedFetcher
@@ -66,6 +65,7 @@ import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.ui.components.CoreGuardCard
+import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.NestedSurface
 import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
@@ -92,8 +92,8 @@ private val scanStages = listOf(
 
 @Composable
 fun ScannerScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onUpgrade: () -> Unit = {}
+    billingProvider: BillingProvider,
+    onUpgrade: () -> Unit
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,19 +138,10 @@ fun ScannerScreen(
         Spacer(modifier = Modifier.height(12.dp))
 
         if (showEmptyState) {
-            CoreGuardCard {
-                Text(
-                    text = "No scan yet",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = ElectricTeal
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-                Text(
-                    text = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds.",
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MutedText
-                )
-            }
+            EmptyStatePanel(
+                title = "No privacy check yet",
+                body = "Run a quick on-device check against open spyware indicators. It usually takes a few seconds, and results stay on this device unless you opt into Premium signature refresh."
+            )
             Spacer(modifier = Modifier.height(16.dp))
         }
 
@@ -360,9 +351,9 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "No spyware signs found"
-        ScanVerdict.SUSPICIOUS -> "Possible privacy risk"
-        ScanVerdict.INFECTED -> "Privacy threat found"
+        ScanVerdict.CLEAN -> "No selected indicators matched"
+        ScanVerdict.SUSPICIOUS -> "Possible privacy risk indicators"
+        ScanVerdict.INFECTED -> "Spyware indicators matched"
     }
 
     CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {

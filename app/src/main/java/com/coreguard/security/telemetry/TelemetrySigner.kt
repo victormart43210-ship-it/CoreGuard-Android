@@ -1,7 +1,5 @@
 package com.coreguard.security.telemetry
 
-import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
 import android.security.keystore.KeyProperties
@@ -17,10 +15,11 @@ import java.security.spec.ECGenParameterSpec
  * Signs [TelemetryDelta] payloads with a hardware-backed EC key in Android Keystore.
  *
  * Prefer StrongBox when available, then TEE. Injectable [signBytes] supports JVM unit tests
- * without AndroidKeyStore.
+ * without AndroidKeyStore. Callers pass [strongBoxAvailable] so this class never retains a
+ * [android.content.Context] (avoids static-field leak warnings from long-lived bridges).
  */
 class TelemetrySigner(
-    private val context: Context? = null,
+    private val strongBoxAvailable: Boolean = false,
     private val keyAlias: String = DEFAULT_KEY_ALIAS,
     private val signBytes: ((ByteArray) -> ByteArray)? = null
 ) {
@@ -52,10 +51,8 @@ class TelemetrySigner(
     }
 
     private fun generateKeyPair() {
-        val ctx = context
-        val strongBox = ctx != null &&
-            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
-            ctx.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+        val strongBox =
+            strongBoxAvailable && Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
         if (strongBox) {
             try {
                 generateKeyPair(strongBox = true)

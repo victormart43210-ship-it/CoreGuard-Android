@@ -2,13 +2,17 @@ package com.coldboar.coreguard
 
 import android.app.Application
 import android.util.Log
+import android.os.PowerManager
+import com.coldboar.coreguard.elite.BehavioralAnomalyEngine
+import com.coldboar.coreguard.monitor.SecurityPulseWorker
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
-import com.coldboar.coreguard.swarm.MemoryIntegrityAgent
-import com.coldboar.coreguard.swarm.NetworkMonitorAgent
-import com.coldboar.coreguard.swarm.ProcessLineageAgent
 import com.coldboar.coreguard.swarm.SwarmCoordinator
+import com.coldboar.coreguard.swarm.SwarmModule
 import com.coreguard.android.data.local.QuillaDatabase
 import com.coreguard.security.telemetry.TelemetryBridge
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -40,6 +44,9 @@ class CoreGuardApplication : Application() {
      */
     val swarmCoordinator: SwarmCoordinator by lazy { SwarmCoordinator() }
 
+    /** Application-scoped work for BAE / Elite correlators (not UI). */
+    private val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
     override fun onCreate() {
         super.onCreate()
         instance.set(this)
@@ -52,20 +59,47 @@ class CoreGuardApplication : Application() {
         // Never block Application.onCreate on software AVDs (TCG/no-KVM ANRs).
         // Native ptrace baseline + billing warm on a daemon thread.
         Thread {
-            if (!instrumented) {
-                try {
+            try {
+                if (!instrumented) {
                     NativeTamperGuard.ensureLoaded()
-                } catch (t: Throwable) {
-                    Log.w(TAG, "Native tamper load failed: ${t.message}")
                 }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Native tamper load failed: ${t.message}")
+            }
+
+            if (!instrumented) {
+                // Warm the billing client early so entitlement queries are ready.
                 try {
                     billingProvider
                 } catch (t: Throwable) {
                     Log.w(TAG, "Billing warm-up failed: ${t.message}")
                 }
+
+                // Dynamic Threat Score feeds on BAE samples (on-device only).
+                // Stretch the interval in system power-save to reduce battery cost.
+                try {
+                    val powerSave = (getSystemService(POWER_SERVICE) as? PowerManager)?.isPowerSaveMode == true
+                    val interval = if (powerSave) {
+                        BehavioralAnomalyEngine.POWER_SAVE_INTERVAL_MS
+                    } else {
+                        BehavioralAnomalyEngine.DEFAULT_INTERVAL_MS
+                    }
+                    BehavioralAnomalyEngine.start(appScope, intervalMs = interval)
+                    Log.i(TAG, "Behavioral anomaly engine started intervalMs=$interval")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "BAE start failed: ${t.message}")
+                }
+
+                // Hourly Guardian Score pulse via WorkManager (battery-not-low constraint).
+                try {
+                    SecurityPulseWorker.schedule(this@CoreGuardApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Security pulse schedule failed: ${t.message}")
+                }
             } else {
-                Log.i(TAG, "Skipping native/billing preload under instrumentation")
+                Log.i(TAG, "Skipping billing/BAE/pulse preload under instrumentation")
             }
+
             try {
                 val token = keyManager.encrypt("coreguard".toByteArray())
                 keyManager.decrypt(token)
@@ -73,15 +107,17 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Key provisioning failed: ${t.message}")
             }
-            if (instrumented) {
-                Log.i(TAG, "Skipping knowledge/swarm/telemetry preload under instrumentation")
-                return@Thread
+
+            if (!instrumented) {
+                try {
+                    CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping knowledge preload under instrumentation")
             }
-            try {
-                CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
-            } catch (t: Throwable) {
-                Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
-            }
+
             try {
                 // Open Room so hypothesis writes from the correlation engine do not
                 // pay first-open latency on the UI path.
@@ -89,21 +125,26 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
             }
-            try {
-                TelemetryBridge.init(this@CoreGuardApplication)
-                TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
-            } catch (t: Throwable) {
-                Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
-            }
-            try {
-                // Michael (Hod) — register swarm agents once for collaborative RASP watch.
-                val swarm = swarmCoordinator
-                swarm.register(MemoryIntegrityAgent())
-                swarm.register(NetworkMonitorAgent())
-                swarm.register(ProcessLineageAgent())
-                Log.i(TAG, "Angelic swarm registered (Michael · memory/network/process)")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Swarm registration failed: ${t.message}")
+
+            if (!instrumented) {
+                try {
+                    TelemetryBridge.init(this@CoreGuardApplication)
+                    TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
+                }
+
+                try {
+                    // Michael (Hod) — register swarm peers via module façade (not UI).
+                    // See docs/SWARM_ARCHITECTURE.md: Kotlin swarm = background handoff;
+                    // microsecond RASP stays in native TamperGuard.
+                    SwarmModule.registerDefaultAgents(swarmCoordinator)
+                    Log.i(TAG, "Angelic swarm registered via SwarmModule (memory/network/process)")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Swarm registration failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping telemetry/swarm preload under instrumentation")
             }
         }.apply { isDaemon = true }.start()
     }

@@ -249,6 +249,43 @@ object QuillaReadyTopics {
                 "emulator tests"
             ),
             chipLabel = "Emulator gate"
+        ),
+        Topic(
+            prompt = "elite platform",
+            entryId = "coreguard-elite-platform",
+            aliases = setOf(
+                "coreguard elite",
+                "elite features",
+                "zero trust mobile",
+                "next-gen mobile endpoint",
+                "forensic journal",
+                "overlay protection matrix"
+            ),
+            chipLabel = "Elite platform"
+        ),
+        Topic(
+            prompt = "dynamic threat score",
+            entryId = "elite-dynamic-threat-score",
+            aliases = setOf(
+                "dts",
+                "threat score",
+                "on-device ai threat",
+                "behavioral threat score",
+                "what is dts"
+            ),
+            chipLabel = "Dynamic Threat Score"
+        ),
+        Topic(
+            prompt = "scam guard",
+            entryId = "elite-scam-guard",
+            aliases = setOf(
+                "smishing",
+                "phishing notification",
+                "scam url",
+                "amber warning",
+                "notification interceptor"
+            ),
+            chipLabel = "Scam Guard"
         )
     )
 

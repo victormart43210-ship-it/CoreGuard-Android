@@ -10,8 +10,8 @@ android {
         applicationId "com.coldboar.coreguard"
         minSdk 24
         targetSdk 35
-        versionCode 11
-        versionName "1.0.10"
+        versionCode 18
+        versionName "1.0.17"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -42,6 +42,8 @@ android {
     ndkVersion "26.1.10909125"
 
     // Prefer CI env secrets; fall back to local gitignored keystore.properties.
+    // Variable names (authoritative): SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD,
+    // SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD, EXPECTED_CERT_SHA256.
     def localKeystoreProps = new Properties()
     def localKeystoreFile = rootProject.file("keystore.properties")
     if (localKeystoreFile.exists()) {
@@ -53,34 +55,57 @@ android {
     def signingKeyAlias = System.getenv("SIGNING_KEY_ALIAS") ?: localKeystoreProps.getProperty("keyAlias")
     def signingKeyPass = System.getenv("SIGNING_KEY_PASSWORD") ?: localKeystoreProps.getProperty("keyPassword")
 
-    // Resolve expected upload-cert SHA-256 for SignatureCheckEvaluator.
-    // Priority: EXPECTED_CERT_SHA256 env → keystore.properties → keytool on release keystore.
+    def signingFields = [storeFilePath, storePass, signingKeyAlias, signingKeyPass]
+    def signingPresentCount = signingFields.count { it != null && it.toString().trim() }
+    if (signingPresentCount > 0 && signingPresentCount < 4) {
+        throw new GradleException(
+            "Release signing is partially configured (${signingPresentCount}/4 of " +
+                "SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD, SIGNING_KEY_ALIAS, SIGNING_KEY_PASSWORD). " +
+                "Provide all four, or none (debug/local unsigned exploration only)."
+        )
+    }
+    def hasReleaseSigning = signingPresentCount == 4
+
+    // Play App Signing: EXPECTED_CERT_SHA256 should be the *installed* app-signing
+    // certificate fingerprint from Play Console (not necessarily the upload key).
+    // Debug builds use the debug cert; upload key is only for Play Console uploads.
     def expectedCert = System.getenv("EXPECTED_CERT_SHA256") ?: localKeystoreProps.getProperty("expectedCertSha256") ?: ""
-    if ((expectedCert == null || expectedCert.trim().isEmpty()) &&
-            storeFilePath != null && storePass != null && signingKeyAlias != null) {
+    if ((expectedCert == null || expectedCert.trim().isEmpty()) && hasReleaseSigning) {
         def ksFile = rootProject.file(storeFilePath)
         if (ksFile.exists()) {
+            // Write the store password to a temp file so it is never visible in
+            // the process argument list (readable via /proc/<pid>/cmdline on Linux).
+            // keytool -storepassfile was added in Java 9; this build requires Java 17.
+            def passFile = File.createTempFile("cg_kp_", null)
+            passFile.deleteOnExit()
             try {
-                def proc = ["keytool", "-list", "-v",
-                            "-keystore", ksFile.absolutePath,
-                            "-alias", signingKeyAlias,
-                            "-storepass", storePass].execute()
+                passFile.text = storePass
+                def pb = new ProcessBuilder(
+                    "keytool", "-list", "-v",
+                    "-keystore", ksFile.absolutePath,
+                    "-alias", signingKeyAlias,
+                    "-storepassfile", passFile.absolutePath
+                )
+                pb.redirectErrorStream(true)
+                def proc = pb.start()
+                def out = proc.inputStream.getText("UTF-8")
                 proc.waitFor()
-                def out = proc.text
                 def matcher = (out =~ /SHA256:\s*([0-9A-Fa-f:]+)/)
                 if (matcher.find()) {
                     expectedCert = matcher.group(1).trim().toUpperCase()
-                    logger.lifecycle("Derived EXPECTED_CERT_SHA256 from keystore (${signingKeyAlias})")
+                    logger.lifecycle("Derived EXPECTED_CERT_SHA256 from keystore alias=${signingKeyAlias}")
                 }
             } catch (Exception e) {
-                logger.warn("Could not derive EXPECTED_CERT_SHA256: ${e.message}")
+                logger.warn("Could not derive EXPECTED_CERT_SHA256 (details omitted)")
+            } finally {
+                passFile.delete()
             }
         }
     }
     expectedCert = (expectedCert ?: "").trim()
     android.defaultConfig.buildConfigField "String", "EXPECTED_CERT_SHA256", "\"${expectedCert}\""
 
-    if (storeFilePath != null && storePass != null && signingKeyAlias != null && signingKeyPass != null) {
+    if (hasReleaseSigning) {
         signingConfigs {
             release {
                 storeFile rootProject.file(storeFilePath)
@@ -89,6 +114,14 @@ android {
                 keyPassword signingKeyPass
             }
         }
+    }
+
+    // Optional lean ABI for emulator CI: -Pcoreguard.emulatorAbi=x86_64
+    def emulatorAbi = (findProperty("coreguard.emulatorAbi") ?: "").toString().trim()
+    if (!emulatorAbi.isEmpty()) {
+        defaultConfig.ndk.abiFilters.clear()
+        defaultConfig.ndk.abiFilters.add(emulatorAbi)
+        logger.lifecycle("Using emulator ABI filter: ${emulatorAbi}")
     }
 
     buildTypes {
@@ -102,6 +135,10 @@ android {
             def releaseCfg = signingConfigs.findByName("release")
             if (releaseCfg != null) {
                 signingConfig releaseCfg
+            }
+            // Native symbols for Play Console crash deobfuscation / NDK crashes.
+            ndk {
+                debugSymbolLevel 'FULL'
             }
         }
         debug {
@@ -137,6 +174,46 @@ android {
     }
 }
 
+// Fail configuration when production signing is required but missing.
+// Set COREGUARD_REQUIRE_RELEASE_SIGNING=true in CI release jobs.
+def requireReleaseSigning = (
+    System.getenv("COREGUARD_REQUIRE_RELEASE_SIGNING") ?: "false"
+).toString().equalsIgnoreCase("true")
+def releaseSigningReady = android.signingConfigs.findByName("release") != null
+if (requireReleaseSigning && !releaseSigningReady) {
+    throw new GradleException(
+        "COREGUARD_REQUIRE_RELEASE_SIGNING=true but release signing credentials are absent. " +
+            "Configure SIGNING_STORE_FILE / SIGNING_STORE_PASSWORD / SIGNING_KEY_ALIAS / SIGNING_KEY_PASSWORD."
+    )
+}
+
+// Verify a debug APK is not an offline placeholder (CI gate helper).
+tasks.register("verifyNoPlaceholderApk") {
+    group = "verification"
+    description = "Fails if app-debug.apk looks like the old offline placeholder ZIP."
+    doLast {
+        def apk = file("${project.layout.buildDirectory.get().asFile}/outputs/apk/debug/app-debug.apk")
+        if (!apk.exists()) {
+            throw new GradleException("Missing debug APK at ${apk}. Run :app:assembleDebug first.")
+        }
+        def meta = file("${project.layout.buildDirectory.get().asFile}/outputs/apk/debug/output-metadata.json")
+        if (meta.exists() && meta.text.contains("\"offlineFallback\": true")) {
+            throw new GradleException("Placeholder/offline APK detected — refusing to accept fake artifact.")
+        }
+        // Placeholder ZIPs were tiny; real debug APKs with native libs are much larger.
+        if (apk.length() < 100_000L) {
+            throw new GradleException(
+                "Debug APK is suspiciously small (${apk.length()} bytes). " +
+                    "Refusing possible placeholder artifact."
+            )
+        }
+        logger.lifecycle("verifyNoPlaceholderApk OK (${apk.length()} bytes)")
+    }
+}
+tasks.matching { it.name == "assembleDebug" }.configureEach {
+    finalizedBy("verifyNoPlaceholderApk")
+}
+
 dependencies {
     implementation project(":core:model")
 
@@ -145,6 +222,8 @@ dependencies {
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+    // Deferrable / battery-aware Guardian Score pulse (SecurityPulseWorker).
+    implementation "androidx.work:work-runtime-ktx:2.9.1"
 
     implementation platform("androidx.compose:compose-bom:2024.06.00")
     implementation "androidx.compose.ui:ui"

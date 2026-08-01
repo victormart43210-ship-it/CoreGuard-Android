@@ -115,7 +115,7 @@ object QuillaPriorityEngine {
         if (!research.synced && research.indicatorCount == 0) {
             moves += PriorityMove(
                 QuillaActionSuggestion.SYNC_INTEL,
-                "Sync Quilla Intel Network",
+                "Train Infinity · sync threat intel",
                 "Optional Amnesty/MVT + CISA/MISP pull sharpens correlation — not a Scanner signature refresh."
             )
         }

@@ -32,16 +32,25 @@ class EntitlementPolicyTest {
     fun `DemoBillingProvider launchPurchaseFlow returns Success and sets premium`() {
         val provider = DemoBillingProvider()
         var result: PurchaseResult? = null
-        provider.launchPurchaseFlow("test_product") { result = it }
+        provider.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) { result = it }
 
         assertTrue(result is PurchaseResult.Success)
         assertTrue(provider.isPremium())
     }
 
     @Test
+    fun `DemoBillingProvider rejects unknown product IDs`() {
+        val provider = DemoBillingProvider()
+        var result: PurchaseResult? = null
+        provider.launchPurchaseFlow("test_product") { result = it }
+        assertTrue(result is PurchaseResult.Error)
+        assertFalse(provider.isPremium())
+    }
+
+    @Test
     fun `DemoBillingProvider reset returns to initial state`() {
         val provider = DemoBillingProvider(startAsPremium = false)
-        provider.launchPurchaseFlow("test_product") {}
+        provider.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) {}
         assertTrue(provider.isPremium())
         provider.reset()
         assertFalse(provider.isPremium())
@@ -133,7 +142,7 @@ class EntitlementPolicyTest {
         val sm = SubscriptionManager(billing)
         assertFalse(sm.isPremium())
 
-        billing.launchPurchaseFlow("test") {}
+        billing.launchPurchaseFlow(BillingProvider.PREMIUM_PRODUCT_ID) {}
         assertTrue(sm.isPremium())
     }
 }

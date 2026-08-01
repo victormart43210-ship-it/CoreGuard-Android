@@ -24,18 +24,18 @@ import java.net.InetAddress
 import java.net.InetSocketAddress
 
 /**
- * The "Pegasus blocker": a local [VpnService] that acts as a DNS sinkhole.
+ * Privacy Shield: a local [VpnService] DNS sinkhole for known indicator domains.
  *
  * The tunnel captures only DNS traffic (its virtual DNS server is the only
  * route installed). For each query it extracts the requested domain and:
- *  - if the domain matches a malicious [Indicator], it answers NXDOMAIN so the
- *    lookup fails and the app never learns the spyware C2 address;
+ *  - if the domain matches a known [Indicator], it answers NXDOMAIN so the
+ *    lookup fails and the app does not resolve that indicator hostname;
  *  - otherwise it forwards the query to a real upstream resolver through a
  *    [protect]ed socket and relays the answer back.
  *
- * This is a userspace, non-root way to stop a compromised app from reaching
- * known clandestine-spyware infrastructure. It cannot block traffic that uses a
- * hardcoded IP (no DNS lookup); that limitation is documented for the user.
+ * This is a userspace, non-root aid against DNS lookups to listed indicator
+ * domains. It is not live IPS, does not remove implants, and cannot block
+ * traffic that uses a hardcoded IP (no DNS lookup) — documented for the user.
  */
 class GuardVpnService : VpnService() {
 
@@ -150,6 +150,11 @@ class GuardVpnService : VpnService() {
         }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
     }
 
+    /**
+     * Prefer the active network's system **IPv4** DNS (the shield tunnel forwards
+     * IPv4 UDP DNS). Private DNS / IPv6 resolution remains an OS concern outside
+     * this path. Hardcoded 8.8.8.8 is last-resort only when no system DNS exists.
+     */
     private fun resolveUpstreamDns(): InetAddress {
         val system = runCatching {
             val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager

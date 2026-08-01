@@ -56,7 +56,8 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.lore.QuillaLivingGeometry
 import com.coldboar.coreguard.mvt.ScannerModule
-import com.coldboar.coreguard.quilla.QuillaActionSuggestion
+import com.coldboar.coreguard.quilla.QuillaActionOutcome
+import com.coldboar.coreguard.quilla.QuillaActionRouter
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
 import com.coldboar.coreguard.quilla.QuillaAwareness
 import com.coldboar.coreguard.quilla.QuillaMemoryFactory
@@ -65,6 +66,7 @@ import com.coldboar.coreguard.quilla.QuillaSalesCoach
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
+import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.AtmosphereTeal
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -86,17 +88,18 @@ private data class QuillaTurn(
 )
 
 /**
- * Top-tier Quilla HUD: loving awareness presence, posture strip, conversation
- * history, Living Geometry path, contextual chips, and action navigation
- * (no silent scan/VPN). Awareness is uncapped; ethics still refuse harm.
+ * Top-tier Quilla HUD: awareness presence, posture strip, conversation history,
+ * Living Geometry path, contextual chips, and action navigation (never silent
+ * scan/VPN). Ethics still refuse harm. Host screens must pass navigation
+ * callbacks; [isPremium] only gates coaching tips, not Q&A.
  */
 @Composable
 fun QuillaAgentPanel(
-    modifier: Modifier = Modifier,
-    onRunScan: (() -> Unit)? = null,
-    onOpenShield: (() -> Unit)? = null,
-    onOpenTimeline: (() -> Unit)? = null,
-    isPremium: Boolean = false
+    onRunScan: () -> Unit,
+    onOpenShield: () -> Unit,
+    onOpenTimeline: () -> Unit,
+    isPremium: Boolean,
+    modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
     var question by remember { mutableStateOf("") }
@@ -127,15 +130,27 @@ fun QuillaAgentPanel(
         delay(QUILLA_RESPONSE_DELAY_MS)
         val result = withContext(Dispatchers.IO) {
             CyberKnowledgeAssets.ensureLoaded(context)
-            val wantsResearch = prompt.lowercase().let {
+            val lower = prompt.lowercase()
+            val wantsResearch = lower.let {
                 it.contains("research") || it.contains("stix") || it.contains("amnesty") ||
                     it.contains("intel network") || it.contains("cisa") || it.contains("misp") ||
+                    it.contains("malpedia") ||
                     (it.contains("intel") && it.contains("sync")) ||
                     (it.contains("ioc") && it.contains("sync")) ||
-                    it.contains("sync threat") || it.contains("sync quilla")
+                    it.contains("sync threat") || it.contains("sync quilla") ||
+                    (it.contains("train") && it.contains("infinity") &&
+                        (it.contains("sync") || it.contains("network") || it.contains("feed")))
             }
-            if (wantsResearch) {
-                QuillaMemoryFactory.syncResearch(context)
+            val wantsLocalInfinity = !wantsResearch && lower.let {
+                it.contains("infinity") ||
+                    (it.contains("train") && (
+                        it.contains("angel") || it.contains("choir") || it.contains("swarm") ||
+                            it.contains("malware") || it.contains("vulnerab")
+                        ))
+            }
+            when {
+                wantsResearch -> QuillaMemoryFactory.syncResearch(context)
+                wantsLocalInfinity -> QuillaMemoryFactory.trainInfinityLocal(context)
             }
             UltimateQuillaAgent(
                 memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
@@ -461,21 +476,20 @@ fun QuillaAgentPanel(
                 actions.forEach { action ->
                     OutlinedButton(
                         onClick = {
-                            when (action.id) {
-                                QuillaActionSuggestion.RUN_SCAN -> {
-                                    if (onRunScan != null) onRunScan()
-                                    else pendingPrompt = "how do I run a nemesis scan"
+                            when (
+                                val outcome = QuillaActionRouter.resolve(
+                                    actionId = action.id,
+                                    canNavigate = true
+                                )
+                            ) {
+                                is QuillaActionOutcome.Navigate -> when (outcome.route) {
+                                    CoreGuardRoute.Scanner.route -> onRunScan()
+                                    CoreGuardRoute.Shield.route -> onOpenShield()
+                                    CoreGuardRoute.Timeline.route -> onOpenTimeline()
                                 }
-                                QuillaActionSuggestion.OPEN_SHIELD -> {
-                                    if (onOpenShield != null) onOpenShield()
-                                    else pendingPrompt = "how do I open privacy shield"
-                                }
-                                QuillaActionSuggestion.OPEN_TIMELINE -> {
-                                    if (onOpenTimeline != null) onOpenTimeline()
-                                    else pendingPrompt = "how do I open scan timeline"
-                                }
-                                QuillaActionSuggestion.SYNC_INTEL ->
-                                    pendingPrompt = "sync quilla research intel"
+                                is QuillaActionOutcome.AskPrompt ->
+                                    pendingPrompt = outcome.prompt
+                                QuillaActionOutcome.Ignored -> Unit
                             }
                         },
                         enabled = !isAsking,

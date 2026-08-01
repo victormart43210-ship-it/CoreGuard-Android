@@ -7,13 +7,16 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Claim | Why it is allowed |
 |-------|-------------------|
 | On-device privacy-integrity / spyware **indicator** checks | Nemesis Scanner matches local artifacts against IOC lists |
+| Aggregate CPU usage is a **BASIC** `/proc/stat` sample | `CpuUsageCalculator`; not per-process and not a security verdict |
+| Live Security Score refreshes on Home and via hourly WorkManager pulse | Weighted local `SecurityCheckRunner` summary; battery-not-low constraint; not cloud threat intel |
+| Threat timeline chart shows past privacy-check verdicts / flag counts | `ScanHistoryStore` history visualization — not continuous network IPS |
 | A clean scan is **reassuring, not a guarantee** | Explicitly disclosed in Scanner UI and store copy |
 | Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent |
 | Guardian Score summarizes local heuristic checks | Root/debugger/emulator/signature/build heuristics |
 | Quilla is an **on-device** agent (no cloud LLM) | Local knowledge + evidence; no ChatGPT/Claude keys |
 | Signed telemetry deltas stay on-device unless user opt-in export exists | `TelemetryBridge` ring buffer; Keystore ECDSA when available |
 | Optional server-side Quilla hypothesis evaluator may use an LLM | `scripts/agents/quilla_hypothesis_evaluator.py` only; not shipped as on-device Quilla |
-| Quilla Intel Network can pull public Amnesty/MVT STIX, CISA KEV, and MISP Android briefs | `QuillaIntelNetwork` + `PublicMultiSourceStixFetcher`; optional HTTPS; defensive only |
+| Quilla Infinity Intel can pull public Amnesty/MVT STIX, CISA KEV, MISP Android + Malpedia (mobile) briefs, then train angels/swarm on-device | `QuillaIntelNetwork` + `QuillaInfinityTrainer`; optional HTTPS; uncapped teaching; not cloud LLM / not zero-day guarantee |
 | Premium unlocks signature refresh, JSON export, longer timeline, coaching tips | Matches `EntitlementPolicy` |
 | Optional HTTPS for IOC/STIX refresh and billing | Documented in Privacy Policy |
 
@@ -22,12 +25,14 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Do not say | Why |
 |------------|-----|
 | Guaranteed spyware detection or removal | App cannot prove absence of spyware or uninstall foreign implants |
+| CPU usage is “Simulated” | Implementation samples `/proc/stat` on-device (coarse BASIC metric) |
+| “Pegasus blocker” / “removes Pegasus” as a product claim | Shield is a DNS sinkhole for listed indicator domains only |
 | “100% offline” / “fully offline” as absolute | Billing, optional IOC refresh, Quilla Research sync, and Shield DNS forwarding use network |
 | Quilla “automates defenses” or silently runs scans/VPN | Actions **navigate** / suggest; VPN still needs Android consent |
 | “Live continuous threat intel” for Quilla Research | Optional pull of public Amnesty/MVT STIX archives, not a live feed |
 | Quilla Research sync refreshes Nemesis Scanner signatures | Separate Premium Scanner path (`IocFeedFetcher`); Research is correlator-only |
 | “Release-ready” / Play approval guaranteed | External Console, signing, device, and policy reviews remain |
-| DemoBilling is the production path | Production uses `PlayBillingProvider`; Demo is tests/previews only |
+| DemoBilling is the production path | Production uses `PlayBillingProvider`; unavailable billing fails closed (`FailClosedBillingProvider`) |
 | MASVS “compliance certified” | Educational mapping / coverage scores only |
 
 ## Premium honesty

@@ -1,59 +1,89 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.kts.
+# CoreGuard R8 / ProGuard rules (release minifyEnabled + shrinkResources).
+# Configured from gradle/android-app.gradle (Groovy), not build.gradle.kts.
 
 # ---------------------------------------------------------------------------
-# Security checks – keep all data classes to prevent R8 from stripping
-# fields that are accessed only via reflection or data-binding.
+# Security checks
 # ---------------------------------------------------------------------------
 -keep class com.coldboar.coreguard.SecurityChecks { *; }
 -keep class com.coldboar.coreguard.SecurityCheckResult { *; }
 -keep class com.coldboar.coreguard.SecurityCheckState { *; }
 -keep class com.coldboar.coreguard.SecurityCheckRunner { *; }
 -keep enum  com.coldboar.coreguard.SecurityCheckState { *; }
-
-# Keep all evaluator classes (instantiated by name / reflection in some paths)
 -keep class * implements com.coldboar.coreguard.SecurityCheckEvaluator { *; }
 
 # ---------------------------------------------------------------------------
-# Billing / entitlement interfaces
+# Billing / entitlements
 # ---------------------------------------------------------------------------
 -keep interface com.coldboar.coreguard.BillingProvider { *; }
 -keep class com.coldboar.coreguard.PurchaseResult { *; }
 -keep class com.coldboar.coreguard.PurchaseResult$* { *; }
-
-# ---------------------------------------------------------------------------
-# MVT / shield
-# ---------------------------------------------------------------------------
--keep class com.coldboar.coreguard.mvt.** { *; }
-
-# ---------------------------------------------------------------------------
-# Jetpack Compose – R8 full-mode rules
-# (The kotlin.plugin.compose Gradle plugin adds the standard rules automatically;
-# these are extra guards for our own sealed classes used inside NavHost.)
-# ---------------------------------------------------------------------------
--keepclassmembers class com.coldboar.coreguard.ui.navigation.CoreGuardRoute {
-    *;
-}
-
-# ---------------------------------------------------------------------------
-# Debugging / crash reporting: preserve line numbers in stack traces.
-# ---------------------------------------------------------------------------
--keepattributes SourceFile,LineNumberTable
--renamesourcefileattribute SourceFile
-
-# ---------------------------------------------------------------------------
-# Google Play Billing Library
-# ---------------------------------------------------------------------------
+-keep class com.coldboar.coreguard.PlayBillingProvider { *; }
+-keep class com.coldboar.coreguard.Entitlements { *; }
+-keep class com.coldboar.coreguard.EntitlementPolicy { *; }
+-keep class com.coldboar.coreguard.SubscriptionManager { *; }
 -keep class com.android.billingclient.** { *; }
 -keepclassmembers class com.android.billingclient.** { *; }
 
 # ---------------------------------------------------------------------------
-# Kotlin metadata – needed by kotlin-reflect and some Compose internals.
+# MVT / VPN / scanner
+# ---------------------------------------------------------------------------
+-keep class com.coldboar.coreguard.mvt.** { *; }
+-keep class com.coldboar.coreguard.mvt.GuardVpnService { *; }
+
+# ---------------------------------------------------------------------------
+# Elite / Scam Guard / notification listener
+# ---------------------------------------------------------------------------
+-keep class com.coldboar.coreguard.elite.** { *; }
+-keep class com.coldboar.coreguard.elite.ScamGuardNotificationListener { *; }
+
+# ---------------------------------------------------------------------------
+# Jetpack Compose navigation routes
+# ---------------------------------------------------------------------------
+-keepclassmembers class com.coldboar.coreguard.ui.navigation.CoreGuardRoute {
+    *;
+}
+-keep class com.coldboar.coreguard.ui.navigation.CoreGuardRoute$* { *; }
+
+# ---------------------------------------------------------------------------
+# WorkManager security pulse
+# ---------------------------------------------------------------------------
+-keep class com.coldboar.coreguard.monitor.SecurityPulseWorker { *; }
+-keep class * extends androidx.work.Worker
+-keep class * extends androidx.work.CoroutineWorker
+-keepclassmembers class * extends androidx.work.Worker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+-keepclassmembers class * extends androidx.work.CoroutineWorker {
+    public <init>(android.content.Context,androidx.work.WorkerParameters);
+}
+
+# ---------------------------------------------------------------------------
+# JNI / native
+# ---------------------------------------------------------------------------
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+-keep class com.coldboar.coreguard.NativeTamperGuard { *; }
+
+# ---------------------------------------------------------------------------
+# Room
+# ---------------------------------------------------------------------------
+-keep class com.coreguard.android.data.local.** { *; }
+-keep class * extends androidx.room.RoomDatabase
+-dontwarn androidx.room.paging.**
+
+# ---------------------------------------------------------------------------
+# JSON (org.json used in forensic journal / IOC)
+# ---------------------------------------------------------------------------
+-keep class org.json.** { *; }
+
+# ---------------------------------------------------------------------------
+# Kotlin metadata
 # ---------------------------------------------------------------------------
 -keep class kotlin.Metadata { *; }
 
 # ---------------------------------------------------------------------------
-# Room – preserve entity and DAO classes from R8 stripping.
+# Crash reporting: preserve line numbers
 # ---------------------------------------------------------------------------
--keep class com.coreguard.android.data.local.** { *; }
+-keepattributes SourceFile,LineNumberTable,Signature,InnerClasses,EnclosingMethod
+-renamesourcefileattribute SourceFile

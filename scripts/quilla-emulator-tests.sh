@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Quilla deadline harness: boot AVD (prefer ATD), unit tests, instrumented tests, smoke.
+# Quilla emulator gate: boot AVD (prefer ATD), unit tests, am-instrument, smoke.
 # Usage: HEADLESS=1 ./scripts/quilla-emulator-tests.sh
 #
 # On no-KVM hosts, Gradle :connectedDebugAndroidTest often ANRs during cold
 # process start. We install via Gradle, then drive AndroidJUnitRunner with
-# `adb shell am instrument` (proven stable on CoreGuard_ATD35).
+# `adb shell am instrument` (stable on CoreGuard_ATD35).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -51,14 +51,18 @@ adb shell settings put global window_animation_scale 0 >/dev/null 2>&1 || true
 adb shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true
 adb shell settings put global animator_duration_scale 0 >/dev/null 2>&1 || true
 
-GRADLE_EMU_FLAGS=(-Pcoreguard.androidBuild=true -Pcoreguard.emulatorAbi=x86_64)
+GRADLE_FLAGS=(-Pcoreguard.androidBuild=true)
+# Optional lean ABI when the property exists in android-app.gradle
+if grep -q 'coreguard.emulatorAbi' "$ROOT/gradle/android-app.gradle" 2>/dev/null; then
+  GRADLE_FLAGS+=(-Pcoreguard.emulatorAbi=x86_64)
+fi
 
 log "2/5 Unit tests…"
-./gradlew "${GRADLE_EMU_FLAGS[@]}" :app:testDebugUnitTest | tee "$OUT_DIR/unit-tests.log"
+./gradlew "${GRADLE_FLAGS[@]}" :app:testDebugUnitTest | tee "$OUT_DIR/unit-tests.log"
 UNIT_OK=1
 
-log "3/5 Install debug + androidTest (x86_64-only)…"
-./gradlew "${GRADLE_EMU_FLAGS[@]}" :app:installDebug :app:installDebugAndroidTest | tee "$OUT_DIR/install.log"
+log "3/5 Install debug + androidTest…"
+./gradlew "${GRADLE_FLAGS[@]}" :app:installDebug :app:installDebugAndroidTest | tee "$OUT_DIR/install.log"
 adb shell cmd package compile -m speed -f com.coldboar.coreguard.debug >/dev/null 2>&1 || true
 sleep 5
 

@@ -22,21 +22,27 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
+import com.coldboar.coreguard.ui.components.ExternalSecurityToolkitPanel
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
+import com.coldboar.coreguard.ui.components.SwarmAlertCounter
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
 @Composable
 fun ToolsScreen(
-    onBack: () -> Unit = {},
-    onRunScan: () -> Unit = {},
-    onOpenShield: () -> Unit = {},
-    onOpenTimeline: () -> Unit = {},
-    isPremium: Boolean = false
+    onBack: () -> Unit,
+    onRunScan: () -> Unit,
+    onOpenShield: () -> Unit,
+    onOpenTimeline: () -> Unit,
+    onOpenOverlayMatrix: () -> Unit,
+    onOpenForensicJournal: () -> Unit,
+    onOpenScamGuard: () -> Unit,
+    isPremium: Boolean
 ) {
     var quillaOpen by remember { mutableStateOf(true) }
+    var toolkitOpen by remember { mutableStateOf(false) }
 
     ScreenAtmosphere(
         modifier = Modifier
@@ -64,6 +70,47 @@ fun ToolsScreen(
             PrimaryTealButton(text = "Open Privacy Shield", onClick = onOpenShield)
             Spacer(modifier = Modifier.height(8.dp))
             PrimaryTealButton(text = "View scan history", onClick = onOpenTimeline)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Overlay Protection Matrix", onClick = onOpenOverlayMatrix)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Forensic Journal", onClick = onOpenForensicJournal)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Scam Guard", onClick = onOpenScamGuard)
+        }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Redux-separated Counter: ToolsScreen never owns the integer.
+        SwarmAlertCounter()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        CoreGuardCard(
+            modifier = Modifier.clickable { toolkitOpen = !toolkitOpen }
+        ) {
+            Text(
+                text = "External Security Toolkit",
+                style = MaterialTheme.typography.titleMedium,
+                color = ElectricTeal,
+                modifier = Modifier.semantics { heading() }
+            )
+            Spacer(modifier = Modifier.height(6.dp))
+            Text(
+                text = "VirusTotal, disposable mail, evidence archive, Downdetector, Fast.com, TinEye — " +
+                    "browser helpers only; CoreGuard does not wrap their APIs.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedText
+            )
+            Spacer(modifier = Modifier.height(10.dp))
+            Text(
+                text = if (toolkitOpen) "Tap to collapse" else "Tap to expand toolkit",
+                style = MaterialTheme.typography.bodySmall,
+                color = MutedText
+            )
+        }
+
+        AnimatedVisibility(visible = toolkitOpen) {
+            ExternalSecurityToolkitPanel(modifier = Modifier.padding(top = 12.dp))
         }
 
         Spacer(modifier = Modifier.height(16.dp))

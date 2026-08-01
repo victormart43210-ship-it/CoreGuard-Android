@@ -13,6 +13,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.AutoAwesome
@@ -32,11 +34,16 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -44,7 +51,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.BuildConfig
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.PurchaseResult
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.material.icons.filled.Bolt
@@ -57,20 +63,29 @@ import com.coldboar.coreguard.ui.theme.SafeGreen
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.DebugEvidencePreviewPanel
+import com.coldboar.coreguard.ui.minigame.MiniGameEasterEgg
+import com.coldboar.coreguard.ui.minigame.QuillaMiniGameScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 
 @Composable
 fun SettingsScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onNavigateToPrivacyPolicy: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onRunScan: () -> Unit = {},
-    onOpenShield: () -> Unit = {},
-    onOpenTimeline: () -> Unit = {}
+    billingProvider: BillingProvider,
+    onNavigateToPrivacyPolicy: () -> Unit,
+    onNavigateToTools: () -> Unit,
+    onRunScan: () -> Unit,
+    onOpenShield: () -> Unit,
+    onOpenTimeline: () -> Unit
 ) {
     val isPremium by billingProvider.premiumState.collectAsState()
+    val context = LocalContext.current
+    val wipeScope = rememberCoroutineScope()
+    var wipeStatus by remember { mutableStateOf<String?>(null) }
+    var wipeBusy by remember { mutableStateOf(false) }
+    var versionTapCount by remember { mutableStateOf(0) }
+    var showQuillaMiniGame by remember { mutableStateOf(false) }
     var purchaseStatus by remember { mutableStateOf<String?>(null) }
     var quillaOpen by remember { mutableStateOf(false) }
     var hardeningOpen by remember { mutableStateOf(false) }
@@ -327,6 +342,67 @@ fun SettingsScreen(
 
         Spacer(Modifier.height(16.dp))
 
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                Text(
+                    "On-device security data",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = ElectricTeal
+                )
+                Spacer(modifier = Modifier.height(6.dp))
+                Text(
+                    "Delete scan history, forensic journal entries, Scam Guard findings, " +
+                        "downloaded threat-intel feeds, and Quilla hypotheses stored on this device. " +
+                        "Play purchases and OS permissions are unchanged.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(modifier = Modifier.height(10.dp))
+                OutlinedButton(
+                    enabled = !wipeBusy,
+                    onClick = {
+                        wipeBusy = true
+                        wipeStatus = null
+                        wipeScope.launch {
+                            // Room clearAllTables must not run on the main thread.
+                            val result = withContext(Dispatchers.IO) {
+                                com.coldboar.coreguard.LocalSecurityData.wipeAll(context)
+                            }
+                            wipeStatus = result.summary()
+                            wipeBusy = false
+                        }
+                    }
+                ) {
+                    Text(if (wipeBusy) "Deleting…" else "Delete local security data")
+                }
+                wipeStatus?.let {
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        it,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = if (it.startsWith("Deleted with issues")) AttentionAmber else SafeGreen
+                    )
+                }
+            }
+        }
+
+        if (BuildConfig.DEBUG) {
+            Spacer(Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    DebugEvidencePreviewPanel()
+                }
+            }
+        }
+
         // ── About ─────────────────────────────────────────────────────────────
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -336,10 +412,30 @@ fun SettingsScreen(
             Column(Modifier.padding(16.dp)) {
                 Text("About", style = MaterialTheme.typography.titleSmall, color = MutedText)
                 Spacer(Modifier.height(8.dp))
-                SettingsRow(label = "Version", value = BuildConfig.VERSION_NAME)
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable {
+                            versionTapCount += 1
+                            if (MiniGameEasterEgg.shouldUnlock(versionTapCount)) {
+                                showQuillaMiniGame = true
+                                versionTapCount = 0
+                            }
+                        }
+                        .semantics {
+                            contentDescription =
+                                "CoreGuard Elite version ${BuildConfig.VERSION_NAME}"
+                        }
+                ) {
+                    Text(text = "Version", style = MaterialTheme.typography.bodySmall, color = MutedText)
+                    Text(
+                        text = "CoreGuard Elite v${BuildConfig.VERSION_NAME}",
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 SettingsRow(label = "Build type", value = if (BuildConfig.DEBUG) "Debug" else "Release")
-                HorizontalDivider(Modifier.padding(vertical = 8.dp))
+                HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
                 Text(
                     text = "Privacy signatures sourced from the Amnesty International Security Lab / mvt-project. " +
                         "CoreGuard is an independent project and is not affiliated with Amnesty International.",
@@ -350,6 +446,19 @@ fun SettingsScreen(
         }
 
         Spacer(Modifier.height(24.dp))
+    }
+
+    if (showQuillaMiniGame) {
+        Dialog(
+            onDismissRequest = { showQuillaMiniGame = false },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                dismissOnBackPress = true,
+                dismissOnClickOutside = false
+            )
+        ) {
+            QuillaMiniGameScreen(onDismiss = { showQuillaMiniGame = false })
+        }
     }
 }
 
