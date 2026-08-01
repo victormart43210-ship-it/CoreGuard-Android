@@ -63,6 +63,7 @@ import com.coldboar.coreguard.ui.theme.SafeGreen
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.DebugEvidencePreviewPanel
 import com.coldboar.coreguard.ui.minigame.MiniGameEasterEgg
 import com.coldboar.coreguard.ui.minigame.QuillaMiniGameScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
@@ -385,6 +386,19 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodySmall,
                         color = if (it.startsWith("Deleted with issues")) AttentionAmber else SafeGreen
                     )
+                }
+            }
+        }
+
+        if (BuildConfig.DEBUG) {
+            Spacer(Modifier.height(16.dp))
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    DebugEvidencePreviewPanel()
                 }
             }
         }
