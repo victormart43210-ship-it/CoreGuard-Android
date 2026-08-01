@@ -19,7 +19,7 @@ jobs:
         # (Settings → Security → Code security and analysis → Dependency graph).
         # This failure is environmental, not a dependency finding.
         continue-on-error: true
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
       - name: Explain soft-fail when Dependency Graph is disabled

@@ -41,14 +41,14 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install Android SDK components
         run: |
@@ -97,12 +97,12 @@ jobs:
       COREGUARD_ANDROID_BUILD: "true"
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Install SDK + emulator packages
         run: |
           yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
@@ -115,6 +115,7 @@ jobs:
             "platform-tools" \
             "system-images;android-35;google_apis_playstore;x86_64"
       - name: Create AVD and run Quilla emulator gate
+        id: emulator_gate
         run: |
           chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh || true
           echo no | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
@@ -123,3 +124,14 @@ jobs:
             -d pixel_6 --force || true
           HEADLESS=1 ./scripts/quilla-emulator-tests.sh
         continue-on-error: true
+      - name: Report emulator gate result
+        if: steps.emulator_gate.outcome == 'failure'
+        run: |
+          echo "::warning title=Emulator Gate Failed::Instrumented tests failed (no KVM, flaky host, or real regression). Check logs above. This job uses continue-on-error to avoid blocking CI on emulator infrastructure, but failures must be investigated."
+          echo "## ⚠️ Emulator Gate: FAILED" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Instrumented tests on API 35 ATD did not pass. This could be:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Emulator host has no KVM acceleration (soft graphics, slow)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- A real test regression that must be investigated before release" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Do not promote to Closed/Open Testing without confirming this passes on a KVM-capable host or real device.**" >> "$GITHUB_STEP_SUMMARY"
