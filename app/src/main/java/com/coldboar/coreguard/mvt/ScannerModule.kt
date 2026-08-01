@@ -12,9 +12,27 @@ import com.coldboar.coreguard.quilla.QuillaMemoryFactory
  */
 object ScannerModule {
 
-    fun scanDevice(context: Context): ScanReport {
-        val report = DeviceScanner.scan(context)
+    /**
+     * Runs a full device scan and returns the [ScanReport].
+     *
+     * Existing call sites that do not need progress callbacks use this overload.
+     */
+    fun scanDevice(context: Context): ScanReport = scanDevice(context, listener = null)
+
+    /**
+     * Runs a full device scan with optional [ScanProgressListener] callbacks.
+     *
+     * Progress is reported at real engine checkpoints, not a time-driven fake loop.
+     * Pass [listener] = null to omit callbacks (equivalent to the no-arg overload).
+     */
+    fun scanDevice(context: Context, listener: ScanProgressListener?): ScanReport {
+        listener?.onStage(ScanStage.LOADING_INDICATORS, 0f)
+        val matcher = IocRepository.matcher(context)
+        listener?.onStage(ScanStage.LOADING_INDICATORS, 1f)
+
+        val report = DeviceScanner.scan(context, listener)
         LastScan.report = report
+
         // Feed MVT-style scan evidence into Quilla threat intelligence (no network).
         QuillaMemoryFactory.ensureLocalIntel(context)
         QuillaIocBridge.recordScanDetections(report, QuillaMemoryFactory.hypothesisStore())
