@@ -9,19 +9,29 @@ package com.coldboar.coreguard.swarm
  *   UI ──dispatch(Action)──► Store ──reduce──► State ──notify──► UI
  * ```
  *
- * Rules (same as Redux):
- * - **Single source of truth** — [state] is the only mutable counter data.
- * - **State is read-only to UI** — screens never mutate fields; they dispatch.
- * - **Changes via pure reducer** — [reduce] is a pure function of (state, action).
+ * ## Rules (same as Redux)
  *
- * The Counter composable ([com.coldboar.coreguard.ui.components.SwarmAlertCounter])
- * must stay presentation-only: it subscribes and dispatches; it never owns counts.
+ * - **Single source of truth** — [state] is the only mutable counter data.
+ * - **State is read-only to UI** — screens never mutate fields; they dispatch
+ *   through [SwarmModule] (or [dispatch] in tests).
+ * - **Changes via pure reducer** — [reduce] is a pure function of (state, action).
+ * - **No side effects in the reducer** — no Context, no I/O, no agent calls.
+ *
+ * ## UI separation
+ *
+ * Compose must not open this store from random screens. Prefer:
+ * - [com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState] to subscribe
+ * - [com.coldboar.coreguard.ui.components.SwarmAlertCounter] to paint + forward taps
+ * - [SwarmModule.incrementAlertCounter] / [SwarmModule.resetAlertCounter] to dispatch
+ *
+ * The Counter composable stays presentation-only: it never owns counts.
  *
  * Thread safety: [dispatch] / [getState] / [subscribe] are synchronized so agent
  * threads and the main/UI thread can share one store.
  *
  * @see SwarmModule for the module-pattern façade that owns this store.
  * @see docs/SWARM_ARCHITECTURE.md for when swarming is recommended.
+ * @see docs/MODULE_ARCHITECTURE.md for the Counter Redux contract.
  */
 class SwarmAlertCounterStore(
     initial: SwarmAlertCounterState = SwarmAlertCounterState()

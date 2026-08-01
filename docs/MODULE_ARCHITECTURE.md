@@ -30,7 +30,8 @@ Android has no React-Redux runtime. CoreGuard uses a tiny unidirectional store
 - **State** — immutable `SwarmAlertCounterState`
 - **Actions** — `AlertObserved` / `Increment` / `Reset`
 - **Reducer** — pure `SwarmAlertCounterStore.reduce`
-- **UI** — `SwarmAlertCounter` Compose only **subscribes** and calls
+- **Subscribe bridge** — `ui.redux.rememberSwarmAlertCounterState`
+- **UI** — `SwarmAlertCounter` Compose only **paints** and calls
   `SwarmModule.incrementAlertCounter()` / `resetAlertCounter()` (no Action imports)
 
 Do not put agent registration or native RASP inside the Counter composable.
@@ -38,8 +39,10 @@ Do not put agent registration or native RASP inside the Counter composable.
 ### Elite threat Counter (same Redux contract)
 
 `EliteThreatCounterStore` behind `EliteModule.threatCounter` holds Dynamic Threat
-Score + Scam amber count. Elite Home subscribes; engines feed the store only
-through `EliteModule.evaluateThreatScore` / `inspectScamText`.
+Score + Scam amber count. Subscribe via `ui.redux.rememberEliteThreatCounterState`.
+Presentation: `EliteThreatCounter`. Engines feed the store only through
+`EliteModule.evaluateThreatScore` / `inspectScamText`. Home must not open a
+raw `DisposableEffect` on the store — use the redux helpers.
 
 ## Target modules (post–Internal Testing)
 
