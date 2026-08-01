@@ -111,7 +111,8 @@ import kotlin.math.sin
  * - **DTS / Scam amber Counter** — [rememberEliteThreatCounterState]; refresh
  *   DTS only through [EliteModule.evaluateThreatScore] (side effects stay in
  *   the module, not in this composable).
- * - **Toggles** below are local UI preferences only — not a cloud LLM switch.
+ * - **Toggles** are DataStore-backed user settings (some are intentionally
+ *   disabled with "Not yet available" until backend enforcement exists).
  *
  * Counter subscription is centralized in `ui.redux` so Home stays free of
  * store `DisposableEffect` / `Action` imports (Redux UI separation).
@@ -138,6 +139,9 @@ fun EliteDashboardScreen(
 
     // Settings are now persisted via DataStore through DashboardViewModel.
     val realTimeEnabled = uiState.realTimeMonitoringEnabled
+    val deepScanEnabled = uiState.deepFileInspectionEnabled
+    val quillaCorrelateEnabled = uiState.quillaCorrelationEnabled
+    val intelSyncEnabled = uiState.intelSyncEnabled
 
     // Core data state from ViewModel.
     val score = uiState.score
@@ -434,24 +438,24 @@ fun EliteDashboardScreen(
                     // Not yet available: engine does not yet honor this toggle.
                     statusText = "NOT YET AVAILABLE",
                     statusColor = TextSecondary,
-                    isChecked = false,
+                    isChecked = deepScanEnabled,
                     enabled = false,
-                    onCheckedChange = {}
+                    onCheckedChange = { viewModel.setDeepFileInspectionEnabled(it) }
                 ) {
                     MetricMiniRow(label = "PKGS SCANNED", value = appsScanned)
                     MetricMiniRow(label = "DETECTIONS", value = threatsLabel)
                     Spacer(modifier = Modifier.height(6.dp))
-                    // Quilla correlate — not yet available
-                    Text(
-                        text = "Quilla correlate — not yet available",
-                        color = TextSecondary,
-                        fontSize = 10.sp
+                    ToggleMiniRow(
+                        label = "Quilla correlate (Not yet available)",
+                        checked = quillaCorrelateEnabled,
+                        enabled = false,
+                        onCheckedChange = { viewModel.setQuillaCorrelationEnabled(it) }
                     )
-                    // Intel sync — not yet available
-                    Text(
-                        text = "Threat intel sync — not yet available",
-                        color = TextSecondary,
-                        fontSize = 10.sp
+                    ToggleMiniRow(
+                        label = "Threat intel sync (Not yet available)",
+                        checked = intelSyncEnabled,
+                        enabled = false,
+                        onCheckedChange = { viewModel.setIntelSyncEnabled(it) }
                     )
                 }
             }
@@ -986,7 +990,12 @@ fun MetricMiniRow(label: String, value: String) {
 }
 
 @Composable
-fun ToggleMiniRow(label: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+fun ToggleMiniRow(
+    label: String,
+    checked: Boolean,
+    enabled: Boolean = true,
+    onCheckedChange: (Boolean) -> Unit
+) {
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -996,6 +1005,7 @@ fun ToggleMiniRow(label: String, checked: Boolean, onCheckedChange: (Boolean) ->
         Switch(
             checked = checked,
             onCheckedChange = onCheckedChange,
+            enabled = enabled,
             modifier = Modifier.height(28.dp),
             colors = SwitchDefaults.colors(
                 checkedThumbColor = DarkBackground,

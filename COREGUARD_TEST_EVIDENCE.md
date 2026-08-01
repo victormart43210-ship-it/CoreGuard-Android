@@ -15,18 +15,20 @@ is reported exactly as observed.
 
 | Command | Result | Notes |
 |---|---|---|
-| `./gradlew :core:model:test -Pcoreguard.androidBuild=false` | **PASS** | All tests pass (see output below) |
+| `./gradlew :core:model:test` | **BLOCKED** | Build fails during `:app` configuration because `com.android.tools.build:gradle:8.5.2` cannot be downloaded from `dl.google.com` |
 | `./gradlew :app:testDebugUnitTest` | **BLOCKED** | `dl.google.com` unreachable; AGP 8.5.2 cannot be resolved (same blocker as Phase 0 audit) |
 | `./gradlew :app:lintDebug` | **BLOCKED** | Same network blocker |
 | `./gradlew build` | **BLOCKED** | Same network blocker |
 
-### `./gradlew :core:model:test` output (first run, fresh Gradle daemon)
+### `./gradlew :core:model:test` output
 ```
-> Task :core:model:test
-BUILD SUCCESSFUL in 46s
-4 actionable tasks: 4 executed
+FAILURE: Build failed with an exception.
+* What went wrong:
+A problem occurred configuring project ':app'.
+> Could not resolve all artifacts for configuration 'classpath'.
+> Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.5.2/gradle-8.5.2.pom'.
+> dl.google.com: No address associated with hostname
 ```
-_(All 25 test cases in `FindingTest.kt` ran; report generated in `core/model/build/reports/tests/test/`)_
 
 ### Environment blocker (carried from Phase 0)
 > `Could not GET 'https://dl.google.com/dl/android/maven2/com/android/tools/build/gradle/8.5.2/gradle-8.5.2.pom'`
@@ -36,8 +38,7 @@ The sandboxed build environment cannot reach Google Maven. All `:app:*` Gradle t
 that require AGP are blocked until the host environment provides network access or
 a local Maven mirror with AGP + Android SDK artifacts.
 
-**This is not a code defect.** The code compiles and tests pass where the runtime
-allows (JVM-only `:core:model` module).
+**This is an environment blocker, not a verified code pass/fail signal.**
 
 ### Tests added in Phase 1
 
@@ -73,8 +74,12 @@ allows (JVM-only `:core:model` module).
   - Tests: initial state is Empty, Scanning state has label, Cancelled state holds no verdict, Error state preserves message, UiState covers all 5 variants
   - **Execution status: NOT RUN — environment blocker (`dl.google.com` unreachable)**
 
-- `app/src/test/.../ui/dashboard/DashboardViewModelTest.kt`
-  - Tests: default score is null, default evidence is empty, not-yet-available flags default false, FakeUserSettingsRepository CRUD, UiState copy semantics
+- `app/src/test/.../truth/DetectionMapperTest.kt`
+  - Tests: `ThreatSeverity -> FindingSeverity`, `Detection.toFinding()` field mapping, threat-intel references propagation
+  - **Execution status: NOT RUN — environment blocker**
+
+- `app/src/test/.../settings/FakeUserSettingsRepositoryTest.kt`
+  - Tests: settings setters persist and emit updated values for all four toggle-backed settings
   - **Execution status: NOT RUN — environment blocker**
 
 #### Compose instrumented tests (require connected device/emulator)
@@ -82,11 +87,13 @@ allows (JVM-only `:core:model` module).
   - Tests: all 5 evidence class labels distinct + visible, content descriptions set for TalkBack
   - **Execution status: NOT RUN — requires Android device/emulator**
 
+- `app/src/androidTest/.../ui/screens/ScannerCancelledContentTest.kt`
+  - Tests: cancelled scan UI shows "Scan cancelled", incomplete-results honesty message, and "Run New Scan" CTA
+  - **Execution status: NOT RUN — requires Android device/emulator**
+
 ### Test coverage gaps (deferred to later phases)
-- Full ViewModel integration tests (require Robolectric or Android emulator)
 - `DataStoreUserSettingsRepository` persistence tests (require Android instrumentation or Robolectric)
-- Scanner cancellation end-to-end test (requires Android runtime)
-- `Detection.toFinding()` mapper unit tests in `:app` (blocked by AGP network)
+- Scanner cancellation end-to-end test with real scan engine job cancellation (requires Android runtime)
 
 ### Truth-first compliance checks
 - All new UI states: `Cancelled` explicitly excludes verdict/score ✓

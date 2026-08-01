@@ -185,6 +185,26 @@ fun ScannerScreen(
 
         // Cancelled state: honest message, no verdict shown.
         AnimatedVisibility(visible = isCancelled) {
+            CancelledScanContent(
+                hasLastCompletedReport = lastCompletedReport != null,
+                onRunNewScan = { scannerViewModel.startScan() }
+            )
+        }
+
+        // Start scan button — hidden while scanning or cancelled (cancel button is shown instead).
+        if (!isScanning && !isCancelled) {
+            PrimaryTealButton(
+                text = "Check My Device Now",
+                enabled = !isRefreshing,
+                onClick = { scannerViewModel.startScan() }
+            )
+        }
+
+        @Composable
+        internal fun CancelledScanContent(
+            hasLastCompletedReport: Boolean,
+            onRunNewScan: () -> Unit
+        ) {
             Column(modifier = Modifier.fillMaxWidth()) {
                 CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.10f)) {
                     Text(
@@ -199,7 +219,7 @@ fun ScannerScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText
                     )
-                    lastCompletedReport?.let { prev ->
+                    if (hasLastCompletedReport) {
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
                             text = "Showing your last completed scan below.",
@@ -209,23 +229,13 @@ fun ScannerScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(8.dp))
-                // Allow user to run a fresh scan after cancellation.
                 PrimaryTealButton(
                     text = "Run New Scan",
                     enabled = true,
-                    onClick = { scannerViewModel.startScan() }
+                    onClick = onRunNewScan
                 )
                 Spacer(modifier = Modifier.height(16.dp))
             }
-        }
-
-        // Start scan button — hidden while scanning or cancelled (cancel button is shown instead).
-        if (!isScanning && !isCancelled) {
-            PrimaryTealButton(
-                text = "Check My Device Now",
-                enabled = !isRefreshing,
-                onClick = { scannerViewModel.startScan() }
-            )
         }
 
         Spacer(modifier = Modifier.height(10.dp))

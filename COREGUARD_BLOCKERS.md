@@ -49,8 +49,8 @@
 
 | Blocker | Type | Description | Needed to unblock |
 |---|---|---|---|
-| `DataStoreUserSettingsRepository` tests | Test/environment | Preferences DataStore tests need Android instrumentation; JVM test impossible without Robolectric | Add Robolectric dependency or run on-device in CI |
-| Compose instrumented tests | Test/environment | `TruthSealTest.kt` written but not executable; requires connected device/emulator | CI with Android emulator |
+| `DataStoreUserSettingsRepository` tests | Test/environment | Preferences DataStore tests still need Android instrumentation or Robolectric. (`FakeUserSettingsRepositoryTest` exists for JVM fallback coverage.) | Add Robolectric dependency or run on-device in CI |
+| Compose instrumented tests | Test/environment | `TruthSealTest.kt` and `ScannerCancelledContentTest.kt` are written but not executable in this sandbox; require connected device/emulator | CI with Android emulator |
 | Hilt injection | Architecture | `DashboardViewModel` and `ScannerViewModel` use manual factories; Hilt migration would require touching every screen | Phase 2 — add Hilt to app module + migrate incrementally |
 | Real scan progress checkpoints | Engine | `ScanProgressListener` interface added; not yet wired through `DeviceScanner`/`NemesisScanner` | Phase 3 — add callbacks to scan engine methods |
 | Deep file inspection behavior | Engine | Toggle persisted but engine does not honor it | Phase 3 — implement deeper file scanning and gate on setting |
