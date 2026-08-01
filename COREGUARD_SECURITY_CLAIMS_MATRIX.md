@@ -28,3 +28,23 @@ Initial audit matrix of user-facing security claims found in app strings/UI/docs
 2. Scanner visibility limitations on non-rooted Android must remain explicit.
 3. Billing entitlement should not be marketed as strongly verified until backend token verification + RTDN are implemented.
 4. “Control” toggles that are in-memory only should not be marketed as persistent protection policy.
+
+---
+
+## Phase 1 updates (2026-08-01)
+
+### Claims affected by truth model / persistent controls / scanner cancellation
+
+| User-facing claim | Change in Phase 1 | New state |
+|---|---|---|
+| "Control toggles for real-time monitoring, deep scan, Quilla, intel" | Previously in-memory only; now persisted via DataStore | `realTimeMonitoringEnabled` wired; deep/quilla/intel disabled with "NOT YET AVAILABLE" label until backend honors the value |
+| "Scanner shows scan progress / stages" | Previously: fake time-animated stage loop | Now: indeterminate progress with label "Estimated progress — scan in progress"; no fake stage numbers |
+| "Scan result / verdict" | Previously: any scan produced a verdict regardless of completion | Now: `ScannerUiState.Cancelled` explicitly holds no verdict/score; incomplete scan results are not displayed as conclusive |
+| "Evidence confidence labels" | Previously: plain text color-only label ("Verified signal", "Heuristic", "Guidance") | Now: `TruthSeal` composable with icon + text label mapped from `EvidenceClass` enum; accessible to users with color-vision deficiency |
+| "Evidence class" | No shared model | Now: `EvidenceClass { OBSERVED, INFERRED, SIMULATED, UNAVAILABLE, USER_REPORTED }` — UNAVAILABLE is never shown as "safe"; absence of evidence is not "Protected" |
+| "Guardian Score backing data" | `EvidenceKind` text only | Now: `GuardianScoreEvidence.toFinding()` maps to normalized `Finding` with explicit `evidenceClass`, `confidence`, `androidVisibilityLimits` |
+
+### Still prohibited (unchanged)
+- "Protected" state must never be inferred from absent data — UNAVAILABLE is UNAVAILABLE.
+- Cancelled or incomplete scans must not produce a verdict or score.
+- In-memory toggle state must never be marketed as a persistent system security control.
