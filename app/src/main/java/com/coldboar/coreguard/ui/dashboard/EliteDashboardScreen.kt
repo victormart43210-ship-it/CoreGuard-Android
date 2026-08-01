@@ -157,7 +157,7 @@ fun EliteDashboardScreen(
 
     LaunchedEffect(realTimeEnabled) {
         suspend fun refreshGuardianScore() {
-            val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+            val results = SecurityCheckRunner.runConcurrent(context)
             val computed = GuardianScore.compute(results)
             score = computed
             evidence = GuardianScore.explain(results)

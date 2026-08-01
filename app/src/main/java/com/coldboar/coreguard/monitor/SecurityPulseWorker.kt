@@ -27,7 +27,7 @@ class SecurityPulseWorker(
 
     override suspend fun doWork(): Result {
         return try {
-            val results = SecurityCheckRunner.run(applicationContext)
+            val results = SecurityCheckRunner.runConcurrent(applicationContext)
             val score = GuardianScore.compute(results)
             val rank = GuardianScore.rankFor(score).userLabel
             SecurityScoreCache.write(applicationContext, score, rank)
