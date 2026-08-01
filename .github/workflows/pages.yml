@@ -18,7 +18,37 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      pages-configured: ${{ steps.pages-check.outputs.configured }}
+    steps:
+      - name: Check GitHub Pages configuration
+        id: pages-check
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          http_code=$(curl -s -o /tmp/pages.json -w "%{http_code}" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${{ github.repository }}/pages")
+          if [ "$http_code" = "200" ]; then
+            build_type=$(jq -r '.build_type // "legacy"' /tmp/pages.json)
+            if [ "$build_type" = "workflow" ]; then
+              echo "configured=true" >> "$GITHUB_OUTPUT"
+              echo "GitHub Pages is configured for GitHub Actions deployment."
+            else
+              echo "configured=false" >> "$GITHUB_OUTPUT"
+              echo "::warning::GitHub Pages source is not set to 'GitHub Actions' (build_type=${build_type}). Update at https://github.com/${{ github.repository }}/settings/pages"
+            fi
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::GitHub Pages is not enabled. Enable it at https://github.com/${{ github.repository }}/settings/pages and set source to 'GitHub Actions'."
+          fi
+
   deploy:
+    needs: check
+    if: needs.check.outputs.pages-configured == 'true'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
