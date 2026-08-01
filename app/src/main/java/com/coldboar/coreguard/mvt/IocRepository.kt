@@ -26,6 +26,22 @@ object IocRepository {
     @Volatile
     private var cached: List<Indicator>? = null
 
+    /**
+     * Epoch millis when [cached] was last populated, or 0 if the cache has never
+     * been loaded (or was invalidated and not yet reloaded). Safe to read without
+     * holding the lock — the worst case is a slightly stale value on a race between
+     * [invalidate] and [indicators].
+     */
+    @Volatile
+    private var loadedAtMs: Long = 0L
+
+    /**
+     * Returns the epoch millis when the active IOC set was last loaded from disk,
+     * or 0 if the cache has not been populated yet. Useful for surfacing "last
+     * refreshed N hours ago" in the UI without exposing the full indicator list.
+     */
+    fun loadedAtMs(): Long = loadedAtMs
+
     /** Returns the merged indicator set, loading and caching on first use. */
     fun indicators(context: Context): List<Indicator> {
         cached?.let { return it }
@@ -33,6 +49,7 @@ object IocRepository {
             cached?.let { return it }
             val merged = load(context)
             cached = merged
+            loadedAtMs = System.currentTimeMillis()
             return merged
         }
     }
@@ -43,6 +60,7 @@ object IocRepository {
     /** Forces a reload on next access (e.g. after importing a new feed). */
     fun invalidate() {
         cached = null
+        loadedAtMs = 0L
     }
 
     private fun load(context: Context): List<Indicator> {

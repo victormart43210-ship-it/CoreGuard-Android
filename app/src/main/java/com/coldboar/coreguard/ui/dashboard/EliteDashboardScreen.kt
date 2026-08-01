@@ -77,8 +77,10 @@ import com.coldboar.coreguard.SecurityCheckRunner
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
+import com.coldboar.coreguard.monitor.SecurityScoreCache
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ShieldState
+import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBorder
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CyberGreen
@@ -88,6 +90,7 @@ import com.coldboar.coreguard.ui.dashboard.ElitePalette.TextPrimary
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.TextSecondary
 import com.coldboar.coreguard.ui.redux.rememberEliteThreatCounterState
 import com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
@@ -95,12 +98,12 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 /**
- * CG Elite Home dashboard — brand geometry + plain-language status hub.
+ * CG Elite Home dashboard — live Security Score + plain-language status hub.
  *
  * Layout priority (top → bottom):
- * 1. Status (Guardian Score rank in plain language)
- * 2. Next action (one primary CTA)
- * 3. Needs attention (FAIL/WARN evidence, not lore)
+ * 1. Live Security Score (on-device check summary)
+ * 2. Status / next action
+ * 3. Needs attention (FAIL/WARN evidence)
  * 4. Shortcuts + power-user mirrors
  *
  * Sacred geometry is **brand atmosphere only** — never presented as a sensor
@@ -120,13 +123,13 @@ import kotlin.math.sin
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EliteDashboardScreen(
-    onNavigateToScanner: () -> Unit = {},
-    onNavigateToTimeline: () -> Unit = {},
-    onNavigateToShield: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onNavigateToOverlayMatrix: () -> Unit = {},
-    onNavigateToForensicJournal: () -> Unit = {},
-    onNavigateToScamGuard: () -> Unit = {}
+    onNavigateToScanner: () -> Unit,
+    onNavigateToTimeline: () -> Unit,
+    onNavigateToShield: () -> Unit,
+    onNavigateToTools: () -> Unit,
+    onNavigateToOverlayMatrix: () -> Unit,
+    onNavigateToForensicJournal: () -> Unit,
+    onNavigateToScamGuard: () -> Unit
 ) {
     val context = LocalContext.current
 
@@ -154,10 +157,27 @@ fun EliteDashboardScreen(
     var threatsLabel by remember { mutableStateOf("–") }
     var shieldOn by remember { mutableStateOf(false) }
 
+    // Fast first paint from battery-aware background pulse cache (if present).
     LaunchedEffect(Unit) {
-        val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
-        score = GuardianScore.compute(results)
-        evidence = GuardianScore.explain(results)
+        SecurityScoreCache.read(context)?.let { cached ->
+            if (score == null) score = cached.score
+        }
+    }
+
+    LaunchedEffect(realTimeEnabled) {
+        suspend fun refreshGuardianScore() {
+            val results = SecurityCheckRunner.runConcurrent(context)
+            val computed = GuardianScore.compute(results)
+            score = computed
+            evidence = GuardianScore.explain(results)
+            SecurityScoreCache.write(
+                context,
+                computed,
+                GuardianScore.rankFor(computed).userLabel
+            )
+        }
+
+        refreshGuardianScore()
         shieldOn = ShieldState.isActive
 
         val report = ScannerModule.latestReport()
@@ -176,6 +196,8 @@ fun EliteDashboardScreen(
         // Module façade: evaluates DTS and dispatches into the Redux Counter.
         withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
 
+        if (!realTimeEnabled) return@LaunchedEffect
+
         var ticks = 0
         while (true) {
             cpuText = CpuUsageCalculator.getUsagePercent()?.let { "$it%" } ?: "n/a"
@@ -184,6 +206,11 @@ fun EliteDashboardScreen(
             )
             shieldOn = ShieldState.isActive
             ticks++
+            // Guardian Score: every ~12s while Home is open (not every tick).
+            if (ticks % 6 == 0) {
+                refreshGuardianScore()
+            }
+            // DTS correlator: every ~30s.
             if (ticks % 15 == 0) {
                 withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
             }
@@ -288,6 +315,13 @@ fun EliteDashboardScreen(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            LiveSecurityScore(
+                score = score,
+                rank = rank,
+                liveUpdating = realTimeEnabled,
+                modifier = Modifier.fillMaxWidth()
+            )
+
             SacredGeometryStatusHub(
                 statusText = hubStatus,
                 guidance = hubGuidance,
@@ -433,7 +467,7 @@ fun EliteDashboardScreen(
                     )
                     MetricMiniRow(
                         label = "SHIELD",
-                        value = if (shieldOn) "ARMED" else "IDLE"
+                        value = if (shieldOn) "ON" else "OFF"
                     )
                 }
 
@@ -717,8 +751,9 @@ fun SacredGeometryStatusHub(
     guidance: String = "",
     subText: String
 ) {
+    val motionEnabled = rememberMotionEnabled()
     val infiniteTransition = rememberInfiniteTransition(label = "sacred_rotation")
-    val rotation by infiniteTransition.animateFloat(
+    val rotationAnimated by infiniteTransition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -727,6 +762,7 @@ fun SacredGeometryStatusHub(
         ),
         label = "rotation"
     )
+    val rotation = if (motionEnabled) rotationAnimated else 0f
 
     Box(
         modifier = Modifier

@@ -7,17 +7,15 @@ import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.FailClosedBillingProvider
 
 /**
- * Resolves the Play Billing provider for Compose UI.
+ * Fail-closed billing resolver for edge Compose hosts that cannot receive an
+ * injected [BillingProvider] from [com.coldboar.coreguard.MainActivity].
  *
- * Production path: [BillingModule.provider] (Play Billing from Application).
- * If Application/billing is unavailable, fail closed (non-premium) — never
- * silently unlock via [com.coldboar.coreguard.DemoBillingProvider].
+ * Production screens must take an explicit [BillingProvider] parameter instead
+ * of calling this. Never unlocks via [com.coldboar.coreguard.DemoBillingProvider].
  */
 @Composable
-fun rememberAppBillingProvider(
-    override: BillingProvider? = null
-): BillingProvider {
-    return override ?: remember {
+fun rememberFailClosedBillingProvider(): BillingProvider {
+    return remember {
         runCatching { BillingModule.provider() }.getOrElse { FailClosedBillingProvider() }
     }
 }

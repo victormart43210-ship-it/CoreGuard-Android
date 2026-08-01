@@ -44,7 +44,10 @@ object BehavioralAnomalyEngine {
     private const val TAG = "BehavioralAnomalyEngine"
 
     /** Default polling interval for continuous memory/hook sampling. */
-    const val DEFAULT_INTERVAL_MS = 10_000L
+    const val DEFAULT_INTERVAL_MS = 15_000L
+
+    /** Slower cadence when the system reports power-save mode. */
+    const val POWER_SAVE_INTERVAL_MS = 45_000L
 
     /**
      * Thread count above which the engine records a WARN anomaly. Mirrors the

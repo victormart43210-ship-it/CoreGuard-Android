@@ -24,6 +24,14 @@ object ScannerModule {
 
     fun latestReport(): ScanReport? = LastScan.report
 
+    /**
+     * Epoch millis when the active IOC indicator set was last loaded from disk,
+     * or 0 if it has not been loaded yet. Useful for surfacing "signatures last
+     * refreshed N hours ago" in the Scanner UI without exposing [IocRepository]
+     * internals.
+     */
+    fun iocLoadedAtMs(): Long = IocRepository.loadedAtMs()
+
     fun loadHistory(context: Context): List<ScanHistoryStore.ScanRecord> =
         ScanHistoryStore.load(context)
 

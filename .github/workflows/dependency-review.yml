@@ -12,14 +12,14 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@v4
       - name: Dependency review
         id: review
         # Soft-fail until the repository owner enables Dependency Graph
         # (Settings → Security → Code security and analysis → Dependency graph).
         # This failure is environmental, not a dependency finding.
         continue-on-error: true
-        uses: actions/dependency-review-action@v4
+        uses: actions/dependency-review-action@v5
         with:
           fail-on-severity: high
       - name: Explain soft-fail when Dependency Graph is disabled
