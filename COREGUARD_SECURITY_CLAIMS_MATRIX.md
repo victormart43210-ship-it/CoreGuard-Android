@@ -28,3 +28,32 @@ Initial audit matrix of user-facing security claims found in app strings/UI/docs
 2. Scanner visibility limitations on non-rooted Android must remain explicit.
 3. Billing entitlement should not be marketed as strongly verified until backend token verification + RTDN are implemented.
 4. “Control” toggles that are in-memory only should not be marketed as persistent protection policy.
+
+---
+
+## Phase 1 updates (2026-08-01)
+
+### Claims affected by Phase 1 changes
+
+| Row affected | Phase 0 state | Phase 1 state |
+|---|---|---|
+| Control toggles are in-memory only | Dashboard toggles (real-time, deep scan, Quilla, intel) lost on restart | ✅ All 4 toggles now persist to Preferences DataStore via `DataStoreUserSettingsRepository` |
+| Scanner progress honesty | "Stage N of 4" was time-driven animation, not engine-reported | ✅ Progress now from real `ScanStage` engine checkpoints; labeled "Estimated progress" |
+| Cancelled scan verdict | No cancellation existed; incomplete scans could show a verdict | ✅ `ScanPhase.CANCELLED` shows explicit "results incomplete" message; no score/verdict displayed |
+| Evidence class surfacing | `EvidenceKind` (VERIFIED/HEURISTIC/EDUCATIONAL) not surfaced in main scanner UI | ✅ `TruthSeal` composable now shown in `DetectionRow` and `EvidenceRowCard` with icon + text label |
+
+### New rows (Phase 1 additions)
+
+| User-facing claim | Producing feature | Evidence source | Android/platform limitation | Test proving behavior | Allowed store wording | Prohibited wording |
+|---|---|---|---|---|---|---|
+| Evidence class badge on each finding (Observed/Inferred/Simulated/Unavailable/User reported) | `TruthSeal` composable | `ui/components/TruthSeal.kt`, `truth/Finding.kt` | No limitation; purely display of engine-reported evidence class | `FindingTest.kt` (mapper tests), `TruthSealTest.kt` (written, environment-blocked) | "Shows how each finding was obtained" | "All findings are independently verified" |
+| Scan cancellation with no incomplete verdict | `ScannerViewModel.cancelScan()` + `ScanPhase.CANCELLED` | `ScannerViewModel.kt`, `ScannerScreen.kt` | Cancellation stops the coroutine; partial IOC matches before cancel are discarded | `ScannerViewModelTest.kt` (honesty invariant tests) | "Cancelled scans show no verdict" | "Partial scan = no risk" |
+| Settings persist across restarts | `DataStoreUserSettingsRepository` | `settings/DataStoreUserSettingsRepository.kt`, Preferences DataStore | DataStore may be cleared if app data is cleared by the user | `DashboardViewModelTest.kt` (fake repo round-trip tests) | "Settings persist to device storage" | "Settings are guaranteed to never change without consent" |
+
+### Updated cross-cutting truth risks
+
+1. (Unchanged) Threat-feed cryptographic authenticity not implemented.
+2. (Unchanged) Scanner visibility limitations on non-rooted Android must remain explicit.
+3. (Unchanged) Billing entitlement not strongly verified until backend token + RTDN are added.
+4. (Improved) Dashboard toggles now durable (DataStore); backend enforcement for Quilla/intel/deep-file still deferred.
+5. (New) `TruthSeal` OBSERVED class in scanner findings is based on IOC match (heuristic by nature, not truly "observed via OS attestation"). This is acceptable but the description in `FindingMappers.kt` should remain `MODERATE` confidence, not `VERIFIED`.

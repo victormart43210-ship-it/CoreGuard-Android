@@ -78,3 +78,81 @@ Per CI-investigation requirements, GitHub Actions was checked.
 - Add a Truth Seal component that surfaces evidence class/source.
 - Convert key dashboard/security toggles to DataStore-backed durable controls.
 - Keep scope narrow and release-freeze compliant: no new product features.
+
+---
+
+## Phase 1 — Shared Truth Architecture (2026-08-01)
+
+### What changed
+
+#### `:core:model` additions
+- `core/model/.../truth/Finding.kt`: New canonical truth model
+  - `enum EvidenceClass` {OBSERVED, INFERRED, SIMULATED, UNAVAILABLE, USER_REPORTED}
+  - `enum FindingSeverity` {INFORMATIONAL, LOW, MEDIUM, HIGH, CRITICAL}
+  - `enum ConfidenceLevel` {LOW, MODERATE, HIGH, VERIFIED}
+  - `data class Finding` (18 fields; all required; no nulls)
+  - Pure mappers: `EvidenceKind.toEvidenceClass()`, `EvidenceKind.toConfidenceLevel()`
+  - Conversion: `GuardianScoreEvidence.toFinding()`
+  - Pure function: `formatFindingExplanation(finding): String` (5-section structured output)
+- Legacy `EvidenceKind`, `ThreatSeverity`, `GuardianScoreEvidence`, `Detection` unchanged (additive only)
+
+#### App additions
+- `app/.../truth/FindingMappers.kt`: `ThreatSeverity.toFindingSeverity()`, `Detection.toFinding()`
+  (kept in app module since `Detection`/`ThreatSeverity` live in `:app`)
+- `app/.../ui/components/TruthSeal.kt`: Material 3 composable; 5 distinct evidence states via
+  icon + text label (not color-only); 48dp min touch target; correct a11y content descriptions
+- `app/.../settings/UserSettingsRepository.kt`: Interface with Flow-backed getters for 4 settings
+- `app/.../settings/DataStoreUserSettingsRepository.kt`: Preferences DataStore implementation
+- `app/.../settings/FakeUserSettingsRepository.kt`: In-memory fake for JVM unit tests
+- `app/.../ui/dashboard/DashboardViewModel.kt`: ViewModel + `DashboardUiState`; manual factory
+- `app/.../ui/screens/ScannerViewModel.kt`: ViewModel + `ScannerUiState` + `ScanPhase`; real
+  cancellation via coroutine `Job.cancel()`; manual factory
+- `app/.../mvt/ScanProgressListener.kt`: `ScanStage` enum + `ScanProgressListener` interface
+
+#### App modifications
+- `EliteDashboardScreen.kt`: All 4 toggles now wired to `DashboardViewModel` + DataStore.
+  Toggle callbacks route to `toggleRealTimeMonitoring()`, `toggleDeepFileInspection()`,
+  `toggleQuillaCorrelation()`, `toggleIntelSync()`. TruthSeal added to `EvidenceRowCard`.
+- `ScannerScreen.kt`: Time-animated fake progress loop removed. Progress now from
+  `ScannerViewModel.uiState.overallProgress` + `stageLabel` (engine checkpoints).
+  Real Cancel button added; `ScanPhase.CANCELLED` state shows honest "incomplete results"
+  message with no score/verdict. `DetectionRow` now includes `TruthSeal`.
+- `ScannerModule.kt`: New `scanDevice(context, listener)` overload; existing `scanDevice(context)`
+  remains as backward-compatible delegate.
+- `DeviceScanner.kt`: New `scan(context, listener)` overload emitting real `ScanStage` callbacks;
+  existing `scan(context)` remains.
+
+### Locked decision conflicts — unchanged from Phase 0
+
+These conflicts are documented but NOT changed in this PR per the Phase 1 scope constraint:
+
+| Conflict | Required | Current | Status |
+|---|---|---|---|
+| compileSdk/targetSdk | 36 | 35 | Carry-forward |
+| Play Billing | 9.1.0 | 7.1.1 | Carry-forward |
+| Yearly SKU + trial | `coreguard_premium_yearly` | Not present | Carry-forward |
+| App name copy | `CoreGuard Elite` | Some strings say `Premium` | Carry-forward |
+| Hilt DI | Required | Manual factory | Carry-forward to Phase 2+ |
+
+### Incomplete scope — intentionally deferred
+
+| Item | Reason deferred |
+|---|---|
+| Quilla correlation toggle backend enforcement | `QuillaIocBridge` call not yet gated; persistence added; effect deferred to Phase 3 |
+| Intel sync automatic trigger | IocFeedFetcher not yet auto-scheduled; toggle persists; Phase 2+ |
+| Deep file inspection skip | DeviceScanner always walks files; toggle persists; Phase 3 |
+| CPU/RAM in ViewModel | Kept in composable to avoid over-scoping Phase 1; Phase 2 cleanup |
+| Hilt DI | Would require touching every screen; manual factory documented as follow-up |
+| Compose/instrumented test execution | No emulator in sandbox; tests written and checked in |
+
+### Validation results
+
+| Command | Result |
+|---|---|
+| `COREGUARD_ANDROID_BUILD=false ./gradlew :core:model:test` | **PASSED — 20/20 tests green** |
+| `./gradlew :app:testDebugUnitTest` | BLOCKED — `dl.google.com` unreachable |
+| `./gradlew :app:lintDebug` | BLOCKED — `dl.google.com` unreachable |
+| `./gradlew build` | BLOCKED — `dl.google.com` unreachable |
+
+See `COREGUARD_TEST_EVIDENCE.md` for full test detail.
+

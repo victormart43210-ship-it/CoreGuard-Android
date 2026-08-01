@@ -17,14 +17,38 @@ object DeviceScanner {
 
     private const val TAG = "DeviceScanner"
 
-    fun scan(context: Context): ScanReport {
+    /** Backward-compatible overload — no progress reporting. */
+    fun scan(context: Context): ScanReport = scan(context, listener = null)
+
+    /**
+     * Scans the device and optionally reports engine-driven progress through
+     * [listener]. Each [ScanStage] is reported at start (0.0) and end (1.0).
+     */
+    fun scan(context: Context, listener: ScanProgressListener?): ScanReport {
         val matcher = IocRepository.matcher(context)
-        return NemesisScanner(
+
+        listener?.onStage(ScanStage.SCANNING_PACKAGES, 0f)
+        val packages = installedPackages(context)
+        listener?.onStage(ScanStage.SCANNING_PACKAGES, 1f)
+
+        listener?.onStage(ScanStage.SCANNING_PROCESSES, 0f)
+        val processes = readableProcessNames()
+        listener?.onStage(ScanStage.SCANNING_PROCESSES, 1f)
+
+        listener?.onStage(ScanStage.SCANNING_FILES, 0f)
+        val files = accessibleFiles(context)
+        listener?.onStage(ScanStage.SCANNING_FILES, 1f)
+
+        listener?.onStage(ScanStage.COMPOSING_VERDICT, 0f)
+        val report = NemesisScanner(
             matcher = matcher,
-            installedPackages = { installedPackages(context) },
-            runningProcesses = { readableProcessNames() },
-            accessibleFiles = { accessibleFiles(context) }
+            installedPackages = { packages },
+            runningProcesses = { processes },
+            accessibleFiles = { files }
         ).scan()
+        listener?.onStage(ScanStage.COMPOSING_VERDICT, 1f)
+
+        return report
     }
 
     private fun installedPackages(context: Context): List<String> = try {

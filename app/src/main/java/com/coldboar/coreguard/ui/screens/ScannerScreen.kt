@@ -35,12 +35,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -54,7 +49,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
@@ -64,6 +59,7 @@ import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
+import com.coldboar.coreguard.truth.toFinding
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.NestedSurface
@@ -71,6 +67,7 @@ import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.TruthSeal
 import com.coldboar.coreguard.ui.theme.AttentionAmber
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
@@ -79,11 +76,10 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import java.util.concurrent.Executors
 import com.coldboar.coreguard.ui.theme.ElectricCyan
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-private val scanStages = listOf(
+// Legacy scanStages kept for reference only. Progress is now engine-driven via ScannerViewModel.
+// The time-animated fake loop has been removed (Phase 1 scanner honesty).
+private val legacyScanStageLabels = listOf(
     "Enumerating installed packages",
     "Reading process signals",
     "Matching Amnesty / MVT indicators",
@@ -96,7 +92,6 @@ fun ScannerScreen(
     onUpgrade: () -> Unit
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val isPremium by billingProvider.premiumState.collectAsState()
     val policy = remember(isPremium) { EntitlementPolicy(billingProvider) }
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
@@ -105,26 +100,18 @@ fun ScannerScreen(
         onDispose { feedExecutor.shutdown() }
     }
 
-    var isScanning by remember { mutableStateOf(false) }
-    var stageIndex by remember { mutableIntStateOf(0) }
-    var stageProgress by remember { mutableFloatStateOf(0f) }
-    var isRefreshing by remember { mutableStateOf(false) }
-    var refreshMessage by remember { mutableStateOf<String?>(null) }
-    var scanError by remember { mutableStateOf<String?>(null) }
-    var justCompleted by remember { mutableStateOf(false) }
-    var scanReport by remember { mutableStateOf(ScannerModule.latestReport()) }
-    var lastHistory by remember { mutableStateOf<ScanHistoryStore.ScanRecord?>(null) }
-    var showUpsell by remember { mutableStateOf(false) }
+    // Phase 1: ScannerViewModel drives all scan state; no local scan-lifecycle vars.
+    // TODO (Phase 2+): Replace factory with @HiltViewModel once Hilt is added.
+    val scannerViewModel: ScannerViewModel = viewModel(
+        factory = ScannerViewModel.Factory(context)
+    )
+    val uiState by scannerViewModel.uiState.collectAsState()
 
-    LaunchedEffect(Unit) {
-        if (scanReport == null) {
-            lastHistory = withContext(Dispatchers.IO) {
-                ScannerModule.loadHistory(context).firstOrNull()
-            }
-        }
-    }
-
-    val showEmptyState = !isScanning && scanReport == null && lastHistory == null && scanError == null
+    val isScanning = uiState.phase == ScanPhase.SCANNING
+    val showEmptyState = uiState.phase == ScanPhase.IDLE &&
+        uiState.completedReport == null &&
+        uiState.lastHistoryRecord == null &&
+        uiState.errorMessage == null
 
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
@@ -145,6 +132,7 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        // Engine-driven progress (Phase 1: real checkpoint stages, not a time-animated loop).
         AnimatedVisibility(
             visible = isScanning,
             enter = fadeIn(),
@@ -156,13 +144,13 @@ fun ScannerScreen(
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text = scanStages.getOrElse(stageIndex) { "Checking this device…" },
+                    text = uiState.stageLabel.ifBlank { "Checking this device…" },
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricCyan
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 LinearProgressIndicator(
-                    progress = { stageProgress.coerceIn(0f, 1f) },
+                    progress = { uiState.overallProgress.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
@@ -172,7 +160,7 @@ fun ScannerScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Stage ${stageIndex + 1} of ${scanStages.size}",
+                    text = "Estimated progress — ${(uiState.overallProgress * 100).toInt()}%",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
@@ -180,69 +168,71 @@ fun ScannerScreen(
             }
         }
 
+        // Cancelled state — no score, no verdict. Show explicit message.
+        AnimatedVisibility(
+            visible = uiState.phase == ScanPhase.CANCELLED,
+            enter = fadeIn(),
+            exit = fadeOut()
+        ) {
+            CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.10f)) {
+                Text(
+                    text = "Scan cancelled",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = AttentionAmber,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = "Results are incomplete — no score or verdict is shown for a cancelled scan. " +
+                        "Run a full scan to get a result.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+            }
+        }
+
         PrimaryTealButton(
             text = if (isScanning) "Checking…" else "Check My Device Now",
-            enabled = !isScanning && !isRefreshing,
-            onClick = {
-                isScanning = true
-                stageIndex = 0
-                stageProgress = 0f
-                scanError = null
-                justCompleted = false
-                scope.launch {
-                    try {
-                        val scanJob = launch(Dispatchers.IO) {
-                            val result = ScannerModule.scanDevice(context)
-                            ScannerModule.recordHistory(context, result)
-                            withContext(Dispatchers.Main) {
-                                scanReport = result
-                                lastHistory = null
-                                justCompleted = true
-                            }
-                        }
-                        for (i in scanStages.indices) {
-                            stageIndex = i
-                            stageProgress = 0f
-                            repeat(10) {
-                                stageProgress = (it + 1) / 10f
-                                delay(60)
-                            }
-                        }
-                        scanJob.join()
-                    } catch (_: Throwable) {
-                        scanError =
-                            "We couldn’t finish the check. Try again, or restart the app if this keeps happening."
-                    } finally {
-                        isScanning = false
-                    }
-                }
-            }
+            enabled = !isScanning && !uiState.isRefreshing,
+            onClick = { scannerViewModel.startScan() }
         )
+
+        // Cancel button — visible only while scanning.
+        AnimatedVisibility(visible = isScanning) {
+            Spacer(modifier = Modifier.height(8.dp))
+            OutlinedButton(
+                onClick = { scannerViewModel.cancelScan() },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Cancel scan", color = AttentionAmber)
+            }
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedButton(
             onClick = {
                 if (!policy.canRefreshThreatSignatures()) {
-                    showUpsell = true
-                    refreshMessage = "Live signature refresh is a Premium unlock."
+                    scannerViewModel.setShowUpsell(true)
+                    scannerViewModel.setRefreshState(false, "Live signature refresh is a Premium unlock.")
                     return@OutlinedButton
                 }
-                isRefreshing = true
-                refreshMessage = "Pulling the newest threat signatures…"
+                scannerViewModel.setRefreshState(true, "Pulling the newest threat signatures…")
                 IocFeedFetcher.fetchAsync(context, executor = feedExecutor) { result ->
                     mainHandler.post {
-                        isRefreshing = false
-                        refreshMessage = when (result) {
-                            is IocFeedFetcher.FetchResult.Success ->
-                                "✓ ${result.indicatorsLoaded} signatures ready — run a privacy check."
-                            is IocFeedFetcher.FetchResult.Failure ->
-                                "Refresh failed: ${result.message}"
-                        }
+                        scannerViewModel.setRefreshState(
+                            isRefreshing = false,
+                            message = when (result) {
+                                is IocFeedFetcher.FetchResult.Success ->
+                                    "✓ ${result.indicatorsLoaded} signatures ready — run a privacy check."
+                                is IocFeedFetcher.FetchResult.Failure ->
+                                    "Refresh failed: ${result.message}"
+                            }
+                        )
                     }
                 }
             },
-            enabled = !isScanning && !isRefreshing,
+            enabled = !isScanning && !uiState.isRefreshing,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
@@ -252,7 +242,7 @@ fun ScannerScreen(
             )
         }
 
-        refreshMessage?.let { msg ->
+        uiState.refreshMessage?.let { msg ->
             Spacer(modifier = Modifier.height(8.dp))
             Text(
                 text = msg,
@@ -262,7 +252,7 @@ fun ScannerScreen(
             )
         }
 
-        if (showUpsell && !policy.isPremium()) {
+        if (uiState.showUpsell && !policy.isPremium()) {
             Spacer(modifier = Modifier.height(12.dp))
             PremiumUpsellCard(
                 title = "Keep your intel current",
@@ -271,7 +261,7 @@ fun ScannerScreen(
             )
         }
 
-        scanError?.let { err ->
+        uiState.errorMessage?.let { err ->
             Spacer(modifier = Modifier.height(12.dp))
             CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
                 Text(
@@ -284,14 +274,20 @@ fun ScannerScreen(
             }
         }
 
-        scanReport?.let { report ->
-            Spacer(modifier = Modifier.height(20.dp))
-            AnimatedVisibility(visible = true, enter = fadeIn()) {
-                ScanResultCard(report, showCompletedBanner = justCompleted)
+        // Only show scan results for COMPLETE scans. CANCELLED scans get no score/verdict.
+        if (uiState.phase == ScanPhase.COMPLETE) {
+            uiState.completedReport?.let { report ->
+                Spacer(modifier = Modifier.height(20.dp))
+                AnimatedVisibility(visible = true, enter = fadeIn()) {
+                    ScanResultCard(report, showCompletedBanner = true)
+                }
             }
-        } ?: lastHistory?.let { record ->
-            Spacer(modifier = Modifier.height(20.dp))
-            LastScanSummaryCard(record)
+        } else if (uiState.phase != ScanPhase.SCANNING) {
+            // Show history record as fallback for IDLE/CANCELLED (no fresh results).
+            uiState.lastHistoryRecord?.let { record ->
+                Spacer(modifier = Modifier.height(20.dp))
+                LastScanSummaryCard(record)
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -431,6 +427,8 @@ private fun DetectionRow(detection: Detection) {
         ThreatSeverity.HIGH -> "High"
         ThreatSeverity.MEDIUM -> "Medium"
     }
+    // Phase 1: map Detection to Finding for evidence class display.
+    val finding = remember(detection) { detection.toFinding() }
     NestedSurface {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -444,6 +442,8 @@ private fun DetectionRow(detection: Detection) {
                 color = severityColor
             )
         }
+        // TruthSeal: evidence class (OBSERVED from IOC match), icon + label for a11y.
+        TruthSeal(evidenceClass = finding.evidenceClass, compact = true)
         Text(text = detection.detail, style = MaterialTheme.typography.bodySmall, color = MutedText)
         detection.indicator.reference?.takeIf { it.isNotBlank() }?.let { ref ->
             Text(text = ref, style = MaterialTheme.typography.bodySmall, color = MutedText)
