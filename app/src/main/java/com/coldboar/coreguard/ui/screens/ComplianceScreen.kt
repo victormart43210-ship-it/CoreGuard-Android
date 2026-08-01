@@ -39,7 +39,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.BillingProvider
-import com.coldboar.coreguard.ui.rememberAppBillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.SecurityCheckResult
 import com.coldboar.coreguard.SecurityCheckRunner
@@ -61,15 +60,13 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun ComplianceScreen(
-    billingProvider: BillingProvider = rememberAppBillingProvider(),
-    onUpgrade: () -> Unit = {},
-    onNavigateToSettings: () -> Unit = {},
-    onNavigateToSupplyChain: () -> Unit = {},
+    billingProvider: BillingProvider,
+    onUpgrade: () -> Unit,
+    onNavigateToSettings: () -> Unit,
+    onNavigateToSupplyChain: () -> Unit,
     securityResults: List<SecurityCheckResult>? = null
 ) {
     val context = LocalContext.current
@@ -91,7 +88,7 @@ fun ComplianceScreen(
         loading = true
         loadError = null
         try {
-            loadedResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+            loadedResults = SecurityCheckRunner.runConcurrent(context)
         } catch (_: Throwable) {
             loadedResults = emptyList()
             loadError = "We couldn’t run the compliance checks. Try again in a moment."

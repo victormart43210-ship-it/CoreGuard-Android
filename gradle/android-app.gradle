@@ -10,8 +10,8 @@ android {
         applicationId "com.coldboar.coreguard"
         minSdk 24
         targetSdk 35
-        versionCode 17
-        versionName "1.0.16"
+        versionCode 18
+        versionName "1.0.17"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -67,13 +67,18 @@ android {
     if ((expectedCert == null || expectedCert.trim().isEmpty()) && hasReleaseSigning) {
         def ksFile = rootProject.file(storeFilePath)
         if (ksFile.exists()) {
+            // Write the store password to a temp file so it is never visible in
+            // the process argument list (readable via /proc/<pid>/cmdline on Linux).
+            // keytool -storepassfile was added in Java 9; this build requires Java 17.
+            def passFile = File.createTempFile("cg_kp_", null)
+            passFile.deleteOnExit()
             try {
-                // Pass password via stdin-env style args; never log password values.
+                passFile.text = storePass
                 def pb = new ProcessBuilder(
                     "keytool", "-list", "-v",
                     "-keystore", ksFile.absolutePath,
                     "-alias", signingKeyAlias,
-                    "-storepass", storePass
+                    "-storepassfile", passFile.absolutePath
                 )
                 pb.redirectErrorStream(true)
                 def proc = pb.start()
@@ -86,6 +91,8 @@ android {
                 }
             } catch (Exception e) {
                 logger.warn("Could not derive EXPECTED_CERT_SHA256 (details omitted)")
+            } finally {
+                passFile.delete()
             }
         }
     }
@@ -209,6 +216,8 @@ dependencies {
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+    // Deferrable / battery-aware Guardian Score pulse (SecurityPulseWorker).
+    implementation "androidx.work:work-runtime-ktx:2.9.1"
 
     implementation platform("androidx.compose:compose-bom:2024.06.00")
     implementation "androidx.compose.ui:ui"

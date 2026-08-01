@@ -57,9 +57,8 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
  * Android does not ship React-Redux; [SwarmAlertCounterStore] is the idiomatic
  * unidirectional stand-in inside the APK.
  *
- * @param store Injectable for previews / tests; production uses [SwarmModule.alertCounter].
- * @param onIncrement UI → module dispatch (override when injecting a private store).
- * @param onReset UI → module reset (override when injecting a private store).
+ * Production defaults wire to [SwarmModule]. Tests may inject a private store
+ * and handlers; there is no demo/premium unlock path here.
  */
 @Composable
 fun SwarmAlertCounter(

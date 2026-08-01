@@ -61,6 +61,7 @@ import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 
 @Composable
 fun ShieldScreen() {
@@ -128,14 +129,18 @@ fun ShieldScreen() {
         ScreenHeader(
             title = "Privacy Shield",
             subtitle = "On-device DNS filter VPN that can block domains matching known surveillance / tracker indicators.",
-            eyebrow = if (shieldActive) "Perimeter armed" else "Perimeter standby"
+            eyebrow = if (shieldActive) "Shield on" else "Shield off"
         )
 
         Spacer(modifier = Modifier.height(16.dp))
         ShieldPresence(active = shieldActive, blocked = totalBlocked)
         Spacer(modifier = Modifier.height(12.dp))
         TechStatusChip(
-            text = if (shieldActive) "Armed · $totalBlocked blocked" else "Standby · awaiting arm",
+            text = if (shieldActive) {
+                "On · $totalBlocked indicator domains blocked"
+            } else {
+                "Off · VPN consent required to start"
+            },
             color = if (shieldActive) SafeGreen else ElectricTeal,
             modifier = Modifier.align(Alignment.CenterHorizontally)
         )
@@ -210,8 +215,9 @@ fun ShieldScreen() {
 
 @Composable
 private fun ShieldPresence(active: Boolean, blocked: Int) {
+    val motionEnabled = rememberMotionEnabled()
     val transition = rememberInfiniteTransition(label = "shieldPresence")
-    val pulse by transition.animateFloat(
+    val pulseAnimated by transition.animateFloat(
         initialValue = 0.65f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
@@ -220,7 +226,7 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
         ),
         label = "pulse"
     )
-    val ring by transition.animateFloat(
+    val ringAnimated by transition.animateFloat(
         initialValue = 0f,
         targetValue = 360f,
         animationSpec = infiniteRepeatable(
@@ -229,6 +235,8 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
         ),
         label = "ring"
     )
+    val pulse = if (motionEnabled) pulseAnimated else 0.85f
+    val ring = if (motionEnabled) ringAnimated else 0f
     val accent = if (active) SafeGreen else ElectricTeal
 
     Box(
@@ -274,7 +282,7 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
                     strokeWidth = if (major) 2.1f else 1.3f
                 )
             }
-            // Hex lock geometry when armed
+            // Hex lock geometry when Shield is on
             if (active) {
                 val hexR = r * 0.42f
                 val path = androidx.compose.ui.graphics.Path()
@@ -296,13 +304,13 @@ private fun ShieldPresence(active: Boolean, blocked: Int) {
         }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = if (active) "ARMED" else "STANDBY",
+                text = if (active) "ON" else "OFF",
                 style = MaterialTheme.typography.labelLarge.copy(letterSpacing = 3.4.sp),
                 color = accent,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = if (active) "$blocked BLOCKED" else "AWAITING ARM",
+                text = if (active) "$blocked BLOCKED" else "TAP TO ENABLE",
                 style = MaterialTheme.typography.labelSmall.copy(letterSpacing = 1.6.sp),
                 color = MutedText
             )

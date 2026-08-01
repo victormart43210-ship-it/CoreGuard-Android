@@ -11,6 +11,18 @@ Version numbers match `gradle/android-app.gradle`.
 - Added `docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md` (repo map, gaps, Phase 1 paths, test baseline)
 - No product behavior changes in this slice
 
+## 1.0.17 — 2026-07-26
+
+### Final release polish + Quilla mini-game
+
+- Live Security Score on Home, threat timeline visualization, premium motion with reduced-motion freeze
+- Hourly battery-not-low Security Pulse (WorkManager) for background score refresh
+- Production screens require explicit billing/nav wiring (no demo defaults)
+- Claims honesty: scanner indicator language, Shield copy, README CPU BASIC `/proc/stat`
+- Emulator/smoke install hardened (`-d` + uninstall retry; async launch + pid poll)
+- Hidden Quilla purge mini-game: Settings → About → Version ×7
+- MASVS false-positive cleanup for pulse prefs (`PREF_*`)
+
 ## 1.0.16 — 2026-07-26
 
 ### Quilla Infinity threat training
