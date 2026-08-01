@@ -60,8 +60,6 @@ import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 
 @Composable
 fun ComplianceScreen(
@@ -90,7 +88,7 @@ fun ComplianceScreen(
         loading = true
         loadError = null
         try {
-            loadedResults = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
+            loadedResults = SecurityCheckRunner.runConcurrent(context)
         } catch (_: Throwable) {
             loadedResults = emptyList()
             loadError = "We couldn’t run the compliance checks. Try again in a moment."
