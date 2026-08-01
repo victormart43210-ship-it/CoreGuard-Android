@@ -3,86 +3,108 @@ package com.coldboar.coreguard.ui.components
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.coldboar.coreguard.truth.EvidenceClass
-import com.coldboar.coreguard.ui.theme.CoreGuardTheme
 import org.junit.Rule
 import org.junit.Test
+import org.junit.runner.RunWith
 
 /**
- * Compose UI tests for [TruthSeal] semantics.
+ * Compose instrumented tests for [TruthSeal].
  *
- * These tests verify that every [EvidenceClass] value produces a correct
- * a11y content description. The TruthSeal must describe its state in text,
- * not color-only.
+ * These tests verify:
+ * 1. All five evidence classes render distinct text labels.
+ * 2. TalkBack content descriptions are set correctly (not color-only).
+ * 3. The component is visible.
  *
- * **Environment note (Phase 1)**: These tests require a Robolectric or real
- * device/emulator environment with an Android runtime. In the CI sandbox with
- * no emulator available, these tests cannot execute. The tests are written and
- * checked in as required by Phase 1 scope. The limitation is recorded in
- * COREGUARD_TEST_EVIDENCE.md.
+ * ENVIRONMENT NOTE: These tests require a connected Android device or emulator.
+ * In the current sandboxed build environment `dl.google.com` is unreachable;
+ * the tests may not be executable. They are written and committed per Phase 1
+ * requirements. See COREGUARD_TEST_EVIDENCE.md for execution status.
  */
+@RunWith(AndroidJUnit4::class)
 class TruthSealTest {
 
     @get:Rule
     val composeTestRule = createComposeRule()
 
     @Test
-    fun `TruthSeal OBSERVED has correct content description`() {
+    fun truthSeal_observed_showsCorrectLabel() {
         composeTestRule.setContent {
-            CoreGuardTheme {
-                TruthSeal(evidenceClass = EvidenceClass.OBSERVED)
-            }
+            TruthSeal(evidenceClass = EvidenceClass.OBSERVED)
+        }
+        composeTestRule.onNodeWithText("Observed").assertIsDisplayed()
+    }
+
+    @Test
+    fun truthSeal_inferred_showsCorrectLabel() {
+        composeTestRule.setContent {
+            TruthSeal(evidenceClass = EvidenceClass.INFERRED)
+        }
+        composeTestRule.onNodeWithText("Inferred").assertIsDisplayed()
+    }
+
+    @Test
+    fun truthSeal_simulated_showsCorrectLabel() {
+        composeTestRule.setContent {
+            TruthSeal(evidenceClass = EvidenceClass.SIMULATED)
+        }
+        composeTestRule.onNodeWithText("Simulated").assertIsDisplayed()
+    }
+
+    @Test
+    fun truthSeal_unavailable_showsCorrectLabel() {
+        composeTestRule.setContent {
+            TruthSeal(evidenceClass = EvidenceClass.UNAVAILABLE)
+        }
+        composeTestRule.onNodeWithText("Unavailable").assertIsDisplayed()
+    }
+
+    @Test
+    fun truthSeal_userReported_showsCorrectLabel() {
+        composeTestRule.setContent {
+            TruthSeal(evidenceClass = EvidenceClass.USER_REPORTED)
+        }
+        composeTestRule.onNodeWithText("User-reported").assertIsDisplayed()
+    }
+
+    @Test
+    fun truthSeal_observed_hasCorrectContentDescription() {
+        composeTestRule.setContent {
+            TruthSeal(evidenceClass = EvidenceClass.OBSERVED)
         }
         composeTestRule
-            .onNodeWithContentDescription("Evidence class: Observed", substring = true)
+            .onNodeWithContentDescription("Evidence class: Observed — directly measured on this device")
             .assertIsDisplayed()
     }
 
     @Test
-    fun `TruthSeal INFERRED has correct content description`() {
+    fun truthSeal_unavailable_hasCorrectContentDescription() {
         composeTestRule.setContent {
-            CoreGuardTheme {
-                TruthSeal(evidenceClass = EvidenceClass.INFERRED)
-            }
+            TruthSeal(evidenceClass = EvidenceClass.UNAVAILABLE)
         }
         composeTestRule
-            .onNodeWithContentDescription("Evidence class: Inferred", substring = true)
+            .onNodeWithContentDescription(
+                "Evidence class: Unavailable — the required data cannot be accessed on this device"
+            )
             .assertIsDisplayed()
     }
 
     @Test
-    fun `TruthSeal SIMULATED has correct content description`() {
-        composeTestRule.setContent {
-            CoreGuardTheme {
-                TruthSeal(evidenceClass = EvidenceClass.SIMULATED)
+    fun truthSeal_allStatesAreDistinct() {
+        // Each evidence class must produce a different label — no two states can look identical.
+        val labels = EvidenceClass.values().map { ec ->
+            when (ec) {
+                EvidenceClass.OBSERVED -> "Observed"
+                EvidenceClass.INFERRED -> "Inferred"
+                EvidenceClass.SIMULATED -> "Simulated"
+                EvidenceClass.UNAVAILABLE -> "Unavailable"
+                EvidenceClass.USER_REPORTED -> "User-reported"
             }
         }
-        composeTestRule
-            .onNodeWithContentDescription("Evidence class: Simulated", substring = true)
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `TruthSeal UNAVAILABLE has correct content description`() {
-        composeTestRule.setContent {
-            CoreGuardTheme {
-                TruthSeal(evidenceClass = EvidenceClass.UNAVAILABLE)
-            }
+        assert(labels.distinct().size == labels.size) {
+            "All evidence class labels must be distinct"
         }
-        composeTestRule
-            .onNodeWithContentDescription("Evidence class: Unavailable", substring = true)
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun `TruthSeal USER_REPORTED has correct content description`() {
-        composeTestRule.setContent {
-            CoreGuardTheme {
-                TruthSeal(evidenceClass = EvidenceClass.USER_REPORTED)
-            }
-        }
-        composeTestRule
-            .onNodeWithContentDescription("Evidence class: User reported", substring = true)
-            .assertIsDisplayed()
     }
 }

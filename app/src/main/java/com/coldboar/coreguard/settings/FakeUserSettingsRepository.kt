@@ -6,16 +6,17 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /**
  * In-memory fake implementation of [UserSettingsRepository] for use in unit
- * tests and JVM previews.
+ * tests and ViewModel tests.
  *
- * Allows tests to control toggle state and observe changes without a real
- * DataStore or Android context.
+ * State is held in [MutableStateFlow]s so tests can observe changes reactively.
+ * All setter methods are synchronous (they update the flow immediately) to avoid
+ * needing a real coroutine scope in tests.
  */
 class FakeUserSettingsRepository(
     realTimeMonitoring: Boolean = true,
-    deepFileInspection: Boolean = true,
-    quillaCorrelation: Boolean = true,
-    intelSync: Boolean = true
+    deepFileInspection: Boolean = false,
+    quillaCorrelation: Boolean = false,
+    intelSync: Boolean = false
 ) : UserSettingsRepository {
 
     private val _realTimeMonitoring = MutableStateFlow(realTimeMonitoring)
@@ -28,19 +29,19 @@ class FakeUserSettingsRepository(
     override val quillaCorrelationEnabled: Flow<Boolean> = _quillaCorrelation.asStateFlow()
     override val intelSyncEnabled: Flow<Boolean> = _intelSync.asStateFlow()
 
-    override suspend fun setRealTimeMonitoring(enabled: Boolean) {
+    override suspend fun setRealTimeMonitoringEnabled(enabled: Boolean) {
         _realTimeMonitoring.value = enabled
     }
 
-    override suspend fun setDeepFileInspection(enabled: Boolean) {
+    override suspend fun setDeepFileInspectionEnabled(enabled: Boolean) {
         _deepFileInspection.value = enabled
     }
 
-    override suspend fun setQuillaCorrelation(enabled: Boolean) {
+    override suspend fun setQuillaCorrelationEnabled(enabled: Boolean) {
         _quillaCorrelation.value = enabled
     }
 
-    override suspend fun setIntelSync(enabled: Boolean) {
+    override suspend fun setIntelSyncEnabled(enabled: Boolean) {
         _intelSync.value = enabled
     }
 }

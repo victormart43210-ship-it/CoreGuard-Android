@@ -5,9 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.coldboar.coreguard.mvt.ScanHistoryStore
-import com.coldboar.coreguard.mvt.ScanProgressListener
 import com.coldboar.coreguard.mvt.ScanReport
-import com.coldboar.coreguard.mvt.ScanStage
 import com.coldboar.coreguard.mvt.ScannerModule
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -15,239 +13,135 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-// ---------------------------------------------------------------------------
-// UI State
-// ---------------------------------------------------------------------------
+/**
+ * The UI state for the scanner screen. Each state is mutually exclusive; the
+ * UI should render exactly one view for the current state.
+ *
+ * Truth-first rules:
+ * - [Cancelled] must never display a score or verdict — results are incomplete.
+ * - [Complete] includes the full [ScanReport]; the UI must not summarize a
+ *   cancelled scan as [Complete].
+ * - [Error] must show the actual failure message, not a fake clean result.
+ */
+sealed class ScannerUiState {
+    /** No scan has been run yet (or state has been cleared). */
+    object Empty : ScannerUiState()
 
-/** Phase of the scanner lifecycle reflected in the UI. */
-enum class ScanPhase {
-    /** No scan has been run yet in this session. */
-    IDLE,
+    /** A scan is currently in progress. [progressLabel] is shown to the user. */
+    data class Scanning(
+        val progressLabel: String = "Scan in progress…"
+    ) : ScannerUiState()
 
-    /** A scan is currently in progress. */
-    SCANNING,
-
-    /** Scan completed normally with a valid report. */
-    COMPLETE,
+    /** A scan completed successfully. */
+    data class Complete(val report: ScanReport) : ScannerUiState()
 
     /**
-     * Scan was cancelled by the user.
-     *
-     * No score or verdict is displayed for a cancelled scan — results are
-     * incomplete. The prior completed scan (if any) may still be displayed.
+     * The scan was cancelled by the user before it finished.
+     * No score or verdict may be derived from this state.
+     * [lastCompletedReport] is the most recent successfully finished scan,
+     * if available — shown so the user always has access to their last real results.
      */
-    CANCELLED,
+    data class Cancelled(
+        val lastCompletedReport: ScanReport? = null
+    ) : ScannerUiState()
 
-    /** Scan failed with an error. */
-    ERROR
+    /** The scan failed with an error. */
+    data class Error(
+        val message: String,
+        val lastCompletedReport: ScanReport? = null
+    ) : ScannerUiState()
 }
 
 /**
- * Immutable snapshot of all scanner-screen state.
+ * ViewModel for the [ScannerScreen].
  *
- * The [ScannerScreen] renders exclusively from this state; no Compose-local
- * mutable vars track scan lifecycle.
- */
-data class ScannerUiState(
-    val phase: ScanPhase = ScanPhase.IDLE,
-
-    // Progress — only meaningful when phase == SCANNING
-    /** Current [ScanStage], null when not scanning. */
-    val currentStage: ScanStage? = null,
-    /** Per-stage progress 0.0–1.0 as reported by the engine. */
-    val stageProgress: Float = 0f,
-    /** Human-readable stage label for display (not an engine guarantee). */
-    val stageLabel: String = "",
-    /** Overall estimated progress 0.0–1.0 based on stage ordering. */
-    val overallProgress: Float = 0f,
-
-    // Results
-    /** Present only when phase == COMPLETE. Never populated for CANCELLED/ERROR scans. */
-    val completedReport: ScanReport? = null,
-
-    /** Most recent scan from history (shown as fallback for IDLE/CANCELLED states). */
-    val lastHistoryRecord: ScanHistoryStore.ScanRecord? = null,
-
-    /** Error message when phase == ERROR. */
-    val errorMessage: String? = null,
-
-    // IOC refresh
-    val isRefreshing: Boolean = false,
-    val refreshMessage: String? = null,
-
-    // Premium upsell
-    val showUpsell: Boolean = false
-)
-
-// ---------------------------------------------------------------------------
-// ViewModel
-// -----------------------------------------------------------------------
-
-/**
- * ViewModel for the Scanner screen.
+ * Owns the scan lifecycle: starting, cancelling, and persisting results.
+ * The ViewModel survives configuration changes; the scan coroutine is tied to
+ * [viewModelScope] and is cancelled when the ViewModel is cleared.
  *
- * Progress is driven by real engine-emitted [ScanStage] checkpoints, not a
- * time-animated fake loop.  Cancellation is supported: if the user cancels,
- * [ScanPhase.CANCELLED] is set, no score or verdict is recorded, and the
- * latest prior history record is shown instead.
- *
- * Uses manual constructor injection (no Hilt).
- * TODO (Phase 2+): Replace [Factory] with @HiltViewModel once Hilt is added.
+ * Note: Manual constructor injection is used here because Hilt was not added to
+ * the project in Phase 1 to avoid a large cross-screen migration. Hilt wiring
+ * is documented as a Phase 2 follow-up (see COREGUARD_BLOCKERS.md).
  */
 class ScannerViewModel(
     private val appContext: Context
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(ScannerUiState())
+    private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Empty)
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
-    /** Active scan coroutine job — may be cancelled by [cancelScan]. */
     private var scanJob: Job? = null
 
-    private val stageOrder = ScanStage.entries.toList()
-    private val stageLabels = mapOf(
-        ScanStage.LOADING_INDICATORS to "Loading threat indicators",
-        ScanStage.SCANNING_PACKAGES to "Enumerating installed packages",
-        ScanStage.SCANNING_PROCESSES to "Reading process signals",
-        ScanStage.SCANNING_FILES to "Scanning file storage",
-        ScanStage.COMPOSING_VERDICT to "Composing verdict"
-    )
-
     init {
-        // Load prior history for IDLE state display.
-        viewModelScope.launch {
-            val history = withContext(Dispatchers.IO) {
-                ScannerModule.loadHistory(appContext).firstOrNull()
-            }
-            _uiState.update { current ->
-                // Only update if no scan report is already in memory.
-                val existingReport = ScannerModule.latestReport()
-                when {
-                    existingReport != null -> current.copy(
-                        phase = ScanPhase.COMPLETE,
-                        completedReport = existingReport
-                    )
-                    history != null -> current.copy(lastHistoryRecord = history)
-                    else -> current
+        // Restore the latest completed scan report so the screen is not blank
+        // on first load if a scan was run in a previous session.
+        val latest = ScannerModule.latestReport()
+        if (latest != null) {
+            _uiState.value = ScannerUiState.Complete(latest)
+        } else {
+            viewModelScope.launch {
+                val history = withContext(Dispatchers.IO) {
+                    ScannerModule.loadHistory(appContext).firstOrNull()
                 }
-            }
-        }
-    }
-
-    // -----------------------------------------------------------------------
-    // Public actions
-    // -----------------------------------------------------------------------
-
-    /** Starts a scan. No-op if a scan is already in progress. */
-    fun startScan() {
-        if (_uiState.value.phase == ScanPhase.SCANNING) return
-
-        _uiState.update { current ->
-            current.copy(
-                phase = ScanPhase.SCANNING,
-                currentStage = null,
-                stageProgress = 0f,
-                stageLabel = "Starting…",
-                overallProgress = 0f,
-                completedReport = null,
-                errorMessage = null,
-                showUpsell = false
-            )
-        }
-
-        val listener = object : ScanProgressListener {
-            override fun onStage(stage: ScanStage, progress: Float) {
-                val stageIdx = stageOrder.indexOf(stage)
-                val overall = if (stageOrder.isEmpty()) 0f else {
-                    (stageIdx + progress) / stageOrder.size
-                }
-                _uiState.update { current ->
-                    current.copy(
-                        currentStage = stage,
-                        stageProgress = progress,
-                        stageLabel = stageLabels[stage] ?: stage.name,
-                        overallProgress = overall.coerceIn(0f, 1f)
-                    )
-                }
-            }
-        }
-
-        scanJob = viewModelScope.launch {
-            try {
-                val report = withContext(Dispatchers.IO) {
-                    ScannerModule.scanDevice(appContext, listener)
-                }
-                withContext(Dispatchers.IO) {
-                    ScannerModule.recordHistory(appContext, report)
-                }
-                _uiState.update { current ->
-                    current.copy(
-                        phase = ScanPhase.COMPLETE,
-                        completedReport = report,
-                        overallProgress = 1f,
-                        stageLabel = "Scan complete"
-                    )
-                }
-            } catch (e: CancellationException) {
-                // User cancelled — do NOT record a score or verdict.
-                _uiState.update { current ->
-                    current.copy(
-                        phase = ScanPhase.CANCELLED,
-                        completedReport = null,
-                        stageLabel = "Scan cancelled",
-                        overallProgress = 0f
-                    )
-                }
-                // Re-throw so the coroutine is properly cancelled.
-                throw e
-            } catch (e: Throwable) {
-                _uiState.update { current ->
-                    current.copy(
-                        phase = ScanPhase.ERROR,
-                        errorMessage = "Scan couldn't finish: ${e.message ?: "unknown error"}. Try again.",
-                        stageLabel = ""
-                    )
+                if (_uiState.value is ScannerUiState.Empty && history != null) {
+                    // History exists but the in-memory report is gone (e.g. process restart).
+                    // Keep state Empty but record that history is available.
+                    // The screen will load history separately if needed.
                 }
             }
         }
     }
 
     /**
-     * Cancels the active scan.
+     * Starts a new scan. If a scan is already in progress, this is a no-op.
      *
-     * Sets [ScanPhase.CANCELLED]. No score or verdict is displayed; the prior
-     * completed scan from history may still be shown.
+     * Progress is labeled "Estimated progress — scan in progress" because the
+     * engine does not yet emit real stage checkpoints. When real checkpoint
+     * callbacks are wired in a future phase, this label should be updated.
      */
-    fun cancelScan() {
-        scanJob?.cancel()
-        // State is updated inside the CancellationException handler above.
-        // If the job was already done, force state just in case.
-        if (_uiState.value.phase == ScanPhase.SCANNING) {
-            _uiState.update { current ->
-                current.copy(
-                    phase = ScanPhase.CANCELLED,
-                    completedReport = null,
-                    stageLabel = "Scan cancelled",
-                    overallProgress = 0f
+    fun startScan() {
+        if (scanJob?.isActive == true) return
+        val previousCompleted = (_uiState.value as? ScannerUiState.Complete)?.report
+
+        _uiState.value = ScannerUiState.Scanning(
+            progressLabel = "Estimated progress — scan in progress"
+        )
+
+        scanJob = viewModelScope.launch {
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    ScannerModule.scanDevice(appContext)
+                }
+                withContext(Dispatchers.IO) {
+                    ScannerModule.recordHistory(appContext, result)
+                }
+                _uiState.value = ScannerUiState.Complete(result)
+            } catch (ce: CancellationException) {
+                // Scan was cancelled — do NOT record a score or verdict.
+                _uiState.value = ScannerUiState.Cancelled(lastCompletedReport = previousCompleted)
+            } catch (t: Throwable) {
+                _uiState.value = ScannerUiState.Error(
+                    message = "Scan couldn't finish: ${t.message ?: "unknown error"}. " +
+                        "Try again, or restart the app if this keeps happening.",
+                    lastCompletedReport = previousCompleted
                 )
             }
         }
     }
 
-    fun setRefreshState(isRefreshing: Boolean, message: String?) {
-        _uiState.update { it.copy(isRefreshing = isRefreshing, refreshMessage = message) }
-    }
-
-    fun setShowUpsell(show: Boolean) {
-        _uiState.update { it.copy(showUpsell = show) }
-    }
-
-    fun dismissError() {
-        _uiState.update { it.copy(phase = ScanPhase.IDLE, errorMessage = null) }
+    /**
+     * Cancels the in-progress scan.
+     *
+     * Per truth-first rules: after cancellation no score or verdict is recorded.
+     * The UI must show a "Scan cancelled — results are incomplete" message and
+     * must NOT display the previous or partial results as current.
+     */
+    fun cancelScan() {
+        scanJob?.cancel()
+        scanJob = null
     }
 
     override fun onCleared() {
@@ -255,17 +149,26 @@ class ScannerViewModel(
         scanJob?.cancel()
     }
 
-    // -----------------------------------------------------------------------
-    // Factory (manual DI — replace with @HiltViewModel in Phase 2+)
-    // -----------------------------------------------------------------------
+    /**
+     * Clears the current state back to [ScannerUiState.Empty].
+     * Useful after dismissing an error or cancelled state.
+     */
+    fun reset() {
+        _uiState.value = ScannerUiState.Empty
+    }
 
-    class Factory(private val context: Context) : ViewModelProvider.Factory {
+    // -------------------------------------------------------------------------
+    // Factory — use until Hilt is wired in Phase 2.
+    // TODO(phase2): replace with @HiltViewModel + @Inject constructor.
+    // -------------------------------------------------------------------------
+
+    class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
-            require(modelClass == ScannerViewModel::class.java) {
-                "Factory only creates ScannerViewModel"
+            require(modelClass.isAssignableFrom(ScannerViewModel::class.java)) {
+                "Unknown ViewModel class: ${modelClass.name}"
             }
-            return ScannerViewModel(context.applicationContext) as T
+            return ScannerViewModel(appContext.applicationContext) as T
         }
     }
 }

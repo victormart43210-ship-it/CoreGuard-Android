@@ -1,41 +1,37 @@
 package com.coldboar.coreguard.mvt
 
 /**
- * Stages of a Nemesis scanner run, in execution order.
+ * Stages of the Nemesis scan in execution order.
  *
- * The UI can use these checkpoints to display honest, engine-driven progress
- * rather than a time-animated fake loop.
+ * These stages correspond to the three artifact categories the scanner checks:
+ * installed packages, running processes, and accessible files.
  */
 enum class ScanStage {
-    /** Loading / verifying the IOC dataset. */
-    LOADING_INDICATORS,
-
-    /** Enumerating installed application packages. */
-    SCANNING_PACKAGES,
-
-    /** Reading process names from /proc (best-effort). */
-    SCANNING_PROCESSES,
-
-    /** Walking app-accessible file storage paths. */
-    SCANNING_FILES,
-
-    /** Composing the final verdict from all detections. */
-    COMPOSING_VERDICT
+    /** Enumerating and matching installed application package names. */
+    PACKAGES,
+    /** Reading and matching visible process names (best-effort, limited by hidepid). */
+    PROCESSES,
+    /** Walking and matching accessible file paths in app-accessible storage. */
+    FILES,
+    /** Finalizing results and persisting the scan record. */
+    FINALIZING
 }
 
 /**
- * Callback interface for receiving scanner progress events.
+ * Callback interface for receiving real-time progress from the Nemesis scanner.
  *
- * Called from the scanner thread; implementations must be thread-safe and
- * avoid blocking (post to Main if UI updates are needed).
+ * Implementations must be thread-safe; callbacks may be invoked from a
+ * background thread.
+ *
+ * Progress values are in the range [0.0, 1.0] and represent completion within
+ * the current stage (not overall scan progress).
  */
 interface ScanProgressListener {
     /**
-     * Called when the scanner enters [stage].
+     * Called when the scanner moves to [stage] with progress within that stage.
      *
-     * @param stage    The current stage.
-     * @param progress A rough 0.0–1.0 progress estimate for the current stage
-     *                 (0.0 = started, 1.0 = stage complete).
+     * @param stage    the current scan stage.
+     * @param progress fraction complete within this stage (0.0–1.0).
      */
     fun onStage(stage: ScanStage, progress: Float)
 }

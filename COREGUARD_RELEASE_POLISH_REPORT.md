@@ -85,74 +85,60 @@ Per CI-investigation requirements, GitHub Actions was checked.
 
 ### What changed
 
-#### `:core:model` additions
-- `core/model/.../truth/Finding.kt`: New canonical truth model
-  - `enum EvidenceClass` {OBSERVED, INFERRED, SIMULATED, UNAVAILABLE, USER_REPORTED}
-  - `enum FindingSeverity` {INFORMATIONAL, LOW, MEDIUM, HIGH, CRITICAL}
-  - `enum ConfidenceLevel` {LOW, MODERATE, HIGH, VERIFIED}
-  - `data class Finding` (18 fields; all required; no nulls)
-  - Pure mappers: `EvidenceKind.toEvidenceClass()`, `EvidenceKind.toConfidenceLevel()`
-  - Conversion: `GuardianScoreEvidence.toFinding()`
-  - Pure function: `formatFindingExplanation(finding): String` (5-section structured output)
-- Legacy `EvidenceKind`, `ThreatSeverity`, `GuardianScoreEvidence`, `Detection` unchanged (additive only)
+**`:core:model` additions (pure Kotlin/JVM)**
+- `core/model/src/main/kotlin/com/coldboar/coreguard/truth/Finding.kt`
+  - `EvidenceClass { OBSERVED, INFERRED, SIMULATED, UNAVAILABLE, USER_REPORTED }` enum
+  - `FindingSeverity { INFORMATIONAL, LOW, MEDIUM, HIGH, CRITICAL }` enum
+  - `ConfidenceLevel { LOW, MODERATE, HIGH, VERIFIED }` enum
+  - `Finding` data class (all 18 required fields as specified)
+  - Pure mapper functions: `EvidenceKind → EvidenceClass`, `EvidenceKind → ConfidenceLevel`, `SecurityCheckState → FindingSeverity`
+  - `GuardianScoreEvidence.toFinding()` conversion
+  - `formatFindingExplanation(Finding): String` deterministic 5-section formatter
+  - Unit tests: `core/model/src/test/…/truth/FindingTest.kt` (25 tests, all PASS in sandbox)
 
-#### App additions
-- `app/.../truth/FindingMappers.kt`: `ThreatSeverity.toFindingSeverity()`, `Detection.toFinding()`
-  (kept in app module since `Detection`/`ThreatSeverity` live in `:app`)
-- `app/.../ui/components/TruthSeal.kt`: Material 3 composable; 5 distinct evidence states via
-  icon + text label (not color-only); 48dp min touch target; correct a11y content descriptions
-- `app/.../settings/UserSettingsRepository.kt`: Interface with Flow-backed getters for 4 settings
-- `app/.../settings/DataStoreUserSettingsRepository.kt`: Preferences DataStore implementation
-- `app/.../settings/FakeUserSettingsRepository.kt`: In-memory fake for JVM unit tests
-- `app/.../ui/dashboard/DashboardViewModel.kt`: ViewModel + `DashboardUiState`; manual factory
-- `app/.../ui/screens/ScannerViewModel.kt`: ViewModel + `ScannerUiState` + `ScanPhase`; real
-  cancellation via coroutine `Job.cancel()`; manual factory
-- `app/.../mvt/ScanProgressListener.kt`: `ScanStage` enum + `ScanProgressListener` interface
+**`:app` additions (app module)**
+- `app/src/main/java/com/coldboar/coreguard/truth/DetectionMapper.kt`
+  - `ThreatSeverity → FindingSeverity` mapper
+  - `Detection.toFinding()` conversion
+- `app/src/main/java/com/coldboar/coreguard/settings/UserSettingsRepository.kt` (interface)
+- `app/src/main/java/com/coldboar/coreguard/settings/DataStoreUserSettingsRepository.kt` (Preferences DataStore impl)
+- `app/src/main/java/com/coldboar/coreguard/settings/FakeUserSettingsRepository.kt` (for tests)
+- `app/src/main/java/com/coldboar/coreguard/ui/components/TruthSeal.kt` (M3 composable, 5 states, icon+label, 48dp, a11y)
+- `app/src/main/java/com/coldboar/coreguard/ui/dashboard/DashboardViewModel.kt` (ViewModel + DashboardUiState + factory)
+- `app/src/main/java/com/coldboar/coreguard/ui/screens/ScannerViewModel.kt` (ViewModel + ScannerUiState + cancel)
+- `app/src/main/java/com/coldboar/coreguard/mvt/ScanProgressListener.kt` (callback interface + ScanStage enum)
 
-#### App modifications
-- `EliteDashboardScreen.kt`: All 4 toggles now wired to `DashboardViewModel` + DataStore.
-  Toggle callbacks route to `toggleRealTimeMonitoring()`, `toggleDeepFileInspection()`,
-  `toggleQuillaCorrelation()`, `toggleIntelSync()`. TruthSeal added to `EvidenceRowCard`.
-- `ScannerScreen.kt`: Time-animated fake progress loop removed. Progress now from
-  `ScannerViewModel.uiState.overallProgress` + `stageLabel` (engine checkpoints).
-  Real Cancel button added; `ScanPhase.CANCELLED` state shows honest "incomplete results"
-  message with no score/verdict. `DetectionRow` now includes `TruthSeal`.
-- `ScannerModule.kt`: New `scanDevice(context, listener)` overload; existing `scanDevice(context)`
-  remains as backward-compatible delegate.
-- `DeviceScanner.kt`: New `scan(context, listener)` overload emitting real `ScanStage` callbacks;
-  existing `scan(context)` remains.
+**`:app` modifications**
+- `gradle/android-app.gradle`: added `lifecycle-viewmodel-ktx:2.8.4`, `lifecycle-viewmodel-compose:2.8.4`, `datastore-preferences:1.1.1`
+- `EliteDashboardScreen.kt`:
+  - Added `DashboardViewModel` parameter (default via `viewModel()` + factory)
+  - Replaced in-memory `remember { mutableStateOf(...) }` settings vars with DataStore-backed ViewModel state
+  - Wired "REAL-TIME MONITOR" switch to `viewModel.setRealTimeMonitoringEnabled()`
+  - Disabled DEEP FILE INSPECTION, Quilla correlate, and Intel sync switches with "NOT YET AVAILABLE" label
+  - Applied `TruthSeal` to `EvidenceRowCard` (replaces text-only confidence label)
+- `ScannerScreen.kt`:
+  - Added `ScannerViewModel` parameter (default via `viewModel()` + factory)
+  - Removed fake time-driven stage animation loop
+  - Progress now uses indeterminate `LinearProgressIndicator` labeled "Estimated progress — scan in progress" (honest; real checkpoints deferred)
+  - Added real Cancel button during scanning
+  - `ScannerUiState.Cancelled` explicitly excludes verdict/score (truth-first compliance)
+  - Applied `TruthSeal` to `DetectionRow`
 
-### Locked decision conflicts — unchanged from Phase 0
+### Gaps intentionally carried forward (Phase 1 scope)
+- Hilt injection: manual `ViewModelProvider.Factory` is used; Hilt migration deferred to Phase 2 to avoid touching every screen
+- Real engine scan progress checkpoints: `ScanProgressListener` interface added but not wired through `NemesisScanner.scan()` yet; progress is labeled indeterminate
+- `DataStoreUserSettingsRepository` persistence tests: require Android instrumentation (blocked by sandbox network)
+- Compose instrumented tests for `TruthSeal`: written but not executable in sandbox environment
+- Deep file inspection / Quilla correlation / Intel sync backend behaviors: toggles persisted via DataStore; UI shows "NOT YET AVAILABLE" honestly
 
-These conflicts are documented but NOT changed in this PR per the Phase 1 scope constraint:
+### Locked-decision conflicts (unchanged from Phase 0, not fixed in Phase 1)
+- `compileSdk/targetSdk` remain 35 (locked decision requires 36)
+- Play Billing remains `billing-ktx:7.1.1` (locked requires 9.1.0)
+- Only monthly SKU exists; no yearly/trial (locked requires both)
+- App name string remains `CoreGuard`; some copy still uses `Premium` not `CoreGuard Elite`
+- No Hilt/DataStore injected at Application level yet (ViewModel factory is manual)
 
-| Conflict | Required | Current | Status |
-|---|---|---|---|
-| compileSdk/targetSdk | 36 | 35 | Carry-forward |
-| Play Billing | 9.1.0 | 7.1.1 | Carry-forward |
-| Yearly SKU + trial | `coreguard_premium_yearly` | Not present | Carry-forward |
-| App name copy | `CoreGuard Elite` | Some strings say `Premium` | Carry-forward |
-| Hilt DI | Required | Manual factory | Carry-forward to Phase 2+ |
-
-### Incomplete scope — intentionally deferred
-
-| Item | Reason deferred |
-|---|---|
-| Quilla correlation toggle backend enforcement | `QuillaIocBridge` call not yet gated; persistence added; effect deferred to Phase 3 |
-| Intel sync automatic trigger | IocFeedFetcher not yet auto-scheduled; toggle persists; Phase 2+ |
-| Deep file inspection skip | DeviceScanner always walks files; toggle persists; Phase 3 |
-| CPU/RAM in ViewModel | Kept in composable to avoid over-scoping Phase 1; Phase 2 cleanup |
-| Hilt DI | Would require touching every screen; manual factory documented as follow-up |
-| Compose/instrumented test execution | No emulator in sandbox; tests written and checked in |
-
-### Validation results
-
-| Command | Result |
-|---|---|
-| `COREGUARD_ANDROID_BUILD=false ./gradlew :core:model:test` | **PASSED — 20/20 tests green** |
-| `./gradlew :app:testDebugUnitTest` | BLOCKED — `dl.google.com` unreachable |
-| `./gradlew :app:lintDebug` | BLOCKED — `dl.google.com` unreachable |
-| `./gradlew build` | BLOCKED — `dl.google.com` unreachable |
-
-See `COREGUARD_TEST_EVIDENCE.md` for full test detail.
-
+### Validation results (Phase 1)
+- `./gradlew :core:model:test -Pcoreguard.androidBuild=false` → **BUILD SUCCESSFUL** (25 tests pass)
+- All `:app:*` tasks → **BLOCKED** (`dl.google.com` unreachable; same environment blocker as Phase 0)
+- Full results in `COREGUARD_TEST_EVIDENCE.md`

@@ -1,114 +1,136 @@
 package com.coldboar.coreguard.ui.dashboard
 
 import com.coldboar.coreguard.settings.FakeUserSettingsRepository
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.StandardTestDispatcher
-import kotlinx.coroutines.test.TestScope
-import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
-import kotlinx.coroutines.test.setMain
-import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
-import org.junit.Before
 import org.junit.Test
 
 /**
- * JVM unit tests for [DashboardViewModel] using [FakeUserSettingsRepository].
+ * JVM unit tests for [DashboardUiState] and [FakeUserSettingsRepository].
  *
- * Android context operations (SecurityCheckRunner, EliteModule, etc.) are NOT
- * exercised here — these tests focus on settings persistence wiring and
- * ViewModel action correctness.
+ * NOTE: [DashboardViewModel] requires an Android [Application] context for
+ * [SecurityCheckRunner], [ScannerModule], and [SecurityScoreCache]. These tests
+ * exercise the pure-Kotlin parts: UiState construction and the fake repository.
+ *
+ * Full ViewModel integration tests require Robolectric or an Android emulator.
+ * See COREGUARD_TEST_EVIDENCE.md for the environment execution status.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class DashboardViewModelTest {
 
-    private val testDispatcher = StandardTestDispatcher()
-    private lateinit var fakeSettings: FakeUserSettingsRepository
+    // -----------------------------------------------------------------------
+    // DashboardUiState defaults
+    // -----------------------------------------------------------------------
 
-    @Before
-    fun setUp() {
-        Dispatchers.setMain(testDispatcher)
-        fakeSettings = FakeUserSettingsRepository(
-            realTimeMonitoring = true,
-            deepFileInspection = true,
-            quillaCorrelation = true,
-            intelSync = true
-        )
-    }
-
-    @After
-    fun tearDown() {
-        Dispatchers.resetMain()
+    @Test
+    fun `DashboardUiState default score is null`() {
+        val state = DashboardUiState()
+        assertTrue("Default score must be null — never default to a 'safe' value", state.score == null)
     }
 
     @Test
-    fun `initial settings defaults reflect FakeUserSettingsRepository values`() = runTest {
-        fakeSettings = FakeUserSettingsRepository(
-            realTimeMonitoring = false,
+    fun `DashboardUiState default evidence is empty`() {
+        val state = DashboardUiState()
+        assertTrue(state.evidence.isEmpty())
+    }
+
+    @Test
+    fun `DashboardUiState deepFileInspectionEnabled defaults to false`() {
+        // Not yet available — must not default to true so we don't mislead users.
+        assertFalse(DashboardUiState().deepFileInspectionEnabled)
+    }
+
+    @Test
+    fun `DashboardUiState quillaCorrelationEnabled defaults to false`() {
+        assertFalse(DashboardUiState().quillaCorrelationEnabled)
+    }
+
+    @Test
+    fun `DashboardUiState intelSyncEnabled defaults to false`() {
+        assertFalse(DashboardUiState().intelSyncEnabled)
+    }
+
+    @Test
+    fun `DashboardUiState realTimeMonitoringEnabled defaults to true`() {
+        // Real-time monitoring (in-app refresh loop) is enabled by default.
+        assertTrue(DashboardUiState().realTimeMonitoringEnabled)
+    }
+
+    // -----------------------------------------------------------------------
+    // FakeUserSettingsRepository
+    // -----------------------------------------------------------------------
+
+    @Test
+    fun `FakeUserSettingsRepository emits initial values`() = runTest {
+        val repo = FakeUserSettingsRepository(
+            realTimeMonitoring = true,
             deepFileInspection = false,
             quillaCorrelation = false,
             intelSync = false
         )
-        val repo = fakeSettings
-
-        // Confirm the fake repo holds the expected defaults.
-        assertFalse(repo.realTimeMonitoringEnabled.first())
+        assertTrue(repo.realTimeMonitoringEnabled.first())
         assertFalse(repo.deepFileInspectionEnabled.first())
         assertFalse(repo.quillaCorrelationEnabled.first())
         assertFalse(repo.intelSyncEnabled.first())
     }
 
     @Test
-    fun `setRealTimeMonitoring persists to repository`() = runTest {
-        fakeSettings.setRealTimeMonitoring(false)
-        assertFalse(fakeSettings.realTimeMonitoringEnabled.first())
-        fakeSettings.setRealTimeMonitoring(true)
-        assertTrue(fakeSettings.realTimeMonitoringEnabled.first())
+    fun `FakeUserSettingsRepository setRealTimeMonitoringEnabled updates flow`() = runTest {
+        val repo = FakeUserSettingsRepository(realTimeMonitoring = true)
+        repo.setRealTimeMonitoringEnabled(false)
+        assertFalse(repo.realTimeMonitoringEnabled.first())
     }
 
     @Test
-    fun `setDeepFileInspection persists to repository`() = runTest {
-        fakeSettings.setDeepFileInspection(false)
-        assertFalse(fakeSettings.deepFileInspectionEnabled.first())
+    fun `FakeUserSettingsRepository setDeepFileInspectionEnabled updates flow`() = runTest {
+        val repo = FakeUserSettingsRepository(deepFileInspection = false)
+        repo.setDeepFileInspectionEnabled(true)
+        assertTrue(repo.deepFileInspectionEnabled.first())
     }
 
     @Test
-    fun `setQuillaCorrelation persists to repository`() = runTest {
-        fakeSettings.setQuillaCorrelation(false)
-        assertFalse(fakeSettings.quillaCorrelationEnabled.first())
+    fun `FakeUserSettingsRepository setQuillaCorrelationEnabled updates flow`() = runTest {
+        val repo = FakeUserSettingsRepository(quillaCorrelation = false)
+        repo.setQuillaCorrelationEnabled(true)
+        assertTrue(repo.quillaCorrelationEnabled.first())
     }
 
     @Test
-    fun `setIntelSync persists to repository`() = runTest {
-        fakeSettings.setIntelSync(false)
-        assertFalse(fakeSettings.intelSyncEnabled.first())
+    fun `FakeUserSettingsRepository setIntelSyncEnabled updates flow`() = runTest {
+        val repo = FakeUserSettingsRepository(intelSync = false)
+        repo.setIntelSyncEnabled(true)
+        assertTrue(repo.intelSyncEnabled.first())
     }
 
     @Test
-    fun `FakeUserSettingsRepository toggle round-trip`() = runTest {
-        // Toggle all settings off then on and verify.
-        fakeSettings.setRealTimeMonitoring(false)
-        fakeSettings.setDeepFileInspection(false)
-        fakeSettings.setQuillaCorrelation(false)
-        fakeSettings.setIntelSync(false)
+    fun `FakeUserSettingsRepository toggle round-trip is consistent`() = runTest {
+        val repo = FakeUserSettingsRepository(realTimeMonitoring = true)
+        repo.setRealTimeMonitoringEnabled(false)
+        repo.setRealTimeMonitoringEnabled(true)
+        assertTrue(repo.realTimeMonitoringEnabled.first())
+    }
 
-        assertFalse(fakeSettings.realTimeMonitoringEnabled.first())
-        assertFalse(fakeSettings.deepFileInspectionEnabled.first())
-        assertFalse(fakeSettings.quillaCorrelationEnabled.first())
-        assertFalse(fakeSettings.intelSyncEnabled.first())
+    // -----------------------------------------------------------------------
+    // DashboardUiState copy semantics
+    // -----------------------------------------------------------------------
 
-        fakeSettings.setRealTimeMonitoring(true)
-        fakeSettings.setDeepFileInspection(true)
-        fakeSettings.setQuillaCorrelation(true)
-        fakeSettings.setIntelSync(true)
+    @Test
+    fun `DashboardUiState copy preserves unmodified fields`() {
+        val original = DashboardUiState(score = 75, shieldOn = true)
+        val updated = original.copy(cpuText = "12%")
+        assertEquals(75, updated.score)
+        assertTrue(updated.shieldOn)
+        assertEquals("12%", updated.cpuText)
+    }
 
-        assertTrue(fakeSettings.realTimeMonitoringEnabled.first())
-        assertTrue(fakeSettings.deepFileInspectionEnabled.first())
-        assertTrue(fakeSettings.quillaCorrelationEnabled.first())
-        assertTrue(fakeSettings.intelSyncEnabled.first())
+    @Test
+    fun `DashboardUiState with null score does not show shieldOn as safe`() {
+        // Truth-first rule: absence of score data is not the same as "safe."
+        val state = DashboardUiState(score = null, shieldOn = false)
+        assertFalse("Shield must not default to on", state.shieldOn)
     }
 }

@@ -5,32 +5,25 @@ import com.coldboar.coreguard.GuardianScoreEvidence
 import com.coldboar.coreguard.SecurityCheckState
 
 /**
- * Phase 1 — Shared Truth Architecture
+ * How evidence for a finding was produced.
  *
- * Canonical evidence classification for every finding emitted by any CoreGuard
- * engine. Modelled after the principle: "what the OS let us observe, not what
- * we'd like to claim".
+ * Truth-first rule: NEVER promote INFERRED or SIMULATED evidence to OBSERVED.
+ * Absence of evidence is UNAVAILABLE, not safe / OBSERVED.
  */
-
-/** How the finding's evidence was obtained. */
 enum class EvidenceClass {
-    /** Directly observed via OS API, system file, or verifiable attestation. */
+    /** Directly measured or cryptographically attested — on-device observation. */
     OBSERVED,
-
-    /** Derived from heuristics or behavioural patterns — not directly seen. */
+    /** Derived or inferred from indirect signals; not directly measured. */
     INFERRED,
-
-    /** Produced by a local simulation, lab fixture, or test dataset. */
+    /** Produced by an emulated or synthetic scenario; not from a live device. */
     SIMULATED,
-
-    /** Data was requested but the OS returned no value or access was denied. */
+    /** The data required to make a determination is not accessible on this device. */
     UNAVAILABLE,
-
-    /** Explicitly supplied by the user (e.g. manual report / self-assessment). */
+    /** Reported by the user; unverified by the engine. */
     USER_REPORTED
 }
 
-/** How significant this finding is if real. */
+/** Severity of a finding — how serious the condition is if confirmed. */
 enum class FindingSeverity {
     INFORMATIONAL,
     LOW,
@@ -39,95 +32,89 @@ enum class FindingSeverity {
     CRITICAL
 }
 
-/** How confident we are that the evidence is accurate and complete. */
+/** How confident the engine is that the finding reflects reality. */
 enum class ConfidenceLevel {
-    /** Heuristic with known gaps; treat as signal, not proof. */
+    /** Weak signal; many false positives possible. */
     LOW,
-
-    /** Multiple supporting signals but not independently verifiable. */
+    /** Moderate corroboration; some uncertainty remains. */
     MODERATE,
-
-    /** Strong, reproducible evidence from a reliable OS source. */
+    /** Strong corroboration from multiple independent signals. */
     HIGH,
-
-    /** Cryptographically attested or independently confirmed. */
+    /** Cryptographically or externally attested; as certain as possible on-device. */
     VERIFIED
 }
 
 /**
- * A single, self-contained security finding.
+ * A single normalized, explainable security finding.
  *
- * All fields are required; use empty strings / empty lists rather than null so
- * the formatter and UI never need null checks.
+ * All fields are required so that the explanation formatter and UI can always
+ * render a complete, honest representation. Empty strings are acceptable
+ * placeholders when a field is genuinely not applicable.
  */
 data class Finding(
-    /** Stable, unique ID (e.g. "nemesis:pkg:com.evil.app" or "guardian:root_check"). */
+    /** Stable unique identifier (e.g. "nemesis.package.com.spyware"). */
     val id: String,
-
-    /** Short, human-readable title. */
+    /** Short human-readable title. */
     val title: String,
-
-    /** One-sentence plain-language summary for non-technical users. */
+    /** One-sentence summary for non-technical users. */
     val plainSummary: String,
-
-    /** Technical detail for analysts / Evidence Mode. */
+    /** Detailed technical description for analyst mode. */
     val technicalDescription: String,
-
     /** How the evidence was obtained. */
     val evidenceClass: EvidenceClass,
-
-    /** Significance level. */
+    /** How serious the condition is if the finding is correct. */
     val severity: FindingSeverity,
-
-    /** Confidence in the evidence. */
+    /** How confident the engine is that the finding is accurate. */
     val confidence: ConfidenceLevel,
-
-    /** Which engine or subsystem produced this finding. */
+    /** Which subsystem or module produced this finding (e.g. "NemesisScanner", "GuardianScore"). */
     val source: String,
-
-    /** When this finding was produced (epoch millis). */
+    /** When the finding was produced (epoch milliseconds). */
     val timestampMs: Long,
-
-    /** Human-readable name of the affected component. */
+    /** Which part of the device this finding relates to. */
     val affectedComponent: String,
-
-    /** Raw values actually observed on the device. */
+    /** Values actually observed on the device (e.g. installed package names). */
     val observedValues: List<String>,
-
-    /** Expected / safe baseline values for comparison. */
+    /** Expected or known-safe baseline values for comparison. */
     val baselineValues: List<String>,
-
-    /** Plain-language explanation of why this matters to the user. */
+    /** Why this finding matters to the user in plain language. */
     val whyItMatters: String,
-
-    /** Concrete recommended next step for the user. */
+    /** Recommended action the user can take. */
     val recommendedResponse: String,
-
-    /** How to independently verify this finding. */
+    /** How this finding could be independently verified. */
     val verificationMethod: String,
-
-    /** Current verification status (e.g. "Not yet independently verified"). */
+    /** Current state of independent verification (e.g. "Unverified", "Confirmed by MVT"). */
     val verificationStatus: String,
-
-    /** Threat-intel references (CVEs, IOC sources, researcher URLs). */
+    /** External threat-intel references (e.g. CVE IDs, IOC hashes, Amnesty report URLs). */
     val threatIntelReferences: List<String>,
-
-    /** Android-specific visibility limits that constrain this evidence. */
+    /** Known Android OS visibility limits that affect this finding's completeness. */
     val androidVisibilityLimits: String
 )
 
 // ---------------------------------------------------------------------------
-// Mappers: EvidenceKind → EvidenceClass / ConfidenceLevel
+// Mapper: EvidenceKind → EvidenceClass / ConfidenceLevel
 // ---------------------------------------------------------------------------
 
-/** Maps the legacy [EvidenceKind] to the canonical [EvidenceClass]. */
+/**
+ * Maps the legacy [EvidenceKind] enum to the shared [EvidenceClass].
+ *
+ * Mapping logic:
+ * - VERIFIED → OBSERVED (cryptographic / attestation signal)
+ * - HEURISTIC → INFERRED (best-effort heuristic, not directly measured)
+ * - EDUCATIONAL → UNAVAILABLE (policy guidance; no live detection performed)
+ */
 fun EvidenceKind.toEvidenceClass(): EvidenceClass = when (this) {
     EvidenceKind.VERIFIED -> EvidenceClass.OBSERVED
     EvidenceKind.HEURISTIC -> EvidenceClass.INFERRED
-    EvidenceKind.EDUCATIONAL -> EvidenceClass.INFERRED
+    EvidenceKind.EDUCATIONAL -> EvidenceClass.UNAVAILABLE
 }
 
-/** Maps [EvidenceKind] to a [ConfidenceLevel]. */
+/**
+ * Maps the legacy [EvidenceKind] enum to a [ConfidenceLevel].
+ *
+ * - VERIFIED → VERIFIED (cryptographic certainty)
+ * - HEURISTIC → MODERATE (heuristics have meaningful but imperfect accuracy)
+ * - EDUCATIONAL → LOW (no live measurement performed)
+ */
 fun EvidenceKind.toConfidenceLevel(): ConfidenceLevel = when (this) {
     EvidenceKind.VERIFIED -> ConfidenceLevel.VERIFIED
     EvidenceKind.HEURISTIC -> ConfidenceLevel.MODERATE
@@ -135,90 +122,133 @@ fun EvidenceKind.toConfidenceLevel(): ConfidenceLevel = when (this) {
 }
 
 // ---------------------------------------------------------------------------
-// Mapper: GuardianScoreEvidence → Finding
+// Mapper: SecurityCheckState → FindingSeverity
 // ---------------------------------------------------------------------------
 
 /**
- * Converts a [GuardianScoreEvidence] row into a canonical [Finding].
+ * Maps a [SecurityCheckState] to [FindingSeverity].
  *
- * [GuardianScoreEvidence] carries a single check result; the resulting
- * [Finding] severity is derived from the check state.
+ * - PASS → INFORMATIONAL (nothing concerning)
+ * - WARN → MEDIUM (notable but not confirmed high-risk)
+ * - FAIL → HIGH (high-risk indicator present)
  */
-fun GuardianScoreEvidence.toFinding(): Finding {
-    val severity = when (this.state) {
-        SecurityCheckState.PASS -> FindingSeverity.INFORMATIONAL
-        SecurityCheckState.WARN -> FindingSeverity.MEDIUM
-        SecurityCheckState.FAIL -> FindingSeverity.HIGH
-    }
-    return Finding(
-        id = "guardian:${this.checkId}",
-        title = this.displayName,
-        plainSummary = this.explanation,
-        technicalDescription = this.explanation,
-        evidenceClass = this.confidence.toEvidenceClass(),
-        severity = severity,
-        confidence = this.confidence.toConfidenceLevel(),
-        source = "GuardianScore",
-        timestampMs = this.timestampMs,
-        affectedComponent = this.displayName,
-        observedValues = emptyList(),
-        baselineValues = emptyList(),
-        whyItMatters = this.explanation,
-        recommendedResponse = this.recommendedAction,
-        verificationMethod = "Re-run Guardian Score check",
-        verificationStatus = "Not independently verified",
-        threatIntelReferences = emptyList(),
-        androidVisibilityLimits = "Result is heuristic; OS API visibility limits apply."
-    )
+fun SecurityCheckState.toFindingSeverity(): FindingSeverity = when (this) {
+    SecurityCheckState.PASS -> FindingSeverity.INFORMATIONAL
+    SecurityCheckState.WARN -> FindingSeverity.MEDIUM
+    SecurityCheckState.FAIL -> FindingSeverity.HIGH
 }
+
+// ---------------------------------------------------------------------------
+// Conversion: GuardianScoreEvidence → Finding
+// ---------------------------------------------------------------------------
+
+/**
+ * Converts a [GuardianScoreEvidence] row to a normalized [Finding].
+ *
+ * The [GuardianScoreEvidence.state] field maps to both [FindingSeverity] and
+ * is reflected in [Finding.observedValues] for full transparency.
+ */
+fun GuardianScoreEvidence.toFinding(): Finding = Finding(
+    id = "guardian.${checkId}",
+    title = displayName,
+    plainSummary = explanation,
+    technicalDescription = explanation,
+    evidenceClass = confidence.toEvidenceClass(),
+    severity = state.toFindingSeverity(),
+    confidence = confidence.toConfidenceLevel(),
+    source = "GuardianScore",
+    timestampMs = timestampMs,
+    affectedComponent = displayName,
+    observedValues = listOf("state=${state.name}"),
+    baselineValues = listOf("state=${SecurityCheckState.PASS.name}"),
+    whyItMatters = explanation,
+    recommendedResponse = recommendedAction,
+    verificationMethod = "Re-run Guardian Score check",
+    verificationStatus = "Unverified — heuristic result",
+    threatIntelReferences = emptyList(),
+    androidVisibilityLimits = "Visibility depends on device configuration and Android API level."
+)
 
 // ---------------------------------------------------------------------------
 // Deterministic explanation formatter
 // ---------------------------------------------------------------------------
 
 /**
- * Formats a [Finding] into a structured plain-text explanation with a fixed
- * five-section structure:
+ * Formats a [Finding] into a deterministic, structured plain-text explanation
+ * with five fixed sections:
  *
- * 1. Conclusion
- * 2. Evidence
- * 3. Confidence
- * 4. Recommended action
- * 5. What could change the conclusion
+ * 1. Conclusion — what the finding means
+ * 2. Evidence — what was observed and how it was obtained
+ * 3. Confidence — how reliable the assessment is
+ * 4. Recommended action — what the user should do
+ * 5. What could change the conclusion — conditions that would alter the verdict
  *
- * Pure function — no I/O, no state, deterministic output for given input.
+ * This function is pure (no side effects, deterministic output) and is the
+ * single source of truth for human-readable finding explanations across the app.
  */
-fun formatFindingExplanation(finding: Finding): String = buildString {
-    appendLine("=== Conclusion ===")
-    appendLine(finding.plainSummary)
-    appendLine()
-
-    appendLine("=== Evidence ===")
-    appendLine("Evidence class : ${finding.evidenceClass.name}")
-    appendLine("Source         : ${finding.source}")
-    if (finding.observedValues.isNotEmpty()) {
-        appendLine("Observed       : ${finding.observedValues.joinToString(", ")}")
+fun formatFindingExplanation(finding: Finding): String {
+    val severityLabel = when (finding.severity) {
+        FindingSeverity.INFORMATIONAL -> "informational"
+        FindingSeverity.LOW -> "low severity"
+        FindingSeverity.MEDIUM -> "medium severity"
+        FindingSeverity.HIGH -> "high severity"
+        FindingSeverity.CRITICAL -> "critical severity"
     }
-    if (finding.baselineValues.isNotEmpty()) {
-        appendLine("Baseline       : ${finding.baselineValues.joinToString(", ")}")
+    val evidenceLabel = when (finding.evidenceClass) {
+        EvidenceClass.OBSERVED -> "directly observed on this device"
+        EvidenceClass.INFERRED -> "inferred from indirect signals"
+        EvidenceClass.SIMULATED -> "based on a simulated or synthetic scenario"
+        EvidenceClass.UNAVAILABLE -> "unavailable — the required data cannot be accessed on this device"
+        EvidenceClass.USER_REPORTED -> "reported by the user; not independently verified"
     }
-    if (finding.technicalDescription.isNotBlank()) {
-        appendLine("Technical      : ${finding.technicalDescription}")
+    val confidenceLabel = when (finding.confidence) {
+        ConfidenceLevel.LOW -> "low — weak signal; many false positives possible"
+        ConfidenceLevel.MODERATE -> "moderate — some uncertainty remains"
+        ConfidenceLevel.HIGH -> "high — strong corroboration from multiple signals"
+        ConfidenceLevel.VERIFIED -> "verified — cryptographically or externally attested"
     }
-    appendLine()
-
-    appendLine("=== Confidence ===")
-    appendLine("Level  : ${finding.confidence.name}")
-    appendLine("Reason : ${finding.androidVisibilityLimits}")
-    appendLine()
-
-    appendLine("=== Recommended action ===")
-    appendLine(finding.recommendedResponse)
-    appendLine()
-
-    appendLine("=== What could change the conclusion ===")
-    appendLine(finding.verificationMethod)
-    if (finding.threatIntelReferences.isNotEmpty()) {
-        appendLine("References: ${finding.threatIntelReferences.joinToString(", ")}")
+    val observedSummary = if (finding.observedValues.isEmpty()) {
+        "No specific values observed."
+    } else {
+        finding.observedValues.joinToString("; ")
     }
+
+    return buildString {
+        appendLine("=== Conclusion ===")
+        appendLine("${finding.title}: ${finding.plainSummary}")
+        appendLine("Severity: $severityLabel.")
+        if (finding.androidVisibilityLimits.isNotBlank()) {
+            appendLine("Note: ${finding.androidVisibilityLimits}")
+        }
+        appendLine()
+        appendLine("=== Evidence ===")
+        appendLine("Evidence class: ${finding.evidenceClass.name} ($evidenceLabel).")
+        appendLine("Source: ${finding.source}.")
+        appendLine("Observed: $observedSummary")
+        if (finding.technicalDescription.isNotBlank() &&
+            finding.technicalDescription != finding.plainSummary
+        ) {
+            appendLine("Technical: ${finding.technicalDescription}")
+        }
+        appendLine()
+        appendLine("=== Confidence ===")
+        appendLine("Confidence: $confidenceLabel.")
+        appendLine("Verification status: ${finding.verificationStatus}.")
+        if (finding.verificationMethod.isNotBlank()) {
+            appendLine("Verification method: ${finding.verificationMethod}.")
+        }
+        appendLine()
+        appendLine("=== Recommended action ===")
+        appendLine(finding.recommendedResponse.ifBlank { "No specific action required at this time." })
+        appendLine()
+        appendLine("=== What could change the conclusion ===")
+        appendLine(
+            if (finding.whyItMatters.isNotBlank()) finding.whyItMatters
+            else "Additional data or a full forensic acquisition could alter this assessment."
+        )
+        if (finding.threatIntelReferences.isNotEmpty()) {
+            appendLine()
+            appendLine("References: ${finding.threatIntelReferences.joinToString(", ")}")
+        }
+    }.trimEnd()
 }

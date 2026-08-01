@@ -94,3 +94,30 @@
 - Could not complete successful `assembleDebug`, `testDebugUnitTest`, `lintDebug`, `bundleRelease`, or `build` due AGP dependency fetch failure from `dl.google.com`.
 - Could not validate signed AAB behavior, release minification output, or runtime behavior on device in this environment.
 
+
+---
+
+## Phase 1 — Shared Truth Architecture (2026-08-01)
+
+### Updated code/work blockers
+
+| Area | Phase 0 state | Phase 1 state | Remaining work |
+|---|---|---|---|
+| Truth model consistency | Severity/evidence modeled differently per subsystem | **RESOLVED** — shared `Finding` model in `:core:model`; mappers from `EvidenceKind`/`ThreatSeverity`; `formatFindingExplanation` added | Wire `Detection.toFinding()` into Nemesis result display (Phase 3) |
+| Persistent controls | Several toggles in-memory only | **PARTIALLY RESOLVED** — DataStore repository added; `realTimeMonitoringEnabled` wired; deep/quilla/intel disabled with "not yet available" | Enable remaining switches when backend behaviors are implemented |
+| MVVM pattern | No ViewModels | **PARTIALLY RESOLVED** — `DashboardViewModel` + `ScannerViewModel` added with manual factories | Hilt injection deferred to Phase 2 |
+| Scanner fake progress | Time-animated stages, no cancellation | **RESOLVED** — fake stage loop removed; indeterminate progress with honest label; real Cancel button added; `Cancelled` state has no score/verdict | Wire real engine progress checkpoints when available |
+| TruthSeal / evidence UI | Color-only evidence labels | **RESOLVED** — `TruthSeal` composable uses icon + label; applied to `EvidenceRowCard` and `DetectionRow` | |
+
+### New blockers discovered in Phase 1
+
+| Blocker | Type | Description | Needed to unblock |
+|---|---|---|---|
+| `DataStoreUserSettingsRepository` tests | Test/environment | Preferences DataStore tests need Android instrumentation; JVM test impossible without Robolectric | Add Robolectric dependency or run on-device in CI |
+| Compose instrumented tests | Test/environment | `TruthSealTest.kt` written but not executable; requires connected device/emulator | CI with Android emulator |
+| Hilt injection | Architecture | `DashboardViewModel` and `ScannerViewModel` use manual factories; Hilt migration would require touching every screen | Phase 2 — add Hilt to app module + migrate incrementally |
+| Real scan progress checkpoints | Engine | `ScanProgressListener` interface added; not yet wired through `DeviceScanner`/`NemesisScanner` | Phase 3 — add callbacks to scan engine methods |
+| Deep file inspection behavior | Engine | Toggle persisted but engine does not honor it | Phase 3 — implement deeper file scanning and gate on setting |
+| Quilla correlation gating | Engine | Toggle persisted but Quilla runs unconditionally | Phase 3 — add conditional execution path |
+| Intel sync scheduling | Engine | Toggle persisted but no auto-schedule logic exists | Phase 3 or later |
+| `dl.google.com` unreachable | Environment/infra | All `:app:*` Gradle tasks blocked; same as Phase 0 | Network egress to Google Maven or local mirror |

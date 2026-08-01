@@ -3,47 +3,54 @@ package com.coldboar.coreguard.settings
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Persistent user settings repository.
+ * Repository interface for user-configurable settings that control security
+ * and monitoring behavior.
  *
- * All toggle preferences are Flow-backed so callers can observe changes.
- * Writes are suspend functions; readers are Flows.
+ * All getters return [Flow] so composables and ViewModels can react to changes.
+ * All setters are suspending functions.
  *
- * Phase 1 note: backend behaviour for these toggles is NOT yet fully wired to
- * corresponding engine operations. Any switch whose backend effect is not yet
- * honoured is labelled "Not yet available" in the UI. Zero decorative toggles remain.
+ * Truth-first rule: a setting being stored here does NOT imply the underlying
+ * behavior is fully implemented. See [DataStoreUserSettingsRepository] for
+ * which features are currently honored and which are marked "not yet available."
  */
 interface UserSettingsRepository {
 
     /**
-     * When enabled, the Guardian Score / device-metrics ticker refreshes
-     * periodically while the Home screen is open.
-     * Backend: SecurityCheckRunner live refresh loop (honoured in Phase 1).
+     * Enables the in-app real-time metrics refresh loop (CPU/RAM update cycle
+     * and periodic Guardian Score re-computation while the app is in the foreground).
+     *
+     * Note: this does NOT enable a background monitoring service; that requires
+     * additional permissions and is a future phase deliverable.
      */
     val realTimeMonitoringEnabled: Flow<Boolean>
 
     /**
-     * When enabled, the Nemesis scanner will include app-accessible file
-     * paths in the IOC match pass.
-     * Backend: DeviceScanner file walk (honoured in Phase 1 via ViewModel).
+     * Deep file inspection mode.
+     *
+     * **NOT YET AVAILABLE**: the backend engine does not yet perform deeper
+     * file scanning beyond app-accessible storage. Storing the preference is
+     * implemented; honoring it in the engine is a future phase deliverable.
      */
     val deepFileInspectionEnabled: Flow<Boolean>
 
     /**
-     * When enabled, scan detections are correlated against the Quilla
-     * hypothesis store.
-     * Backend: QuillaIocBridge.correlateScanArtifacts (NOT YET AVAILABLE — Phase 2+).
+     * Quilla cross-source correlation mode.
+     *
+     * **NOT YET AVAILABLE**: Quilla correlation runs unconditionally in the
+     * current implementation. This toggle does not yet gate that behavior.
      */
     val quillaCorrelationEnabled: Flow<Boolean>
 
     /**
-     * When enabled, the IOC feed refresh button is shown and the in-app
-     * signature refresh is allowed.
-     * Backend: IocFeedFetcher (NOT YET AVAILABLE for automatic sync — Phase 2+).
+     * Intel sync / live IOC feed pull.
+     *
+     * **NOT YET AVAILABLE**: IOC refresh is currently triggered explicitly by
+     * the user in the Scanner screen; this toggle does not yet auto-schedule it.
      */
     val intelSyncEnabled: Flow<Boolean>
 
-    suspend fun setRealTimeMonitoring(enabled: Boolean)
-    suspend fun setDeepFileInspection(enabled: Boolean)
-    suspend fun setQuillaCorrelation(enabled: Boolean)
-    suspend fun setIntelSync(enabled: Boolean)
+    suspend fun setRealTimeMonitoringEnabled(enabled: Boolean)
+    suspend fun setDeepFileInspectionEnabled(enabled: Boolean)
+    suspend fun setQuillaCorrelationEnabled(enabled: Boolean)
+    suspend fun setIntelSyncEnabled(enabled: Boolean)
 }

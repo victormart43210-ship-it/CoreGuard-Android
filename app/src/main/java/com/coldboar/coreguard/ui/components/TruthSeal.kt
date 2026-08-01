@@ -1,17 +1,16 @@
 package com.coldboar.coreguard.ui.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.defaultMinSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Block
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.HelpOutline
 import androidx.compose.material.icons.filled.Psychology
 import androidx.compose.material.icons.filled.Science
-import androidx.compose.material.icons.filled.VisibilityOff
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -26,95 +25,87 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.truth.EvidenceClass
 
 /**
- * Material 3 badge that communicates the evidence class of a finding.
+ * A Material 3 evidence-class badge ("truth seal") that communicates how a
+ * finding's evidence was produced.
  *
- * Each of the five states is represented by a unique **icon + text label**
- * (never color-only) so the UI is accessible to users with color vision
- * deficiencies.
+ * Five distinct states are represented using BOTH an icon AND a text label,
+ * never by color alone, so the UI is accessible to users with color-vision
+ * deficiency.
  *
- * Minimum touch target: 48 dp × 48 dp (WCAG 2.5.5 / Material 3 guidance).
- * Content descriptions are set for TalkBack.
+ * Minimum touch target is 48 dp (applied via [Modifier.defaultMinSize]).
+ * A merged semantics content description is provided for TalkBack.
  *
- * @param evidenceClass The [EvidenceClass] to render.
- * @param modifier      Optional outer modifier.
- * @param compact       When true, shows only the icon (for tight rows);
- *                      the text label is still included in the accessibility
- *                      description.
+ * Usage:
+ * ```
+ * TruthSeal(evidenceClass = finding.evidenceClass)
+ * ```
  */
 @Composable
 fun TruthSeal(
     evidenceClass: EvidenceClass,
-    modifier: Modifier = Modifier,
-    compact: Boolean = false
+    modifier: Modifier = Modifier
 ) {
-    val config = evidenceClass.sealConfig()
-    val accessibilityLabel = "Evidence class: ${config.label}. ${config.description}"
-
+    val (icon, label, tint, description) = evidenceClassMeta(evidenceClass)
     Row(
-        verticalAlignment = Alignment.CenterVertically,
         modifier = modifier
             .defaultMinSize(minWidth = 48.dp, minHeight = 48.dp)
-            .padding(horizontal = if (compact) 4.dp else 8.dp, vertical = 4.dp)
-            .semantics { contentDescription = accessibilityLabel }
+            .semantics(mergeDescendants = true) {
+                contentDescription = "Evidence class: $description"
+            },
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
     ) {
         Icon(
-            imageVector = config.icon,
-            contentDescription = null, // Provided at Row level
-            tint = config.tint,
-            modifier = Modifier.size(20.dp)
+            imageVector = icon,
+            contentDescription = null,
+            tint = tint
         )
-        if (!compact) {
-            Spacer(modifier = Modifier.width(6.dp))
-            Text(
-                text = config.label,
-                style = MaterialTheme.typography.labelSmall,
-                color = config.tint
-            )
-        }
+        Spacer(modifier = Modifier.width(4.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelSmall,
+            color = tint
+        )
     }
 }
 
-// ---------------------------------------------------------------------------
-// Internal configuration
-// ---------------------------------------------------------------------------
-
-private data class SealConfig(
+private data class EvidenceClassMeta(
     val icon: ImageVector,
     val label: String,
-    val description: String,
-    val tint: Color
+    val tint: Color,
+    val description: String
 )
 
 @Composable
-private fun EvidenceClass.sealConfig(): SealConfig = when (this) {
-    EvidenceClass.OBSERVED -> SealConfig(
+private fun evidenceClassMeta(evidenceClass: EvidenceClass): EvidenceClassMeta = when (evidenceClass) {
+    EvidenceClass.OBSERVED -> EvidenceClassMeta(
         icon = Icons.Filled.CheckCircle,
         label = "Observed",
-        description = "Directly observed via OS API or verifiable attestation.",
-        tint = MaterialTheme.colorScheme.primary
+        tint = MaterialTheme.colorScheme.primary,
+        description = "Observed — directly measured on this device"
     )
-    EvidenceClass.INFERRED -> SealConfig(
+    EvidenceClass.INFERRED -> EvidenceClassMeta(
         icon = Icons.Filled.Psychology,
         label = "Inferred",
-        description = "Derived from heuristics or behavioural patterns, not directly seen.",
-        tint = MaterialTheme.colorScheme.tertiary
+        tint = MaterialTheme.colorScheme.secondary,
+        description = "Inferred — derived from indirect signals"
     )
-    EvidenceClass.SIMULATED -> SealConfig(
+    EvidenceClass.SIMULATED -> EvidenceClassMeta(
         icon = Icons.Filled.Science,
         label = "Simulated",
-        description = "Produced by a local simulation, lab fixture, or test dataset.",
-        tint = MaterialTheme.colorScheme.secondary
+        tint = MaterialTheme.colorScheme.tertiary,
+        description = "Simulated — produced from a synthetic scenario, not a live device"
     )
-    EvidenceClass.UNAVAILABLE -> SealConfig(
-        icon = Icons.Filled.VisibilityOff,
+    EvidenceClass.UNAVAILABLE -> EvidenceClassMeta(
+        icon = Icons.Filled.Block,
         label = "Unavailable",
-        description = "Data was requested but the OS returned no value or access was denied.",
-        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+        tint = MaterialTheme.colorScheme.onSurfaceVariant,
+        description = "Unavailable — the required data cannot be accessed on this device"
     )
-    EvidenceClass.USER_REPORTED -> SealConfig(
+    EvidenceClass.USER_REPORTED -> EvidenceClassMeta(
         icon = Icons.Filled.HelpOutline,
-        label = "User reported",
-        description = "Explicitly supplied by the user — not verified by an on-device sensor.",
-        tint = MaterialTheme.colorScheme.secondary
+        label = "User-reported",
+        tint = MaterialTheme.colorScheme.outline,
+        description = "User-reported — stated by the user; not independently verified"
     )
 }

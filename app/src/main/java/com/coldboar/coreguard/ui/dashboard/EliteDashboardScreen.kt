@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.ui.dashboard
 
+import android.app.Application
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -50,9 +51,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -70,13 +68,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.coldboar.coreguard.CpuUsageCalculator
 import com.coldboar.coreguard.EvidenceKind
 import com.coldboar.coreguard.GuardianScore
 import com.coldboar.coreguard.GuardianScoreEvidence
-import com.coldboar.coreguard.MemoryUsageCalculator
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
+import com.coldboar.coreguard.elite.EliteModule
 import com.coldboar.coreguard.truth.toEvidenceClass
 import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.components.TruthSeal
@@ -90,7 +87,9 @@ import com.coldboar.coreguard.ui.dashboard.ElitePalette.TextSecondary
 import com.coldboar.coreguard.ui.redux.rememberEliteThreatCounterState
 import com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState
 import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -126,25 +125,30 @@ fun EliteDashboardScreen(
     onNavigateToTools: () -> Unit,
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
-    onNavigateToScamGuard: () -> Unit
+    onNavigateToScamGuard: () -> Unit,
+    // TODO(phase2): inject via @HiltViewModel; manual ViewModelProvider.Factory used for Phase 1.
+    viewModel: DashboardViewModel = viewModel(
+        factory = DashboardViewModel.defaultFactory(
+            LocalContext.current.applicationContext as Application
+        )
+    )
 ) {
     val context = LocalContext.current
+    val uiState by viewModel.uiState.collectAsState()
 
-    // Phase 1: ViewModel provides persistent settings + Guardian Score state.
-    // TODO (Phase 2+): Replace factory with @HiltViewModel once Hilt is added.
-    val dashboardViewModel: DashboardViewModel = viewModel(
-        factory = DashboardViewModel.Factory(context)
-    )
-    val uiState by dashboardViewModel.uiState.collectAsState()
-
-    // Persist toggles via ViewModel; read back from uiState for rendering.
+    // Settings are now persisted via DataStore through DashboardViewModel.
     val realTimeEnabled = uiState.realTimeMonitoringEnabled
-    val deepScanEnabled = uiState.deepFileInspectionEnabled
-    val quillaCorrelateEnabled = uiState.quillaCorrelationEnabled
-    val intelSyncEnabled = uiState.intelSyncEnabled
 
+    // Core data state from ViewModel.
     val score = uiState.score
     val evidence = uiState.evidence
+    val cpuText = uiState.cpuText
+    val ramText = uiState.ramText
+    val lastScanLabel = uiState.lastScanLabel
+    val hasScan = uiState.hasScan
+    val appsScanned = uiState.appsScanned
+    val threatsLabel = uiState.threatsLabel
+    val shieldOn = uiState.shieldOn
 
     // -------------------------------------------------------------------------
     // Redux Counters — subscribe via ui.redux helpers (not inline store wiring).
@@ -153,31 +157,23 @@ fun EliteDashboardScreen(
     val eliteCounter by rememberEliteThreatCounterState()
     val swarmCounter by rememberSwarmAlertCounterState()
 
-    // CPU and RAM are short-lived display strings — read locally and refresh
-    // on the same 2-second cadence, but only while realTime is on.
-    var cpuText by remember { mutableStateOf("…") }
-    var ramText by remember { mutableStateOf("…") }
-
+    // Start or restart the metrics loop when real-time monitoring changes.
+    // LaunchedEffect cancels the previous coroutine automatically when the key changes.
     LaunchedEffect(realTimeEnabled) {
-        if (!realTimeEnabled) {
-            cpuText = "—"
-            ramText = "—"
-            return@LaunchedEffect
-        }
+        viewModel.refresh()
+        if (!realTimeEnabled) return@LaunchedEffect
+
+        var ticks = 0
         while (true) {
-            cpuText = CpuUsageCalculator.getUsagePercent()?.let { "$it%" } ?: "n/a"
-            ramText = MemoryUsageCalculator.formatBytes(
-                MemoryUsageCalculator.getUsedRamBytes(context)
-            )
             delay(2_000L)
+            viewModel.updateDeviceMetrics()
+            ticks++
+            if (ticks % 6 == 0) viewModel.refresh()
+            if (ticks % 15 == 0) {
+                withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
+            }
         }
     }
-
-    val lastScanLabel = uiState.lastScanLabel
-    val hasScan = uiState.hasScan
-    val appsScanned = uiState.appsScanned
-    val threatsLabel = uiState.threatsLabel
-    val shieldOn = uiState.shieldOn
 
     // Read Counter fields from Redux mirrors — do not cache ints in local vars
     // that diverge from the store (that would re-couple UI to Counter logic).
@@ -414,7 +410,7 @@ fun EliteDashboardScreen(
                     statusText = if (realTimeEnabled) "ENABLED" else "DISABLED",
                     statusColor = if (realTimeEnabled) CyberGreen else Color.Red,
                     isChecked = realTimeEnabled,
-                    onCheckedChange = { dashboardViewModel.toggleRealTimeMonitoring(it) }
+                    onCheckedChange = { viewModel.setRealTimeMonitoringEnabled(it) }
                 ) {
                     MetricMiniRow(label = "CPU", value = if (realTimeEnabled) cpuText else "—")
                     MetricMiniRow(label = "MEMORY", value = if (realTimeEnabled) ramText else "—")
@@ -435,26 +431,28 @@ fun EliteDashboardScreen(
                 PowerUserCard(
                     modifier = Modifier.weight(1f),
                     title = "DEEP FILE INSPECTION",
-                    statusText = if (deepScanEnabled) "ACTIVE" else "PAUSED",
-                    statusColor = if (deepScanEnabled) CyberGreen else Color.Yellow,
-                    isChecked = deepScanEnabled,
-                    onCheckedChange = { dashboardViewModel.toggleDeepFileInspection(it) }
+                    // Not yet available: engine does not yet honor this toggle.
+                    statusText = "NOT YET AVAILABLE",
+                    statusColor = TextSecondary,
+                    isChecked = false,
+                    enabled = false,
+                    onCheckedChange = {}
                 ) {
                     MetricMiniRow(label = "PKGS SCANNED", value = appsScanned)
                     MetricMiniRow(label = "DETECTIONS", value = threatsLabel)
                     Spacer(modifier = Modifier.height(6.dp))
-                    // Phase 1 note: Quilla correlate toggle persists to DataStore.
-                    // Backend enforcement (skip QuillaIocBridge) deferred to Phase 3.
-                    ToggleMiniRow(
-                        label = "Quilla correlate",
-                        checked = quillaCorrelateEnabled
-                    ) { dashboardViewModel.toggleQuillaCorrelation(it) }
-                    // Phase 1 note: Intel sync toggle persists to DataStore.
-                    // Automatic sync enforcement deferred to Phase 2+.
-                    ToggleMiniRow(
-                        label = "Threat intel",
-                        checked = intelSyncEnabled
-                    ) { dashboardViewModel.toggleIntelSync(it) }
+                    // Quilla correlate — not yet available
+                    Text(
+                        text = "Quilla correlate — not yet available",
+                        color = TextSecondary,
+                        fontSize = 10.sp
+                    )
+                    // Intel sync — not yet available
+                    Text(
+                        text = "Threat intel sync — not yet available",
+                        color = TextSecondary,
+                        fontSize = 10.sp
+                    )
                 }
             }
 
@@ -674,11 +672,9 @@ private fun EvidenceRowCard(row: GuardianScoreEvidence) {
                     fontWeight = FontWeight.Bold
                 )
             }
-            // Phase 1: TruthSeal shows evidence class (icon + label, not color-only).
-            TruthSeal(
-                evidenceClass = row.confidence.toEvidenceClass(),
-                compact = true
-            )
+            // TruthSeal: shows evidence class via icon + label (not color alone)
+            // so the UI is accessible to users with color-vision deficiency.
+            TruthSeal(evidenceClass = row.confidence.toEvidenceClass())
             Text(
                 text = row.explanation,
                 color = TextSecondary,
@@ -918,6 +914,7 @@ fun PowerUserCard(
     statusText: String,
     statusColor: Color,
     isChecked: Boolean,
+    enabled: Boolean = true,
     onCheckedChange: (Boolean) -> Unit,
     content: @Composable ColumnScope.() -> Unit
 ) {
@@ -946,6 +943,7 @@ fun PowerUserCard(
                 Switch(
                     checked = isChecked,
                     onCheckedChange = onCheckedChange,
+                    enabled = enabled,
                     colors = SwitchDefaults.colors(
                         checkedThumbColor = DarkBackground,
                         checkedTrackColor = CyberGreen,
