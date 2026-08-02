@@ -94,7 +94,7 @@ Per CI-investigation requirements, GitHub Actions was checked.
   - Pure mapper functions: `EvidenceKind → EvidenceClass`, `EvidenceKind → ConfidenceLevel`, `SecurityCheckState → FindingSeverity`
   - `GuardianScoreEvidence.toFinding()` conversion
   - `formatFindingExplanation(Finding): String` deterministic 5-section formatter
-  - Unit tests: `core/model/src/test/…/truth/FindingTest.kt` (25 tests, all PASS in sandbox)
+  - Unit tests added in `core/model/src/test/…/truth/FindingTest.kt` (execution blocked in this sandbox by AGP resolution failure while configuring `:app`)
 
 **`:app` additions (app module)**
 - `app/src/main/java/com/coldboar/coreguard/truth/DetectionMapper.kt`
@@ -122,6 +122,7 @@ Per CI-investigation requirements, GitHub Actions was checked.
   - Progress now uses indeterminate `LinearProgressIndicator` labeled "Estimated progress — scan in progress" (honest; real checkpoints deferred)
   - Added real Cancel button during scanning
   - `ScannerUiState.Cancelled` explicitly excludes verdict/score (truth-first compliance)
+  - Extracted `CancelledScanContent` for compose-level cancellation-state testing
   - Applied `TruthSeal` to `DetectionRow`
 
 ### Gaps intentionally carried forward (Phase 1 scope)
@@ -129,6 +130,7 @@ Per CI-investigation requirements, GitHub Actions was checked.
 - Real engine scan progress checkpoints: `ScanProgressListener` interface added but not wired through `NemesisScanner.scan()` yet; progress is labeled indeterminate
 - `DataStoreUserSettingsRepository` persistence tests: require Android instrumentation (blocked by sandbox network)
 - Compose instrumented tests for `TruthSeal`: written but not executable in sandbox environment
+- Compose instrumented tests for scanner cancelled-state messaging: written but not executable in sandbox environment
 - Deep file inspection / Quilla correlation / Intel sync backend behaviors: toggles persisted via DataStore; UI shows "NOT YET AVAILABLE" honestly
 
 ### Locked-decision conflicts (unchanged from Phase 0, not fixed in Phase 1)
@@ -139,6 +141,8 @@ Per CI-investigation requirements, GitHub Actions was checked.
 - No Hilt/DataStore injected at Application level yet (ViewModel factory is manual)
 
 ### Validation results (Phase 1)
-- `./gradlew :core:model:test -Pcoreguard.androidBuild=false` → **BUILD SUCCESSFUL** (25 tests pass)
-- All `:app:*` tasks → **BLOCKED** (`dl.google.com` unreachable; same environment blocker as Phase 0)
+- `./gradlew :core:model:test` → **BLOCKED** during `:app` configuration (`com.android.tools.build:gradle:8.5.2` cannot be fetched from `dl.google.com`)
+- `./gradlew :app:testDebugUnitTest` → **BLOCKED** (same network blocker)
+- `./gradlew :app:lintDebug` → **BLOCKED** (same network blocker)
+- `./gradlew build` → **BLOCKED** (same network blocker)
 - Full results in `COREGUARD_TEST_EVIDENCE.md`
