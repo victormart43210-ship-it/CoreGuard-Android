@@ -200,44 +200,6 @@ fun ScannerScreen(
             )
         }
 
-        @Composable
-        internal fun CancelledScanContent(
-            hasLastCompletedReport: Boolean,
-            onRunNewScan: () -> Unit
-        ) {
-            Column(modifier = Modifier.fillMaxWidth()) {
-                CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.10f)) {
-                    Text(
-                        text = "Scan cancelled",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = AttentionAmber,
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = "The scan was cancelled before completion. No final verdict or Integrity Index was recorded for this session.",
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MutedText
-                    )
-                    if (hasLastCompletedReport) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "Showing your last completed scan below.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MutedText
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(8.dp))
-                PrimaryTealButton(
-                    text = "Run New Scan",
-                    enabled = true,
-                    onClick = onRunNewScan
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-            }
-        }
-
         Spacer(modifier = Modifier.height(10.dp))
 
         OutlinedButton(
@@ -332,6 +294,44 @@ fun ScannerScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
+    }
+}
+
+@Composable
+private fun CancelledScanContent(
+    hasLastCompletedReport: Boolean,
+    onRunNewScan: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.10f)) {
+            Text(
+                text = "Scan cancelled",
+                style = MaterialTheme.typography.titleMedium,
+                color = AttentionAmber,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "The scan was cancelled before completion. No final verdict or Integrity Index was recorded for this session.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedText
+            )
+            if (hasLastCompletedReport) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Showing your last completed scan below.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        PrimaryTealButton(
+            text = "Run New Scan",
+            enabled = true,
+            onClick = onRunNewScan
+        )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
