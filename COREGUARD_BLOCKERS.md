@@ -1,5 +1,22 @@
 # COREGUARD_BLOCKERS.md
 
+## Phase 3 — Scanner Engine Events, Cancellation, and Durable Sessions (2026-08-02)
+
+### Resolved in this phase
+- Engine stage events now emitted directly by scanner engine with required IDs and terminal states.
+- Deep file inspection setting now changes scanner behavior (enabled scans app-accessible files; disabled records skipped stage).
+- Quilla correlation is now gated by persisted setting.
+- Durable scan-session evidence persistence added through Room entities + DAO + migration.
+- Legacy SharedPreferences history one-time import path added without deleting legacy data.
+
+### New/remaining blockers after this phase
+| Area | Current state | Block type | Needed work |
+|---|---|---|---|
+| Threat-intel signatures | Feed authenticity still transport-only (`HTTPS`) | Security architecture | Implement signed manifest, content hash verification, rollback/expiry handling (Phase 4) |
+| Session evidence breadth | Certificate, installer, and permission findings are staged but not fully normalized into separate first-class finding generators | Engine modeling | Add dedicated finding mappers for each unavailable/observed/inferred check class |
+| Validation environment | `dl.google.com` unreachable, AGP unresolved | Environment | Provide Maven/SDK network access or mirror to execute Android validation tasks |
+| Hilt migration | Scanner still uses manual ViewModel factory | Architecture | Migrate to Hilt dependency injection in planned architecture phase |
+
 ## Phase 1 — Shared Truth Architecture (2026-08-01)
 
 ### Phase 1 context

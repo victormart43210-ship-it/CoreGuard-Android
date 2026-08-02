@@ -1,5 +1,38 @@
 # COREGUARD_RELEASE_POLISH_REPORT.md
 
+## Phase 3 implementation snapshot (2026-08-02)
+
+### Summary
+- Implemented scanner-engine emitted stage events, cooperative cancellation, and durable scan-session persistence.
+- Scanner UI now uses stage labels/limitations emitted by engine events and avoids definitive safety claims.
+
+### What changed (phase scope)
+- Added stage IDs/events: PREPARING → BUILDING_FINDINGS + terminal COMPLETED/CANCELLED/FAILED.
+- Added cancellation propagation (`ScanCancellation`) through device enumeration + IOC correlation path.
+- Added durable Room entities/DAO for scan sessions, findings, evidence, stage events, and threat-intel references.
+- Added explicit Room migration `1 -> 2`; removed destructive fallback for this evidence path.
+- Added one-time legacy SharedPreferences scan-history import into Room while retaining legacy data.
+- Gated deep file inspection behavior and Quilla correlation using persisted settings.
+- Added deterministic finding correlation utility and unit tests.
+
+### Truth and security impact
+- IOC string matches no longer auto-escalate to critical severity in scanner defaults.
+- Cancelled/failed scans persist as terminal sessions without completed verdict output.
+- Android visibility limitations are surfaced in stage events and scanner result copy.
+- Threat feed authenticity is explicitly labeled as transport-protected but not signed.
+
+### Validation performed in this session
+| Command | Status | Notes |
+|---|---|---|
+| `./scripts/setup-android-sdk.sh` | FAIL | Network access to `dl.google.com` unavailable |
+| `./gradlew :app:assembleDebug --stacktrace` | BLOCKED | AGP 8.5.2 fetch from `dl.google.com` failed |
+| `./gradlew :app:testDebugUnitTest --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew :app:lintDebug --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew :app:bundleRelease --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew build --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew lint --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew test --stacktrace` | BLOCKED | Same blocker |
+
 ## Validation commands run in this session (real results)
 
 Environment notes:
