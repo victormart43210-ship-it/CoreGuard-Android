@@ -3,7 +3,7 @@ package com.coldboar.coreguard
 import android.app.Application
 import android.util.Log
 import android.os.PowerManager
-import com.coldboar.coreguard.elite.BehavioralAnomalyEngine
+import com.coldboar.coreguard.BehavioralAnomalyEngine
 import com.coldboar.coreguard.monitor.SecurityPulseWorker
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.swarm.SwarmCoordinator
