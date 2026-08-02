@@ -1,9 +1,5 @@
 package com.coldboar.coreguard.ui.screens
 
-import com.coldboar.coreguard.settings.FakeUserSettingsRepository
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -20,7 +16,6 @@ import org.junit.Test
  * Full integration tests require an Android emulator or device. See
  * COREGUARD_TEST_EVIDENCE.md for the environment execution status.
  */
-@OptIn(ExperimentalCoroutinesApi::class)
 class ScannerViewModelTest {
 
     @Test
@@ -35,9 +30,9 @@ class ScannerViewModelTest {
 
     @Test
     fun `Scanning state has a progress label`() {
-        val scanning = ScannerUiState.Scanning(progressLabel = "Estimated progress — scan in progress")
+        val scanning = ScannerUiState.Scanning()
         assertTrue(scanning is ScannerUiState.Scanning)
-        assertTrue(scanning.progressLabel.isNotBlank())
+        assertTrue(scanning.allStages.isEmpty())
     }
 
     @Test
@@ -45,7 +40,11 @@ class ScannerViewModelTest {
         // Truth-first rule: a cancelled scan MUST NOT record a score/verdict.
         // The Cancelled state has no 'report' field with a verdict —
         // it only carries the last *completed* report as optional fallback.
-        val cancelled = ScannerUiState.Cancelled(lastCompletedReport = null)
+        val cancelled = ScannerUiState.Cancelled(
+            sessionId = null,
+            stageEvents = emptyList(),
+            lastCompletedReport = null
+        )
         assertTrue(cancelled is ScannerUiState.Cancelled)
         assertFalse("Cancelled state must not have a live report with verdict",
             cancelled.lastCompletedReport != null
@@ -56,7 +55,11 @@ class ScannerViewModelTest {
     fun `Cancelled with lastCompletedReport still does not produce a new verdict`() {
         // Even when a previous completed report is available, the cancelled state
         // itself carries no new verdict — the UI must not show it as current.
-        val cancelled = ScannerUiState.Cancelled(lastCompletedReport = null)
+        val cancelled = ScannerUiState.Cancelled(
+            sessionId = null,
+            stageEvents = emptyList(),
+            lastCompletedReport = null
+        )
         // The cancelled.lastCompletedReport is the PREVIOUS scan, not the incomplete one.
         assertTrue("lastCompletedReport should be null when no previous scan exists",
             cancelled.lastCompletedReport == null
@@ -67,6 +70,8 @@ class ScannerViewModelTest {
     fun `Error state preserves the failure message`() {
         val error = ScannerUiState.Error(
             message = "Scan couldn't finish: IO error.",
+            sessionId = null,
+            stageEvents = emptyList(),
             lastCompletedReport = null
         )
         assertTrue(error is ScannerUiState.Error)
@@ -79,9 +84,9 @@ class ScannerViewModelTest {
         val states: List<ScannerUiState> = listOf(
             ScannerUiState.Empty,
             ScannerUiState.Scanning(),
-            ScannerUiState.Complete(report = buildFakeScanReport()),
-            ScannerUiState.Cancelled(),
-            ScannerUiState.Error(message = "error", lastCompletedReport = null)
+            ScannerUiState.Complete(report = buildFakeScanReport(), sessionId = "s", stageEvents = emptyList()),
+            ScannerUiState.Cancelled(sessionId = null, stageEvents = emptyList()),
+            ScannerUiState.Error(message = "error", sessionId = null, stageEvents = emptyList(), lastCompletedReport = null)
         )
         assertEquals(5, states.size)
     }
