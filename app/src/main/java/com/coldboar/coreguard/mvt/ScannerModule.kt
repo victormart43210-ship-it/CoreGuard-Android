@@ -11,13 +11,21 @@ import com.coldboar.coreguard.quilla.QuillaMemoryFactory
  * scanner internals ([NemesisScanner], IOC loaders, `/proc` walkers).
  */
 object ScannerModule {
+    private const val SCANNER_ENGINE_VERSION = "nemesis-engine-v2"
+    private const val SCAN_SCHEMA_VERSION = 2
 
     /**
      * Runs a full device scan and returns the [ScanReport].
      *
      * Existing call sites that do not need progress callbacks use this overload.
      */
-    fun scanDevice(context: Context): ScanReport = scanDevice(context, listener = null)
+    fun scanDevice(context: Context): ScanReport = scanDevice(
+        context = context,
+        listener = null,
+        cancellation = ScanCancellation { false },
+        deepFileInspectionEnabled = true,
+        quillaCorrelationEnabled = true
+    )
 
     /**
      * Runs a full device scan with optional [ScanProgressListener] callbacks.
@@ -25,20 +33,34 @@ object ScannerModule {
      * Progress is reported at real engine checkpoints, not a time-driven fake loop.
      * Pass [listener] = null to omit callbacks (equivalent to the no-arg overload).
      */
-    fun scanDevice(context: Context, listener: ScanProgressListener?): ScanReport {
-        listener?.onStage(ScanStage.LOADING_INDICATORS, 0f)
-        val matcher = IocRepository.matcher(context)
-        listener?.onStage(ScanStage.LOADING_INDICATORS, 1f)
-
-        val report = DeviceScanner.scan(context, listener)
+    fun scanDevice(
+        context: Context,
+        listener: ScanProgressListener?,
+        cancellation: ScanCancellation,
+        deepFileInspectionEnabled: Boolean,
+        quillaCorrelationEnabled: Boolean
+    ): ScanReport {
+        val report = DeviceScanner.scan(
+            context = context,
+            listener = listener,
+            cancellation = cancellation,
+            options = DeviceScanner.ScanOptions(
+                deepFileInspectionEnabled = deepFileInspectionEnabled
+            )
+        )
         LastScan.report = report
 
         // Feed MVT-style scan evidence into Quilla threat intelligence (no network).
         QuillaMemoryFactory.ensureLocalIntel(context)
         QuillaIocBridge.recordScanDetections(report, QuillaMemoryFactory.hypothesisStore())
-        QuillaIocBridge.correlateScanArtifacts(report, QuillaMemoryFactory.correlationEngine())
+        if (quillaCorrelationEnabled) {
+            QuillaIocBridge.correlateScanArtifacts(report, QuillaMemoryFactory.correlationEngine())
+        }
         return report
     }
+
+    fun scannerEngineVersion(): String = SCANNER_ENGINE_VERSION
+    fun scanSchemaVersion(): Int = SCAN_SCHEMA_VERSION
 
     fun latestReport(): ScanReport? = LastScan.report
 

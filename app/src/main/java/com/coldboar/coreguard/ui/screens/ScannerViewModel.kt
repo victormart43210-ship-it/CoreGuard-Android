@@ -4,163 +4,202 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.coldboar.coreguard.mvt.ScanHistoryStore
+import com.coldboar.coreguard.mvt.ScanCancellation
+import com.coldboar.coreguard.mvt.ScanProgressListener
 import com.coldboar.coreguard.mvt.ScanReport
+import com.coldboar.coreguard.mvt.ScanSessionSaveRequest
+import com.coldboar.coreguard.mvt.ScanStageEvent
+import com.coldboar.coreguard.mvt.ScanStageId
 import com.coldboar.coreguard.mvt.ScannerModule
+import com.coldboar.coreguard.mvt.RoomScanSessionRepository
+import com.coldboar.coreguard.mvt.correlateFindingsDeterministic
+import com.coldboar.coreguard.settings.DataStoreUserSettingsRepository
+import com.coldboar.coreguard.settings.UserSettingsRepository
+import com.coldboar.coreguard.truth.toFinding
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-/**
- * The UI state for the scanner screen. Each state is mutually exclusive; the
- * UI should render exactly one view for the current state.
- *
- * Truth-first rules:
- * - [Cancelled] must never display a score or verdict — results are incomplete.
- * - [Complete] includes the full [ScanReport]; the UI must not summarize a
- *   cancelled scan as [Complete].
- * - [Error] must show the actual failure message, not a fake clean result.
- */
 sealed class ScannerUiState {
-    /** No scan has been run yet (or state has been cleared). */
     object Empty : ScannerUiState()
-
-    /** A scan is currently in progress. [progressLabel] is shown to the user. */
     data class Scanning(
-        val progressLabel: String = "Scan in progress…"
+        val currentStage: ScanStageEvent? = null,
+        val allStages: List<ScanStageEvent> = emptyList()
     ) : ScannerUiState()
-
-    /** A scan completed successfully. */
-    data class Complete(val report: ScanReport) : ScannerUiState()
-
-    /**
-     * The scan was cancelled by the user before it finished.
-     * No score or verdict may be derived from this state.
-     * [lastCompletedReport] is the most recent successfully finished scan,
-     * if available — shown so the user always has access to their last real results.
-     */
+    data class Complete(
+        val report: ScanReport,
+        val sessionId: String,
+        val stageEvents: List<ScanStageEvent>
+    ) : ScannerUiState()
     data class Cancelled(
+        val sessionId: String?,
+        val stageEvents: List<ScanStageEvent>,
         val lastCompletedReport: ScanReport? = null
     ) : ScannerUiState()
-
-    /** The scan failed with an error. */
     data class Error(
         val message: String,
+        val sessionId: String?,
+        val stageEvents: List<ScanStageEvent>,
         val lastCompletedReport: ScanReport? = null
     ) : ScannerUiState()
 }
 
-/**
- * ViewModel for the [ScannerScreen].
- *
- * Owns the scan lifecycle: starting, cancelling, and persisting results.
- * The ViewModel survives configuration changes; the scan coroutine is tied to
- * [viewModelScope] and is cancelled when the ViewModel is cleared.
- *
- * Note: Manual constructor injection is used here because Hilt was not added to
- * the project in Phase 1 to avoid a large cross-screen migration. Hilt wiring
- * is documented as a Phase 2 follow-up (see COREGUARD_BLOCKERS.md).
- */
 class ScannerViewModel(
-    private val appContext: Context
+    private val appContext: Context,
+    private val settingsRepository: UserSettingsRepository,
+    private val sessionRepository: RoomScanSessionRepository
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Empty)
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
     private var scanJob: Job? = null
+    private var cancelRequested = false
 
     init {
-        // Restore the latest completed scan report so the screen is not blank
-        // on first load if a scan was run in a previous session.
-        val latest = ScannerModule.latestReport()
-        if (latest != null) {
-            _uiState.value = ScannerUiState.Complete(latest)
-        } else {
-            viewModelScope.launch {
-                val history = withContext(Dispatchers.IO) {
-                    ScannerModule.loadHistory(appContext).firstOrNull()
-                }
-                if (_uiState.value is ScannerUiState.Empty && history != null) {
-                    // History exists but the in-memory report is gone (e.g. process restart).
-                    // Keep state Empty but record that history is available.
-                    // The screen will load history separately if needed.
-                }
-            }
+        sessionRepository.ensureLegacyImport()
+        ScannerModule.latestReport()?.let {
+            _uiState.value = ScannerUiState.Complete(it, sessionId = "in-memory", stageEvents = emptyList())
         }
     }
 
-    /**
-     * Starts a new scan. If a scan is already in progress, this is a no-op.
-     *
-     * Progress is labeled "Estimated progress — scan in progress" because the
-     * engine does not yet emit real stage checkpoints. When real checkpoint
-     * callbacks are wired in a future phase, this label should be updated.
-     */
     fun startScan() {
-        if (scanJob?.isActive == true) return
+        scanJob?.cancel()
+        scanJob = null
+        cancelRequested = false
         val previousCompleted = (_uiState.value as? ScannerUiState.Complete)?.report
-
-        _uiState.value = ScannerUiState.Scanning(
-            progressLabel = "Estimated progress — scan in progress"
-        )
+        val stageEvents = mutableListOf<ScanStageEvent>()
+        _uiState.value = ScannerUiState.Scanning()
 
         scanJob = viewModelScope.launch {
+            val startedAt = System.currentTimeMillis()
+            val listener = object : ScanProgressListener {
+                override fun onStage(event: ScanStageEvent) {
+                    stageEvents += event
+                    _uiState.value = ScannerUiState.Scanning(
+                        currentStage = event,
+                        allStages = stageEvents.toList()
+                    )
+                }
+            }
             try {
-                val result = withContext(Dispatchers.IO) {
-                    ScannerModule.scanDevice(appContext)
+                val deepInspection = settingsRepository.deepFileInspectionEnabled.first()
+                val quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
+                val cancellation = ScanCancellation { cancelRequested || !isActive() }
+                val report = withContext(Dispatchers.IO) {
+                    ScannerModule.scanDevice(
+                        context = appContext,
+                        listener = listener,
+                        cancellation = cancellation,
+                        deepFileInspectionEnabled = deepInspection,
+                        quillaCorrelationEnabled = quillaEnabled
+                    )
                 }
                 withContext(Dispatchers.IO) {
-                    ScannerModule.recordHistory(appContext, result)
+                    ScannerModule.recordHistory(appContext, report)
                 }
-                _uiState.value = ScannerUiState.Complete(result)
+                val normalizedFindings = report.detections
+                    .map { it.toFinding(report.finishedAtMillis) }
+                    .let { correlateFindingsDeterministic(it) }
+                val sessionId = withContext(Dispatchers.IO) {
+                    sessionRepository.saveSession(
+                        ScanSessionSaveRequest(
+                            status = ScanStageId.COMPLETED,
+                            startedAtMs = startedAt,
+                            endedAtMs = System.currentTimeMillis(),
+                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
+                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            deepInspectionEnabled = deepInspection,
+                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedVersion = null,
+                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            findings = normalizedFindings.map { it.finding },
+                            stageEvents = stageEvents.toList()
+                        )
+                    )
+                }
+                _uiState.value = ScannerUiState.Complete(
+                    report = report,
+                    sessionId = sessionId,
+                    stageEvents = stageEvents.toList()
+                )
             } catch (ce: CancellationException) {
-                // Scan was cancelled — do NOT record a score or verdict.
-                _uiState.value = ScannerUiState.Cancelled(lastCompletedReport = previousCompleted)
+                val sessionId = withContext(Dispatchers.IO) {
+                    sessionRepository.saveSession(
+                        ScanSessionSaveRequest(
+                            status = ScanStageId.CANCELLED,
+                            startedAtMs = startedAt,
+                            endedAtMs = System.currentTimeMillis(),
+                            failureReason = "Cancelled by user",
+                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
+                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
+                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedVersion = null,
+                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            findings = emptyList(),
+                            stageEvents = stageEvents.toList()
+                        )
+                    )
+                }
+                _uiState.value = ScannerUiState.Cancelled(
+                    sessionId = sessionId,
+                    stageEvents = stageEvents.toList(),
+                    lastCompletedReport = previousCompleted
+                )
             } catch (t: Throwable) {
+                val sessionId = withContext(Dispatchers.IO) {
+                    sessionRepository.saveSession(
+                        ScanSessionSaveRequest(
+                            status = ScanStageId.FAILED,
+                            startedAtMs = startedAt,
+                            endedAtMs = System.currentTimeMillis(),
+                            failureReason = t.message ?: "Unknown error",
+                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
+                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
+                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedVersion = null,
+                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            findings = emptyList(),
+                            stageEvents = stageEvents.toList()
+                        )
+                    )
+                }
                 _uiState.value = ScannerUiState.Error(
-                    message = "Scan couldn't finish: ${t.message ?: "unknown error"}. " +
-                        "Try again, or restart the app if this keeps happening.",
+                    message = "Scan failed: ${t.message ?: "unknown error"}",
+                    sessionId = sessionId,
+                    stageEvents = stageEvents.toList(),
                     lastCompletedReport = previousCompleted
                 )
             }
         }
     }
 
-    /**
-     * Cancels the in-progress scan.
-     *
-     * Per truth-first rules: after cancellation no score or verdict is recorded.
-     * The UI must show a "Scan cancelled — results are incomplete" message and
-     * must NOT display the previous or partial results as current.
-     */
     fun cancelScan() {
+        cancelRequested = true
         scanJob?.cancel()
         scanJob = null
     }
 
     override fun onCleared() {
-        super.onCleared()
         scanJob?.cancel()
     }
 
-    /**
-     * Clears the current state back to [ScannerUiState.Empty].
-     * Useful after dismissing an error or cancelled state.
-     */
     fun reset() {
         _uiState.value = ScannerUiState.Empty
     }
 
-    // -------------------------------------------------------------------------
-    // Factory — use until Hilt is wired in Phase 2.
-    // TODO(phase2): replace with @HiltViewModel + @Inject constructor.
-    // -------------------------------------------------------------------------
+    private fun isActive(): Boolean = scanJob?.isActive == true
 
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -168,7 +207,12 @@ class ScannerViewModel(
             require(modelClass.isAssignableFrom(ScannerViewModel::class.java)) {
                 "Unknown ViewModel class: ${modelClass.name}"
             }
-            return ScannerViewModel(appContext.applicationContext) as T
+            val context = appContext.applicationContext
+            return ScannerViewModel(
+                appContext = context,
+                settingsRepository = DataStoreUserSettingsRepository(context),
+                sessionRepository = RoomScanSessionRepository(context)
+            ) as T
         }
     }
 }

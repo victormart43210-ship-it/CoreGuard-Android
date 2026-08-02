@@ -135,8 +135,7 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        // Scan in progress: indeterminate progress (real engine checkpoints not yet
-        // wired — labeled honestly as estimated). Cancel button always visible.
+        // Scan in progress: engine-emitted stages with indeterminate progress when totals are unknown.
         AnimatedVisibility(
             visible = isScanning,
             enter = fadeIn(),
@@ -148,7 +147,7 @@ fun ScannerScreen(
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text = "Estimated progress — scan in progress",
+                    text = (uiState as? ScannerUiState.Scanning)?.currentStage?.label ?: "Scan in progress",
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricCyan
                 )
@@ -164,7 +163,8 @@ fun ScannerScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Progress is estimated — real engine checkpoints will be added in a future release.",
+                    text = (uiState as? ScannerUiState.Scanning)?.currentStage?.visibilityLimitation
+                        ?: "Android visibility limitations apply to scanner results.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
@@ -215,7 +215,7 @@ fun ScannerScreen(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Text(
-                        text = "The scan was cancelled before it could finish. Results are incomplete — no score or verdict has been recorded for this incomplete scan.",
+                        text = "The scan was cancelled before completion. No final verdict or Integrity Index was recorded for this session.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MutedText
                     )
@@ -381,9 +381,9 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "No selected indicators matched"
-        ScanVerdict.SUSPICIOUS -> "Possible privacy risk indicators"
-        ScanVerdict.INFECTED -> "Spyware indicators matched"
+        ScanVerdict.CLEAN -> "No known indicators were observed in the data Android allowed CoreGuard to inspect."
+        ScanVerdict.SUSPICIOUS -> "Review suggested: one or more signals need attention."
+        ScanVerdict.INFECTED -> "High-confidence indicator match found."
     }
 
     CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
@@ -407,12 +407,17 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
+        Text(
+            text = "Observed findings: ${report.detections.size} · Inferred findings: 0 · Unavailable checks: visibility-limited by Android sandbox",
+            style = MaterialTheme.typography.bodySmall,
+            color = MutedText
+        )
 
         if (report.detections.isEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Nothing flagged on this device. A clean result is reassuring but " +
-                    "not a guarantee — keep Privacy Shield on and re-check after installing new apps.",
+                text = "No known indicators were observed in the data Android allowed CoreGuard to inspect. " +
+                    "This is not a guarantee of absence.",
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {

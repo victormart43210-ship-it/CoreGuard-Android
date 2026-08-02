@@ -7,6 +7,44 @@ is reported exactly as observed.
 
 ---
 
+## Phase 3 — Scanner Engine Events, Cancellation, and Durable Sessions
+**Branch:** `copilot/fix-merge-requests`
+**Date:** 2026-08-02
+
+### Validation commands attempted
+
+| Command | Result | Notes |
+|---|---|---|
+| `./scripts/setup-android-sdk.sh` | **FAIL** | Cannot reach `dl.google.com`; SDK packages cannot be fetched |
+| `./gradlew :app:assembleDebug --stacktrace` | **BLOCKED** | AGP `8.5.2` resolution failed from `https://dl.google.com/dl/android/maven2` |
+| `./gradlew :app:testDebugUnitTest --stacktrace` | **BLOCKED** | Same AGP network blocker |
+| `./gradlew :app:lintDebug --stacktrace` | **BLOCKED** | Same AGP network blocker |
+| `./gradlew :app:bundleRelease --stacktrace` | **BLOCKED** | Same AGP network blocker |
+| `./gradlew build --stacktrace` | **BLOCKED** | Same AGP network blocker |
+| `./gradlew lint --stacktrace` | **BLOCKED** | Same AGP network blocker |
+| `./gradlew test --stacktrace` | **BLOCKED** | Same AGP network blocker |
+
+### Representative blocker output
+```
+A problem occurred configuring project ':app'.
+Could not resolve com.android.tools.build:gradle:8.5.2.
+Could not GET 'https://dl.google.com/dl/android/maven2/.../gradle-8.5.2.pom'.
+dl.google.com
+```
+
+### Tests added/updated in this phase
+- `app/src/test/java/com/coldboar/coreguard/mvt/NemesisScannerTest.kt`
+  - Updated severity/verdict expectations to avoid auto-critical escalation from IOC string match
+  - Added cooperative cancellation test path
+- `app/src/test/java/com/coldboar/coreguard/mvt/FindingCorrelationTest.kt`
+  - Verifies deterministic dedup and confidence-elevation rules only for independent sources
+- `app/src/test/java/com/coldboar/coreguard/mvt/ScanStageContractTest.kt`
+  - Verifies engine stage ordering contract and explicit terminal states
+- `app/src/test/java/com/coldboar/coreguard/ui/screens/ScannerViewModelTest.kt`
+  - Updated sealed-state constructors for stage/session-aware scanner states
+
+---
+
 ## Phase 1 — Shared Truth Architecture
 **Branch:** `main`
 **Date:** 2026-08-01

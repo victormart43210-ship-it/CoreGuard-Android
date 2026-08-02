@@ -48,3 +48,21 @@ Initial audit matrix of user-facing security claims found in app strings/UI/docs
 - "Protected" state must never be inferred from absent data — UNAVAILABLE is UNAVAILABLE.
 - Cancelled or incomplete scans must not produce a verdict or score.
 - In-memory toggle state must never be marketed as a persistent system security control.
+
+---
+
+## Phase 3 updates (2026-08-02)
+
+| User-facing claim | Change in Phase 3 | New state |
+|---|---|---|
+| "Scanner stages represent real engine work" | UI-owned stage messaging replaced by engine-emitted stage events | Scanner emits required stage IDs, labels, optional units, timestamps, and visibility limitations |
+| "Cancelled scan handling" | Cancellation only affected UI job state previously | Cooperative cancellation now checked through expensive enumeration/matching path and persisted as `CANCELLED` session |
+| "Failed scan handling" | Failure state was UI-only | Failed sessions now persist `FAILED` terminal state with reason and stage timeline |
+| "Deep file inspection" | Toggle persisted but behavior unchanged | Toggle now controls scan behavior; disabled mode records an explicit skipped stage |
+| "Quilla correlation control" | Quilla correlation always executed | Quilla correlation now gated by persisted setting |
+| "Threat feed trust level" | Premium refresh copy implied freshness but not trust class | Session save records feed source and labels current authenticity as transport-protected, not cryptographically signed |
+| "No definitive safety language" | Prior copy referenced reassuring clean result | Scanner summary now states: "No known indicators were observed in the data Android allowed CoreGuard to inspect." |
+
+### Claims narrowed in this phase
+- IOC string matches are no longer treated as automatically critical by default scanner severity mapping.
+- Scanner copy now avoids definitive "safe/clean/protected" conclusions and reiterates Android visibility limits.
