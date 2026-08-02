@@ -1,5 +1,6 @@
 package com.coldboar.coreguard
 
+import com.coldboar.coreguard.mvt.IocRepository
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
