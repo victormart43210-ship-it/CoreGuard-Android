@@ -3,8 +3,8 @@ package com.coldboar.coreguard.quilla
 import android.content.Context
 import android.util.Log
 import com.coldboar.coreguard.CoreGuardApplication
+import com.coldboar.coreguard.knowledge.SharedThreatKnowledgeRepository
 import com.coldboar.coreguard.mvt.IocRepository
-import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.quilla.intelligence.sdk.engine.SlidingWindowCorrelationEngine
 import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.intel.PublicMultiSourceStixFetcher
@@ -96,7 +96,7 @@ object QuillaIntelNetwork {
         if (web.isSuccess) {
             val result = web.getOrThrow()
             if (result.entries.isNotEmpty()) {
-                CyberKnowledgeBase.mergeEntries(result.entries)
+                SharedThreatKnowledgeRepository.mergeAnkiKnowledge(result.entries)
                 knowledgeCount = result.entries.size
             }
             feedNotes += result.sourcesOk

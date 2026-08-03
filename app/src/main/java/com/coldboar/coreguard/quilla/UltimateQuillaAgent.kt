@@ -2,6 +2,7 @@ package com.coldboar.coreguard.quilla
 
 import com.coldboar.coreguard.lore.QuillaKnowledge
 import com.coldboar.coreguard.lore.QuillaLivingGeometry
+import com.coldboar.coreguard.knowledge.SharedThreatKnowledgeRepository
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard
 import com.coldboar.coreguard.quilla.knowledge.QuillaReadyTopics
@@ -130,7 +131,7 @@ class UltimateQuillaAgent(
 
             QuillaKnowledge.matchLivingOrObservatory(p) ||
                 isKnowledgeHeavy(p) ||
-                CyberKnowledgeBase.search(p, limit = 1).isNotEmpty() ->
+                SharedThreatKnowledgeRepository.search(p, limit = 1).isNotEmpty() ->
                 QuillaIntent.KNOWLEDGE
 
             else -> QuillaIntent.GENERAL
@@ -467,7 +468,7 @@ class UltimateQuillaAgent(
     }
 
     private fun knowledgeBlurb(prompt: String, memory: QuillaMemorySnapshot): String {
-        val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
+        val hits = SharedThreatKnowledgeRepository.search(prompt, limit = knowledgeLimit)
         if (hits.isEmpty()) {
             if (QuillaKnowledge.matchLivingOrObservatory(prompt.lowercase())) {
                 return QuillaKnowledge.answer(prompt)
@@ -477,14 +478,14 @@ class UltimateQuillaAgent(
                 " — or ask about the Tree of Life, Tetragrammaton, Metatron, or Observatory cycles in the Secret Portal.\n" +
                 statusBlurb(memory, QuillaPriorityEngine.brief(memory), QuillaResearchSnapshot())
         }
-        val primary = hits.first()
+        val primary = hits.first().hit
         val readyId = QuillaReadyTopics.resolveEntryId(prompt)
         val header = if (readyId != null && primary.entry.id == readyId) {
             "Ready topic locked — Quilla Cyber Codex:\n\n"
         } else {
             "Pulling from Quilla Cyber Codex:\n\n"
         }
-        val articles = hits.joinToString("\n\n—\n\n") { CyberKnowledgeBase.formatHit(it) }
+        val articles = hits.joinToString("\n\n—\n\n") { CyberKnowledgeBase.formatHit(it.hit) }
         val deviceBridge = when {
             memory.lastScanVerdict == null ->
                 "\n\nDevice bridge: no recent Nemesis scan in Memory — run one to connect this lesson to evidence."
@@ -657,7 +658,7 @@ class UltimateQuillaAgent(
         briefing: QuillaPriorityEngine.Briefing,
         research: QuillaResearchSnapshot
     ): String {
-        val hits = CyberKnowledgeBase.search(prompt, limit = knowledgeLimit)
+        val hits = SharedThreatKnowledgeRepository.search(prompt, limit = knowledgeLimit)
         return if (hits.isNotEmpty()) {
             knowledgeBlurb(prompt, memory)
         } else {

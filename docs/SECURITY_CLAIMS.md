@@ -17,6 +17,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Signed telemetry deltas stay on-device unless user opt-in export exists | `TelemetryBridge` ring buffer; Keystore ECDSA when available |
 | Optional server-side Quilla hypothesis evaluator may use an LLM | `scripts/agents/quilla_hypothesis_evaluator.py` only; not shipped as on-device Quilla |
 | Quilla Infinity Intel can pull public Amnesty/MVT STIX, CISA KEV, MISP Android + Malpedia (mobile) briefs, then train angels/swarm on-device | `QuillaIntelNetwork` + `QuillaInfinityTrainer`; optional HTTPS; uncapped teaching; not cloud LLM / not zero-day guarantee |
+| Shared threat-knowledge query layer can merge Anki-backed codex entries with Viper threat-intel records | `SharedThreatKnowledgeRepository` + `ViperThreatIntelImporter`; Viper is sanitized/validated and mapped to `CyberKnowledgeBase.Entry` |
 | Premium unlocks signature refresh, JSON export, longer timeline, coaching tips | Matches `EntitlementPolicy` |
 | Optional HTTPS for IOC/STIX refresh and billing | Documented in Privacy Policy |
 
@@ -30,6 +31,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | “100% offline” / “fully offline” as absolute | Billing, optional IOC refresh, Quilla Research sync, and Shield DNS forwarding use network |
 | Quilla “automates defenses” or silently runs scans/VPN | Actions **navigate** / suggest; VPN still needs Android consent |
 | “Live continuous threat intel” for Quilla Research | Optional pull of public Amnesty/MVT STIX archives, not a live feed |
+| “Viper alert = confirmed infection” | Viper entries are knowledge/correlation clues only and are capped as non-proof context |
 | Quilla Research sync refreshes Nemesis Scanner signatures | Separate Premium Scanner path (`IocFeedFetcher`); Research is correlator-only |
 | “Release-ready” / Play approval guaranteed | External Console, signing, device, and policy reviews remain |
 | DemoBilling is the production path | Production uses `PlayBillingProvider`; unavailable billing fails closed (`FailClosedBillingProvider`) |
