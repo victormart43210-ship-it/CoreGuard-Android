@@ -3,6 +3,26 @@
 All notable changes to CoreGuard-Android are documented here.
 Version numbers match `gradle/android-app.gradle`.
 
+## Unreleased
+
+### Guardian Intelligence (Phases 1–10)
+
+- Shared truth model in `:core:model` (`EvidenceClass`, calm `Severity`, `Confidence`, `SecurityFinding`, …)
+- Deterministic Oracle Engine + Truth Seal + Guardian Pulse
+- Book of Changes (Room + SHA-256 hash chain), Evidence Constellation (3 conservative rules)
+- Ward Circle hardening journey, Quilla Private Baseline (7-day learning), Ritual of Response
+- Verify CoreGuard installation identity, redacted report export
+- Hub screen: Tools → **Guardian Intelligence** (`GuardianModule` façade)
+- Home shows Guardian Pulse (tap opens Intelligence hub)
+- Baseline prefs use `PREF_*` names (MASVS-CRYPTO-1 false-positive fix)
+- On-device smoke: `GuardianIntelligenceOnDeviceTest` in emulator gate
+- Docs: blueprint + Phase 0 architecture audit
+
+### Docs — Guardian Intelligence Phase 0
+
+- Added `docs/COREGUARD_GUARDIAN_BLUEPRINT.md` (product/architecture roadmap)
+- Added `docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md` (repo map, gaps, Phase 1 paths, test baseline)
+
 ## 1.0.17 — 2026-07-26
 
 ### Final release polish + Quilla mini-game

@@ -51,7 +51,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,7 +77,11 @@ import com.coldboar.coreguard.GuardianScoreEvidence
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
+import com.coldboar.coreguard.guardian.DataAvailability
+import com.coldboar.coreguard.guardian.GuardianModule
+import com.coldboar.coreguard.guardian.GuardianState
 import com.coldboar.coreguard.truth.toEvidenceClass
+import com.coldboar.coreguard.ui.components.GuardianPulse
 import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.components.TruthSeal
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
@@ -110,13 +116,10 @@ import kotlin.math.sin
  *
  * - **Swarm alerts** — [rememberSwarmAlertCounterState] (never own the int).
  * - **DTS / Scam amber Counter** — [rememberEliteThreatCounterState]; refresh
- *   DTS only through [EliteModule.evaluateThreatScore] (side effects stay in
- *   the module, not in this composable).
- * - **Toggles** are DataStore-backed user settings (some are intentionally
- *   disabled with "Not yet available" until backend enforcement exists).
- *
- * Counter subscription is centralized in `ui.redux` so Home stays free of
- * store `DisposableEffect` / `Action` imports (Redux UI separation).
+ *   DTS only through [EliteModule.evaluateThreatScore].
+ * - **Guardian Pulse** — resolved via [GuardianModule]; tap opens Guardian Intelligence.
+ * - **Toggles** are DataStore-backed user settings; deferred controls remain
+ *   labeled "Not yet available" until backend enforcement exists.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,7 +131,7 @@ fun EliteDashboardScreen(
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
     onNavigateToScamGuard: () -> Unit,
-    // TODO(phase2): inject via @HiltViewModel; manual ViewModelProvider.Factory used for Phase 1.
+    onNavigateToGuardian: () -> Unit,
     viewModel: DashboardViewModel = viewModel(
         factory = DashboardViewModel.defaultFactory(
             LocalContext.current.applicationContext as Application
@@ -144,7 +147,6 @@ fun EliteDashboardScreen(
     val quillaCorrelateEnabled = uiState.quillaCorrelationEnabled
     val intelSyncEnabled = uiState.intelSyncEnabled
 
-    // Core data state from ViewModel.
     val score = uiState.score
     val evidence = uiState.evidence
     val cpuText = uiState.cpuText
@@ -154,6 +156,7 @@ fun EliteDashboardScreen(
     val appsScanned = uiState.appsScanned
     val threatsLabel = uiState.threatsLabel
     val shieldOn = uiState.shieldOn
+    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
 
     // -------------------------------------------------------------------------
     // Redux Counters — subscribe via ui.redux helpers (not inline store wiring).
@@ -162,10 +165,20 @@ fun EliteDashboardScreen(
     val eliteCounter by rememberEliteThreatCounterState()
     val swarmCounter by rememberSwarmAlertCounterState()
 
-    // Start or restart the metrics loop when real-time monitoring changes.
-    // LaunchedEffect cancels the previous coroutine automatically when the key changes.
     LaunchedEffect(realTimeEnabled) {
         viewModel.refresh()
+        guardianPulse = withContext(Dispatchers.IO) {
+            val findings = GuardianModule.explainChecks(context)
+            GuardianModule.resolvePulse(
+                findings = findings,
+                scanning = false,
+                dataAvailability = if (findings.isEmpty()) {
+                    DataAvailability.NONE
+                } else {
+                    DataAvailability.COMPLETE
+                }
+            )
+        }
         if (!realTimeEnabled) return@LaunchedEffect
 
         var ticks = 0
@@ -173,7 +186,21 @@ fun EliteDashboardScreen(
             delay(2_000L)
             viewModel.updateDeviceMetrics()
             ticks++
-            if (ticks % 6 == 0) viewModel.refresh()
+            if (ticks % 6 == 0) {
+                viewModel.refresh()
+                guardianPulse = withContext(Dispatchers.IO) {
+                    val findings = GuardianModule.explainChecks(context)
+                    GuardianModule.resolvePulse(
+                        findings = findings,
+                        scanning = false,
+                        dataAvailability = if (findings.isEmpty()) {
+                            DataAvailability.NONE
+                        } else {
+                            DataAvailability.COMPLETE
+                        }
+                    )
+                }
+            }
             if (ticks % 15 == 0) {
                 withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
             }
@@ -300,6 +327,23 @@ fun EliteDashboardScreen(
                     .semantics {
                         contentDescription =
                             "Sacred geometry is brand artwork, not a live sensor reading"
+                    }
+            )
+
+            GuardianPulse(
+                state = guardianPulse,
+                onClick = onNavigateToGuardian
+            )
+            Text(
+                text = "Tap pulse for Guardian Intelligence (Truth Seals · evidence · next action).",
+                color = TextSecondary,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToGuardian)
+                    .semantics {
+                        contentDescription = "Open Guardian Intelligence"
                     }
             )
 

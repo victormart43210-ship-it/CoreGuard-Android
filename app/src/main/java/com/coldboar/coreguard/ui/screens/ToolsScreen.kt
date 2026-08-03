@@ -40,6 +40,7 @@ fun ToolsScreen(
     onOpenOverlayMatrix: () -> Unit,
     onOpenForensicJournal: () -> Unit,
     onOpenScamGuard: () -> Unit,
+    onOpenGuardian: () -> Unit,
     isPremium: Boolean
 ) {
     var quillaOpen by remember { mutableStateOf(true) }
@@ -77,6 +78,8 @@ fun ToolsScreen(
             PrimaryTealButton(text = "Forensic Journal", onClick = onOpenForensicJournal)
             Spacer(modifier = Modifier.height(8.dp))
             PrimaryTealButton(text = "Scam Guard", onClick = onOpenScamGuard)
+            Spacer(modifier = Modifier.height(8.dp))
+            PrimaryTealButton(text = "Guardian Intelligence", onClick = onOpenGuardian)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
