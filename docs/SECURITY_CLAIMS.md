@@ -16,7 +16,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Quilla is an **on-device** agent (no cloud LLM) | Local knowledge + evidence; no ChatGPT/Claude keys |
 | Signed telemetry deltas stay on-device unless user opt-in export exists | `TelemetryBridge` ring buffer; Keystore ECDSA when available |
 | Optional server-side Quilla hypothesis evaluator may use an LLM | `scripts/agents/quilla_hypothesis_evaluator.py` only; not shipped as on-device Quilla |
-| Quilla Infinity Intel can pull public Amnesty/MVT STIX, CISA KEV, MISP Android + Malpedia (mobile) briefs, then train angels/swarm on-device | `QuillaIntelNetwork` + `QuillaInfinityTrainer`; optional HTTPS; uncapped teaching; not cloud LLM / not zero-day guarantee |
+| Threat-intel hardening pipeline ingests legal/open advisories (NVD CVE + public vendor advisories) and keeps signed/hashed provenance artifacts | `security/threat-intel/v1/*`, `scripts/threat_intel/*`; optional HTTPS; no private/leaked feeds |
 | Shared threat-knowledge query layer can merge Anki-backed codex entries with Viper threat-intel records | `SharedThreatKnowledgeRepository` + `ViperThreatIntelImporter`; Viper is sanitized/validated and mapped to `CyberKnowledgeBase.Entry` |
 | Premium unlocks signature refresh, JSON export, longer timeline, coaching tips | Matches `EntitlementPolicy` |
 | Optional HTTPS for IOC/STIX refresh and billing | Documented in Privacy Policy |

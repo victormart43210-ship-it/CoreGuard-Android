@@ -1,0 +1,12 @@
+{
+  "source_id": "android-security-bulletin",
+  "fetched_at": "2026-08-01T00:00:00Z",
+  "records": [
+    {
+      "advisory_id": "CVE-2024-43093",
+      "title": "Elevation of privilege in System",
+      "published_at": "2024-09-01T00:00:00Z",
+      "reference": "https://source.android.com/security/bulletin/2024-09-01"
+    }
+  ]
+}
