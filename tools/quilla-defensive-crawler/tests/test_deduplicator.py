@@ -81,8 +81,8 @@ class TestDeduplication:
         result = d.accepted_entries()
         merged = result[0]
         # Both source refs should be present.
-        assert any("cisa.gov" in ref for ref in merged.references)
-        assert any("nvd.nist.gov" in ref for ref in merged.references)
+        assert any(ref == "https://www.cisa.gov/kev" or ref.startswith("https://www.cisa.gov/") for ref in merged.references)
+        assert any(ref.startswith("https://nvd.nist.gov/") for ref in merged.references)
 
     def test_unrelated_entries_not_merged(self) -> None:
         d = Deduplicator()

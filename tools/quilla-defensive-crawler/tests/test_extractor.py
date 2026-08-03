@@ -124,8 +124,8 @@ class TestCisaKevParser:
         )
         entries = extract_entries(result, _kev_source())
         kev = next(e for e in entries if "cve-2023-20963" in e.id)
-        assert any("cisa.gov" in ref for ref in kev.references)
-        assert any("nvd.nist.gov" in ref for ref in kev.references)
+        assert any(ref.startswith("https://www.cisa.gov/") for ref in kev.references)
+        assert any(ref.startswith("https://nvd.nist.gov/") for ref in kev.references)
 
     def test_empty_json_returns_empty_list(self) -> None:
         result = FetchResult(
