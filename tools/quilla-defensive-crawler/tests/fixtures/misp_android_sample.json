@@ -1,0 +1,28 @@
+{
+  "values": [
+    {
+      "value": "CopyCat",
+      "description": "CopyCat is an Android malware that roots devices and establishes persistent backdoor access. It injects code into Zygote to spoof app installations and generate fraudulent ad revenue.",
+      "meta": {
+        "synonyms": ["copy-cat", "copycat-android"],
+        "refs": [
+          "https://blog.checkpoint.com/research/copycat-malware/",
+          "https://www.misp-galaxy.org/android"
+        ]
+      },
+      "uuid": "aaaa-1111-bbbb-2222"
+    },
+    {
+      "value": "FluBot",
+      "description": "FluBot (also known as Cabassous) is an Android banking trojan that spreads via SMS phishing, steals credentials, and intercepts SMS messages to bypass 2FA.",
+      "meta": {
+        "synonyms": ["cabassous", "fedex-malware"],
+        "refs": [
+          "https://www.europol.europa.eu/flubot",
+          "https://www.misp-galaxy.org/android"
+        ]
+      },
+      "uuid": "cccc-3333-dddd-4444"
+    }
+  ]
+}

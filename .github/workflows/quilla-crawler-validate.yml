@@ -1,0 +1,66 @@
+name: Quilla Defensive Crawler — Python Validation
+
+on:
+  push:
+    paths:
+      - 'tools/quilla-defensive-crawler/**'
+  pull_request:
+    paths:
+      - 'tools/quilla-defensive-crawler/**'
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: tools/quilla-defensive-crawler
+
+jobs:
+  validate:
+    name: Lint, type-check, and test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+          cache-dependency-path: tools/quilla-defensive-crawler/requirements.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Ruff lint
+        run: python -m ruff check quilla_crawler/ tests/
+
+      - name: Mypy type-check
+        run: python -m mypy quilla_crawler/ --ignore-missing-imports
+        continue-on-error: true  # Type hints are best-effort; failing is advisory only.
+
+      - name: Pytest (no internet access required — fixtures only)
+        run: python -m pytest tests/ -v --tb=short
+        env:
+          # Ensure no key is set — tests must not attempt signing.
+          QUILLA_SIGNING_KEY_PATH: ""
+
+      - name: Dry-run bundle generation (fixture data)
+        run: |
+          # Generate a throwaway key-pair in a temp dir.
+          TMPDIR=$(mktemp -d)
+          python -m quilla_crawler generate-key \
+            --private "$TMPDIR/private.pem" \
+            --public  "$TMPDIR/public.pem"
+          # Dry-run with the default config (no live network — expect source failures).
+          QUILLA_SIGNING_KEY_PATH="$TMPDIR/private.pem" \
+          python -m quilla_crawler crawl \
+            --config source_allowlist.json \
+            --output "$TMPDIR/output/" \
+            --dry-run \
+            --max-pages 1 || true
+          # Clean up private key from the temp dir.
+          rm -f "$TMPDIR/private.pem"
+        env:
+          # Never use a production key in CI.
+          QUILLA_SIGNING_KEY_PATH: ""
