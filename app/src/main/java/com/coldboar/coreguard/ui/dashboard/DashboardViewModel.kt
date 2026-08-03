@@ -22,7 +22,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -102,26 +104,21 @@ class DashboardViewModel(
             }
         }
 
-        // Observe settings and update UI state reactively.
+        // Observe all settings in a single coroutine to reduce overhead.
         viewModelScope.launch {
-            settingsRepository.realTimeMonitoringEnabled.collect { enabled ->
-                _uiState.value = _uiState.value.copy(realTimeMonitoringEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.deepFileInspectionEnabled.collect { enabled ->
-                _uiState.value = _uiState.value.copy(deepFileInspectionEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.quillaCorrelationEnabled.collect { enabled ->
-                _uiState.value = _uiState.value.copy(quillaCorrelationEnabled = enabled)
-            }
-        }
-        viewModelScope.launch {
-            settingsRepository.intelSyncEnabled.collect { enabled ->
-                _uiState.value = _uiState.value.copy(intelSyncEnabled = enabled)
-            }
+            combine(
+                settingsRepository.realTimeMonitoringEnabled,
+                settingsRepository.deepFileInspectionEnabled,
+                settingsRepository.quillaCorrelationEnabled,
+                settingsRepository.intelSyncEnabled
+            ) { rtm, dfi, qc, intel ->
+                _uiState.value = _uiState.value.copy(
+                    realTimeMonitoringEnabled = rtm,
+                    deepFileInspectionEnabled = dfi,
+                    quillaCorrelationEnabled = qc,
+                    intelSyncEnabled = intel
+                )
+            }.collect {}
         }
 
         // Initial data load.
@@ -201,7 +198,7 @@ class DashboardViewModel(
     fun startMetricsLoop() {
         viewModelScope.launch {
             var ticks = 0
-            while (true) {
+            while (isActive) {
                 updateDeviceMetrics()
                 ticks++
                 if (ticks % 6 == 0) {

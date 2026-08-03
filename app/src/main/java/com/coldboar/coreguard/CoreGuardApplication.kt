@@ -58,7 +58,7 @@ class CoreGuardApplication : Application() {
 
         // Never block Application.onCreate on software AVDs (TCG/no-KVM ANRs).
         // Native ptrace baseline + billing warm on a daemon thread.
-        Thread {
+        Thread({
             try {
                 if (!instrumented) {
                     NativeTamperGuard.ensureLoaded()
@@ -146,7 +146,7 @@ class CoreGuardApplication : Application() {
             } else {
                 Log.i(TAG, "Skipping telemetry/swarm preload under instrumentation")
             }
-        }.apply { isDaemon = true }.start()
+        }, "CoreGuard-WarmUp").apply { isDaemon = true }.start()
     }
 
     companion object {

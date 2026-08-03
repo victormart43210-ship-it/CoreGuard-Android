@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 sealed class ScannerUiState {
     object Empty : ScannerUiState()
@@ -60,7 +61,7 @@ class ScannerViewModel(
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
     private var scanJob: Job? = null
-    private var cancelRequested = false
+    private val cancelRequested = AtomicBoolean(false)
 
     init {
         sessionRepository.ensureLegacyImport()
@@ -72,7 +73,7 @@ class ScannerViewModel(
     fun startScan() {
         scanJob?.cancel()
         scanJob = null
-        cancelRequested = false
+        cancelRequested.set(false)
         val previousCompleted = (_uiState.value as? ScannerUiState.Complete)?.report
         val stageEvents = mutableListOf<ScanStageEvent>()
         _uiState.value = ScannerUiState.Scanning()
@@ -91,7 +92,7 @@ class ScannerViewModel(
             try {
                 val deepInspection = settingsRepository.deepFileInspectionEnabled.first()
                 val quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
-                val cancellation = ScanCancellation { cancelRequested || !isActive() }
+                val cancellation = ScanCancellation { cancelRequested.get() || !isActive() }
                 val report = withContext(Dispatchers.IO) {
                     ScannerModule.scanDevice(
                         context = appContext,
@@ -116,9 +117,9 @@ class ScannerViewModel(
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
                             deepInspectionEnabled = deepInspection,
-                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedSource = FEED_SOURCE,
                             feedVersion = null,
-                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedAuthenticity = FEED_AUTHENTICITY,
                             feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
                             findings = normalizedFindings.map { it.finding },
                             stageEvents = stageEvents.toList()
@@ -141,9 +142,9 @@ class ScannerViewModel(
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedSource = FEED_SOURCE,
                             feedVersion = null,
-                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedAuthenticity = FEED_AUTHENTICITY,
                             feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
@@ -166,9 +167,9 @@ class ScannerViewModel(
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = "Amnesty International Security Lab / mvt-project",
+                            feedSource = FEED_SOURCE,
                             feedVersion = null,
-                            feedAuthenticity = "Transport-protected but not cryptographically signed.",
+                            feedAuthenticity = FEED_AUTHENTICITY,
                             feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
@@ -186,7 +187,7 @@ class ScannerViewModel(
     }
 
     fun cancelScan() {
-        cancelRequested = true
+        cancelRequested.set(true)
         scanJob?.cancel()
         scanJob = null
     }
@@ -214,5 +215,11 @@ class ScannerViewModel(
                 sessionRepository = RoomScanSessionRepository(context)
             ) as T
         }
+    }
+
+    companion object {
+        /** Attribution label included in every persisted scan session. */
+        const val FEED_SOURCE = "Amnesty International Security Lab / mvt-project"
+        const val FEED_AUTHENTICITY = "Transport-protected but not cryptographically signed."
     }
 }

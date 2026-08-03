@@ -177,6 +177,8 @@ fun EliteDashboardScreen(
             if (ticks % 15 == 0) {
                 withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
             }
+            // coroutineContext.isActive is checked implicitly by delay(); the LaunchedEffect
+            // key change cancels this coroutine when realTimeEnabled flips.
         }
     }
 
