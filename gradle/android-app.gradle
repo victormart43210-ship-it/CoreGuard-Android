@@ -35,11 +35,11 @@ android {
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
+            version "3.31.5"
         }
     }
 
-    ndkVersion "26.1.10909125"
+    ndkVersion "27.3.13750724"
 
     // Prefer CI env secrets; fall back to local gitignored keystore.properties.
     // Variable names (authoritative): SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD,

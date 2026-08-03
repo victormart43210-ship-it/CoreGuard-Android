@@ -2,10 +2,7 @@
 
 from __future__ import annotations
 
-import json
 import os
-
-import pytest
 
 from quilla_crawler.config import SourceConfig, TrustLevel
 from quilla_crawler.extractor import extract_entries
@@ -18,7 +15,9 @@ def _kev_source() -> SourceConfig:
     return SourceConfig(
         id="cisa-kev",
         name="CISA KEV",
-        seed_urls=["https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"],
+        seed_urls=[
+            "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+        ],
         allowed_hosts=["www.cisa.gov"],
         allowed_path_prefixes=["/sites/default/files/feeds/"],
         content_types=["application/json"],

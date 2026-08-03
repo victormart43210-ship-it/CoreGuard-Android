@@ -2,13 +2,11 @@
 
 from __future__ import annotations
 
-import pytest
-
 from quilla_crawler.sanitizer import (
     cap_field,
+    sanitize_entry_fields,
     sanitize_html,
     sanitize_text,
-    sanitize_entry_fields,
 )
 
 
@@ -20,7 +18,9 @@ class TestHtmlSanitization:
         assert "Safe text" in text
 
     def test_iframe_removed(self) -> None:
-        html = "<html><body><iframe src='https://evil.example/spy'></iframe><p>data</p></body></html>"
+        html = (
+            "<html><body><iframe src='https://evil.example/spy'></iframe><p>data</p></body></html>"
+        )
         text, _ = sanitize_html(html)
         assert "evil.example" not in text
         assert "data" in text
@@ -75,6 +75,7 @@ class TestTextSanitization:
     def test_unicode_normalization_applied(self) -> None:
         # Decomposed 'é' (e + combining accent) should be normalized to precomposed.
         import unicodedata
+
         text = "caf\u0065\u0301"  # e + combining acute accent
         result, _ = sanitize_text(text)
         assert unicodedata.is_normalized("NFC", result)

@@ -14,12 +14,11 @@ from __future__ import annotations
 
 import hashlib
 import re
-from typing import Dict, List, Optional
 from urllib.parse import urlparse, urlunparse
 
 from quilla_crawler.models import (
-    CrawlerEntry,
     MAX_ENTRIES_PER_BUNDLE,
+    CrawlerEntry,
     VerificationStatus,
 )
 
@@ -63,15 +62,15 @@ class Deduplicator:
 
     def __init__(self) -> None:
         # stable_id → list of entries that share that identity.
-        self._groups: Dict[str, List[CrawlerEntry]] = {}
+        self._groups: dict[str, list[CrawlerEntry]] = {}
 
     def add(self, entry: CrawlerEntry) -> None:
         key = _stable_id_for(entry)
         self._groups.setdefault(key, []).append(entry)
 
-    def accepted_entries(self) -> List[CrawlerEntry]:
+    def accepted_entries(self) -> list[CrawlerEntry]:
         """Return merged, deduplicated, publishable entries (≤ MAX_ENTRIES_PER_BUNDLE)."""
-        merged: List[CrawlerEntry] = []
+        merged: list[CrawlerEntry] = []
         for group in self._groups.values():
             entry = _merge_group(group)
             if entry is not None:
@@ -81,7 +80,7 @@ class Deduplicator:
         return merged[:MAX_ENTRIES_PER_BUNDLE]
 
 
-def _merge_group(group: List[CrawlerEntry]) -> Optional[CrawlerEntry]:
+def _merge_group(group: list[CrawlerEntry]) -> CrawlerEntry | None:
     """Merge a deduplication group into a single publishable entry."""
     if not group:
         return None
@@ -119,7 +118,9 @@ def _merge_group(group: List[CrawlerEntry]) -> Optional[CrawlerEntry]:
     primary.warnings = list(dict.fromkeys(all_warnings))  # deduplicate, preserve order
 
     # Merge CVEs.
-    all_cves = list(dict.fromkeys(primary.related_cves + [c for e in group for c in e.related_cves]))
+    all_cves = list(
+        dict.fromkeys(primary.related_cves + [c for e in group for c in e.related_cves])
+    )
     primary.related_cves = all_cves[:256]
 
     return primary

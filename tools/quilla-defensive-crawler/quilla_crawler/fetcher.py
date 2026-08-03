@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import time
 from collections import defaultdict
-from typing import Dict, List, Optional
 from urllib.parse import urlparse
 
 import httpx
@@ -29,7 +28,6 @@ from quilla_crawler.network_guard import (
     MAX_REDIRECTS,
     MAX_RESPONSE_BYTES,
     READ_TIMEOUT,
-    TOTAL_TIMEOUT,
     USER_AGENT,
     NetworkGuardError,
     assert_allowed_content_type,
@@ -45,20 +43,20 @@ _NO_RETRY_STATUSES: frozenset[int] = frozenset([401, 403])
 class Fetcher:
     """Orchestrates safe HTTP fetching and parsing for all approved sources."""
 
-    def __init__(self, audit: Optional[AuditLogger] = None, verbose: bool = False) -> None:
+    def __init__(self, audit: AuditLogger | None = None, verbose: bool = False) -> None:
         self._audit = audit
         self._verbose = verbose
         # Per-host last-request timestamp for rate limiting
-        self._last_request_ts: Dict[str, float] = defaultdict(float)
+        self._last_request_ts: dict[str, float] = defaultdict(float)
 
     def fetch_source(
         self,
         source: SourceConfig,
-        max_pages_override: Optional[int] = None,
-    ) -> List[CrawlerEntry]:
+        max_pages_override: int | None = None,
+    ) -> list[CrawlerEntry]:
         """Fetch all seed URLs for a source and return extracted entries."""
         max_pages = max_pages_override if max_pages_override is not None else source.max_pages
-        entries: List[CrawlerEntry] = []
+        entries: list[CrawlerEntry] = []
         pages_fetched = 0
 
         for seed_url in source.seed_urls:
@@ -98,7 +96,7 @@ class Fetcher:
                 # Rule 24: never retry auth failures.
                 break
             if result.http_status in _RETRY_STATUSES and attempt < MAX_ATTEMPTS:
-                backoff = 2 ** attempt
+                backoff = 2**attempt
                 if self._verbose:
                     print(f"[fetcher] back-off {backoff}s after HTTP {result.http_status}")
                 time.sleep(backoff)
@@ -163,7 +161,7 @@ class Fetcher:
                 )
 
             # Stream and size-limit (rules 17-18).
-            chunks: List[bytes] = []
+            chunks: list[bytes] = []
             total = 0
             for chunk in resp.iter_bytes(chunk_size=65_536):
                 total += len(chunk)
@@ -205,9 +203,15 @@ class Fetcher:
             )
 
         except NetworkGuardError as exc:
-            return FetchResult(url=url, error=str(exc), duration_ms=(time.monotonic() - start) * 1000)
+            return FetchResult(
+                url=url, error=str(exc), duration_ms=(time.monotonic() - start) * 1000
+            )
         except Exception as exc:  # noqa: BLE001
-            return FetchResult(url=url, error=f"{type(exc).__name__}: {exc}", duration_ms=(time.monotonic() - start) * 1000)
+            return FetchResult(
+                url=url,
+                error=f"{type(exc).__name__}: {exc}",
+                duration_ms=(time.monotonic() - start) * 1000,
+            )
 
     def _follow_redirects(
         self,
@@ -234,9 +238,10 @@ class Fetcher:
                 location = f"{parsed.scheme}://{parsed.netloc}{location}"
             # Rule 8+9: validate redirect.
             from quilla_crawler.network_guard import validate_redirect
+
             validate_redirect(current_url, location, source)
             current_url = location
-        return current_url, resp  # type: ignore[return-value]
+        return current_url, resp
 
 
 class _SafeHTTPTransport(httpx.HTTPTransport):

@@ -12,7 +12,6 @@ from __future__ import annotations
 import base64
 import os
 import stat
-from typing import Optional
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric.ed25519 import (
@@ -79,12 +78,11 @@ def load_public_key_pem(public_path: str) -> bytes:
 
 # ── Private helpers ───────────────────────────────────────────────────────────
 
+
 def _load_private_key(key_path: str) -> Ed25519PrivateKey:
     """Load the private key from disk with safety checks."""
     if not key_path:
-        raise RuntimeError(
-            "QUILLA_SIGNING_KEY_PATH is not set. Refusing to sign bundle."
-        )
+        raise RuntimeError("QUILLA_SIGNING_KEY_PATH is not set. Refusing to sign bundle.")
     if not os.path.isfile(key_path):
         raise RuntimeError(f"Private key file not found: {key_path!r}")
 
@@ -102,9 +100,7 @@ def _load_private_key(key_path: str) -> Ed25519PrivateKey:
 
     private_key = serialization.load_pem_private_key(pem_data, password=None)
     if not isinstance(private_key, Ed25519PrivateKey):
-        raise RuntimeError(
-            f"Key at {key_path!r} is not an Ed25519 private key."
-        )
+        raise RuntimeError(f"Key at {key_path!r} is not an Ed25519 private key.")
     return private_key
 
 

@@ -132,8 +132,7 @@ def _cmd_crawl(args: argparse.Namespace) -> int:
     key_path = os.environ.get("QUILLA_SIGNING_KEY_PATH", "")
     if not key_path:
         print(
-            "ERROR: QUILLA_SIGNING_KEY_PATH is not set. "
-            "Cannot sign the bundle. Aborting publish.",
+            "ERROR: QUILLA_SIGNING_KEY_PATH is not set. Cannot sign the bundle. Aborting publish.",
             file=sys.stderr,
         )
         return 1
@@ -144,10 +143,7 @@ def _cmd_crawl(args: argparse.Namespace) -> int:
         print(f"ERROR: signing failed: {exc}", file=sys.stderr)
         return 1
 
-    print(
-        f"[crawl] bundle signed and written to {output_dir!r} "
-        f"({len(accepted)} entries)."
-    )
+    print(f"[crawl] bundle signed and written to {output_dir!r} ({len(accepted)} entries).")
     return 0
 
 

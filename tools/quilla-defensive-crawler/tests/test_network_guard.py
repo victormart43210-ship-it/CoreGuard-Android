@@ -45,7 +45,9 @@ class TestHttpsEnforcement:
 class TestHostAllowlist:
     def test_unknown_host_is_rejected(self) -> None:
         with pytest.raises(NetworkGuardError, match="not in allowlist"):
-            validate_url("https://evil.example.com/sites/default/files/feeds/kev.json", ALLOWED_SOURCE)
+            validate_url(
+                "https://evil.example.com/sites/default/files/feeds/kev.json", ALLOWED_SOURCE
+            )
 
     def test_subdomain_of_allowed_host_is_rejected(self) -> None:
         with pytest.raises(NetworkGuardError, match="not in allowlist"):
@@ -154,6 +156,7 @@ class TestContentTypeFiltering:
 
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
+
 
 def _simulate_ip_check(ip: str) -> None:
     """Direct IP safety check, bypassing DNS."""

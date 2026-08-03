@@ -226,7 +226,13 @@ object QuillaCuratedIntelFetcher {
         var rejected = 0
 
         for (i in 0 until entriesArray.length()) {
-            val obj = entriesArray.optJSONObject(i) ?: run { rejected++; continue }
+            val obj = entriesArray.optJSONObject(i)
+
+            if (obj == null) {
+                rejected++
+                continue
+            }
+
             val entryResult = runCatching { parseEntry(obj, warnings) }
             if (entryResult.isSuccess) {
                 val entry = entryResult.getOrThrow()

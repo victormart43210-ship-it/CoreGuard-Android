@@ -4,15 +4,13 @@ from __future__ import annotations
 
 import json
 import os
-import stat
 import tempfile
-from typing import List
 
 import pytest
 
-from quilla_crawler.bundle import build_bundle, _to_deterministic_bytes
+from quilla_crawler.bundle import _to_deterministic_bytes, build_bundle
 from quilla_crawler.models import CrawlerEntry, VerificationStatus
-from quilla_crawler.signer import generate_keypair, sign_bundle, verify_bundle, load_public_key_pem
+from quilla_crawler.signer import generate_keypair, load_public_key_pem, sign_bundle, verify_bundle
 
 
 def _make_entry(entry_id: str, title: str = "Test Entry") -> CrawlerEntry:
@@ -39,6 +37,7 @@ class TestBundleDeterminism:
         # bundle_id and generated_at are intentionally fresh on each call.
         # The entries content and sha256 must be identical.
         import json as _json
+
         d1 = _json.loads(b1)
         d2 = _json.loads(b2)
         assert d1["entries"] == d2["entries"]
@@ -78,6 +77,7 @@ class TestBundleDeterminism:
 
     def test_entries_sha256_correct(self) -> None:
         import hashlib
+
         entries = [_make_entry("entry-a")]
         with tempfile.TemporaryDirectory() as tmp:
             bundle_bytes = build_bundle(entries, output_dir=tmp)

@@ -18,14 +18,12 @@ from __future__ import annotations
 
 import re
 import unicodedata
-from typing import Tuple
 
 from bs4 import BeautifulSoup, Comment, Tag
 
 from quilla_crawler.models import (
     MAX_BODY_CHARS,
     MAX_DEFENSE_CHARS,
-    MAX_FIELD_CHARS,
     MAX_SUMMARY_CHARS,
     MAX_TITLE_CHARS,
 )
@@ -33,9 +31,24 @@ from quilla_crawler.models import (
 # Tags that execute code or present deceptive UX — always removed.
 _DANGEROUS_TAGS: frozenset[str] = frozenset(
     [
-        "script", "style", "iframe", "object", "embed", "form", "input",
-        "button", "canvas", "video", "audio", "svg", "template", "noscript",
-        "applet", "base", "link", "meta",
+        "script",
+        "style",
+        "iframe",
+        "object",
+        "embed",
+        "form",
+        "input",
+        "button",
+        "canvas",
+        "video",
+        "audio",
+        "svg",
+        "template",
+        "noscript",
+        "applet",
+        "base",
+        "link",
+        "meta",
     ]
 )
 
@@ -60,12 +73,10 @@ _CODE_BLOCK_RE: re.Pattern[str] = re.compile(r"```.*?```", re.DOTALL)
 _INLINE_CODE_RE: re.Pattern[str] = re.compile(r"`[^`\n]{1,200}`")
 
 # Control characters (keep \t, \n, \r).
-_CONTROL_CHAR_RE: re.Pattern[str] = re.compile(
-    r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]"
-)
+_CONTROL_CHAR_RE: re.Pattern[str] = re.compile(r"[\x00-\x08\x0b\x0c\x0e-\x1f\x7f-\x9f]")
 
 
-def sanitize_html(html: str) -> Tuple[str, list[str]]:
+def sanitize_html(html: str) -> tuple[str, list[str]]:
     """Parse HTML, remove dangerous elements, return plain text + warnings.
 
     Returns:
@@ -86,8 +97,10 @@ def sanitize_html(html: str) -> Tuple[str, list[str]]:
 
     # Remove hidden elements.
     for tag in soup.find_all(True):
-        style = tag.get("style", "") if isinstance(tag, Tag) else ""
-        if "display:none" in style.replace(" ", "") or "visibility:hidden" in style.replace(" ", ""):
+        style = str(tag.get("style", "")) if isinstance(tag, Tag) else ""
+        if "display:none" in style.replace(" ", "") or "visibility:hidden" in style.replace(
+            " ", ""
+        ):
             tag.decompose()
 
     # Strip all attributes except safe provenance ones.
@@ -95,8 +108,7 @@ def sanitize_html(html: str) -> Tuple[str, list[str]]:
         if not isinstance(tag, Tag):
             continue
         attrs_to_remove = [
-            k for k in list(tag.attrs.keys())
-            if k not in _SAFE_ATTRIBUTES or k.startswith("on")
+            k for k in list(tag.attrs.keys()) if k not in _SAFE_ATTRIBUTES or k.startswith("on")
         ]
         # Also remove any event handlers that slipped through.
         attrs_to_remove += [k for k in tag.attrs if k.lower().startswith("on")]
@@ -110,7 +122,7 @@ def sanitize_html(html: str) -> Tuple[str, list[str]]:
     return text, warnings
 
 
-def sanitize_text(text: str) -> Tuple[str, list[str]]:
+def sanitize_text(text: str) -> tuple[str, list[str]]:
     """Sanitize plain text: normalize unicode, strip control chars, detect injection.
 
     Returns:
@@ -135,10 +147,7 @@ def sanitize_text(text: str) -> Tuple[str, list[str]]:
         injected = False
         for pattern in _INJECTION_PATTERNS:
             if pattern.search(line):
-                warnings.append(
-                    f"prompt-injection-like phrase removed: "
-                    f"{line[:120]!r}"
-                )
+                warnings.append(f"prompt-injection-like phrase removed: {line[:120]!r}")
                 injected = True
                 break
         if not injected:
@@ -154,7 +163,7 @@ def sanitize_text(text: str) -> Tuple[str, list[str]]:
     return text.strip(), warnings
 
 
-def cap_field(text: str, max_chars: int, field_name: str) -> Tuple[str, list[str]]:
+def cap_field(text: str, max_chars: int, field_name: str) -> tuple[str, list[str]]:
     """Truncate a field to max_chars; return (value, warnings)."""
     warnings: list[str] = []
     if len(text) > max_chars:
@@ -168,7 +177,7 @@ def sanitize_entry_fields(
     summary: str,
     body: str,
     defense: str,
-) -> Tuple[str, str, str, str, list[str]]:
+) -> tuple[str, str, str, str, list[str]]:
     """Apply per-field limits and sanitization.
 
     Returns:

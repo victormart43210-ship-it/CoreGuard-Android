@@ -6,13 +6,12 @@ rejected before a network connection is attempted.
 
 from __future__ import annotations
 
-from enum import Enum
-from typing import List, Optional
+from enum import StrEnum
 
 from pydantic import BaseModel, Field, field_validator, model_validator
 
 
-class TrustLevel(str, Enum):
+class TrustLevel(StrEnum):
     TRUSTED_SOURCE = "TRUSTED_SOURCE"
     CORROBORATED = "CORROBORATED"
 
@@ -22,17 +21,17 @@ class SourceConfig(BaseModel):
 
     id: str = Field(min_length=1, max_length=64)
     name: str = Field(min_length=1, max_length=128)
-    seed_urls: List[str] = Field(min_length=1, max_length=8)
-    allowed_hosts: List[str] = Field(min_length=1, max_length=8)
-    allowed_path_prefixes: List[str] = Field(min_length=1, max_length=16)
-    content_types: List[str] = Field(default_factory=list)
+    seed_urls: list[str] = Field(min_length=1, max_length=8)
+    allowed_hosts: list[str] = Field(min_length=1, max_length=8)
+    allowed_path_prefixes: list[str] = Field(min_length=1, max_length=16)
+    content_types: list[str] = Field(default_factory=list)
     max_depth: int = Field(default=0, ge=0, le=3)
     max_pages: int = Field(default=1, ge=1, le=500)
     requests_per_minute: int = Field(default=6, ge=1, le=60)
     trust_level: TrustLevel = TrustLevel.TRUSTED_SOURCE
     parser: str = Field(min_length=1, max_length=64)
     # Optional port override (e.g. 443); absent means 443 only.
-    allowed_port: Optional[int] = Field(default=None)
+    allowed_port: int | None = Field(default=None)
 
     @field_validator("seed_urls", mode="before")
     @classmethod
@@ -51,7 +50,7 @@ class SourceConfig(BaseModel):
         return v
 
     @model_validator(mode="after")
-    def _seeds_within_allowed_hosts(self) -> "SourceConfig":
+    def _seeds_within_allowed_hosts(self) -> SourceConfig:
         for url in self.seed_urls:
             from urllib.parse import urlparse
 
@@ -67,7 +66,7 @@ class AllowList(BaseModel):
     """Top-level allowlist configuration document."""
 
     schema_version: int = Field(default=1)
-    sources: List[SourceConfig] = Field(min_length=1, max_length=32)
+    sources: list[SourceConfig] = Field(min_length=1, max_length=32)
 
     @field_validator("schema_version")
     @classmethod
