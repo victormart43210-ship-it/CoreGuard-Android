@@ -1,0 +1,42 @@
+name: Threat Intel Refresh
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  refresh:
+    name: Safe intel refresh + drift checks
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate schemas/config policy
+        run: python3 scripts/threat_intel/validate_configs.py
+      - name: Run continuous-learning scaffold
+        env:
+          THREAT_INTEL_HMAC_KEY: ${{ secrets.THREAT_INTEL_HMAC_KEY }}
+        run: |
+          python3 scripts/threat_intel/continuous_learning.py \
+            --deterministic \
+            --quality-tolerance 0.02 \
+            --drift-threshold 0.25 \
+            --hmac-key "${THREAT_INTEL_HMAC_KEY:-}"
+      - name: Upload refresh artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: threat-intel-refresh-${{ github.run_number }}
+          path: |
+            security/threat-intel/artifacts/open-threat-intel.bundle.v1.json
+            security/threat-intel/artifacts/open-threat-intel.bundle.v1.json.sha256
+            security/threat-intel/artifacts/open-threat-intel.bundle.v1.json.sig
+            security/threat-intel/models/baseline-model.v1.json
+            security/threat-intel/models/baseline-model.rollback.json
+          if-no-files-found: warn
+          retention-days: 30
