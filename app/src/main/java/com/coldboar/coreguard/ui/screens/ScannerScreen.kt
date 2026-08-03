@@ -1,7 +1,5 @@
 package com.coldboar.coreguard.ui.screens
 
-import android.os.Handler
-import android.os.Looper
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -33,11 +31,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -77,7 +75,9 @@ import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
-import java.util.concurrent.Executors
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 @Composable
 fun ScannerScreen(
@@ -91,11 +91,7 @@ fun ScannerScreen(
     val context = LocalContext.current
     val isPremium by billingProvider.premiumState.collectAsState()
     val policy = remember(isPremium) { EntitlementPolicy(billingProvider) }
-    val mainHandler = remember { Handler(Looper.getMainLooper()) }
-    val feedExecutor = remember { Executors.newSingleThreadExecutor() }
-    DisposableEffect(feedExecutor) {
-        onDispose { feedExecutor.shutdown() }
-    }
+    val refreshScope = rememberCoroutineScope()
 
     val uiState by scannerViewModel.uiState.collectAsState()
 
@@ -211,15 +207,16 @@ fun ScannerScreen(
                 }
                 isRefreshing = true
                 refreshMessage = "Pulling the newest threat signatures…"
-                IocFeedFetcher.fetchAsync(context, executor = feedExecutor) { result ->
-                    mainHandler.post {
-                        isRefreshing = false
-                        refreshMessage = when (result) {
-                            is IocFeedFetcher.FetchResult.Success ->
-                                "✓ ${result.indicatorsLoaded} signatures ready — run a privacy check."
-                            is IocFeedFetcher.FetchResult.Failure ->
-                                "Refresh failed: ${result.message}"
-                        }
+                refreshScope.launch {
+                    val result = withContext(Dispatchers.IO) {
+                        IocFeedFetcher.fetch(context)
+                    }
+                    isRefreshing = false
+                    refreshMessage = when (result) {
+                        is IocFeedFetcher.FetchResult.Success ->
+                            "✓ ${result.indicatorsLoaded} signatures ready — run a privacy check."
+                        is IocFeedFetcher.FetchResult.Failure ->
+                            friendlyFetchError(result.message)
                     }
                 }
             },
@@ -295,6 +292,23 @@ fun ScannerScreen(
             color = MutedText
         )
     }
+}
+
+/**
+ * Converts a raw [IocFeedFetcher.FetchResult.Failure] message into user-friendly text.
+ * Technical details are logged at the call site; this layer provides guidance without jargon.
+ */
+private fun friendlyFetchError(message: String): String = when {
+    message.contains("too large", ignoreCase = true) ->
+        "The signature feed is too large to download. Please try again later."
+    message.contains("HTTP 4", ignoreCase = true) || message.contains("HTTP 5", ignoreCase = true) ->
+        "The signature server returned an error. Please try again later."
+    message.contains("no recognisable", ignoreCase = true) ->
+        "The downloaded feed contained no valid signatures. Please try again later."
+    message.contains("Redirect", ignoreCase = true) ->
+        "The signature server sent an unsafe redirect. Update was skipped for your safety."
+    else ->
+        "Signature refresh failed. Check your connection and try again."
 }
 
 @Composable
