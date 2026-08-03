@@ -1,0 +1,12 @@
+{
+  "source_id": "nvd-cve",
+  "fetched_at": "2026-08-01T00:00:00Z",
+  "records": [
+    {
+      "advisory_id": "CVE-2024-32896",
+      "title": "Privilege escalation in Android framework component",
+      "published_at": "2024-07-01T00:00:00Z",
+      "reference": "https://nvd.nist.gov/vuln/detail/CVE-2024-32896"
+    }
+  ]
+}

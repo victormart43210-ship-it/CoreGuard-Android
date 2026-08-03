@@ -26,6 +26,27 @@ jobs:
       - run: go vet ./...
       - run: go build -o /tmp/coreguard-cli ./cmd/coreguard
 
+  threat-intel-policy:
+    name: Threat-intel policy + schema checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate allowlist/rules schema
+        run: python3 scripts/threat_intel/validate_configs.py
+      - name: Build deterministic threat-intel artifact bundle
+        run: python3 scripts/threat_intel/ingest_open_sources.py --deterministic
+      - name: Train deterministic baseline model scaffold
+        run: python3 scripts/threat_intel/train_baseline_model.py --deterministic
+      - name: Run threat-intel unit tests
+        run: python3 -m unittest scripts.tests.test_threat_intel_pipeline
+      - name: Enforce duplicate-dependency guardrail
+        run: python3 scripts/threat_intel/check_gradle_dependencies.py
+
   build:
     name: Android validation (real build)
     runs-on: ubuntu-latest

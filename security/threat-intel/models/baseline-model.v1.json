@@ -1,0 +1,103 @@
+{
+  "centroids": {
+    "benign": {
+      "domain_churn": 0.11499999999999999,
+      "exploit_indicator_score": 0.02,
+      "failed_tls_rate": 0.025,
+      "network_anomaly_score": 0.1675,
+      "suspicious_permission_score": 0.1375
+    },
+    "threat": {
+      "domain_churn": 0.73,
+      "exploit_indicator_score": 0.7875,
+      "failed_tls_rate": 0.6575,
+      "network_anomaly_score": 0.75,
+      "suspicious_permission_score": 0.84
+    }
+  },
+  "created_at": "2026-01-01T00:00:00Z",
+  "dataset": "security/threat-intel/v1/training.dataset.sample.csv",
+  "evaluation": {
+    "accuracy": 1.0,
+    "confusion_matrix": {
+      "fn": 0,
+      "fp": 0,
+      "tn": 4,
+      "tp": 4
+    },
+    "mean_confidence": 0.9141,
+    "samples": 8
+  },
+  "explainability_preview": [
+    {
+      "confidence": 0.938294,
+      "label": 0,
+      "prediction": 0,
+      "top_feature_contributions": [
+        {
+          "contribution": -0.0375,
+          "feature": "suspicious_permission_score"
+        },
+        {
+          "contribution": -0.02,
+          "feature": "exploit_indicator_score"
+        },
+        {
+          "contribution": -0.0175,
+          "feature": "network_anomaly_score"
+        }
+      ]
+    },
+    {
+      "confidence": 0.937648,
+      "label": 0,
+      "prediction": 0,
+      "top_feature_contributions": [
+        {
+          "contribution": 0.0325,
+          "feature": "network_anomaly_score"
+        },
+        {
+          "contribution": 0.03,
+          "feature": "exploit_indicator_score"
+        },
+        {
+          "contribution": 0.0125,
+          "feature": "suspicious_permission_score"
+        }
+      ]
+    },
+    {
+      "confidence": 0.903723,
+      "label": 0,
+      "prediction": 0,
+      "top_feature_contributions": [
+        {
+          "contribution": -0.0675,
+          "feature": "network_anomaly_score"
+        },
+        {
+          "contribution": -0.025,
+          "feature": "domain_churn"
+        },
+        {
+          "contribution": -0.02,
+          "feature": "exploit_indicator_score"
+        }
+      ]
+    }
+  ],
+  "feature_order": [
+    "suspicious_permission_score",
+    "network_anomaly_score",
+    "exploit_indicator_score",
+    "failed_tls_rate",
+    "domain_churn"
+  ],
+  "guardrails": {
+    "confidence_threshold": 0.7,
+    "explainability": "top_feature_contributions",
+    "low_confidence_behavior": "fallback_to_rule_based_detection"
+  },
+  "model_version": "baseline-anomaly-v1"
+}
