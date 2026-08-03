@@ -48,6 +48,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -60,6 +62,7 @@ import com.coldboar.coreguard.mvt.IocFeedFetcher
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
+import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import com.coldboar.coreguard.truth.toFinding
 import com.coldboar.coreguard.ui.components.CoreGuardCard
@@ -102,12 +105,16 @@ fun ScannerScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var showUpsell by remember { mutableStateOf(false) }
-
     // Derive display booleans from the immutable ViewModel state.
     val isScanning = uiState is ScannerUiState.Scanning
     val isCancelled = uiState is ScannerUiState.Cancelled
     val scanReport = (uiState as? ScannerUiState.Complete)?.report
     val scanError = (uiState as? ScannerUiState.Error)?.message
+    val quillaChoirNote = if (scanReport != null && scanError == null && !isCancelled) {
+        ScannerModule.lastQuillaBridge()?.scannerBlurb()
+    } else {
+        null
+    }
     val lastCompletedReport = when (val s = uiState) {
         is ScannerUiState.Cancelled -> s.lastCompletedReport
         is ScannerUiState.Error -> s.lastCompletedReport
@@ -283,6 +290,27 @@ fun ScannerScreen(
             scanReport?.let { report ->
                 Spacer(modifier = Modifier.height(20.dp))
                 ScanResultCard(report, showCompletedBanner = uiState is ScannerUiState.Complete)
+            }
+            quillaChoirNote?.let { note ->
+                Spacer(modifier = Modifier.height(12.dp))
+                CoreGuardCard {
+                    Text(
+                        text = "Quilla · angelic choir",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = ElectricTeal,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        modifier = Modifier.semantics {
+                            contentDescription = note
+                            liveRegion = LiveRegionMode.Polite
+                        }
+                    )
+                }
             }
         }
 

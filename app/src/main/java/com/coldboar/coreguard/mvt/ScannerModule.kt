@@ -1,19 +1,22 @@
 package com.coldboar.coreguard.mvt
 
 import android.content.Context
-import com.coldboar.coreguard.quilla.QuillaIocBridge
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
+import com.coldboar.coreguard.quilla.QuillaScanBridgeResult
 
 /**
  * Public module façade for on-device Nemesis scanning.
  *
  * UI and other features should call through this surface instead of reaching into
  * scanner internals ([NemesisScanner], IOC loaders, `/proc` walkers).
+ *
+ * Scan completion is connected to Quilla Memory + the angelic choir via
+ * [QuillaMemoryModule.onScanCompleted] (hypotheses, correlator, Elite DTS,
+ * Forensic Journal on hits, swarm alert on WARN+).
  */
 object ScannerModule {
     private const val SCANNER_ENGINE_VERSION = "nemesis-engine-v2"
     private const val SCAN_SCHEMA_VERSION = 2
-
     /**
      * Runs a full device scan and returns the [ScanReport].
      *
@@ -49,12 +52,11 @@ object ScannerModule {
             )
         )
         LastScan.report = report
-
-        // Feed MVT-style scan evidence into Quilla threat intelligence (no network).
-        QuillaMemoryFactory.ensureLocalIntel(context)
-        QuillaIocBridge.recordScanDetections(report, QuillaMemoryFactory.hypothesisStore())
+        recordHistory(context, report)
         if (quillaCorrelationEnabled) {
-            QuillaIocBridge.correlateScanArtifacts(report, QuillaMemoryFactory.correlationEngine())
+            QuillaMemoryModule.onScanCompleted(context, report)
+        } else {
+            QuillaMemoryModule.ensureLocalIntel(context)
         }
         return report
     }
@@ -71,6 +73,9 @@ object ScannerModule {
      * internals.
      */
     fun iocLoadedAtMs(): Long = IocRepository.loadedAtMs()
+
+    /** Choir / Quilla bridge result from the most recent [scanDevice] in this process. */
+    fun lastQuillaBridge(): QuillaScanBridgeResult? = QuillaMemoryModule.lastScanBridge()
 
     fun loadHistory(context: Context): List<ScanHistoryStore.ScanRecord> =
         ScanHistoryStore.load(context)

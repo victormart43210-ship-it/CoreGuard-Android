@@ -60,7 +60,7 @@ import com.coldboar.coreguard.quilla.QuillaActionOutcome
 import com.coldboar.coreguard.quilla.QuillaActionRouter
 import com.coldboar.coreguard.quilla.QuillaAgentAnswer
 import com.coldboar.coreguard.quilla.QuillaAwareness
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import com.coldboar.coreguard.quilla.QuillaModule
 import com.coldboar.coreguard.quilla.QuillaSalesCoach
 import com.coldboar.coreguard.quilla.UltimateQuillaAgent
@@ -116,8 +116,8 @@ fun QuillaAgentPanel(
             CyberKnowledgeAssets.ensureLoaded(context)
         }
         val boot = UltimateQuillaAgent(
-            memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
-            researchProvider = { QuillaMemoryFactory.cachedResearch() }
+            memoryProvider = { QuillaMemoryModule.memorySnapshot(context) },
+            researchProvider = { QuillaMemoryModule.cachedResearch() }
         ).answer("give me my priority status brief")
         answer = boot
         history.clear()
@@ -149,19 +149,19 @@ fun QuillaAgentPanel(
                         ))
             }
             when {
-                wantsResearch -> QuillaMemoryFactory.syncResearch(context)
-                wantsLocalInfinity -> QuillaMemoryFactory.trainInfinityLocal(context)
+                wantsResearch -> QuillaMemoryModule.syncResearch(context)
+                wantsLocalInfinity -> QuillaMemoryModule.trainInfinityLocal(context)
             }
             UltimateQuillaAgent(
-                memoryProvider = { QuillaMemoryFactory.memorySnapshot(context) },
-                researchProvider = { QuillaMemoryFactory.cachedResearch() }
+                memoryProvider = { QuillaMemoryModule.memorySnapshot(context) },
+                researchProvider = { QuillaMemoryModule.cachedResearch() }
             ).answer(prompt)
         }
         answer = result
         history.add(QuillaTurn(prompt, result))
         while (history.size > 8) history.removeAt(0)
         // Honest Premium coaching tips (SalesCoach) — Quilla Q&A itself stays free.
-        val memory = QuillaMemoryFactory.memorySnapshot(context)
+        val memory = QuillaMemoryModule.memorySnapshot(context)
         val coach = QuillaSalesCoach.answer(
             prompt,
             QuillaSalesCoach.DeviceContext(
@@ -238,7 +238,7 @@ fun QuillaAgentPanel(
                     )
                     val seal = remember(answer) {
                         runCatching {
-                            QuillaMemoryFactory.memorySnapshot(context).blessingSeal
+                            QuillaMemoryModule.memorySnapshot(context).blessingSeal
                         }.getOrNull()
                     }
                     if (!seal.isNullOrBlank()) {

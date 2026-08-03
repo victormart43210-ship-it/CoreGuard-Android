@@ -101,9 +101,6 @@ class ScannerViewModel(
                         quillaCorrelationEnabled = quillaEnabled
                     )
                 }
-                withContext(Dispatchers.IO) {
-                    ScannerModule.recordHistory(appContext, report)
-                }
                 val normalizedFindings = report.detections
                     .map { it.toFinding(report.finishedAtMillis) }
                     .let { correlateFindingsDeterministic(it) }
