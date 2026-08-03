@@ -1,5 +1,38 @@
 # COREGUARD_RELEASE_POLISH_REPORT.md
 
+## Phase 3 implementation snapshot (2026-08-02)
+
+### Summary
+- Implemented scanner-engine emitted stage events, cooperative cancellation, and durable scan-session persistence.
+- Scanner UI now uses stage labels/limitations emitted by engine events and avoids definitive safety claims.
+
+### What changed (phase scope)
+- Added stage IDs/events: PREPARING → BUILDING_FINDINGS + terminal COMPLETED/CANCELLED/FAILED.
+- Added cancellation propagation (`ScanCancellation`) through device enumeration + IOC correlation path.
+- Added durable Room entities/DAO for scan sessions, findings, evidence, stage events, and threat-intel references.
+- Added explicit Room migration `1 -> 2`; removed destructive fallback for this evidence path.
+- Added one-time legacy SharedPreferences scan-history import into Room while retaining legacy data.
+- Gated deep file inspection behavior and Quilla correlation using persisted settings.
+- Added deterministic finding correlation utility and unit tests.
+
+### Truth and security impact
+- IOC string matches no longer auto-escalate to critical severity in scanner defaults.
+- Cancelled/failed scans persist as terminal sessions without completed verdict output.
+- Android visibility limitations are surfaced in stage events and scanner result copy.
+- Threat feed authenticity is explicitly labeled as transport-protected but not signed.
+
+### Validation performed in this session
+| Command | Status | Notes |
+|---|---|---|
+| `./scripts/setup-android-sdk.sh` | FAIL | Network access to `dl.google.com` unavailable |
+| `./gradlew :app:assembleDebug --stacktrace` | BLOCKED | AGP 8.5.2 fetch from `dl.google.com` failed |
+| `./gradlew :app:testDebugUnitTest --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew :app:lintDebug --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew :app:bundleRelease --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew build --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew lint --stacktrace` | BLOCKED | Same blocker |
+| `./gradlew test --stacktrace` | BLOCKED | Same blocker |
+
 ## Validation commands run in this session (real results)
 
 Environment notes:
@@ -78,3 +111,71 @@ Per CI-investigation requirements, GitHub Actions was checked.
 - Add a Truth Seal component that surfaces evidence class/source.
 - Convert key dashboard/security toggles to DataStore-backed durable controls.
 - Keep scope narrow and release-freeze compliant: no new product features.
+
+---
+
+## Phase 1 — Shared Truth Architecture (2026-08-01)
+
+### What changed
+
+**`:core:model` additions (pure Kotlin/JVM)**
+- `core/model/src/main/kotlin/com/coldboar/coreguard/truth/Finding.kt`
+  - `EvidenceClass { OBSERVED, INFERRED, SIMULATED, UNAVAILABLE, USER_REPORTED }` enum
+  - `FindingSeverity { INFORMATIONAL, LOW, MEDIUM, HIGH, CRITICAL }` enum
+  - `ConfidenceLevel { LOW, MODERATE, HIGH, VERIFIED }` enum
+  - `Finding` data class (all 18 required fields as specified)
+  - Pure mapper functions: `EvidenceKind → EvidenceClass`, `EvidenceKind → ConfidenceLevel`, `SecurityCheckState → FindingSeverity`
+  - `GuardianScoreEvidence.toFinding()` conversion
+  - `formatFindingExplanation(Finding): String` deterministic 5-section formatter
+  - Unit tests added in `core/model/src/test/…/truth/FindingTest.kt` (execution blocked in this sandbox by AGP resolution failure while configuring `:app`)
+
+**`:app` additions (app module)**
+- `app/src/main/java/com/coldboar/coreguard/truth/DetectionMapper.kt`
+  - `ThreatSeverity → FindingSeverity` mapper
+  - `Detection.toFinding()` conversion
+- `app/src/main/java/com/coldboar/coreguard/settings/UserSettingsRepository.kt` (interface)
+- `app/src/main/java/com/coldboar/coreguard/settings/DataStoreUserSettingsRepository.kt` (Preferences DataStore impl)
+- `app/src/main/java/com/coldboar/coreguard/settings/FakeUserSettingsRepository.kt` (for tests)
+- `app/src/main/java/com/coldboar/coreguard/ui/components/TruthSeal.kt` (M3 composable, 5 states, icon+label, 48dp, a11y)
+- `app/src/main/java/com/coldboar/coreguard/ui/dashboard/DashboardViewModel.kt` (ViewModel + DashboardUiState + factory)
+- `app/src/main/java/com/coldboar/coreguard/ui/screens/ScannerViewModel.kt` (ViewModel + ScannerUiState + cancel)
+- `app/src/main/java/com/coldboar/coreguard/mvt/ScanProgressListener.kt` (callback interface + ScanStage enum)
+
+**`:app` modifications**
+- `gradle/android-app.gradle`: added `lifecycle-viewmodel-ktx:2.8.4`, `lifecycle-viewmodel-compose:2.8.4`, `datastore-preferences:1.1.1`
+- `EliteDashboardScreen.kt`:
+  - Added `DashboardViewModel` parameter (default via `viewModel()` + factory)
+  - Replaced in-memory `remember { mutableStateOf(...) }` settings vars with DataStore-backed ViewModel state
+  - Wired "REAL-TIME MONITOR" switch to `viewModel.setRealTimeMonitoringEnabled()`
+  - Disabled DEEP FILE INSPECTION, Quilla correlate, and Intel sync switches with "NOT YET AVAILABLE" label
+  - Applied `TruthSeal` to `EvidenceRowCard` (replaces text-only confidence label)
+- `ScannerScreen.kt`:
+  - Added `ScannerViewModel` parameter (default via `viewModel()` + factory)
+  - Removed fake time-driven stage animation loop
+  - Progress now uses indeterminate `LinearProgressIndicator` labeled "Estimated progress — scan in progress" (honest; real checkpoints deferred)
+  - Added real Cancel button during scanning
+  - `ScannerUiState.Cancelled` explicitly excludes verdict/score (truth-first compliance)
+  - Extracted `CancelledScanContent` for compose-level cancellation-state testing
+  - Applied `TruthSeal` to `DetectionRow`
+
+### Gaps intentionally carried forward (Phase 1 scope)
+- Hilt injection: manual `ViewModelProvider.Factory` is used; Hilt migration deferred to Phase 2 to avoid touching every screen
+- Real engine scan progress checkpoints: `ScanProgressListener` interface added but not wired through `NemesisScanner.scan()` yet; progress is labeled indeterminate
+- `DataStoreUserSettingsRepository` persistence tests: require Android instrumentation (blocked by sandbox network)
+- Compose instrumented tests for `TruthSeal`: written but not executable in sandbox environment
+- Compose instrumented tests for scanner cancelled-state messaging: written but not executable in sandbox environment
+- Deep file inspection / Quilla correlation / Intel sync backend behaviors: toggles persisted via DataStore; UI shows "NOT YET AVAILABLE" honestly
+
+### Locked-decision conflicts (unchanged from Phase 0, not fixed in Phase 1)
+- `compileSdk/targetSdk` remain 35 (locked decision requires 36)
+- Play Billing remains `billing-ktx:7.1.1` (locked requires 9.1.0)
+- Only monthly SKU exists; no yearly/trial (locked requires both)
+- App name string remains `CoreGuard`; some copy still uses `Premium` not `CoreGuard Elite`
+- No Hilt/DataStore injected at Application level yet (ViewModel factory is manual)
+
+### Validation results (Phase 1)
+- `./gradlew :core:model:test` → **BLOCKED** during `:app` configuration (`com.android.tools.build:gradle:8.5.2` cannot be fetched from `dl.google.com`)
+- `./gradlew :app:testDebugUnitTest` → **BLOCKED** (same network blocker)
+- `./gradlew :app:lintDebug` → **BLOCKED** (same network blocker)
+- `./gradlew build` → **BLOCKED** (same network blocker)
+- Full results in `COREGUARD_TEST_EVIDENCE.md`

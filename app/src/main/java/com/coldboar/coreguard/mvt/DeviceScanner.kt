@@ -3,6 +3,7 @@ package com.coldboar.coreguard.mvt
 import android.content.Context
 import android.content.pm.PackageManager
 import android.util.Log
+import kotlinx.coroutines.CancellationException
 import java.io.File
 
 /**
@@ -17,14 +18,104 @@ object DeviceScanner {
 
     private const val TAG = "DeviceScanner"
 
-    fun scan(context: Context): ScanReport {
-        val matcher = IocRepository.matcher(context)
-        return NemesisScanner(
-            matcher = matcher,
-            installedPackages = { installedPackages(context) },
-            runningProcesses = { readableProcessNames() },
-            accessibleFiles = { accessibleFiles(context) }
-        ).scan()
+    data class ScanOptions(
+        val deepFileInspectionEnabled: Boolean = true
+    )
+
+    fun scan(
+        context: Context,
+        listener: ScanProgressListener?,
+        cancellation: ScanCancellation = ScanCancellation { false },
+        options: ScanOptions = ScanOptions()
+    ): ScanReport {
+        val emit: (ScanStageId, Int?, Int?, String?) -> Unit = { stage, completed, total, limit ->
+            listener?.onStage(
+                ScanStageEvent(
+                    stageId = stage,
+                    completedUnits = completed,
+                    totalUnits = total,
+                    visibilityLimitation = limit
+                )
+            )
+        }
+        try {
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.PREPARING, null, null, "Android sandbox limits visibility to app-accessible surfaces.")
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.LOADING_INDICATORS, null, null, null)
+            val matcher = IocRepository.matcher(context)
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.ENUMERATING_PACKAGES, null, null, null)
+            val packages = installedPackages(context)
+            emit(ScanStageId.ENUMERATING_PACKAGES, packages.size, packages.size, null)
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.CHECKING_PACKAGE_METADATA, packages.size, packages.size, null)
+
+            cancellation.throwIfCancelled()
+            emit(
+                ScanStageId.CHECKING_INSTALLER_SOURCES,
+                null,
+                null,
+                "Installer source visibility varies by Android version and package visibility policies."
+            )
+
+            cancellation.throwIfCancelled()
+            emit(
+                ScanStageId.CHECKING_CERTIFICATES,
+                null,
+                null,
+                "Certificate/signing lineage exposure is limited on non-rooted Android."
+            )
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.CHECKING_PROCESSES, null, null, "Process data is restricted by Android hidepid protections.")
+            val processes = readableProcessNames()
+            emit(ScanStageId.CHECKING_PROCESSES, processes.size, processes.size, "Only visible process names were checked.")
+
+            cancellation.throwIfCancelled()
+            val files = if (options.deepFileInspectionEnabled) {
+                emit(
+                    ScanStageId.CHECKING_ACCESSIBLE_FILES,
+                    null,
+                    null,
+                    "Only app-accessible files are visible; system and other-app private files are not inspected."
+                )
+                val scanned = accessibleFiles(context, cancellation)
+                emit(ScanStageId.CHECKING_ACCESSIBLE_FILES, scanned.size, scanned.size, "Scanned app-accessible storage roots only.")
+                scanned
+            } else {
+                emit(
+                    ScanStageId.CHECKING_ACCESSIBLE_FILES,
+                    0,
+                    0,
+                    "Skipped by user preference: Inspect app-accessible files is disabled."
+                )
+                emptyList()
+            }
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.CORRELATING_INDICATORS, null, null, null)
+            val report = NemesisScanner(
+                matcher = matcher,
+                installedPackages = { packages },
+                runningProcesses = { processes },
+                accessibleFiles = { files }
+            ).scan(cancellation = cancellation)
+
+            cancellation.throwIfCancelled()
+            emit(ScanStageId.BUILDING_FINDINGS, report.detections.size, report.detections.size, null)
+            emit(ScanStageId.COMPLETED, null, null, null)
+            return report
+        } catch (ce: CancellationException) {
+            emit(ScanStageId.CANCELLED, null, null, "Scan cancelled before completion.")
+            throw ce
+        } catch (t: Throwable) {
+            emit(ScanStageId.FAILED, null, null, t.message ?: "Unknown scanner failure")
+            throw t
+        }
     }
 
     private fun installedPackages(context: Context): List<String> = try {
@@ -63,15 +154,17 @@ object DeviceScanner {
         return names.toList()
     }
 
-    private fun accessibleFiles(context: Context): List<String> {
+    private fun accessibleFiles(context: Context, cancellation: ScanCancellation): List<String> {
         val roots = buildList {
             context.getExternalFilesDir(null)?.takeIf(::isReadableDirectory)?.let { add(it) }
             context.filesDir.takeIf(::isReadableDirectory)?.let { add(it) }
         }
         val out = mutableListOf<String>()
         roots.forEach { root ->
+            cancellation.throwIfCancelled()
             runCatching {
                 root.walkTopDown().maxDepth(3).forEach { f ->
+                    cancellation.throwIfCancelled()
                     if (f.isFile) out += f.absolutePath
                 }
             }

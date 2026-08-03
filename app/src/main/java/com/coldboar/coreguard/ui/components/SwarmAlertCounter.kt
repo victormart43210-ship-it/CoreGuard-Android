@@ -11,11 +11,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -25,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import com.coldboar.coreguard.swarm.SwarmAlertCounterStore
 import com.coldboar.coreguard.swarm.SwarmModule
 import com.coldboar.coreguard.swarm.SwarmSeverity
+import com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
@@ -42,10 +39,12 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
  * |-------|----------------|------------|
  * | [SwarmAlertCounterStore] | State + pure reducer + dispatch | No |
  * | [SwarmModule] | Module façade; UI-facing increment/reset | Called only |
- * | This composable | Subscribe, paint, forward button taps | Yes |
+ * | [rememberSwarmAlertCounterState] | Store → Compose State bridge | Used |
+ * | This composable | Paint + forward button taps | Yes |
  *
- * Local Compose `var state` is a **mirror** of the Redux store for recomposition.
- * It is never the source of truth: agents and [SwarmModule] own mutations.
+ * Local Compose state from [rememberSwarmAlertCounterState] is a **mirror** of
+ * the Redux store for recomposition. It is never the source of truth: agents
+ * and [SwarmModule] own mutations.
  *
  * ## What must never live here
  *
@@ -53,32 +52,31 @@ import com.coldboar.coreguard.ui.theme.RestrainedGold
  * - Native RASP / Frida probes
  * - IOC matching or journal I/O
  * - Direct `count++` or reducer invocation
+ * - Importing [SwarmAlertCounterStore.Action] sealed types
  *
  * Android does not ship React-Redux; [SwarmAlertCounterStore] is the idiomatic
- * unidirectional stand-in inside the APK.
+ * unidirectional stand-in inside the APK. See also [EliteThreatCounter] for the
+ * Elite DTS / Scam amber Counter with the same contract.
  *
- * Production defaults wire to [SwarmModule]. Tests may inject a private store
- * and handlers; there is no demo/premium unlock path here.
+ * @param store Injectable for previews / tests; production uses [SwarmModule.alertCounter].
+ * @param agentCount Peer count from the module façade (injected so this file does
+ *   not reach into coordinator internals). Defaults to [SwarmModule.agentCount].
+ * @param onIncrement UI → module dispatch (override when injecting a private store).
+ * @param onReset UI → module reset (override when injecting a private store).
  */
 @Composable
 fun SwarmAlertCounter(
     modifier: Modifier = Modifier,
     store: SwarmAlertCounterStore = SwarmModule.alertCounter,
+    agentCount: Int = SwarmModule.agentCount(),
     onIncrement: () -> Unit = { SwarmModule.incrementAlertCounter() },
     onReset: () -> Unit = { SwarmModule.resetAlertCounter() }
 ) {
     // -------------------------------------------------------------------------
-    // Subscription: mirror Redux state into Compose for recomposition only.
-    // DisposableEffect guarantees we unsubscribe when leaving the composition.
+    // Subscription lives in ui.redux — this composable only reads State.
+    // That keeps Counter presentation free of DisposableEffect / store wiring.
     // -------------------------------------------------------------------------
-    var state by remember {
-        mutableStateOf(store.getState())
-    }
-
-    DisposableEffect(store) {
-        val unsubscribe = store.subscribe { next -> state = next }
-        onDispose { unsubscribe() }
-    }
+    val state by rememberSwarmAlertCounterState(store)
 
     // Color encodes severity pressure without embedding business thresholds
     // beyond what the store already exposed (criticalCount / count).
@@ -118,8 +116,8 @@ fun SwarmAlertCounter(
                     append("critical=")
                     append(state.criticalCount)
                     append(" · agents=")
-                    // Agent count comes from the module façade, not from UI state.
-                    append(SwarmModule.agentCount())
+                    // Injected peer count — not read from coordinator here.
+                    append(agentCount)
                     state.lastSeverity?.let {
                         append(" · last=")
                         append(it.name)

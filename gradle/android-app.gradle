@@ -22,7 +22,13 @@ android {
         }
 
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            // Emulator gate: -Pcoreguard.emulatorAbi=x86_64 shrinks APK/native load on AVD.
+            def emuAbi = project.findProperty("coreguard.emulatorAbi")?.toString()?.trim()
+            if (emuAbi) {
+                abiFilters emuAbi
+            } else {
+                abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            }
         }
     }
 
@@ -216,8 +222,19 @@ dependencies {
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+    // ViewModel for MVVM (DashboardViewModel, ScannerViewModel).
+    // Manual constructor injection used; Hilt wiring is a Phase 2 follow-up.
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4"
+    // Preferences DataStore for persisting UserSettings.
+    // Replaces SharedPreferences-backed in-memory toggle state.
+    implementation "androidx.datastore:datastore-preferences:1.1.1"
     // Deferrable / battery-aware Guardian Score pulse (SecurityPulseWorker).
     implementation "androidx.work:work-runtime-ktx:2.9.1"
+    // Phase 1: Preferences DataStore (settings persistence) + ViewModel
+    implementation "androidx.datastore:datastore-preferences:1.1.1"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4"
 
     implementation platform("androidx.compose:compose-bom:2024.06.00")
     implementation "androidx.compose.ui:ui"

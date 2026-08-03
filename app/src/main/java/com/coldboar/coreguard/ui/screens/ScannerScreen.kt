@@ -25,6 +25,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
@@ -32,14 +34,10 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -54,7 +52,7 @@ import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import kotlinx.coroutines.delay
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.EntitlementPolicy
 import com.coldboar.coreguard.mvt.Detection
@@ -62,8 +60,8 @@ import com.coldboar.coreguard.mvt.IocFeedFetcher
 import com.coldboar.coreguard.mvt.ScanHistoryStore
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanVerdict
-import com.coldboar.coreguard.mvt.ScannerModule
 import com.coldboar.coreguard.mvt.ThreatSeverity
+import com.coldboar.coreguard.truth.toFinding
 import com.coldboar.coreguard.ui.components.CoreGuardCard
 import com.coldboar.coreguard.ui.components.EmptyStatePanel
 import com.coldboar.coreguard.ui.components.NestedSurface
@@ -71,32 +69,26 @@ import com.coldboar.coreguard.ui.components.PremiumUpsellCard
 import com.coldboar.coreguard.ui.components.PrimaryTealButton
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.ScreenHeader
+import com.coldboar.coreguard.ui.components.TruthSeal
 import com.coldboar.coreguard.ui.theme.AttentionAmber
+import com.coldboar.coreguard.ui.theme.ElectricCyan
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.HighRed
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SafeGreen
 import java.util.concurrent.Executors
-import com.coldboar.coreguard.ui.theme.ElectricCyan
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-
-private val scanStages = listOf(
-    "Enumerating installed packages",
-    "Reading process signals",
-    "Matching Amnesty / MVT indicators",
-    "Composing privacy verdict"
-)
 
 @Composable
 fun ScannerScreen(
     billingProvider: BillingProvider,
-    onUpgrade: () -> Unit
+    onUpgrade: () -> Unit,
+    // TODO(phase2): inject via @HiltViewModel; manual factory used for Phase 1.
+    scannerViewModel: ScannerViewModel = viewModel(
+        factory = ScannerViewModel.Factory(LocalContext.current)
+    )
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val isPremium by billingProvider.premiumState.collectAsState()
     val policy = remember(isPremium) { EntitlementPolicy(billingProvider) }
     val mainHandler = remember { Handler(Looper.getMainLooper()) }
@@ -105,26 +97,24 @@ fun ScannerScreen(
         onDispose { feedExecutor.shutdown() }
     }
 
-    var isScanning by remember { mutableStateOf(false) }
-    var stageIndex by remember { mutableIntStateOf(0) }
-    var stageProgress by remember { mutableFloatStateOf(0f) }
+    val uiState by scannerViewModel.uiState.collectAsState()
+
     var isRefreshing by remember { mutableStateOf(false) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
-    var scanError by remember { mutableStateOf<String?>(null) }
-    var justCompleted by remember { mutableStateOf(false) }
-    var scanReport by remember { mutableStateOf(ScannerModule.latestReport()) }
-    var lastHistory by remember { mutableStateOf<ScanHistoryStore.ScanRecord?>(null) }
     var showUpsell by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        if (scanReport == null) {
-            lastHistory = withContext(Dispatchers.IO) {
-                ScannerModule.loadHistory(context).firstOrNull()
-            }
-        }
+    // Derive display booleans from the immutable ViewModel state.
+    val isScanning = uiState is ScannerUiState.Scanning
+    val isCancelled = uiState is ScannerUiState.Cancelled
+    val scanReport = (uiState as? ScannerUiState.Complete)?.report
+    val scanError = (uiState as? ScannerUiState.Error)?.message
+    val lastCompletedReport = when (val s = uiState) {
+        is ScannerUiState.Cancelled -> s.lastCompletedReport
+        is ScannerUiState.Error -> s.lastCompletedReport
+        else -> null
     }
-
-    val showEmptyState = !isScanning && scanReport == null && lastHistory == null && scanError == null
+    // History is loaded by the ViewModel; show it only when no live report is available.
+    val showEmptyState = uiState is ScannerUiState.Empty
 
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
@@ -145,6 +135,7 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(16.dp))
         }
 
+        // Scan in progress: engine-emitted stages with indeterminate progress when totals are unknown.
         AnimatedVisibility(
             visible = isScanning,
             enter = fadeIn(),
@@ -156,13 +147,13 @@ fun ScannerScreen(
                     .semantics { liveRegion = LiveRegionMode.Polite }
             ) {
                 Text(
-                    text = scanStages.getOrElse(stageIndex) { "Checking this device…" },
+                    text = (uiState as? ScannerUiState.Scanning)?.currentStage?.label ?: "Scan in progress",
                     style = MaterialTheme.typography.titleMedium,
                     color = ElectricCyan
                 )
                 Spacer(modifier = Modifier.height(8.dp))
+                // Indeterminate: real engine checkpoints not yet available.
                 LinearProgressIndicator(
-                    progress = { stageProgress.coerceIn(0f, 1f) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(6.dp)
@@ -172,52 +163,42 @@ fun ScannerScreen(
                 )
                 Spacer(modifier = Modifier.height(6.dp))
                 Text(
-                    text = "Stage ${stageIndex + 1} of ${scanStages.size}",
+                    text = (uiState as? ScannerUiState.Scanning)?.currentStage?.visibilityLimitation
+                        ?: "Android visibility limitations apply to scanner results.",
                     style = MaterialTheme.typography.bodySmall,
                     color = MutedText
                 )
+                Spacer(modifier = Modifier.height(12.dp))
+                // Cancel button — always available during scanning.
+                Button(
+                    onClick = { scannerViewModel.cancelScan() },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = HighRed.copy(alpha = 0.85f)
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Cancel Scan", color = Color.White)
+                }
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
 
-        PrimaryTealButton(
-            text = if (isScanning) "Checking…" else "Check My Device Now",
-            enabled = !isScanning && !isRefreshing,
-            onClick = {
-                isScanning = true
-                stageIndex = 0
-                stageProgress = 0f
-                scanError = null
-                justCompleted = false
-                scope.launch {
-                    try {
-                        val scanJob = launch(Dispatchers.IO) {
-                            val result = ScannerModule.scanDevice(context)
-                            ScannerModule.recordHistory(context, result)
-                            withContext(Dispatchers.Main) {
-                                scanReport = result
-                                lastHistory = null
-                                justCompleted = true
-                            }
-                        }
-                        for (i in scanStages.indices) {
-                            stageIndex = i
-                            stageProgress = 0f
-                            repeat(10) {
-                                stageProgress = (it + 1) / 10f
-                                delay(60)
-                            }
-                        }
-                        scanJob.join()
-                    } catch (_: Throwable) {
-                        scanError =
-                            "We couldn’t finish the check. Try again, or restart the app if this keeps happening."
-                    } finally {
-                        isScanning = false
-                    }
-                }
-            }
-        )
+        // Cancelled state: honest message, no verdict shown.
+        AnimatedVisibility(visible = isCancelled) {
+            CancelledScanContent(
+                hasLastCompletedReport = lastCompletedReport != null,
+                onRunNewScan = { scannerViewModel.startScan() }
+            )
+        }
+
+        // Start scan button — hidden while scanning or cancelled (cancel button is shown instead).
+        if (!isScanning && !isCancelled) {
+            PrimaryTealButton(
+                text = "Check My Device Now",
+                enabled = !isRefreshing,
+                onClick = { scannerViewModel.startScan() }
+            )
+        }
 
         Spacer(modifier = Modifier.height(10.dp))
 
@@ -275,23 +256,34 @@ fun ScannerScreen(
             Spacer(modifier = Modifier.height(12.dp))
             CoreGuardCard(containerColor = HighRed.copy(alpha = 0.12f)) {
                 Text(
-                    text = "Check couldn’t finish",
+                    text = "Check couldn't finish",
                     style = MaterialTheme.typography.titleSmall,
-                    color = HighRed
+                    color = HighRed,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
                 )
                 Spacer(modifier = Modifier.height(4.dp))
-                Text(text = err, style = MaterialTheme.typography.bodySmall, color = MutedText)
+                Text(
+                    text = err,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                PrimaryTealButton(
+                    text = "Try again",
+                    onClick = { scannerViewModel.startScan() }
+                )
             }
         }
 
-        scanReport?.let { report ->
-            Spacer(modifier = Modifier.height(20.dp))
-            AnimatedVisibility(visible = true, enter = fadeIn()) {
-                ScanResultCard(report, showCompletedBanner = justCompleted)
+        // Show the last completed report (from cancelled/error state) as a fallback.
+        if (isCancelled && lastCompletedReport != null) {
+            Spacer(modifier = Modifier.height(12.dp))
+            ScanResultCard(lastCompletedReport, showCompletedBanner = false)
+        } else if (!isCancelled && scanError == null) {
+            scanReport?.let { report ->
+                Spacer(modifier = Modifier.height(20.dp))
+                ScanResultCard(report, showCompletedBanner = uiState is ScannerUiState.Complete)
             }
-        } ?: lastHistory?.let { record ->
-            Spacer(modifier = Modifier.height(20.dp))
-            LastScanSummaryCard(record)
         }
 
         Spacer(modifier = Modifier.height(16.dp))
@@ -302,6 +294,44 @@ fun ScannerScreen(
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
+    }
+}
+
+@Composable
+private fun CancelledScanContent(
+    hasLastCompletedReport: Boolean,
+    onRunNewScan: () -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        CoreGuardCard(containerColor = AttentionAmber.copy(alpha = 0.10f)) {
+            Text(
+                text = "Scan cancelled",
+                style = MaterialTheme.typography.titleMedium,
+                color = AttentionAmber,
+                modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite }
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "The scan was cancelled before completion. No final verdict or Integrity Index was recorded for this session.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MutedText
+            )
+            if (hasLastCompletedReport) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Text(
+                    text = "Showing your last completed scan below.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MutedText
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+        PrimaryTealButton(
+            text = "Run New Scan",
+            enabled = true,
+            onClick = onRunNewScan
+        )
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
@@ -351,9 +381,9 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
         ScanVerdict.INFECTED -> HighRed
     }
     val verdictLabel = when (report.verdict) {
-        ScanVerdict.CLEAN -> "No selected indicators matched"
-        ScanVerdict.SUSPICIOUS -> "Possible privacy risk indicators"
-        ScanVerdict.INFECTED -> "Spyware indicators matched"
+        ScanVerdict.CLEAN -> "No known indicators were observed in the data Android allowed CoreGuard to inspect."
+        ScanVerdict.SUSPICIOUS -> "Review suggested: one or more signals need attention."
+        ScanVerdict.INFECTED -> "High-confidence indicator match found."
     }
 
     CoreGuardCard(containerColor = MaterialTheme.colorScheme.surfaceVariant) {
@@ -377,12 +407,17 @@ private fun ScanResultCard(report: ScanReport, showCompletedBanner: Boolean) {
             style = MaterialTheme.typography.bodySmall,
             color = MutedText
         )
+        Text(
+            text = "Observed findings: ${report.detections.size} · Inferred findings: 0 · Unavailable checks: visibility-limited by Android sandbox",
+            style = MaterialTheme.typography.bodySmall,
+            color = MutedText
+        )
 
         if (report.detections.isEmpty()) {
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "Nothing flagged on this device. A clean result is reassuring but " +
-                    "not a guarantee — keep Privacy Shield on and re-check after installing new apps.",
+                text = "No known indicators were observed in the data Android allowed CoreGuard to inspect. " +
+                    "This is not a guarantee of absence.",
                 style = MaterialTheme.typography.bodyMedium
             )
         } else {
@@ -431,6 +466,8 @@ private fun DetectionRow(detection: Detection) {
         ThreatSeverity.HIGH -> "High"
         ThreatSeverity.MEDIUM -> "Medium"
     }
+    // Convert to Finding to get normalized evidence class for TruthSeal.
+    val finding = detection.toFinding()
     NestedSurface {
         Row(horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
             Text(
@@ -444,6 +481,8 @@ private fun DetectionRow(detection: Detection) {
                 color = severityColor
             )
         }
+        // TruthSeal shows evidence class with icon + label (not color alone) for a11y.
+        TruthSeal(evidenceClass = finding.evidenceClass)
         Text(text = detection.detail, style = MaterialTheme.typography.bodySmall, color = MutedText)
         detection.indicator.reference?.takeIf { it.isNotBlank() }?.let { ref ->
             Text(text = ref, style = MaterialTheme.typography.bodySmall, color = MutedText)
