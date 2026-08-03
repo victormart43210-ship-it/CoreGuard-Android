@@ -29,7 +29,7 @@ jobs:
             --drift-threshold 0.25 \
             --hmac-key "${THREAT_INTEL_HMAC_KEY:-}"
       - name: Upload refresh artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: threat-intel-refresh-${{ github.run_number }}
           path: |

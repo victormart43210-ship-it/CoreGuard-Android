@@ -104,7 +104,7 @@ jobs:
           subject-path: ${{ env.AAB_PATH }}
 
       - name: Upload release AAB, mapping, native symbols
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: release-aab-${{ github.ref_name }}
           path: |
