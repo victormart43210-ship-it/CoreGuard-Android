@@ -103,6 +103,38 @@ class QuillaCuratedIntelFetcherTest {
         return sb.toString().toByteArray(Charsets.UTF_8)
     }
 
+    private fun buildDeterministicEntriesBytes(entriesArray: org.json.JSONArray): ByteArray {
+        val entries = mutableListOf<Map<String, Any>>()
+        for (i in 0 until entriesArray.length()) {
+            val obj = entriesArray.optJSONObject(i) ?: continue
+            val sorted = sortedMapOf<String, Any>()
+            for (key in obj.keys()) sorted[key] = obj.get(key)
+            entries.add(sorted)
+        }
+        return buildCompactJsonForTest(entries).toByteArray(Charsets.UTF_8)
+    }
+
+    private fun buildCompactJsonForTest(value: Any?): String = when (value) {
+        null -> "null"
+        is Boolean -> value.toString()
+        is Number -> value.toString()
+        is String -> "\"${value.replace("\\", "\\\\").replace("\"", "\\\"")
+            .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t")}\""
+        is List<*> -> value.joinToString(",", "[", "]") { buildCompactJsonForTest(it) }
+        is Map<*, *> -> value.entries
+            .sortedBy { it.key.toString() }
+            .joinToString(",", "{", "}") { (k, v) ->
+                "${buildCompactJsonForTest(k.toString())}:${buildCompactJsonForTest(v)}"
+            }
+        is org.json.JSONArray -> (0 until value.length())
+            .joinToString(",", "[", "]") { buildCompactJsonForTest(value.get(it)) }
+        is org.json.JSONObject -> value.keys().asSequence().sorted()
+            .joinToString(",", "{", "}") { k ->
+                "${buildCompactJsonForTest(k)}:${buildCompactJsonForTest(value.get(k))}"
+            }
+        else -> "\"$value\""
+    }
+
     private fun sha256Hex(data: ByteArray): String {
         val md = java.security.MessageDigest.getInstance("SHA-256")
         return md.digest(data).joinToString("") { "%02x".format(it) }
@@ -234,10 +266,6 @@ class QuillaCuratedIntelFetcherTest {
 
     @Test
     fun `invalid references are stripped`() {
-        val entries = listOf(
-            mapOf("id" to "test-entry", "title" to "Test", "category" to "crawler-vulnerability",
-                  "summary" to "s", "body" to "b", "defense" to "d")
-        )
         // Add references via JSONArray directly.
         val root = org.json.JSONObject()
         root.put("schema_version", 1)
@@ -261,11 +289,10 @@ class QuillaCuratedIntelFetcherTest {
         entriesJsonArray.put(entryObj)
         root.put("entries", entriesJsonArray)
         root.put("entry_count", 1)
-        val entriesBytes = buildDeterministicEntriesBytes(entries)
-        root.put("entries_sha256", sha256Hex(entriesBytes))
+        root.put("entries_sha256", sha256Hex(buildDeterministicEntriesBytes(entriesJsonArray)))
         val bundleBytes = root.toString().toByteArray()
         val warnings = mutableListOf<String>()
-        val (accepted, _, warns) = QuillaCuratedIntelFetcher.parseBundle(bundleBytes, warnings)
+        val (accepted, _, _) = QuillaCuratedIntelFetcher.parseBundle(bundleBytes, warnings)
         assertEquals(1, accepted.size)
         val refs = accepted[0].references
         assertFalse(refs.any { it.startsWith("http://") })
