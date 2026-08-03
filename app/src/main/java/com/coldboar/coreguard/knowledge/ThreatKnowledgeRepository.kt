@@ -5,7 +5,8 @@ import java.util.concurrent.ConcurrentHashMap
 
 enum class ThreatKnowledgeSource {
     ANKI,
-    VIPER
+    VIPER,
+    CRAWLER
 }
 
 data class ThreatKnowledgeMatch(
@@ -19,6 +20,7 @@ data class ThreatKnowledgeMatch(
 interface ThreatKnowledgeRepository {
     fun mergeAnkiKnowledge(entries: Collection<CyberKnowledgeBase.Entry>)
     fun mergeViperKnowledge(entries: Collection<CyberKnowledgeBase.Entry>)
+    fun mergeCrawlerKnowledge(entries: Collection<CyberKnowledgeBase.Entry>)
     fun importViperPayload(payload: String): ViperThreatIntelImporter.ImportResult
     fun search(
         query: String,
@@ -36,6 +38,13 @@ object SharedThreatKnowledgeRepository : ThreatKnowledgeRepository {
 
     override fun mergeViperKnowledge(entries: Collection<CyberKnowledgeBase.Entry>) {
         merge(entries, ThreatKnowledgeSource.VIPER)
+    }
+
+    override fun mergeCrawlerKnowledge(entries: Collection<CyberKnowledgeBase.Entry>) {
+        if (entries.isEmpty()) return
+        // Crawler entries are always context only — provesCompromise = false.
+        // Confidence and severity are capped at MEDIUM by ThreatKnowledgeMatch.
+        merge(entries, ThreatKnowledgeSource.CRAWLER)
     }
 
     override fun importViperPayload(payload: String): ViperThreatIntelImporter.ImportResult {
@@ -58,7 +67,8 @@ object SharedThreatKnowledgeRepository : ThreatKnowledgeRepository {
         val filtered = hits.mapNotNull { hit ->
             val source = sourceByEntryId[hit.entry.id] ?: ThreatKnowledgeSource.ANKI
             if (source !in include) return@mapNotNull null
-            ThreatKnowledgeMatch(source = source, hit = hit)
+            // All knowledge matches are context only — they do not prove device compromise.
+            ThreatKnowledgeMatch(source = source, hit = hit, provesCompromise = false)
         }
         return if (uncapped) filtered else filtered.take(limit.coerceAtLeast(1))
     }
