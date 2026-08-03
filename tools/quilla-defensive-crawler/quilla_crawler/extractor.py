@@ -11,16 +11,14 @@ from __future__ import annotations
 import hashlib
 import json
 import re
-from datetime import datetime, timezone
-from typing import Dict, List, Optional
-from urllib.parse import urlparse
+from datetime import UTC, datetime
 
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 
 from quilla_crawler.classifier import classify_entry
 from quilla_crawler.config import SourceConfig, TrustLevel
 from quilla_crawler.models import CrawlerEntry, FetchResult, VerificationStatus
-from quilla_crawler.sanitizer import sanitize_html, sanitize_text, sanitize_entry_fields
+from quilla_crawler.sanitizer import sanitize_entry_fields, sanitize_html
 
 PARSER_VERSION: str = "1.0"
 
@@ -49,7 +47,7 @@ _OFFENSIVE_RE: re.Pattern[str] = re.compile(
 )
 
 
-def extract_entries(result: FetchResult, source: SourceConfig) -> List[CrawlerEntry]:
+def extract_entries(result: FetchResult, source: SourceConfig) -> list[CrawlerEntry]:
     """Dispatch to the correct parser based on source.parser."""
     parser = source.parser
     if parser == "cisa_kev":
@@ -64,7 +62,8 @@ def extract_entries(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
 
 # ── CISA KEV parser ───────────────────────────────────────────────────────────
 
-def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEntry]:
+
+def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> list[CrawlerEntry]:
     try:
         data = json.loads(result.body)
     except (json.JSONDecodeError, ValueError):
@@ -74,7 +73,7 @@ def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
     if not isinstance(vulns, list):
         return []
 
-    entries: List[CrawlerEntry] = []
+    entries: list[CrawlerEntry] = []
     doc_sha = hashlib.sha256(result.body.encode("utf-8")).hexdigest()
 
     for vuln in vulns:
@@ -105,7 +104,9 @@ def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
             f"{description}\n\nVendor/product: {vendor} / {product}.\n"
             f"Date added: {date_added}. Required action: {required_action}.\n"
             f"Due date: {due_date}. Ransomware use: {ransomware}.\n"
-            f"Notes: {notes}" if notes else (
+            f"Notes: {notes}"
+            if notes
+            else (
                 f"{description}\n\nVendor/product: {vendor} / {product}.\n"
                 f"Date added: {date_added}. Required action: {required_action}.\n"
                 f"Due date: {due_date}. Ransomware use: {ransomware}."
@@ -126,12 +127,16 @@ def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
         if not title:
             continue
 
-        entry_id = f"kev-{cve.lower()}" if cve else f"kev-row-{hashlib.sha256(vuln_name.encode()).hexdigest()[:8]}"
+        entry_id = (
+            f"kev-{cve.lower()}"
+            if cve
+            else f"kev-row-{hashlib.sha256(vuln_name.encode()).hexdigest()[:8]}"
+        )
 
         # Remove offensive content patterns from body.
         body = _redact_offensive(body, warnings)
 
-        refs: List[str] = ["https://www.cisa.gov/known-exploited-vulnerabilities-catalog"]
+        refs: list[str] = ["https://www.cisa.gov/known-exploited-vulnerabilities-catalog"]
         if cve:
             refs.append(f"https://nvd.nist.gov/vuln/detail/{cve}")
 
@@ -142,15 +147,28 @@ def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
             confidence -= 0.05
             warnings.append("missing publication date")
 
-        confidence = max(0.0, min(1.0, confidence - 0.10 * warnings.count("offensive content removed")))
+        confidence = max(
+            0.0, min(1.0, confidence - 0.10 * warnings.count("offensive content removed"))
+        )
 
         published = _parse_date(date_added)
         entry = CrawlerEntry(
             id=entry_id,
             title=title,
             category="crawler-vulnerability",
-            tags=_build_tags(["cisa", "kev", "vulnerability", "patch", "android", "mobile",
-                               cve.lower(), vendor.lower(), product.lower()]),
+            tags=_build_tags(
+                [
+                    "cisa",
+                    "kev",
+                    "vulnerability",
+                    "patch",
+                    "android",
+                    "mobile",
+                    cve.lower(),
+                    vendor.lower(),
+                    product.lower(),
+                ]
+            ),
             summary=summary,
             body=body,
             defense=defense,
@@ -175,7 +193,8 @@ def _parse_cisa_kev(result: FetchResult, source: SourceConfig) -> List[CrawlerEn
 
 # ── MISP Android / Malpedia parser ─────────────────────────────────────────────
 
-def _parse_misp_android(result: FetchResult, source: SourceConfig) -> List[CrawlerEntry]:
+
+def _parse_misp_android(result: FetchResult, source: SourceConfig) -> list[CrawlerEntry]:
     """Parse MISP Android or Malpedia galaxy JSON."""
     # Handle possible content-type negotiation — raw.githubusercontent serves text/plain.
     body = result.body.strip()
@@ -188,7 +207,7 @@ def _parse_misp_android(result: FetchResult, source: SourceConfig) -> List[Crawl
     if not isinstance(values, list):
         return []
 
-    entries: List[CrawlerEntry] = []
+    entries: list[CrawlerEntry] = []
     doc_sha = hashlib.sha256(result.body.encode("utf-8")).hexdigest()
 
     for obj in values:
@@ -203,12 +222,12 @@ def _parse_misp_android(result: FetchResult, source: SourceConfig) -> List[Crawl
         if not isinstance(meta, dict):
             meta = {}
 
-        synonyms: List[str] = []
+        synonyms: list[str] = []
         raw_syns = meta.get("synonyms", [])
         if isinstance(raw_syns, list):
             synonyms = [str(s).strip() for s in raw_syns if str(s).strip()]
 
-        refs_raw: List[str] = []
+        refs_raw: list[str] = []
         raw_refs = meta.get("refs", [])
         if isinstance(raw_refs, list):
             for r in raw_refs:
@@ -249,11 +268,9 @@ def _parse_misp_android(result: FetchResult, source: SourceConfig) -> List[Crawl
         body = _redact_offensive(body, warnings)
 
         syn_tags = [s.lower() for s in synonyms]
-        tags = _build_tags(
-            ["android", "malware", "misp", "family", name.lower()] + syn_tags
-        )
+        tags = _build_tags(["android", "malware", "misp", "family", name.lower()] + syn_tags)
 
-        refs: List[str] = [
+        refs: list[str] = [
             "https://www.misp-galaxy.org/android"
             if "android" in source.id
             else "https://malpedia.caad.fkie.fraunhofer.de/"
@@ -291,7 +308,8 @@ def _parse_misp_android(result: FetchResult, source: SourceConfig) -> List[Crawl
 
 # ── Generic advisory HTML parser ───────────────────────────────────────────────
 
-def _parse_generic_advisory_html(result: FetchResult, source: SourceConfig) -> List[CrawlerEntry]:
+
+def _parse_generic_advisory_html(result: FetchResult, source: SourceConfig) -> list[CrawlerEntry]:
     """Extract a single advisory entry from an HTML page."""
     text, warnings = sanitize_html(result.body)
     if not text.strip():
@@ -326,7 +344,9 @@ def _parse_generic_advisory_html(result: FetchResult, source: SourceConfig) -> L
     body_raw = text[:8000]
 
     # Defense — look for mitigation/remediation sections.
-    defense_raw = _extract_section(text, ["mitigation", "remediation", "solution", "recommendation"])
+    defense_raw = _extract_section(
+        text, ["mitigation", "remediation", "solution", "recommendation"]
+    )
 
     title, summary, body, defense, field_warnings = sanitize_entry_fields(
         title=title_raw,
@@ -382,10 +402,11 @@ def _parse_generic_advisory_html(result: FetchResult, source: SourceConfig) -> L
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
 
-def _extract_section(text: str, keywords: List[str]) -> str:
+
+def _extract_section(text: str, keywords: list[str]) -> str:
     """Extract a section from plain text following a keyword heading."""
     lines = text.splitlines()
-    result_lines: List[str] = []
+    result_lines: list[str] = []
     capturing = False
     for line in lines:
         lower = line.lower().strip()
@@ -394,9 +415,19 @@ def _extract_section(text: str, keywords: List[str]) -> str:
             continue
         if capturing:
             if lower and any(
-                lower.startswith(h) for h in
-                ["overview", "background", "description", "summary", "introduction",
-                 "technical", "impact", "references", "ioc", "indicator"]
+                lower.startswith(h)
+                for h in [
+                    "overview",
+                    "background",
+                    "description",
+                    "summary",
+                    "introduction",
+                    "technical",
+                    "impact",
+                    "references",
+                    "ioc",
+                    "indicator",
+                ]
             ):
                 break
             result_lines.append(line)
@@ -408,7 +439,7 @@ def _extract_section(text: str, keywords: List[str]) -> str:
 def _redact_offensive(body: str, warnings: list[str]) -> str:
     """Remove lines containing offensive procedure patterns."""
     lines = body.splitlines()
-    clean: List[str] = []
+    clean: list[str] = []
     for line in lines:
         if _OFFENSIVE_RE.search(line):
             warnings.append(f"offensive content removed: {line[:80]!r}")
@@ -429,8 +460,8 @@ def _trust_to_status(trust_level: TrustLevel) -> VerificationStatus:
     )
 
 
-def _build_tags(items: List[str]) -> List[str]:
-    seen: Dict[str, None] = {}
+def _build_tags(items: list[str]) -> list[str]:
+    seen: dict[str, None] = {}
     for item in items:
         t = item.strip().lower()
         if t and len(t) <= 64:
@@ -438,12 +469,12 @@ def _build_tags(items: List[str]) -> List[str]:
     return list(seen.keys())[:64]
 
 
-def _parse_date(date_str: str) -> Optional[datetime]:
+def _parse_date(date_str: str) -> datetime | None:
     if not date_str:
         return None
     for fmt in ("%Y-%m-%d", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S"):
         try:
-            return datetime.strptime(date_str, fmt).replace(tzinfo=timezone.utc)
+            return datetime.strptime(date_str, fmt).replace(tzinfo=UTC)
         except ValueError:
             continue
     return None

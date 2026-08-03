@@ -11,8 +11,7 @@ import json
 import os
 import threading
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
+from datetime import UTC, datetime
 
 
 class AuditLogger:
@@ -40,8 +39,8 @@ class AuditLogger:
         parser: str = "",
         entries_accepted: int = 0,
         entries_rejected: int = 0,
-        rejection_reasons: Optional[list[str]] = None,
-        sanitization_warnings: Optional[list[str]] = None,
+        rejection_reasons: list[str] | None = None,
+        sanitization_warnings: list[str] | None = None,
         error_class: str = "",
     ) -> None:
         self._write(
@@ -121,4 +120,4 @@ class AuditLogger:
 
 
 def _now_iso() -> str:
-    return datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ")

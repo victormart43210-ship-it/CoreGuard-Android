@@ -2,8 +2,6 @@
 
 from __future__ import annotations
 
-import pytest
-
 from quilla_crawler.deduplicator import Deduplicator, _stable_id_for
 from quilla_crawler.models import CrawlerEntry, VerificationStatus
 
@@ -62,10 +60,22 @@ class TestDeduplication:
 
     def test_same_cve_different_sources_merged(self) -> None:
         d = Deduplicator()
-        d.add(_make_entry("kev-cve-2023-20963", cves=["CVE-2023-20963"], source_id="source-a",
-                           refs=["https://www.cisa.gov/kev"]))
-        d.add(_make_entry("nvd-cve-2023-20963", cves=["CVE-2023-20963"], source_id="source-b",
-                           refs=["https://nvd.nist.gov/vuln/detail/CVE-2023-20963"]))
+        d.add(
+            _make_entry(
+                "kev-cve-2023-20963",
+                cves=["CVE-2023-20963"],
+                source_id="source-a",
+                refs=["https://www.cisa.gov/kev"],
+            )
+        )
+        d.add(
+            _make_entry(
+                "nvd-cve-2023-20963",
+                cves=["CVE-2023-20963"],
+                source_id="source-b",
+                refs=["https://nvd.nist.gov/vuln/detail/CVE-2023-20963"],
+            )
+        )
         result = d.accepted_entries()
         assert len(result) == 1
         merged = result[0]
@@ -74,22 +84,39 @@ class TestDeduplication:
 
     def test_provenance_preserved_on_merge(self) -> None:
         d = Deduplicator()
-        d.add(_make_entry("kev-cve-2023-20963", cves=["CVE-2023-20963"], source_id="source-a",
-                           refs=["https://www.cisa.gov/kev"]))
-        d.add(_make_entry("nvd-cve-2023-20963", cves=["CVE-2023-20963"], source_id="source-b",
-                           refs=["https://nvd.nist.gov/vuln/detail/CVE-2023-20963"]))
+        d.add(
+            _make_entry(
+                "kev-cve-2023-20963",
+                cves=["CVE-2023-20963"],
+                source_id="source-a",
+                refs=["https://www.cisa.gov/kev"],
+            )
+        )
+        d.add(
+            _make_entry(
+                "nvd-cve-2023-20963",
+                cves=["CVE-2023-20963"],
+                source_id="source-b",
+                refs=["https://nvd.nist.gov/vuln/detail/CVE-2023-20963"],
+            )
+        )
         result = d.accepted_entries()
         merged = result[0]
         # Both source refs should be present.
-        assert any(ref == "https://www.cisa.gov/kev" or ref.startswith("https://www.cisa.gov/") for ref in merged.references)
+        assert any(
+            ref == "https://www.cisa.gov/kev" or ref.startswith("https://www.cisa.gov/")
+            for ref in merged.references
+        )
         assert any(ref.startswith("https://nvd.nist.gov/") for ref in merged.references)
 
     def test_unrelated_entries_not_merged(self) -> None:
         d = Deduplicator()
-        d.add(_make_entry("entry-alpha", title="CVE-2023-11111 Android vuln",
-                           cves=["CVE-2023-11111"]))
-        d.add(_make_entry("entry-beta", title="CVE-2023-22222 Samsung vuln",
-                           cves=["CVE-2023-22222"]))
+        d.add(
+            _make_entry("entry-alpha", title="CVE-2023-11111 Android vuln", cves=["CVE-2023-11111"])
+        )
+        d.add(
+            _make_entry("entry-beta", title="CVE-2023-22222 Samsung vuln", cves=["CVE-2023-22222"])
+        )
         result = d.accepted_entries()
         assert len(result) == 2
 

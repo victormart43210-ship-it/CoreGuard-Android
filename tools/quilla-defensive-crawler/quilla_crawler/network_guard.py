@@ -33,7 +33,6 @@ from __future__ import annotations
 
 import ipaddress
 import socket
-from typing import List, Optional
 from urllib.parse import urlparse
 
 from quilla_crawler.config import SourceConfig
@@ -102,21 +101,18 @@ def _assert_allowed_port(url: str, source: SourceConfig) -> None:
     allowed_port = source.allowed_port if source.allowed_port else 443
     if port is not None and port != allowed_port:
         raise NetworkGuardError(
-            f"Rule 5 – non-standard port {port} not configured for source "
-            f"{source.id!r}: {url}"
+            f"Rule 5 – non-standard port {port} not configured for source {source.id!r}: {url}"
         )
 
 
-def _resolve_and_assert_safe_ip(hostname: str) -> List[str]:
+def _resolve_and_assert_safe_ip(hostname: str) -> list[str]:
     """Resolve hostname and assert no private/loopback/etc. IPs (rule 6 + 7 + 25)."""
     try:
         results = socket.getaddrinfo(hostname, None, proto=socket.IPPROTO_TCP)
     except socket.gaierror as exc:
-        raise NetworkGuardError(
-            f"Rule 6 – DNS resolution failed for {hostname!r}: {exc}"
-        ) from exc
+        raise NetworkGuardError(f"Rule 6 – DNS resolution failed for {hostname!r}: {exc}") from exc
 
-    addrs: List[str] = []
+    addrs: list[str] = []
     for _fam, _type, _proto, _canon, sockaddr in results:
         raw_addr = sockaddr[0]
         addrs.append(raw_addr)
@@ -177,7 +173,7 @@ def validate_redirect(original_url: str, redirect_url: str, source: SourceConfig
 
 def assert_allowed_content_type(
     content_type: str,
-    source_allowed: Optional[List[str]] = None,
+    source_allowed: list[str] | None = None,
 ) -> None:
     """Rule 19 – reject unknown or binary content types."""
     ct_base = content_type.split(";")[0].strip().lower()

@@ -20,18 +20,17 @@ import hashlib
 import json
 import os
 import uuid
-from datetime import datetime, timezone
-from typing import List
+from datetime import UTC, datetime
 
 from quilla_crawler import __version__
-from quilla_crawler.models import CrawlerEntry, MAX_ENTRIES_PER_BUNDLE
+from quilla_crawler.models import MAX_ENTRIES_PER_BUNDLE, CrawlerEntry
 
 BUNDLE_SCHEMA_VERSION: int = 1
 GENERATOR_NAME: str = "CoreGuard Quilla Defensive Crawler"
 
 
 def build_bundle(
-    entries: List[CrawlerEntry],
+    entries: list[CrawlerEntry],
     output_dir: str = "output/",
 ) -> bytes:
     """Build the quilla-intel.json bundle and write it to disk.
@@ -54,7 +53,7 @@ def build_bundle(
     bundle = {
         "schema_version": BUNDLE_SCHEMA_VERSION,
         "bundle_id": str(uuid.uuid4()),
-        "generated_at": datetime.now(tz=timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "generated_at": datetime.now(tz=UTC).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "generator": GENERATOR_NAME,
         "generator_version": __version__,
         "entry_count": len(publishable),
