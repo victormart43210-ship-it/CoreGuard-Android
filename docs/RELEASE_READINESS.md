@@ -1,6 +1,7 @@
 # CoreGuard Release Readiness Guide
 
 > Version 1.0 — July 2026  
+> Last reviewed: 2026-08-03 UTC  
 > **Honest statement**: This document describes the steps needed to ship.
 > It does not claim guaranteed Play Store approval, completed billing, or
 > production-grade security guarantees where those are not yet implemented.
