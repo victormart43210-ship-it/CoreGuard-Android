@@ -3,6 +3,14 @@
 All notable changes to CoreGuard-Android are documented here.
 Version numbers match `gradle/android-app.gradle`.
 
+## Unreleased
+
+### Docs — Guardian Intelligence Phase 0
+
+- Added `docs/COREGUARD_GUARDIAN_BLUEPRINT.md` (product/architecture roadmap)
+- Added `docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md` (repo map, gaps, Phase 1 paths, test baseline)
+- No product behavior changes in this slice
+
 ## 1.0.17 — 2026-07-26
 
 ### Final release polish + Quilla mini-game
