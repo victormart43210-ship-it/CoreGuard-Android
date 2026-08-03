@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+dist/
+build/
+.venv/
+venv/
+env/
+
+# Private signing keys — NEVER commit
+output/private/
+
+# Generated output (not for source control)
+output/quilla-intel.json
+output/quilla-intel.sig
+output/quilla-intel-manifest.json
+output/audit.jsonl

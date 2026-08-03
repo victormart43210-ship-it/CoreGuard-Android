@@ -1,0 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "quilla-defensive-crawler"
+version = "1.0.0"
+description = "CoreGuard Quilla defensive threat-intelligence crawler"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+dependencies = [
+    "httpx[http2]>=0.27,<0.28",
+    "beautifulsoup4>=4.12,<5",
+    "lxml>=5.2,<6",
+    "pydantic>=2.7,<3",
+    "cryptography>=42,<44",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.2,<9",
+    "pytest-cov>=5,<6",
+    "mypy>=1.10,<2",
+    "ruff>=0.4,<0.5",
+    "types-beautifulsoup4>=4.12",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["quilla_crawler*"]
+
+[tool.mypy]
+python_version = "3.11"
+strict = true
+ignore_missing_imports = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "N", "UP"]
+ignore = ["E501"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v --tb=short"

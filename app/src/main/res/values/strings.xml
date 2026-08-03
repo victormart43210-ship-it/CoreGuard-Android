@@ -109,4 +109,12 @@
     <!-- Accessibility -->
     <string name="cd_sigil_background">Decorative Enochian protection seal</string>
     <string name="cd_guardian_shield">Guardian score shield</string>
+
+    <!-- Quilla Curated Intel Bundle configuration.
+         Set quilla_curated_bundle_url to a real HTTPS endpoint in a product flavor or
+         a secrets-managed overlay. Leave blank to disable in default/debug builds.
+         Release builds fail closed when quilla_curated_bundle_url is blank.
+         cleartext traffic is globally disabled; only HTTPS endpoints are allowed. -->
+    <string name="quilla_curated_bundle_url" translatable="false"></string>
+    <string name="quilla_curated_sig_url" translatable="false"></string>
 </resources>
