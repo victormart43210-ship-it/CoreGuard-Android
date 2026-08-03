@@ -23,6 +23,8 @@ jobs:
   skipped-notice:
     name: Black Duck (no backend configured)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     if: |
       vars.BLACKDUCKSCA_URL == '' &&
       vars.COVERITY_URL == '' &&
