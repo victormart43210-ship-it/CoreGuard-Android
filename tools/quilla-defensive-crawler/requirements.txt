@@ -15,7 +15,7 @@ idna>=3.4
 
 # HTML parsing
 beautifulsoup4==4.12.3
-lxml==5.2.2
+lxml==6.1.0
 soupsieve>=2.5
 
 # Schema validation
@@ -24,7 +24,7 @@ pydantic-core==2.18.4
 annotated-types>=0.6
 
 # Cryptography
-cryptography==42.0.8
+cryptography==48.0.1
 cffi>=1.16
 pycparser>=2.22
 

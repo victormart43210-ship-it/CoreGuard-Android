@@ -12,9 +12,9 @@ license = { text = "Apache-2.0" }
 dependencies = [
     "httpx[http2]>=0.27,<0.28",
     "beautifulsoup4>=4.12,<5",
-    "lxml>=5.2,<6",
+    "lxml>=6.1,<7",
     "pydantic>=2.7,<3",
-    "cryptography>=42,<44",
+    "cryptography>=48.0.1,<49",
 ]
 
 [project.optional-dependencies]
