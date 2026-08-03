@@ -38,12 +38,12 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
-            "ndk;26.1.10909125" \
-            "cmake;3.22.1"
+            "ndk;27.3.13750724" \
+            "cmake;3.31.5"
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew

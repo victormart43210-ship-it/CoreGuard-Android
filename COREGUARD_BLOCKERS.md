@@ -1,5 +1,30 @@
 # COREGUARD_BLOCKERS.md
 
+## CI Fix Pass — Build and Quilla crawler cleanup (2026-08-03)
+
+### Resolved in this pass
+- Kotlin `continue` inside `?: run { ... }` inline lambda in `QuillaCuratedIntelFetcher.kt` (line 229)
+  fixed to standard `if (obj == null) { rejected++; continue }` — no experimental feature needed.
+- Quilla crawler: 119 Ruff lint violations resolved (UP/F/I rules); `TrustLevel` and
+  `VerificationStatus` migrated to `StrEnum`; mypy passes with 0 errors; all 84 pytest tests pass.
+- Android SDK license handling in CI workflows updated: `|| true` replaced with proper quoting
+  and `>/dev/null`; NDK `26.1.10909125` (unavailable) updated to `27.3.13750724` (available);
+  cmake `3.22.1` updated to `3.31.5` across `android.yml` and `release.yml`.
+- `gradle/android-app.gradle` NDK and cmake versions aligned with installed SDK packages.
+- Black Duck workflow: added `skipped-notice` job that emits a step summary when no backend
+  is configured, making the skip explicit rather than silent.
+- Stale GitHub issue #92 ("c" / `guardian-integrated-v1.0.18 → main`) closed — that merge
+  was already completed; issue had no remaining actionable work.
+
+### Remaining blockers after this pass
+| Area | Current state | Block type | Needed work |
+|---|---|---|---|
+| Android build in sandbox | `dl.google.com` unreachable — AGP/Kotlin cannot be resolved offline | Environment | Network-accessible Maven mirror or GitHub Actions runner required to run full Gradle build |
+| Kotlin Gradle plugin dual-load warning | `:app` uses `buildscript {}` + `apply plugin`; `:core:model` uses `plugins {}` — KGP loaded twice | Build | Migrate `app/build.gradle` to modern `plugins {}` block (risky without CI to verify) |
+| Physical device testing | No full device matrix executed | Testing | Run on physical devices before Internal Testing promotion |
+| Play Console configuration | Billing product, closed testing, and Play App Signing not yet verified | Release | Requires Play Console access and production signing secret |
+| External Black Duck scan | No backend URL configured | Security | Configure one of `BLACKDUCKSCA_URL`, `COVERITY_URL`, `POLARIS_SERVER_URL`, or `SRM_URL` |
+
 ## Phase 3 — Scanner Engine Events, Cancellation, and Durable Sessions (2026-08-02)
 
 ### Resolved in this phase

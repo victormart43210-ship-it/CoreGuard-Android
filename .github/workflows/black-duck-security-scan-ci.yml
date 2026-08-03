@@ -19,6 +19,27 @@ on:
     - cron: '24 2 * * 1'
 
 jobs:
+  # Emit a clear summary when no backend is configured so CI is transparent.
+  skipped-notice:
+    name: Black Duck (no backend configured)
+    runs-on: ubuntu-latest
+    if: |
+      vars.BLACKDUCKSCA_URL == '' &&
+      vars.COVERITY_URL == '' &&
+      vars.POLARIS_SERVER_URL == '' &&
+      vars.SRM_URL == ''
+    steps:
+      - name: Write step summary
+        run: |
+          echo "## ⏭️ Black Duck scan skipped" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "No Black Duck backend is configured for this repository." >> "$GITHUB_STEP_SUMMARY"
+          echo "To enable scanning, configure one of the following repository variables:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`BLACKDUCKSCA_URL\` + secret \`BLACKDUCKSCA_TOKEN\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`COVERITY_URL\` + secrets \`COVERITY_USER\` / \`COVERITY_PASSPHRASE\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`POLARIS_SERVER_URL\` + secret \`POLARIS_ACCESS_TOKEN\`" >> "$GITHUB_STEP_SUMMARY"
+          echo "- \`SRM_URL\` + secret \`SRM_API_KEY\`" >> "$GITHUB_STEP_SUMMARY"
+
   build:
     # Skip this job entirely when no Black Duck scan service is configured,
     # rather than failing with a hard error.
