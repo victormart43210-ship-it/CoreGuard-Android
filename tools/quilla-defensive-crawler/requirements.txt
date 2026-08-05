@@ -24,7 +24,7 @@ pydantic-core==2.18.4
 annotated-types>=0.6
 
 # Cryptography
-cryptography==48.0.1
+cryptography==50.0.0
 cffi>=1.16
 pycparser>=2.22
 
