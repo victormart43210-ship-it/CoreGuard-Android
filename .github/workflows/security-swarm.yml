@@ -43,7 +43,7 @@ jobs:
 
       - name: Upload MASVS report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: masvs-report
           path: /tmp/masvs_report.json
@@ -71,7 +71,7 @@ jobs:
 
       - name: Upload vulnerability report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: vuln-report
           path: /tmp/vuln_report.json
@@ -100,7 +100,7 @@ jobs:
 
       - name: Upload RASP audit report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: rasp-report
           path: /tmp/rasp_report.json
