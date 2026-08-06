@@ -130,21 +130,21 @@ jobs:
           python-version: "3.12"
 
       - name: Download MASVS report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: masvs-report
           path: /tmp/reports
         continue-on-error: true
 
       - name: Download vulnerability report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: vuln-report
           path: /tmp/reports
         continue-on-error: true
 
       - name: Download RASP audit report
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8
         with:
           name: rasp-report
           path: /tmp/reports
