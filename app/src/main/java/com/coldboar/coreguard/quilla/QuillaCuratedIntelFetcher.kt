@@ -7,12 +7,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URL
 import java.security.PublicKey
 import java.security.Signature
-import java.util.Base64
 
 /**
  * Downloads and verifies the cryptographically signed Quilla curated intelligence
@@ -300,9 +300,35 @@ object QuillaCuratedIntelFetcher {
 
     // ── Signature verification ────────────────────────────────────────────────
 
+    // java.util.Base64 is API 26 and this module ships at minSdk 24; android.util.Base64
+    // returns stubs under the unit tests' returnDefaultValues. Hence a local decoder.
+    private val BASE64_INVERSE = IntArray(128) { -1 }.also { table ->
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
+            .forEachIndexed { index, c -> table[c.code] = index }
+    }
+
+    internal fun decodeBase64(input: String): ByteArray {
+        val out = ByteArrayOutputStream(input.length / 4 * 3 + 3)
+        var accumulator = 0
+        var bitsCollected = 0
+        for (c in input) {
+            if (c == '=') break
+            if (c == '\n' || c == '\r' || c == ' ' || c == '\t') continue
+            val value = if (c.code < 128) BASE64_INVERSE[c.code] else -1
+            require(value >= 0) { "Invalid base64 character: $c" }
+            accumulator = (accumulator shl 6) or value
+            bitsCollected += 6
+            if (bitsCollected >= 8) {
+                bitsCollected -= 8
+                out.write((accumulator shr bitsCollected) and 0xFF)
+            }
+        }
+        return out.toByteArray()
+    }
+
     internal fun verifyEd25519(data: ByteArray, sigB64: String, publicKey: PublicKey): Boolean {
         return runCatching {
-            val sigBytes = Base64.getDecoder().decode(sigB64.trim())
+            val sigBytes = decodeBase64(sigB64.trim())
             val sig = Signature.getInstance("Ed25519")
             sig.initVerify(publicKey)
             sig.update(data)
@@ -318,7 +344,7 @@ object QuillaCuratedIntelFetcher {
             .replace("\n", "")
             .replace("\r", "")
             .trim()
-        val der = Base64.getDecoder().decode(b64)
+        val der = decodeBase64(b64)
         val keySpec = java.security.spec.X509EncodedKeySpec(der)
         return java.security.KeyFactory.getInstance("Ed25519").generatePublic(keySpec)
     }

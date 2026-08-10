@@ -234,11 +234,15 @@ class QuillaCuratedIntelFetcherTest {
 
     @Test
     fun `invalid references are stripped`() {
+        val refsArray = org.json.JSONArray()
+        refsArray.put("http://not-https.example.com/")  // HTTP — should be stripped
+        refsArray.put("https://www.cisa.gov/kev")       // approved
+        refsArray.put("https://evil-domain.xyz/malware") // unapproved domain
+        // The digest must be computed over the same keys the bundle carries, references included.
         val entries = listOf(
             mapOf("id" to "test-entry", "title" to "Test", "category" to "crawler-vulnerability",
-                  "summary" to "s", "body" to "b", "defense" to "d")
+                  "summary" to "s", "body" to "b", "defense" to "d", "references" to refsArray)
         )
-        // Add references via JSONArray directly.
         val root = org.json.JSONObject()
         root.put("schema_version", 1)
         root.put("bundle_id", "bid")
@@ -253,10 +257,6 @@ class QuillaCuratedIntelFetcherTest {
         entryObj.put("summary", "s")
         entryObj.put("body", "b")
         entryObj.put("defense", "d")
-        val refsArray = org.json.JSONArray()
-        refsArray.put("http://not-https.example.com/")  // HTTP — should be stripped
-        refsArray.put("https://www.cisa.gov/kev")       // approved
-        refsArray.put("https://evil-domain.xyz/malware") // unapproved domain
         entryObj.put("references", refsArray)
         entriesJsonArray.put(entryObj)
         root.put("entries", entriesJsonArray)
