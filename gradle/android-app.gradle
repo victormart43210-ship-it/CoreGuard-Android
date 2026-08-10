@@ -4,14 +4,14 @@
 
 android {
     namespace "com.coldboar.coreguard"
-    compileSdk 35
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.coldboar.coreguard"
         minSdk 24
-        targetSdk 35
-        versionCode 17
-        versionName "1.0.16"
+        targetSdk 36
+        versionCode 18
+        versionName "1.0.17"
 
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
 
@@ -22,18 +22,24 @@ android {
         }
 
         ndk {
-            abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            // Emulator gate: -Pcoreguard.emulatorAbi=x86_64 shrinks APK/native load on AVD.
+            def emuAbi = project.findProperty("coreguard.emulatorAbi")?.toString()?.trim()
+            if (emuAbi) {
+                abiFilters emuAbi
+            } else {
+                abiFilters "arm64-v8a", "armeabi-v7a", "x86", "x86_64"
+            }
         }
     }
 
     externalNativeBuild {
         cmake {
             path "src/main/cpp/CMakeLists.txt"
-            version "3.22.1"
+            version "3.31.5"
         }
     }
 
-    ndkVersion "26.1.10909125"
+    ndkVersion "27.3.13750724"
 
     // Prefer CI env secrets; fall back to local gitignored keystore.properties.
     // Variable names (authoritative): SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD,
@@ -67,13 +73,18 @@ android {
     if ((expectedCert == null || expectedCert.trim().isEmpty()) && hasReleaseSigning) {
         def ksFile = rootProject.file(storeFilePath)
         if (ksFile.exists()) {
+            // Write the store password to a temp file so it is never visible in
+            // the process argument list (readable via /proc/<pid>/cmdline on Linux).
+            // keytool -storepassfile was added in Java 9; this build requires Java 17.
+            def passFile = File.createTempFile("cg_kp_", null)
+            passFile.deleteOnExit()
             try {
-                // Pass password via stdin-env style args; never log password values.
+                passFile.text = storePass
                 def pb = new ProcessBuilder(
                     "keytool", "-list", "-v",
                     "-keystore", ksFile.absolutePath,
                     "-alias", signingKeyAlias,
-                    "-storepass", storePass
+                    "-storepassfile", passFile.absolutePath
                 )
                 pb.redirectErrorStream(true)
                 def proc = pb.start()
@@ -86,6 +97,8 @@ android {
                 }
             } catch (Exception e) {
                 logger.warn("Could not derive EXPECTED_CERT_SHA256 (details omitted)")
+            } finally {
+                passFile.delete()
             }
         }
     }
@@ -209,6 +222,15 @@ dependencies {
     implementation "com.google.android.material:material:1.12.0"
     implementation "androidx.constraintlayout:constraintlayout:2.1.4"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:2.8.4"
+    // ViewModel for MVVM (DashboardViewModel, ScannerViewModel).
+    // Manual constructor injection used; Hilt wiring is a Phase 2 follow-up.
+    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.4"
+    implementation "androidx.lifecycle:lifecycle-viewmodel-compose:2.8.4"
+    // Preferences DataStore for persisting UserSettings.
+    // Replaces SharedPreferences-backed in-memory toggle state.
+    implementation "androidx.datastore:datastore-preferences:1.1.1"
+    // Deferrable / battery-aware Guardian Score pulse (SecurityPulseWorker).
+    implementation "androidx.work:work-runtime-ktx:2.9.1"
 
     implementation platform("androidx.compose:compose-bom:2024.06.00")
     implementation "androidx.compose.ui:ui"

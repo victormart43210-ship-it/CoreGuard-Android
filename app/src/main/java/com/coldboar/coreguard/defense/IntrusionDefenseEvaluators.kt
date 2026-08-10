@@ -192,15 +192,20 @@ class SideloadRiskEvaluator(
     constructor(context: Context) : this(
         installedFromStore = { isPlayOrSystemInstaller(context) },
         canInstallUnknown = {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                context.packageManager.canRequestPackageInstalls()
-            } else {
-                @Suppress("DEPRECATION")
-                Settings.Secure.getInt(
-                    context.contentResolver,
-                    Settings.Secure.INSTALL_NON_MARKET_APPS,
-                    0
-                ) == 1
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    context.packageManager.canRequestPackageInstalls()
+                } else {
+                    @Suppress("DEPRECATION")
+                    Settings.Secure.getInt(
+                        context.contentResolver,
+                        Settings.Secure.INSTALL_NON_MARKET_APPS,
+                        0
+                    ) == 1
+                }
+            } catch (e: SecurityException) {
+                // Permission not available in test environments
+                false
             }
         },
         installerLabel = { installerPackage(context) }

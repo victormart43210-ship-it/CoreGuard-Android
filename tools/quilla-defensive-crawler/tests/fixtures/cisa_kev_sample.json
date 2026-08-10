@@ -1,0 +1,40 @@
+{
+  "vulnerabilities": [
+    {
+      "cveID": "CVE-2023-20963",
+      "vendorProject": "Android",
+      "product": "Framework",
+      "vulnerabilityName": "Android Framework Privilege Escalation Vulnerability",
+      "shortDescription": "Android Framework contains an unspecified vulnerability which allows for privilege escalation after updating an app to a higher Target SDK.",
+      "dateAdded": "2023-03-30",
+      "requiredAction": "Apply updates per vendor instructions.",
+      "dueDate": "2023-04-20",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-2023-21492",
+      "vendorProject": "Samsung",
+      "product": "Galaxy",
+      "vulnerabilityName": "Samsung Galaxy Log Information Vulnerability",
+      "shortDescription": "Samsung Galaxy contains an information exposure vulnerability where log files expose kernel addresses, bypassing ASLR.",
+      "dateAdded": "2023-05-15",
+      "requiredAction": "Apply updates per vendor instructions.",
+      "dueDate": "2023-06-05",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    },
+    {
+      "cveID": "CVE-1999-0001",
+      "vendorProject": "ExampleCorp",
+      "product": "ToasterFirmware",
+      "vulnerabilityName": "Toaster Firmware Overflow",
+      "shortDescription": "Kitchen appliance firmware buffer overflow.",
+      "dateAdded": "1999-01-01",
+      "requiredAction": "Unplug.",
+      "dueDate": "1999-02-01",
+      "knownRansomwareCampaignUse": "Unknown",
+      "notes": ""
+    }
+  ]
+}

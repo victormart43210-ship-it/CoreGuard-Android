@@ -67,28 +67,34 @@ class NemesisScanner(
     private val clock: () -> Long = { System.currentTimeMillis() }
 ) {
 
-    fun scan(): ScanReport {
+    fun scan(cancellation: ScanCancellation = ScanCancellation { false }): ScanReport {
         val started = clock()
         val detections = mutableListOf<Detection>()
 
+        cancellation.throwIfCancelled()
         val packages = installedPackages()
         packages.forEach { pkg ->
+            cancellation.throwIfCancelled()
             matcher.matchPackage(pkg)?.let {
-                detections += Detection(ArtifactKind.PACKAGE, pkg, it, ThreatSeverity.CRITICAL)
+                detections += Detection(ArtifactKind.PACKAGE, pkg, it, ThreatSeverity.HIGH)
             }
         }
 
+        cancellation.throwIfCancelled()
         val processes = runningProcesses()
         processes.forEach { proc ->
+            cancellation.throwIfCancelled()
             matcher.matchProcess(proc)?.let {
-                detections += Detection(ArtifactKind.PROCESS, proc, it, ThreatSeverity.CRITICAL)
+                detections += Detection(ArtifactKind.PROCESS, proc, it, ThreatSeverity.HIGH)
             }
         }
 
+        cancellation.throwIfCancelled()
         val files = accessibleFiles()
         files.forEach { path ->
+            cancellation.throwIfCancelled()
             matcher.matchFilePath(path)?.let {
-                detections += Detection(ArtifactKind.FILE, path, it, ThreatSeverity.HIGH)
+                detections += Detection(ArtifactKind.FILE, path, it, ThreatSeverity.MEDIUM)
             }
         }
 

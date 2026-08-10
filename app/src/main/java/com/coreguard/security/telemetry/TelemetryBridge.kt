@@ -1,9 +1,11 @@
 package com.coreguard.security.telemetry
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import com.coldboar.coreguard.quilla.QuillaHypothesis
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import com.coldboar.coreguard.swarm.SwarmSignal
 import org.json.JSONObject
 import java.util.UUID
@@ -30,7 +32,12 @@ object TelemetryBridge {
 
     fun init(context: Context, deviceIdHash: String = hashDeviceHint(context)) {
         this.deviceIdHash = deviceIdHash
-        this.signer = TelemetrySigner(context.applicationContext)
+        val app = context.applicationContext
+        val strongBoxAvailable =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                app.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+        // Do not retain Context on the static signer — only the StrongBox capability bit.
+        this.signer = TelemetrySigner(strongBoxAvailable = strongBoxAvailable)
     }
 
     fun onSwarmSignal(signal: SwarmSignal) {
@@ -75,7 +82,7 @@ object TelemetryBridge {
             put("currentStateHash", delta.currentStateHash)
             put("anomalies", JSONObject(delta.detectedAnomalies))
         }.toString()
-        QuillaMemoryFactory.hypothesisStore().upsert(
+        QuillaMemoryModule.hypothesisStore().upsert(
             QuillaHypothesis(
                 id = UUID.randomUUID().toString(),
                 hypothesisType = "SIGNED_TELEMETRY_${delta.trigger.name}",

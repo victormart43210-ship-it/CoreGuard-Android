@@ -27,8 +27,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -43,6 +41,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.coldboar.coreguard.BillingProvider
 import com.coldboar.coreguard.FirstRunStore
+import com.coldboar.coreguard.ui.navigation.CoreGuardNavGraph
 import com.coldboar.coreguard.ui.navigation.CoreGuardRoute
 import com.coldboar.coreguard.ui.screens.ComplianceScreen
 import com.coldboar.coreguard.ui.screens.ForensicJournalScreen
@@ -60,9 +59,15 @@ import com.coldboar.coreguard.ui.screens.SupplyChainScreen
 import com.coldboar.coreguard.ui.screens.TimelineScreen
 import com.coldboar.coreguard.ui.screens.ToolsScreen
 import com.coldboar.coreguard.ui.theme.ElectricTeal
+import com.coldboar.coreguard.ui.theme.MOTION_POP_FADE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_POP_SLIDE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_PUSH_FADE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_PUSH_SLIDE_MS
+import com.coldboar.coreguard.ui.theme.MOTION_TAB_FADE_MS
 import com.coldboar.coreguard.ui.theme.MutedText
 import com.coldboar.coreguard.ui.theme.RestrainedGold
 import com.coldboar.coreguard.ui.theme.SurfacePewter
+import com.coldboar.coreguard.ui.theme.rememberMotionEnabled
 
 private data class NavItem(
     val route: String,
@@ -78,6 +83,7 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
 )
 
+<<<<<<< HEAD
 private val routesWithoutBottomBar = setOf(
     CoreGuardRoute.Onboarding.route,
     CoreGuardRoute.PrivacyPolicy.route,
@@ -91,6 +97,9 @@ private val routesWithoutBottomBar = setOf(
 )
 
 private val tabRoutes = bottomNavItems.map { it.route }.toSet()
+=======
+private val tabRoutes = CoreGuardNavGraph.bottomTabRoutes.toSet()
+>>>>>>> origin/main
 
 /**
  * Root composable for the entire app.
@@ -98,19 +107,26 @@ private val tabRoutes = bottomNavItems.map { it.route }.toSet()
  * Contains exactly one [NavHost] and one bottom navigation bar with five
  * primary destinations. All screens are reachable through this single graph.
  *
+ * @param billingProvider Required production [BillingProvider] from MainActivity
+ *   (Play Billing). No demo/preview default — callers must inject explicitly.
  * @param secretPortalVisible Shared toggle state controlled by the host Activity.
- * @param billingProvider Production [BillingProvider] from MainActivity (Play Billing).
  */
 @Composable
 fun CoreGuardApp(
-    secretPortalVisible: MutableState<Boolean> = remember { mutableStateOf(false) },
-    billingProvider: BillingProvider = rememberAppBillingProvider()
+    billingProvider: BillingProvider,
+    secretPortalVisible: MutableState<Boolean>
 ) {
     val context = LocalContext.current
+    val motionEnabled = rememberMotionEnabled()
+    val tabFade = if (motionEnabled) MOTION_TAB_FADE_MS else 0
+    val pushFade = if (motionEnabled) MOTION_PUSH_FADE_MS else 0
+    val pushSlide = if (motionEnabled) MOTION_PUSH_SLIDE_MS else 0
+    val popFade = if (motionEnabled) MOTION_POP_FADE_MS else 0
+    val popSlide = if (motionEnabled) MOTION_POP_SLIDE_MS else 0
     val navController = rememberNavController()
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
-    val showBottomBar = currentRoute !in routesWithoutBottomBar
+    val showBottomBar = CoreGuardNavGraph.showsBottomBar(currentRoute)
 
     fun navigateToTab(route: String) {
         navController.navigate(route) {
@@ -149,35 +165,35 @@ fun CoreGuardApp(
         ) { paddingValues ->
             NavHost(
                 navController = navController,
-                startDestination = CoreGuardRoute.Home.route,
+                startDestination = CoreGuardNavGraph.startDestination,
                 modifier = Modifier.padding(paddingValues),
                 enterTransition = {
                     if (targetState.destination.route in tabRoutes &&
                         initialState.destination.route in tabRoutes
                     ) {
-                        fadeIn(animationSpec = tween(220))
+                        fadeIn(animationSpec = tween(tabFade))
                     } else {
-                        fadeIn(animationSpec = tween(240)) +
+                        fadeIn(animationSpec = tween(pushFade)) +
                             slideIntoContainer(
                                 towards = AnimatedContentTransitionScope.SlideDirection.Start,
-                                animationSpec = tween(280),
-                                initialOffset = { it / 20 }
+                                animationSpec = tween(pushSlide),
+                                initialOffset = { it / 18 }
                             )
                     }
                 },
                 exitTransition = {
-                    fadeOut(animationSpec = tween(180))
+                    fadeOut(animationSpec = tween((pushFade * 0.7f).toInt().coerceAtLeast(0)))
                 },
                 popEnterTransition = {
-                    fadeIn(animationSpec = tween(220)) +
+                    fadeIn(animationSpec = tween(popFade)) +
                         slideIntoContainer(
                             towards = AnimatedContentTransitionScope.SlideDirection.End,
-                            animationSpec = tween(260),
-                            initialOffset = { it / 20 }
+                            animationSpec = tween(popSlide),
+                            initialOffset = { it / 18 }
                         )
                 },
                 popExitTransition = {
-                    fadeOut(animationSpec = tween(160))
+                    fadeOut(animationSpec = tween((popFade * 0.75f).toInt().coerceAtLeast(0)))
                 }
             ) {
                 composable(CoreGuardRoute.Onboarding.route) {

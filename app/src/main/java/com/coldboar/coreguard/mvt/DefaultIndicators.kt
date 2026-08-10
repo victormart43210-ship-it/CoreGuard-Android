@@ -8,8 +8,8 @@ package com.coldboar.coreguard.mvt
  * "Pegasus" infrastructure published by the Amnesty International Security Lab
  * alongside the 2021 Forensic Methodology Report, mirrored in the
  * `mvt-project/mvt-indicators` repository. Entries marked as EXAMPLE are
- * synthetic, non-attributable placeholders used only to exercise the scanner in
- * tests and demos.
+ * synthetic, non-attributable fixtures used only to exercise the scanner in
+ * automated tests — not user-facing demo content.
  *
  * This list is intentionally short; production deployments should ship and
  * regularly refresh a full STIX2 indicator feed (see [IocRepository]).

@@ -8,7 +8,7 @@ package com.coldboar.coreguard.elite
  *
  * ```
  *   Engines / Module ──dispatch(Action)──► Store ──reduce──► State ──notify──► UI
- *   UI ──dispatch(Reset / demo)──► Store   (never mutates ints directly)
+ *   UI ──reset via EliteModule──► Store   (never mutates ints directly)
  * ```
  *
  * ## Redux rules enforced here
@@ -16,15 +16,23 @@ package com.coldboar.coreguard.elite
  * 1. **Single source of truth** — [EliteThreatCounterState] is the only Counter
  *    data the Elite Home dashboard should render for DTS / Scam amber chips.
  * 2. **State is read-only to UI** — Compose never writes `dtsScore = …`; it
- *    dispatches or lets [EliteModule] feed evaluations.
+ *    lets [EliteModule] feed evaluations (or calls [EliteModule.resetThreatCounter]).
  * 3. **Pure reducer** — [reduce] has no I/O, no Android Context, no journal
  *    writes. Side effects stay in engines / [EliteModule].
+ *
+ * ## UI separation
+ *
+ * Compose must not subscribe here from ad-hoc `DisposableEffect` blocks. Prefer:
+ * - [com.coldboar.coreguard.ui.redux.rememberEliteThreatCounterState] to subscribe
+ * - [com.coldboar.coreguard.ui.components.EliteThreatCounter] to paint + Reset
+ * - [EliteModule.evaluateThreatScore] / [EliteModule.inspectScamText] to feed
  *
  * Thread safety: [dispatch] / [getState] / [subscribe] are synchronized so the
  * BAE / notification listener threads and the main thread can share one store.
  *
  * @see EliteModule module-pattern façade that owns this store
  * @see com.coldboar.coreguard.swarm.SwarmAlertCounterStore sibling Counter for swarm
+ * @see docs/MODULE_ARCHITECTURE.md for the Counter Redux contract
  */
 class EliteThreatCounterStore(
     initial: EliteThreatCounterState = EliteThreatCounterState()

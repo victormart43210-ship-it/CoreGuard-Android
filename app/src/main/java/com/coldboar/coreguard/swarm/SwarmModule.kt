@@ -103,6 +103,13 @@ object SwarmModule {
     }
 
     /**
+     * One-shot WARN+ alert count for non-Compose readers (tests, logging).
+     * Compose UI should prefer [com.coldboar.coreguard.ui.redux.rememberSwarmAlertCounterState]
+     * so it recomposes when the Redux store changes.
+     */
+    fun alertCount(): Int = alertCounter.getState().count
+
+    /**
      * Last Infinity training digest shared with swarm peers.
      * Peers stay heuristic — this is shared intel depth, not an LLM brain.
      */

@@ -29,15 +29,32 @@ for i in $(seq 1 90); do
 done
 
 echo "[smoke] Installing $APK"
-adb install -r -t -g "$APK"
+# -d allows downgrade on shared AVDs that retained a newer versionCode.
+if ! adb install -r -d -t -g "$APK"; then
+  echo "[smoke] install failed — uninstalling $PACKAGE and retrying…"
+  adb uninstall "$PACKAGE" >/dev/null 2>&1 || true
+  adb install -r -d -t -g "$APK"
+fi
 
 echo "[smoke] Clearing logcat + launching"
 adb logcat -c || true
 adb shell am force-stop "$PACKAGE" || true
-adb shell am start -W -n "$PACKAGE/com.coldboar.coreguard.MainActivity" | tee "$OUT_DIR/am-start.txt"
+# Avoid am start -W on soft/no-KVM hosts: it often reports LaunchState UNKNOWN /
+# Status: timeout while the activity is still coming up. Start async, then poll pid.
+adb shell am start -n "$PACKAGE/com.coldboar.coreguard.MainActivity" | tee "$OUT_DIR/am-start.txt"
+
+echo "[smoke] Waiting for process…"
+PID=""
+for _ in $(seq 1 60); do
+  PID="$(adb shell pidof -s "$PACKAGE" 2>/dev/null | tr -d '\r' || true)"
+  if [[ -n "$PID" ]]; then
+    break
+  fi
+  sleep 1
+done
 
 echo "[smoke] Settling…"
-sleep 12
+sleep 8
 
 PID="$(adb shell pidof -s "$PACKAGE" 2>/dev/null | tr -d '\r' || true)"
 FOCUS="$(adb shell dumpsys window 2>/dev/null | grep mCurrentFocus | head -1 || true)"

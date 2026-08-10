@@ -3,8 +3,8 @@ package com.coldboar.coreguard.quilla
 import android.content.Context
 import android.util.Log
 import com.coldboar.coreguard.CoreGuardApplication
+import com.coldboar.coreguard.knowledge.SharedThreatKnowledgeRepository
 import com.coldboar.coreguard.mvt.IocRepository
-import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import com.quilla.intelligence.sdk.engine.SlidingWindowCorrelationEngine
 import com.quilla.intelligence.sdk.intel.MultiSourceStixFetcher
 import com.quilla.intelligence.sdk.intel.PublicMultiSourceStixFetcher
@@ -43,12 +43,18 @@ object QuillaIntelNetwork {
      * Full network sync. Call from a background dispatcher.
      *
      * @param stixFetcher injectable for tests; defaults to [PublicMultiSourceStixFetcher].
+     * @param curatedIntelResult optional pre-fetched curated crawler bundle result.
+     *   When provided and [signatureValid], entries are merged under
+     *   [ThreatKnowledgeSource.CRAWLER]. Pass null to skip (e.g. endpoint not configured).
+     *   A temporary failure here must not cause the entire sync to fail when a
+     *   previous verified cache was returned by [QuillaCuratedIntelFetcher].
      */
     fun syncAll(
         context: Context,
         stixFetcher: MultiSourceStixFetcher = PublicMultiSourceStixFetcher(),
         webFetcher: () -> QuillaWebSecurityIntelFetcher.WebIntelResult =
-            QuillaWebSecurityIntelFetcher::fetchDefensiveKnowledge
+            QuillaWebSecurityIntelFetcher::fetchDefensiveKnowledge,
+        curatedIntelResult: QuillaCuratedIntelFetcher.FetchResult? = null,
     ): QuillaIntelNetworkSnapshot {
         val feedNotes = mutableListOf<String>()
         var stixCount = 0
@@ -75,7 +81,7 @@ object QuillaIntelNetwork {
 
         val fromStix = stix.map { it.toAmnestyIndicator() }
         val merged = QuillaIocBridge.mergeUnique(fromStix, onDevice)
-        QuillaMemoryFactory.correlationEngine().loadIndicators(merged)
+        QuillaMemoryModule.correlationEngine().loadIndicators(merged)
 
         // Warm / sync sliding-window engine when Room is available.
         runCatching {
@@ -96,7 +102,7 @@ object QuillaIntelNetwork {
         if (web.isSuccess) {
             val result = web.getOrThrow()
             if (result.entries.isNotEmpty()) {
-                CyberKnowledgeBase.mergeEntries(result.entries)
+                SharedThreatKnowledgeRepository.mergeAnkiKnowledge(result.entries)
                 knowledgeCount = result.entries.size
             }
             feedNotes += result.sourcesOk
@@ -108,6 +114,24 @@ object QuillaIntelNetwork {
         } else {
             knowledgeFailed = true
             feedNotes += "Web security intel failed: ${web.exceptionOrNull()?.message}"
+        }
+
+        // Optional: merge curated crawler bundle (does not fail the overall sync).
+        var crawlerEntryCount = 0
+        var crawlerSigValid = false
+        var crawlerSourceLabel = ""
+        val crawlerWarnings = mutableListOf<String>()
+        if (curatedIntelResult != null) {
+            if (curatedIntelResult.signatureValid && curatedIntelResult.entries.isNotEmpty()) {
+                SharedThreatKnowledgeRepository.mergeCrawlerKnowledge(curatedIntelResult.entries)
+                crawlerEntryCount = curatedIntelResult.entries.size
+                crawlerSigValid = true
+                crawlerSourceLabel = curatedIntelResult.sourceLabel
+                feedNotes += "Curated crawler bundle: ${crawlerEntryCount} entries"
+            } else {
+                feedNotes += "Curated crawler bundle: skipped (${curatedIntelResult.failureReason.take(80)})"
+            }
+            crawlerWarnings += curatedIntelResult.warnings
         }
 
         // Infinity: harden angel choir + swarm on the merged malware/vuln corpus (uncapped).
@@ -140,7 +164,11 @@ object QuillaIntelNetwork {
             infinityGeneration = training.generation,
             infinityMalwareStudied = training.malwareEntriesStudied,
             infinityVulnStudied = training.vulnerabilityEntriesStudied,
-            infinityCodexDepth = training.totalCodexEntries
+            infinityCodexDepth = training.totalCodexEntries,
+            crawlerEntryCount = crawlerEntryCount,
+            crawlerSignatureValid = crawlerSigValid,
+            crawlerSourceLabel = crawlerSourceLabel,
+            crawlerWarnings = crawlerWarnings.toList(),
         )
         lastSync = snapshot
         return snapshot
@@ -167,5 +195,10 @@ data class QuillaIntelNetworkSnapshot(
     val infinityGeneration: Int = 0,
     val infinityMalwareStudied: Int = 0,
     val infinityVulnStudied: Int = 0,
-    val infinityCodexDepth: Int = 0
+    val infinityCodexDepth: Int = 0,
+    // Curated crawler bundle fields (optional — populated when crawler endpoint is configured).
+    val crawlerEntryCount: Int = 0,
+    val crawlerSignatureValid: Boolean = false,
+    val crawlerSourceLabel: String = "",
+    val crawlerWarnings: List<String> = emptyList(),
 )

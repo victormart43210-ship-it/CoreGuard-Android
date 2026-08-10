@@ -5,6 +5,7 @@ Version numbers match `gradle/android-app.gradle`.
 
 ## Unreleased
 
+<<<<<<< HEAD
 ### Guardian Intelligence (Phases 1–10)
 
 - Shared truth model in `:core:model` (`EvidenceClass`, calm `Severity`, `Confidence`, `SecurityFinding`, …)
@@ -17,11 +18,40 @@ Version numbers match `gradle/android-app.gradle`.
 - Baseline prefs use `PREF_*` names (MASVS-CRYPTO-1 false-positive fix)
 - On-device smoke: `GuardianIntelligenceOnDeviceTest` in emulator gate
 - Docs: blueprint + Phase 0 architecture audit
+=======
+### Android 16 compatibility pass (PR-002 scope)
+
+- Enabled edge-to-edge setup in `MainActivity` (`enableEdgeToEdge()`) for target-36 system bar behavior.
+- Explicitly enabled predictive back callbacks via `android:enableOnBackInvokedCallback="true"` in manifest.
+- Added `docs/ANDROID_16_COMPATIBILITY.md` with evidence-classed validation status (`OBSERVED` / `INFERRED` / `UNAVAILABLE`).
+- No billing/backend/IOC/Guardian feature redesign in this slice.
+>>>>>>> origin/main
 
 ### Docs — Guardian Intelligence Phase 0
 
 - Added `docs/COREGUARD_GUARDIAN_BLUEPRINT.md` (product/architecture roadmap)
 - Added `docs/COREGUARD_GUARDIAN_ARCHITECTURE_AUDIT.md` (repo map, gaps, Phase 1 paths, test baseline)
+
+## 1.0.17 — 2026-07-26
+
+### Nemesis ↔ Quilla ↔ choir bridge
+
+- Every Nemesis scan completes through `QuillaMemoryModule.onScanCompleted` (hypotheses, correlator, choir refresh, Elite DTS)
+- Non-clean / hit scans append `NEMESIS_SCAN` forensic journal entries and WARN+ swarm alerts
+- Scanner UI shows Quilla/choir bridge note; history always persisted inside `ScannerModule`
+- Tzadkiel/Gabriel blessings reflect Nemesis Memory; SpywareScan falls back to scan history after process death
+- `QuillaMemoryModule` is the module-pattern façade (`QuillaMemoryFactory` remains a deprecated alias)
+- Security Swarm VULN-IMPLICIT exempts only MAIN+LAUNCHER exported activities (MainActivity false positive)
+
+### Final release polish + Quilla mini-game
+
+- Live Security Score on Home, threat timeline visualization, premium motion with reduced-motion freeze
+- Hourly battery-not-low Security Pulse (WorkManager) for background score refresh
+- Production screens require explicit billing/nav wiring (no demo defaults)
+- Claims honesty: scanner indicator language, Shield copy, README CPU BASIC `/proc/stat`
+- Emulator/smoke install hardened (`-d` + uninstall retry; async launch + pid poll)
+- Hidden Quilla purge mini-game: Settings → About → Version ×7
+- MASVS false-positive cleanup for pulse prefs (`PREF_*`)
 
 ## 1.0.16 — 2026-07-26
 

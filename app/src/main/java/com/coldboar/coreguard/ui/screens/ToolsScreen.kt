@@ -26,12 +26,14 @@ import com.coldboar.coreguard.ui.components.ExternalSecurityToolkitPanel
 import com.coldboar.coreguard.ui.components.QuillaAgentPanel
 import com.coldboar.coreguard.ui.components.ScreenAtmosphere
 import com.coldboar.coreguard.ui.components.SubScreenTopBar
+import com.coldboar.coreguard.ui.components.EliteThreatCounter
 import com.coldboar.coreguard.ui.components.SwarmAlertCounter
 import com.coldboar.coreguard.ui.theme.ElectricTeal
 import com.coldboar.coreguard.ui.theme.MutedText
 
 @Composable
 fun ToolsScreen(
+<<<<<<< HEAD
     onBack: () -> Unit = {},
     onRunScan: () -> Unit = {},
     onOpenShield: () -> Unit = {},
@@ -41,6 +43,16 @@ fun ToolsScreen(
     onOpenScamGuard: () -> Unit = {},
     onOpenGuardian: () -> Unit = {},
     isPremium: Boolean = false
+=======
+    onBack: () -> Unit,
+    onRunScan: () -> Unit,
+    onOpenShield: () -> Unit,
+    onOpenTimeline: () -> Unit,
+    onOpenOverlayMatrix: () -> Unit,
+    onOpenForensicJournal: () -> Unit,
+    onOpenScamGuard: () -> Unit,
+    isPremium: Boolean
+>>>>>>> origin/main
 ) {
     var quillaOpen by remember { mutableStateOf(true) }
     var toolkitOpen by remember { mutableStateOf(false) }
@@ -83,8 +95,13 @@ fun ToolsScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Redux-separated Counter: ToolsScreen never owns the integer.
+        // Redux-separated Counters: ToolsScreen never owns the integers.
+        // Subscription + dispatch live behind ui.redux / module façades.
         SwarmAlertCounter()
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        EliteThreatCounter()
 
         Spacer(modifier = Modifier.height(16.dp))
 

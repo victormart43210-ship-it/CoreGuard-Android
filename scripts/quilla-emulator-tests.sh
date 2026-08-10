@@ -4,7 +4,7 @@
 #
 # On no-KVM hosts, Gradle :connectedDebugAndroidTest often ANRs during cold
 # process start. We install via Gradle, then drive AndroidJUnitRunner with
-# `adb shell am instrument` (stable on CoreGuard_ATD35).
+# `adb shell am instrument` (stable on CoreGuard_ATD36).
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -46,7 +46,7 @@ run_instrument_class() {
 
 cd "$ROOT"
 
-log "1/5 Boot emulator (prefer CoreGuard_ATD35)…"
+log "1/5 Boot emulator (prefer CoreGuard_ATD36)…"
 ./scripts/run-emulator.sh | tee -a "$OUT_DIR/emulator.log"
 adb shell settings put global window_animation_scale 0 >/dev/null 2>&1 || true
 adb shell settings put global transition_animation_scale 0 >/dev/null 2>&1 || true

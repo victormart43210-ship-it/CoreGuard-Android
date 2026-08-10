@@ -26,22 +26,32 @@ yes | sdkmanager --licenses >/dev/null || true
 
 echo "[setup] Installing SDK packages…"
 sdkmanager --install \
-  "platforms;android-35" \
-  "build-tools;35.0.0" \
+  "platforms;android-36" \
+  "build-tools;36.0.0" \
   "platform-tools" \
-  "ndk;26.1.10909125" \
-  "cmake;3.22.1" \
+  "ndk;27.3.13750724" \
+  "cmake;3.31.5" \
   "emulator" \
-  "system-images;android-35;google_apis;x86_64"
+  "system-images;android-36;google_apis;x86_64" \
+  "system-images;android-36;google_atd;x86_64"
 
 printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$ROOT/local.properties"
 echo "[setup] Wrote $ROOT/local.properties"
 
-if ! avdmanager list avd 2>/dev/null | grep -q "CoreGuard_API35"; then
-  echo "[setup] Creating AVD CoreGuard_API35…"
+if ! avdmanager list avd 2>/dev/null | grep -q "CoreGuard_API36"; then
+  echo "[setup] Creating AVD CoreGuard_API36…"
   echo no | avdmanager create avd \
-    -n CoreGuard_API35 \
-    -k "system-images;android-35;google_apis;x86_64" \
+    -n CoreGuard_API36 \
+    -k "system-images;android-36;google_apis;x86_64" \
+    -d pixel_6 \
+    --force
+fi
+
+if ! avdmanager list avd 2>/dev/null | grep -q "CoreGuard_ATD36"; then
+  echo "[setup] Creating lean AVD CoreGuard_ATD36 (instrumented tests)…"
+  echo no | avdmanager create avd \
+    -n CoreGuard_ATD36 \
+    -k "system-images;android-36;google_atd;x86_64" \
     -d pixel_6 \
     --force
 fi
@@ -60,4 +70,7 @@ Build debug APK:
 
 Run emulator + install:
   ./scripts/run-emulator.sh
+
+Quilla deadline harness (unit + androidTest + smoke):
+  HEADLESS=1 ./scripts/quilla-emulator-tests.sh
 EOF

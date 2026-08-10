@@ -29,7 +29,7 @@ This is not a functional Android package. Do not install it, upload it to Play,
 or treat it as a CI success signal.
 
 To build the real app:
-  1. Install JDK 17+, Android SDK (compileSdk 35), NDK 26.1.10909125, CMake 3.22.1
+  1. Install JDK 17+, Android SDK (compileSdk 36), NDK 27.3.13750724, CMake 3.31.5
   2. Set sdk.dir in local.properties
   3. Run: ./gradlew :app:assembleDebug
      (Android build is on by default; do not pass -Pcoreguard.androidBuild=false)
@@ -54,7 +54,7 @@ To build the real app:
 def failRealAndroid = { String taskName ->
     """Task :app:${taskName} requires the real Android build.
 Unset -Pcoreguard.androidBuild=false / COREGUARD_ANDROID_BUILD=false,
-install the Android SDK (compileSdk 35, NDK 26.1.10909125, CMake 3.22.1),
+install the Android SDK (compileSdk 36, NDK 27.3.13750724, CMake 3.31.5),
 then re-run ./gradlew :app:${taskName}.
 For a non-APK sandbox stub only: ./gradlew :app:generatePlaceholderArtifact"""
 }

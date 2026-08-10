@@ -1,0 +1,53 @@
+{
+  "schema_version": "1.0.0",
+  "policy_id": "coreguard-ethical-open-source-only",
+  "allowed_sources": [
+    {
+      "id": "nvd-cve",
+      "name": "NVD CVE API",
+      "type": "cve-feed",
+      "url": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+      "license": "U.S. Government Work (public domain)",
+      "acceptable_data": ["cve_id", "cvss", "published", "references"],
+      "disallowed_data": ["private telemetry", "credentials", "device identifiers"]
+    },
+    {
+      "id": "android-security-bulletin",
+      "name": "Android Security Bulletin",
+      "type": "vendor-advisory",
+      "url": "https://source.android.com/security/bulletin",
+      "license": "Public advisory",
+      "acceptable_data": ["bulletin_id", "cve_id", "affected_components"],
+      "disallowed_data": ["user content", "closed-source exploit payloads"]
+    },
+    {
+      "id": "google-project-zero",
+      "name": "Google Project Zero disclosures",
+      "type": "public-advisory",
+      "url": "https://googleprojectzero.blogspot.com/",
+      "license": "Public disclosure",
+      "acceptable_data": ["public writeups", "cve links", "indicators"],
+      "disallowed_data": ["weaponized exploit kits", "non-public proof-of-concept code"]
+    },
+    {
+      "id": "qualcomm-security-bulletin",
+      "name": "Qualcomm Product Security Bulletin",
+      "type": "vendor-advisory",
+      "url": "https://www.qualcomm.com/company/product-security/bulletins",
+      "license": "Public advisory",
+      "acceptable_data": ["advisory_id", "cve_id", "affected_chipsets"],
+      "disallowed_data": ["private customer data", "exploit instructions"]
+    }
+  ],
+  "prohibited_collection": [
+    "Do not ingest paid or leaked zero-day feeds",
+    "Do not scrape private forums, chat logs, or stolen datasets",
+    "Do not collect personal data, credentials, or unique device identifiers",
+    "Do not execute or store malware binaries in this pipeline"
+  ],
+  "review_requirements": {
+    "two_person_review": true,
+    "security_signoff_required": true,
+    "allowed_source_changes_require_docs_update": true
+  }
+}

@@ -21,7 +21,11 @@ the hard boundaries; Kotlin `object` façades enforce the soft ones inside `:app
 | `BillingProvider` | Play Billing client details | Injected into Compose screens |
 | `SwarmModule` | `SwarmCoordinator`, agent ctors, Redux alert Counter store | Alerts / agent count / increment / reset Counter |
 | `EliteModule` | DTS engine, Scam Guard, Forensic Journal, Redux threat Counter | Evaluate DTS / inspect scam / journal export / Counter |
+<<<<<<< HEAD
 | `GuardianModule` | Oracle, Pulse, Book of Changes, Constellation, Ward Circle, Baseline, Verify, Reports | `refreshIntelligence` / explain / report |
+=======
+| `QuillaMemoryModule` | Memory snapshot, choir seal, Nemesis→choir bridge, correlator, research/Infinity | Memory / `onScanCompleted` / sync / train |
+>>>>>>> origin/main
 
 ### Swarm alert Counter (Redux-style, not React-Redux)
 
@@ -31,7 +35,8 @@ Android has no React-Redux runtime. CoreGuard uses a tiny unidirectional store
 - **State** — immutable `SwarmAlertCounterState`
 - **Actions** — `AlertObserved` / `Increment` / `Reset`
 - **Reducer** — pure `SwarmAlertCounterStore.reduce`
-- **UI** — `SwarmAlertCounter` Compose only **subscribes** and calls
+- **Subscribe bridge** — `ui.redux.rememberSwarmAlertCounterState`
+- **UI** — `SwarmAlertCounter` Compose only **paints** and calls
   `SwarmModule.incrementAlertCounter()` / `resetAlertCounter()` (no Action imports)
 
 Do not put agent registration or native RASP inside the Counter composable.
@@ -39,8 +44,10 @@ Do not put agent registration or native RASP inside the Counter composable.
 ### Elite threat Counter (same Redux contract)
 
 `EliteThreatCounterStore` behind `EliteModule.threatCounter` holds Dynamic Threat
-Score + Scam amber count. Elite Home subscribes; engines feed the store only
-through `EliteModule.evaluateThreatScore` / `inspectScamText`.
+Score + Scam amber count. Subscribe via `ui.redux.rememberEliteThreatCounterState`.
+Presentation: `EliteThreatCounter`. Engines feed the store only through
+`EliteModule.evaluateThreatScore` / `inspectScamText`. Home must not open a
+raw `DisposableEffect` on the store — use the redux helpers.
 
 ## Target modules (post–Internal Testing)
 

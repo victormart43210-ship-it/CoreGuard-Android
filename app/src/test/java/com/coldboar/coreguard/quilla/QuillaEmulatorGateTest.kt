@@ -9,7 +9,7 @@ class QuillaEmulatorGateTest {
     @Test
     fun `host script and avd constants are stable`() {
         assertEquals("./scripts/quilla-emulator-tests.sh", QuillaEmulatorGate.HOST_SCRIPT)
-        assertEquals("CoreGuard_API35", QuillaEmulatorGate.AVD_NAME)
+        assertEquals("CoreGuard_ATD36", QuillaEmulatorGate.AVD_NAME)
     }
 
     @Test

@@ -4,7 +4,7 @@ Use this after merging the Play Store readiness branch. Code + assets in-repo ar
 
 ## In this repo (code / assets)
 
-- [x] `targetSdk` / `compileSdk` 35, `versionCode` 16 / `versionName` 1.0.15 (source: `gradle/android-app.gradle`)
+- [x] `targetSdk` / `compileSdk` 36, `minSdk` 24, `versionCode` 18 / `versionName` 1.0.17 (source: `gradle/android-app.gradle`)
 - [x] `com.android.vending.BILLING` declared; production path is `PlayBillingProvider`
 - [x] Unused `READ_PHONE_STATE` removed
 - [x] Honest store listing + paywall copy (no magical spyware guarantees)
@@ -56,5 +56,5 @@ Use this after merging the Play Store readiness branch. Code + assets in-repo ar
 
 - Play policy approval
 - Real screenshots / feature graphic quality review
-- Target API 36 deadline (Aug 31, 2026 for updates — plan a follow-up bump)
+- Target API 36 baseline is now in-repo; keep future API-level deadlines tracked per Play policy updates
 - Server-side purchase verification (recommended before high-trust gating)
