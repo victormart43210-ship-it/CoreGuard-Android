@@ -88,19 +88,54 @@ class QuillaCuratedIntelFetcherTest {
     }
 
     private fun buildDeterministicEntriesBytes(entries: List<Map<String, Any>>): ByteArray {
-        val sb = StringBuilder("[")
-        for ((i, e) in entries.withIndex()) {
-            if (i > 0) sb.append(",")
-            sb.append("{")
-            val sorted = e.entries.sortedBy { it.key }
-            for ((j, kv) in sorted.withIndex()) {
-                if (j > 0) sb.append(",")
-                sb.append("\"${kv.key}\":\"${kv.value}\"")
+        val entriesJsonArray = org.json.JSONArray()
+        for (entry in entries) {
+            val obj = org.json.JSONObject()
+            for ((key, value) in entry.entries) {
+                obj.put(key, value)
             }
-            sb.append("}")
+            entriesJsonArray.put(obj)
         }
-        sb.append("]")
-        return sb.toString().toByteArray(Charsets.UTF_8)
+        return buildDeterministicEntriesBytes(entriesJsonArray)
+    }
+
+    private fun buildDeterministicEntriesBytes(entries: org.json.JSONArray): ByteArray {
+        val normalized = buildList<Map<String, Any?>>(entries.length()) {
+            for (i in 0 until entries.length()) {
+                val obj = entries.getJSONObject(i)
+                add(
+                    buildMap<String, Any?> {
+                        for (key in obj.keys()) {
+                            put(key, obj.get(key))
+                        }
+                    }
+                )
+            }
+        }
+        return buildCompactJson(normalized).toByteArray(Charsets.UTF_8)
+    }
+
+    private fun buildCompactJson(value: Any?): String = when (value) {
+        null -> "null"
+        is Boolean, is Number -> value.toString()
+        is String -> org.json.JSONObject.quote(value)
+        is org.json.JSONArray -> (0 until value.length()).joinToString(",", "[", "]") {
+            buildCompactJson(value.get(it))
+        }
+        is org.json.JSONObject -> buildCompactJson(
+            buildMap<String, Any?> {
+                for (key in value.keys()) {
+                    put(key, value.get(key))
+                }
+            }
+        )
+        is Collection<*> -> value.joinToString(",", "[", "]") { buildCompactJson(it) }
+        is Map<*, *> -> value.entries
+            .sortedBy { it.key.toString() }
+            .joinToString(",", "{", "}") { (key, nestedValue) ->
+                "${org.json.JSONObject.quote(key.toString())}:${buildCompactJson(nestedValue)}"
+            }
+        else -> org.json.JSONObject.quote(value.toString())
     }
 
     private fun sha256Hex(data: ByteArray): String {
@@ -261,7 +296,7 @@ class QuillaCuratedIntelFetcherTest {
         entriesJsonArray.put(entryObj)
         root.put("entries", entriesJsonArray)
         root.put("entry_count", 1)
-        val entriesBytes = buildDeterministicEntriesBytes(entries)
+        val entriesBytes = buildDeterministicEntriesBytes(entriesJsonArray)
         root.put("entries_sha256", sha256Hex(entriesBytes))
         val bundleBytes = root.toString().toByteArray()
         val warnings = mutableListOf<String>()
