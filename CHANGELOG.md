@@ -5,6 +5,13 @@ Version numbers match `gradle/android-app.gradle`.
 
 ## Unreleased
 
+### Android 16 compatibility pass (PR-002 scope)
+
+- Enabled edge-to-edge setup in `MainActivity` (`enableEdgeToEdge()`) for target-36 system bar behavior.
+- Explicitly enabled predictive back callbacks via `android:enableOnBackInvokedCallback="true"` in manifest.
+- Added `docs/ANDROID_16_COMPATIBILITY.md` with evidence-classed validation status (`OBSERVED` / `INFERRED` / `UNAVAILABLE`).
+- No billing/backend/IOC/Guardian feature redesign in this slice.
+
 ### Docs — Guardian Intelligence Phase 0
 
 - Added `docs/COREGUARD_GUARDIAN_BLUEPRINT.md` (product/architecture roadmap)
