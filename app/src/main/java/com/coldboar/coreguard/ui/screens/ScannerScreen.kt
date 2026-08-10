@@ -31,6 +31,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -46,6 +47,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
@@ -78,6 +81,7 @@ import com.coldboar.coreguard.ui.theme.SafeGreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import com.coldboar.coreguard.mvt.ScannerModule
 
 @Composable
 fun ScannerScreen(
@@ -98,6 +102,7 @@ fun ScannerScreen(
     var isRefreshing by remember { mutableStateOf(false) }
     var refreshMessage by remember { mutableStateOf<String?>(null) }
     var showUpsell by remember { mutableStateOf(false) }
+    var quillaChoirNote by remember { mutableStateOf<String?>(null) }
 
     // Derive display booleans from the immutable ViewModel state.
     val isScanning = uiState is ScannerUiState.Scanning
@@ -111,6 +116,13 @@ fun ScannerScreen(
     }
     // History is loaded by the ViewModel; show it only when no live report is available.
     val showEmptyState = uiState is ScannerUiState.Empty
+
+    // Populate Quilla / choir note whenever a scan completes in this process.
+    LaunchedEffect(uiState) {
+        if (uiState is ScannerUiState.Complete) {
+            quillaChoirNote = ScannerModule.lastQuillaBridge()?.scannerBlurb()
+        }
+    }
 
     ScreenAtmosphere(modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
         ScreenHeader(
@@ -280,6 +292,27 @@ fun ScannerScreen(
             scanReport?.let { report ->
                 Spacer(modifier = Modifier.height(20.dp))
                 ScanResultCard(report, showCompletedBanner = uiState is ScannerUiState.Complete)
+            }
+            quillaChoirNote?.let { note ->
+                Spacer(modifier = Modifier.height(12.dp))
+                CoreGuardCard {
+                    Text(
+                        text = "Quilla · angelic choir",
+                        style = MaterialTheme.typography.titleSmall,
+                        color = ElectricTeal,
+                        modifier = Modifier.semantics { heading() }
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Text(
+                        text = note,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MutedText,
+                        modifier = Modifier.semantics {
+                            contentDescription = note
+                            liveRegion = LiveRegionMode.Polite
+                        }
+                    )
+                }
             }
         }
 

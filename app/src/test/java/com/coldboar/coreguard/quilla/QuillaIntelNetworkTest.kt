@@ -67,7 +67,7 @@ class QuillaIntelNetworkTest {
         assertFalse(snapshot.syncFailed)
         assertEquals(1, snapshot.stixIndicatorCount)
         assertEquals(1, snapshot.webKnowledgeCount)
-        assertTrue(QuillaMemoryFactory.correlationEngine().indicatorCount() >= 1)
+        assertTrue(QuillaMemoryModule.correlationEngine().indicatorCount() >= 1)
         assertTrue(CyberKnowledgeBase.search("CVE-TEST Android", limit = 2).isNotEmpty())
     }
 }

@@ -1,152 +1,44 @@
 package com.coldboar.coreguard.quilla
 
 import android.content.Context
-import com.coldboar.coreguard.SecurityCheckRunner
-import com.coldboar.coreguard.defense.AngelicDefenseBlessings
-import com.coldboar.coreguard.mvt.IocRepository
-import com.coldboar.coreguard.mvt.LastScan
-import com.coldboar.coreguard.mvt.ScanHistoryStore
-import com.coldboar.coreguard.mvt.ShieldState
-import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
-import com.coreguard.security.telemetry.RiskSeverity
-import com.coreguard.security.telemetry.TelemetryBridge
+import com.coldboar.coreguard.mvt.ScanReport
 
 /**
- * Builds [QuillaMemorySnapshot] / [QuillaResearchSnapshot] from live CoreGuard state.
+ * Compatibility alias for [QuillaMemoryModule].
  *
- * Threat-intel honesty:
- * - Research sync uses [QuillaIntelNetwork] (Amnesty/MVT STIX + CISA/MISP/Malpedia web intel)
- *   then runs [QuillaInfinityTrainer] to harden angels + swarm (uncapped teaching).
- * - On-device MVT IOCs from [IocRepository] are also merged for correlation.
- * - Neither path writes Scanner signatures for free users; Premium Nemesis
- *   refresh remains [com.coldboar.coreguard.mvt.IocFeedFetcher].
+ * Prefer [QuillaMemoryModule] from UI and feature code — that is the
+ * module-pattern façade documented in `docs/MODULE_ARCHITECTURE.md`.
  */
+@Deprecated(
+    message = "Use QuillaMemoryModule (module-pattern façade)",
+    replaceWith = ReplaceWith(
+        "QuillaMemoryModule",
+        "com.coldboar.coreguard.quilla.QuillaMemoryModule"
+    )
+)
 object QuillaMemoryFactory {
 
-    private val sharedStore = QuillaHypothesisStore()
-    private val sharedCorrelation = QuillaCorrelationEngine(sharedStore)
-    private var cachedResearch = QuillaResearchSnapshot()
+    fun hypothesisStore(): QuillaHypothesisStore = QuillaMemoryModule.hypothesisStore()
 
-    @Volatile
-    private var localIntelLoaded = false
+    fun correlationEngine(): QuillaCorrelationEngine = QuillaMemoryModule.correlationEngine()
 
-    fun hypothesisStore(): QuillaHypothesisStore = sharedStore
+    fun lastScanBridge(): QuillaScanBridgeResult? = QuillaMemoryModule.lastScanBridge()
 
-    fun correlationEngine(): QuillaCorrelationEngine = sharedCorrelation
+    fun invalidateLocalIntel() = QuillaMemoryModule.invalidateLocalIntel()
 
-    /** Call after Premium Nemesis feed write so Quilla re-reads inventory. */
-    fun invalidateLocalIntel() {
-        localIntelLoaded = false
-    }
+    fun ensureLocalIntel(context: Context) = QuillaMemoryModule.ensureLocalIntel(context)
 
-    /**
-     * Lazily merges on-device MVT/Nemesis IOCs into the Quilla correlator.
-     * Safe to call from scan / shield paths; no network I/O.
-     */
-    fun ensureLocalIntel(context: Context) {
-        if (localIntelLoaded) return
-        synchronized(this) {
-            if (localIntelLoaded) return
-            val onDevice = QuillaIocBridge.fromMvtIndicators(IocRepository.indicators(context))
-            sharedCorrelation.mergeIndicators(onDevice)
-            localIntelLoaded = true
-        }
-    }
+    fun onScanCompleted(context: Context, report: ScanReport): QuillaScanBridgeResult =
+        QuillaMemoryModule.onScanCompleted(context, report)
 
-    fun memorySnapshot(context: Context): QuillaMemorySnapshot {
-        ensureLocalIntel(context)
-        val history = runCatching { ScanHistoryStore.load(context) }.getOrDefault(emptyList())
-        val last = LastScan.report
-        val newest = history.firstOrNull()
-        val iocCount = runCatching { IocRepository.indicators(context).size }.getOrDefault(0)
-        val telemetry = TelemetryBridge.ringBuffer().snapshot()
-        val highTelemetry = telemetry.any {
-            it.delta.severity == RiskSeverity.HIGH || it.delta.severity == RiskSeverity.CRITICAL
-        }
-        val base = QuillaMemorySnapshot(
-            lastScanVerdict = last?.verdict?.name ?: newest?.verdict?.name,
-            lastScanDetections = last?.detections?.size ?: newest?.detectionCount,
-            lastScanDetectionTitles = last?.detections?.map { it.title }
-                ?.take(QuillaAwareness.DETECTION_TITLE_VOICE).orEmpty(),
-            historyCount = history.size,
-            shieldActive = ShieldState.isActive,
-            shieldBlocked = ShieldState.totalBlocked,
-            lastBlockedDomain = ShieldState.lastBlockedDomain,
-            activeHypotheses = sharedStore.all()
-                .filter { it.status.equals("ACTIVE", ignoreCase = true) }
-                .map { it.summary },
-            mvtIocInventoryCount = iocCount,
-            correlatorIndicatorCount = sharedCorrelation.indicatorCount(),
-            telemetryDeltaCount = telemetry.size,
-            telemetryHighSeverity = highTelemetry
-        )
-        // Angelic choir — evidence from Guardian Score checks + Memory/Research.
-        val checks = runCatching { SecurityCheckRunner.run(context) }.getOrDefault(emptyList())
-        val choir = AngelicDefenseBlessings.evaluate(checks, base, cachedResearch)
-        val quantum = sharedCorrelation.lastQuantumReport()
-        return base.copy(
-            blessingSeal = choir.sealLine,
-            blessingLines = AngelicDefenseBlessings.summaryLines(choir),
-            blessingsBreached = choir.breachedCount,
-            blessingsActive = choir.activeCount,
-            quantumSeal = quantum?.seal,
-            quantumCollapse = quantum?.collapseProbability,
-            quantumCollapsed = quantum?.collapsed == true
-        )
-    }
+    fun memorySnapshot(context: Context): QuillaMemorySnapshot =
+        QuillaMemoryModule.memorySnapshot(context)
 
-    fun cachedResearch(): QuillaResearchSnapshot = cachedResearch
+    fun cachedResearch(): QuillaResearchSnapshot = QuillaMemoryModule.cachedResearch()
 
-    /**
-     * Synchronous intel sync for Research module via [QuillaIntelNetwork].
-     * Call from a background dispatcher.
-     *
-     * Honesty rules:
-     * - [QuillaResearchSnapshot.synced] is true only when the network sync reports success.
-     * - Failure leaves [QuillaResearchSnapshot.syncFailed] true and does not claim success.
-     * - This feed feeds Quilla Research / correlation only — it does **not** refresh
-     *   Nemesis Scanner signatures.
-     */
-    fun syncResearch(context: Context): QuillaResearchSnapshot {
-        val network = QuillaIntelNetwork.syncAll(context)
-        localIntelLoaded = true
-        cachedResearch = QuillaResearchSnapshot(
-            indicatorCount = network.mergedCorrelatorCount,
-            remoteIndicatorCount = network.stixIndicatorCount,
-            mvtOnDeviceCount = network.onDeviceMvtCount,
-            webKnowledgeCount = network.webKnowledgeCount,
-            feedNotes = network.feedNotes,
-            synced = network.synced && !network.syncFailed,
-            syncFailed = network.syncFailed,
-            sourceLabel = network.sourceLabel,
-            infinityGeneration = network.infinityGeneration,
-            infinityMalwareStudied = network.infinityMalwareStudied,
-            infinityVulnStudied = network.infinityVulnStudied,
-            infinityCodexDepth = network.infinityCodexDepth
-        )
-        return cachedResearch
-    }
+    fun syncResearch(context: Context): QuillaResearchSnapshot =
+        QuillaMemoryModule.syncResearch(context)
 
-    /**
-     * Offline Infinity pass — trains angels/swarm on the bundled Cyber Codex
-     * without requiring HTTPS. Useful when the user asks to "train the choir"
-     * on-device with no network.
-     */
-    fun trainInfinityLocal(context: Context): AngelSwarmTrainingLedger {
-        QuillaInfinityTrainer.restoreLite(context)
-        CyberKnowledgeAssets.ensureLoaded(context)
-        val training = QuillaInfinityTrainer.trainFromCodex(
-            context = context,
-            network = QuillaIntelNetwork.lastSnapshot(),
-            correlatorIndicatorCount = cachedResearch.indicatorCount
-        )
-        cachedResearch = cachedResearch.copy(
-            infinityGeneration = training.generation,
-            infinityMalwareStudied = training.malwareEntriesStudied,
-            infinityVulnStudied = training.vulnerabilityEntriesStudied,
-            infinityCodexDepth = training.totalCodexEntries,
-            feedNotes = (cachedResearch.feedNotes + training.summaryLine()).distinct()
-        )
-        return training
-    }
+    fun trainInfinityLocal(context: Context): AngelSwarmTrainingLedger =
+        QuillaMemoryModule.trainInfinityLocal(context)
 }

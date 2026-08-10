@@ -45,6 +45,8 @@ object ForensicJournal {
         SCAM_URL,
         NETWORK_BLOCK,
         TAMPER,
+        /** Nemesis Scanner completed with non-clean verdict or IOC hits. */
+        NEMESIS_SCAN,
         MANUAL_NOTE
     }
 

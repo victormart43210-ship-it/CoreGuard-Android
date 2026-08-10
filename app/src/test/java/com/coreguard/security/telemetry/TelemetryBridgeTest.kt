@@ -1,6 +1,6 @@
 package com.coreguard.security.telemetry
 
-import com.coldboar.coreguard.quilla.QuillaMemoryFactory
+import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import com.coldboar.coreguard.swarm.SwarmSeverity
 import com.coldboar.coreguard.swarm.SwarmSignal
 import com.coldboar.coreguard.swarm.SwarmSignalType
@@ -19,7 +19,7 @@ class TelemetryBridgeTest {
 
     @Test
     fun `onSwarmSignal stores signed ring entry and Quilla hypothesis for critical`() {
-        val before = QuillaMemoryFactory.hypothesisStore().all().size
+        val before = QuillaMemoryModule.hypothesisStore().all().size
         TelemetryBridge.onSwarmSignal(
             SwarmSignal(
                 agentId = "memory",
@@ -32,9 +32,9 @@ class TelemetryBridgeTest {
         assertEquals(1, TelemetryBridge.ringBuffer().size())
         val payload = TelemetryBridge.ringBuffer().snapshot().first()
         assertEquals(TriggerEvent.MEMORY_HOOK, payload.delta.trigger)
-        assertTrue(QuillaMemoryFactory.hypothesisStore().all().size >= before + 1)
+        assertTrue(QuillaMemoryModule.hypothesisStore().all().size >= before + 1)
         assertTrue(
-            QuillaMemoryFactory.hypothesisStore().all().any {
+            QuillaMemoryModule.hypothesisStore().all().any {
                 it.hypothesisType.startsWith("SIGNED_TELEMETRY_")
             }
         )
