@@ -5,6 +5,20 @@ Version numbers match `gradle/android-app.gradle`.
 
 ## Unreleased
 
+### Guardian Intelligence (Phases 1–10)
+
+- Shared truth model in `:core:model` (`EvidenceClass` typealias to `truth.EvidenceClass`, calm `Severity`, `Confidence`, `SecurityFinding`, …)
+- Deterministic Oracle Engine + Truth Seal + Guardian Pulse
+- Book of Changes (Room + SHA-256 hash chain), Evidence Constellation (3 conservative rules)
+- Ward Circle hardening journey, Quilla Private Baseline (7-day learning), Ritual of Response
+- Verify CoreGuard installation identity, redacted report export
+- Hub screen: Tools → **Guardian Intelligence** (`GuardianModule` façade)
+- Home shows Guardian Pulse (tap opens Intelligence hub)
+- Baseline prefs use `PREF_*` names (MASVS-CRYPTO-1 false-positive fix)
+- On-device smoke: `GuardianIntelligenceOnDeviceTest` in emulator gate
+- Docs: blueprint + Phase 0 architecture audit
+- `guardian.EvidenceClass` is a typealias to `truth.EvidenceClass` (single truth model, no duplication)
+
 ### Android 16 compatibility pass (PR-002 scope)
 
 - Enabled edge-to-edge setup in `MainActivity` (`enableEdgeToEdge()`) for target-36 system bar behavior.

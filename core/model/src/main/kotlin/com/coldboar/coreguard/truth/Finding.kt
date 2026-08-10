@@ -20,7 +20,17 @@ enum class EvidenceClass {
     /** The data required to make a determination is not accessible on this device. */
     UNAVAILABLE,
     /** Reported by the user; unverified by the engine. */
-    USER_REPORTED
+    USER_REPORTED;
+
+    /** Short user-facing label for Truth Seals and guardian reports. */
+    val userLabel: String
+        get() = when (this) {
+            OBSERVED -> "Observed"
+            INFERRED -> "Inferred"
+            SIMULATED -> "Simulation"
+            UNAVAILABLE -> "Unavailable"
+            USER_REPORTED -> "User reported"
+        }
 }
 
 /** Severity of a finding — how serious the condition is if confirmed. */

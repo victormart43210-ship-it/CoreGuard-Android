@@ -51,7 +51,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,7 +77,11 @@ import com.coldboar.coreguard.GuardianScoreEvidence
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
+import com.coldboar.coreguard.guardian.DataAvailability
+import com.coldboar.coreguard.guardian.GuardianModule
+import com.coldboar.coreguard.guardian.GuardianState
 import com.coldboar.coreguard.truth.toEvidenceClass
+import com.coldboar.coreguard.ui.components.GuardianPulse
 import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.components.TruthSeal
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
@@ -128,6 +134,7 @@ fun EliteDashboardScreen(
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
     onNavigateToScamGuard: () -> Unit,
+    onNavigateToGuardian: () -> Unit = {},
     // TODO(phase2): inject via @HiltViewModel; manual ViewModelProvider.Factory used for Phase 1.
     viewModel: DashboardViewModel = viewModel(
         factory = DashboardViewModel.defaultFactory(
@@ -161,6 +168,19 @@ fun EliteDashboardScreen(
     // -------------------------------------------------------------------------
     val eliteCounter by rememberEliteThreatCounterState()
     val swarmCounter by rememberSwarmAlertCounterState()
+
+    // Guardian Pulse — resolved asynchronously; never defaults to PROTECTED with no data.
+    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
+    LaunchedEffect(Unit) {
+        guardianPulse = withContext(Dispatchers.IO) {
+            val findings = GuardianModule.explainChecks(context)
+            GuardianModule.resolvePulse(
+                findings = findings,
+                scanning = false,
+                dataAvailability = if (findings.isEmpty()) DataAvailability.NONE else DataAvailability.COMPLETE
+            )
+        }
+    }
 
     // Start or restart the metrics loop when real-time monitoring changes.
     // LaunchedEffect cancels the previous coroutine automatically when the key changes.
@@ -303,6 +323,12 @@ fun EliteDashboardScreen(
                         contentDescription =
                             "Sacred geometry is brand artwork, not a live sensor reading"
                     }
+            )
+
+            GuardianPulse(
+                state = guardianPulse,
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onNavigateToGuardian
             )
 
             NextActionCard(

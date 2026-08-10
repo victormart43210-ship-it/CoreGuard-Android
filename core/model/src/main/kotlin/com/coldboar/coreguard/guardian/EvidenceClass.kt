@@ -1,34 +1,18 @@
 package com.coldboar.coreguard.guardian
 
+import com.coldboar.coreguard.truth.EvidenceClass as TruthEvidenceClass
+
 /**
- * Origin class for a security result (Guardian Intelligence Blueprint §2.1 / §5).
+ * Canonical type alias — Guardian Intelligence uses the shared truth model from
+ * [com.coldboar.coreguard.truth.EvidenceClass].
  *
- * Distinct from [com.coldboar.coreguard.EvidenceKind], which blends certainty with origin.
- * UI must never present [INFERRED] or [SIMULATED] as a confirmed observation.
+ * Both enums define the same five values (OBSERVED, INFERRED, SIMULATED,
+ * UNAVAILABLE, USER_REPORTED).  Using a typealias here makes the guardian package
+ * the *consumer* of the shared model rather than a competing definition.
+ *
+ * Do NOT revert to a standalone enum: that would leave two competing truth systems.
+ *
+ * [userLabel] is defined directly on [com.coldboar.coreguard.truth.EvidenceClass] and
+ * is therefore available without additional imports.
  */
-enum class EvidenceClass {
-    /** Directly read from an Android API, package metadata, file, or OS source. */
-    OBSERVED,
-
-    /** Calculated from multiple observations or behavior patterns. */
-    INFERRED,
-
-    /** Educational, demonstration, laboratory, or fictional data. */
-    SIMULATED,
-
-    /** Android does not expose the required information to this application. */
-    UNAVAILABLE,
-
-    /** Entered or confirmed by the user. */
-    USER_REPORTED;
-
-    /** Short user-facing label for Truth Seals. */
-    val userLabel: String
-        get() = when (this) {
-            OBSERVED -> "Observed"
-            INFERRED -> "Inferred"
-            SIMULATED -> "Simulation"
-            UNAVAILABLE -> "Unavailable"
-            USER_REPORTED -> "User reported"
-        }
-}
+typealias EvidenceClass = TruthEvidenceClass
