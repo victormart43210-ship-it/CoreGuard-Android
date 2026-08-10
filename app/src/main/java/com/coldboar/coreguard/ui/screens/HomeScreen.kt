@@ -15,7 +15,8 @@ fun HomeScreen(
     onNavigateToTools: () -> Unit,
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
-    onNavigateToScamGuard: () -> Unit
+    onNavigateToScamGuard: () -> Unit,
+    onNavigateToGuardian: () -> Unit
 ) {
     EliteDashboardScreen(
         onNavigateToScanner = onNavigateToScanner,
@@ -24,6 +25,7 @@ fun HomeScreen(
         onNavigateToTools = onNavigateToTools,
         onNavigateToOverlayMatrix = onNavigateToOverlayMatrix,
         onNavigateToForensicJournal = onNavigateToForensicJournal,
-        onNavigateToScamGuard = onNavigateToScamGuard
+        onNavigateToScamGuard = onNavigateToScamGuard,
+        onNavigateToGuardian = onNavigateToGuardian
     )
 }

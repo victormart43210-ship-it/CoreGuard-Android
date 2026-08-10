@@ -21,6 +21,7 @@ the hard boundaries; Kotlin `object` façades enforce the soft ones inside `:app
 | `BillingProvider` | Play Billing client details | Injected into Compose screens |
 | `SwarmModule` | `SwarmCoordinator`, agent ctors, Redux alert Counter store | Alerts / agent count / increment / reset Counter |
 | `EliteModule` | DTS engine, Scam Guard, Forensic Journal, Redux threat Counter | Evaluate DTS / inspect scam / journal export / Counter |
+| `GuardianModule` | Oracle, Pulse, Book of Changes, Constellation, Ward Circle, Baseline, Verify, Reports | `refreshIntelligence` / explain / report |
 | `QuillaMemoryModule` | Memory snapshot, choir seal, Nemesis→choir bridge, correlator, research/Infinity | Memory / `onScanCompleted` / sync / train |
 
 ### Swarm alert Counter (Redux-style, not React-Redux)

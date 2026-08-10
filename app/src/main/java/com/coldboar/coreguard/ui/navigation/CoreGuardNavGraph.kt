@@ -25,7 +25,8 @@ object CoreGuardNavGraph {
         CoreGuardRoute.PrivacyPolicy.route,
         CoreGuardRoute.OverlayMatrix.route,
         CoreGuardRoute.ForensicJournal.route,
-        CoreGuardRoute.ScamGuard.route
+        CoreGuardRoute.ScamGuard.route,
+        CoreGuardRoute.GuardianIntelligence.route
     )
 
     /** Primary bottom-bar tabs (order matches the bar). */
@@ -46,7 +47,8 @@ object CoreGuardNavGraph {
         CoreGuardRoute.Tools.route,
         CoreGuardRoute.OverlayMatrix.route,
         CoreGuardRoute.ForensicJournal.route,
-        CoreGuardRoute.ScamGuard.route
+        CoreGuardRoute.ScamGuard.route,
+        CoreGuardRoute.GuardianIntelligence.route
     )
 
     val startDestination: String = CoreGuardRoute.Home.route

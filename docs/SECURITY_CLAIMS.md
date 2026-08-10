@@ -20,6 +20,11 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Shared threat-knowledge query layer can merge Anki-backed codex entries with Viper threat-intel records | `SharedThreatKnowledgeRepository` + `ViperThreatIntelImporter`; Viper is sanitized/validated and mapped to `CyberKnowledgeBase.Entry` |
 | Premium unlocks signature refresh, JSON export, longer timeline, coaching tips | Matches `EntitlementPolicy` |
 | Optional HTTPS for IOC/STIX refresh and billing | Documented in Privacy Policy |
+| Guardian Truth Seals label Observed / Inferred / Simulation / Unavailable / User reported | `EvidenceClass` + `TruthSeal`; never presents inferred/simulated as confirmed intrusion |
+| Guardian Pulse summarizes posture from findings + data availability | Never maps “no data” to Protected |
+| Signing mismatch: “does not match official signing identity” | Not automatic “malware” labeling for forks |
+| Ward Circle is hardening progress, not immunity | Explicit copy: not unhackable |
+| Evidence Constellation describes co-occurrence only | Conservative correlation; max confidence below VERIFIED unless verified signature inputs |
 
 ## Forbidden / overclaim language
 

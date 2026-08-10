@@ -75,6 +75,10 @@ import com.coldboar.coreguard.GuardianScoreEvidence
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
+import com.coldboar.coreguard.guardian.DataAvailability
+import com.coldboar.coreguard.guardian.GuardianModule
+import com.coldboar.coreguard.guardian.GuardianState
+import com.coldboar.coreguard.ui.components.GuardianPulse
 import com.coldboar.coreguard.truth.toEvidenceClass
 import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.components.TruthSeal
@@ -117,6 +121,7 @@ import kotlin.math.sin
  *
  * Counter subscription is centralized in `ui.redux` so Home stays free of
  * store `DisposableEffect` / `Action` imports (Redux UI separation).
+ * - **Guardian Pulse** — resolved via [GuardianModule]; tap opens Guardian Intelligence.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -128,6 +133,7 @@ fun EliteDashboardScreen(
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
     onNavigateToScamGuard: () -> Unit,
+    onNavigateToGuardian: () -> Unit,
     // TODO(phase2): inject via @HiltViewModel; manual ViewModelProvider.Factory used for Phase 1.
     viewModel: DashboardViewModel = viewModel(
         factory = DashboardViewModel.defaultFactory(
@@ -154,6 +160,7 @@ fun EliteDashboardScreen(
     val appsScanned = uiState.appsScanned
     val threatsLabel = uiState.threatsLabel
     val shieldOn = uiState.shieldOn
+    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
 
     // -------------------------------------------------------------------------
     // Redux Counters — subscribe via ui.redux helpers (not inline store wiring).
@@ -161,6 +168,21 @@ fun EliteDashboardScreen(
     // -------------------------------------------------------------------------
     val eliteCounter by rememberEliteThreatCounterState()
     val swarmCounter by rememberSwarmAlertCounterState()
+
+    LaunchedEffect(Unit) {
+        guardianPulse = withContext(Dispatchers.IO) {
+            val findings = GuardianModule.explainChecks(context)
+            GuardianModule.resolvePulse(
+                findings = findings,
+                scanning = false,
+                dataAvailability = if (findings.isEmpty()) {
+                    DataAvailability.NONE
+                } else {
+                    DataAvailability.COMPLETE
+                }
+            )
+        }
+    }
 
     // Start or restart the metrics loop when real-time monitoring changes.
     // LaunchedEffect cancels the previous coroutine automatically when the key changes.
@@ -302,6 +324,23 @@ fun EliteDashboardScreen(
                     .semantics {
                         contentDescription =
                             "Sacred geometry is brand artwork, not a live sensor reading"
+                    }
+            )
+
+            GuardianPulse(
+                state = guardianPulse,
+                onClick = onNavigateToGuardian
+            )
+            Text(
+                text = "Tap pulse for Guardian Intelligence (Truth Seals · evidence · next action).",
+                color = TextSecondary,
+                fontSize = 11.sp,
+                textAlign = TextAlign.Center,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onNavigateToGuardian)
+                    .semantics {
+                        contentDescription = "Open Guardian Intelligence"
                     }
             )
 
