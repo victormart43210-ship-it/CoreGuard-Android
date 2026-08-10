@@ -467,22 +467,43 @@ object QuillaCuratedIntelFetcher {
     }
 
     private fun buildCompactJson(value: Any?): String = when (value) {
-        null -> "null"
+        null, JSONObject.NULL -> "null"
         is Boolean -> value.toString()
         is Number -> value.toString()
-        is String -> buildString {
-            append('"')
-            append(value.replace("\\", "\\\\").replace("\"", "\\\"")
-                .replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t"))
-            append('"')
-        }
-        is List<*> -> value.joinToString(",", "[", "]") { buildCompactJson(it) }
-        is Map<*, *> -> (value as Map<*, *>).entries
-            .sortedBy { it.key.toString() }
-            .joinToString(",", "{", "}") { (k, v) ->
-                "${buildCompactJson(k.toString())}:${buildCompactJson(v)}"
+        is String -> quoteJsonString(value)
+        is JSONArray -> (0 until value.length())
+            .joinToString(",", "[", "]") { index -> buildCompactJson(value.get(index)) }
+        is JSONObject -> value.keys().asSequence().toList().sorted()
+            .joinToString(",", "{", "}") { key ->
+                "${quoteJsonString(key)}:${buildCompactJson(value.get(key))}"
             }
-        else -> "\"${value}\""
+        is List<*> -> value.joinToString(",", "[", "]") { buildCompactJson(it) }
+        is Map<*, *> -> value.entries.sortedBy { it.key.toString() }
+            .joinToString(",", "{", "}") { (key, nestedValue) ->
+                "${quoteJsonString(key.toString())}:${buildCompactJson(nestedValue)}"
+            }
+        else -> quoteJsonString(value.toString())
+    }
+
+    private fun quoteJsonString(value: String): String = buildString {
+        append('"')
+        for (c in value) {
+            when (c) {
+                '"'  -> append("\\\"")
+                '\\' -> append("\\\\")
+                '\b' -> append("\\b")
+                '\u000C' -> append("\\f")
+                '\n' -> append("\\n")
+                '\r' -> append("\\r")
+                '\t' -> append("\\t")
+                else -> if (c.code < 0x20) {
+                    append("\\u%04x".format(c.code))
+                } else {
+                    append(c)
+                }
+            }
+        }
+        append('"')
     }
 
     private fun <T> HttpURLConnection.use(block: (HttpURLConnection) -> T): T {

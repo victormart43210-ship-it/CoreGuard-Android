@@ -234,39 +234,36 @@ class QuillaCuratedIntelFetcherTest {
 
     @Test
     fun `invalid references are stripped`() {
-        val refsArray = org.json.JSONArray()
-        refsArray.put("http://not-https.example.com/")  // HTTP — should be stripped
-        refsArray.put("https://www.cisa.gov/kev")       // approved
-        refsArray.put("https://evil-domain.xyz/malware") // unapproved domain
-        // The digest must be computed over the same keys the bundle carries, references included.
-        val entries = listOf(
-            mapOf("id" to "test-entry", "title" to "Test", "category" to "crawler-vulnerability",
-                  "summary" to "s", "body" to "b", "defense" to "d", "references" to refsArray)
-        )
         val root = org.json.JSONObject()
         root.put("schema_version", 1)
         root.put("bundle_id", "bid")
         root.put("generated_at", "2024-01-01T00:00:00Z")
         root.put("generator", "test")
         root.put("generator_version", "1.0")
-        val entriesJsonArray = org.json.JSONArray()
+        val refsArray = org.json.JSONArray()
+        refsArray.put("http://not-https.example.com/")   // HTTP — should be stripped
+        refsArray.put("https://www.cisa.gov/kev")        // approved
+        refsArray.put("https://evil-domain.xyz/malware") // unapproved domain
         val entryObj = org.json.JSONObject()
-        entryObj.put("id", "test-entry")
-        entryObj.put("title", "Test")
-        entryObj.put("category", "crawler-vulnerability")
-        entryObj.put("summary", "s")
         entryObj.put("body", "b")
+        entryObj.put("category", "crawler-vulnerability")
         entryObj.put("defense", "d")
+        entryObj.put("id", "test-entry")
         entryObj.put("references", refsArray)
+        entryObj.put("summary", "s")
+        entryObj.put("title", "Test")
+        val entriesJsonArray = org.json.JSONArray()
         entriesJsonArray.put(entryObj)
         root.put("entries", entriesJsonArray)
         root.put("entry_count", 1)
-        val entriesBytes = buildDeterministicEntriesBytes(entries)
-        root.put("entries_sha256", sha256Hex(entriesBytes))
-        val bundleBytes = root.toString().toByteArray()
+        // Canonical JSON matching Python's json.dumps(sort_keys=True, separators=(",",":")):
+        val canonicalEntries = """[{"body":"b","category":"crawler-vulnerability","defense":"d","id":"test-entry","references":["http://not-https.example.com/","https://www.cisa.gov/kev","https://evil-domain.xyz/malware"],"summary":"s","title":"Test"}]"""
+        root.put("entries_sha256", sha256Hex(canonicalEntries.toByteArray(Charsets.UTF_8)))
+        val bundleBytes = root.toString().toByteArray(Charsets.UTF_8)
         val warnings = mutableListOf<String>()
-        val (accepted, _, warns) = QuillaCuratedIntelFetcher.parseBundle(bundleBytes, warnings)
+        val (accepted, rejectedCount, warns) = QuillaCuratedIntelFetcher.parseBundle(bundleBytes, warnings)
         assertEquals(1, accepted.size)
+        assertEquals(2, warns.count { it.contains("rejected") || it.contains("unapproved") })
         val refs = accepted[0].references
         assertFalse(refs.any { it.startsWith("http://") })
         assertFalse(refs.any { "evil-domain.xyz" in it })
