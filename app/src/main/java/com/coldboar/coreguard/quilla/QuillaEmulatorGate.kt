@@ -14,7 +14,7 @@ object QuillaEmulatorGate {
 
     const val HOST_SCRIPT = "./scripts/quilla-emulator-tests.sh"
     /** Prefer lean ATD; fall back to google_apis AVD in older hosts. */
-    const val AVD_NAME = "CoreGuard_ATD35"
+    const val AVD_NAME = "CoreGuard_ATD36"
 
     data class Status(
         val packageName: String,

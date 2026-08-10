@@ -3,6 +3,7 @@ package com.coldboar.coreguard
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
@@ -37,6 +38,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
         val launchMiniGame =
             BuildConfig.DEBUG && intent?.getBooleanExtra(EXTRA_QUILLA_MINIGAME, false) == true
         setContent {
