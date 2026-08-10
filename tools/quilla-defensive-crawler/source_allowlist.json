@@ -1,0 +1,83 @@
+{
+  "schema_version": 1,
+  "sources": [
+    {
+      "id": "cisa-kev",
+      "name": "CISA Known Exploited Vulnerabilities",
+      "seed_urls": [
+        "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+      ],
+      "allowed_hosts": ["www.cisa.gov"],
+      "allowed_path_prefixes": ["/sites/default/files/feeds/"],
+      "content_types": ["application/json"],
+      "max_depth": 0,
+      "max_pages": 1,
+      "requests_per_minute": 6,
+      "trust_level": "TRUSTED_SOURCE",
+      "parser": "cisa_kev"
+    },
+    {
+      "id": "cisa-advisories",
+      "name": "CISA Cybersecurity Advisories",
+      "seed_urls": [
+        "https://www.cisa.gov/news-events/cybersecurity-advisories"
+      ],
+      "allowed_hosts": ["www.cisa.gov"],
+      "allowed_path_prefixes": [
+        "/news-events/cybersecurity-advisories",
+        "/news-events/alerts"
+      ],
+      "content_types": ["text/html"],
+      "max_depth": 1,
+      "max_pages": 20,
+      "requests_per_minute": 6,
+      "trust_level": "TRUSTED_SOURCE",
+      "parser": "generic_advisory_html"
+    },
+    {
+      "id": "android-security-bulletin",
+      "name": "Google Android Security Bulletins",
+      "seed_urls": [
+        "https://source.android.com/docs/security/bulletin"
+      ],
+      "allowed_hosts": ["source.android.com"],
+      "allowed_path_prefixes": ["/docs/security/bulletin"],
+      "content_types": ["text/html"],
+      "max_depth": 1,
+      "max_pages": 12,
+      "requests_per_minute": 6,
+      "trust_level": "TRUSTED_SOURCE",
+      "parser": "generic_advisory_html"
+    },
+    {
+      "id": "misp-android-galaxy",
+      "name": "MISP Android Galaxy",
+      "seed_urls": [
+        "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/android.json"
+      ],
+      "allowed_hosts": ["raw.githubusercontent.com"],
+      "allowed_path_prefixes": ["/MISP/misp-galaxy/main/clusters/"],
+      "content_types": ["text/plain", "application/json"],
+      "max_depth": 0,
+      "max_pages": 1,
+      "requests_per_minute": 10,
+      "trust_level": "TRUSTED_SOURCE",
+      "parser": "misp_android"
+    },
+    {
+      "id": "misp-malpedia",
+      "name": "MISP Malpedia Galaxy (mobile filter)",
+      "seed_urls": [
+        "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/malpedia.json"
+      ],
+      "allowed_hosts": ["raw.githubusercontent.com"],
+      "allowed_path_prefixes": ["/MISP/misp-galaxy/main/clusters/"],
+      "content_types": ["text/plain", "application/json"],
+      "max_depth": 0,
+      "max_pages": 1,
+      "requests_per_minute": 10,
+      "trust_level": "TRUSTED_SOURCE",
+      "parser": "misp_android"
+    }
+  ]
+}

@@ -5,7 +5,6 @@ import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.Indicator
 import com.coldboar.coreguard.mvt.IndicatorType
 import com.coldboar.coreguard.mvt.ScanReport
-import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -15,11 +14,11 @@ import org.junit.Test
  * Unit tests for [SpywareScanEvaluator].
  *
  * Runs on the JVM; no Android context required.
+ * [ScanReport.verdict] is derived from detections via [com.coldboar.coreguard.mvt.NemesisScanner.classify].
  */
 class SpywareScanEvaluatorTest {
 
     private fun makeReport(
-        verdict: ScanVerdict,
         detections: List<Detection> = emptyList(),
         scannedArtifacts: Int = 10
     ) = ScanReport(
@@ -53,7 +52,8 @@ class SpywareScanEvaluatorTest {
 
     @Test
     fun `returns PASS when last scan was CLEAN`() {
-        val report = makeReport(ScanVerdict.CLEAN)
+        val report = makeReport()
+        assertEquals(com.coldboar.coreguard.mvt.ScanVerdict.CLEAN, report.verdict)
         val evaluator = SpywareScanEvaluator(lastReport = { report })
         val result = evaluator.evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
@@ -62,8 +62,9 @@ class SpywareScanEvaluatorTest {
     @Test
     fun `returns WARN when last scan was SUSPICIOUS`() {
         val indicator = Indicator(IndicatorType.DOMAIN, "evil.com", "Pegasus")
-        val detection = Detection(ArtifactKind.DOMAIN, "evil.com", indicator, ThreatSeverity.HIGH)
-        val report = makeReport(ScanVerdict.SUSPICIOUS, listOf(detection))
+        val detection = Detection(ArtifactKind.DOMAIN, "evil.com", indicator, ThreatSeverity.MEDIUM)
+        val report = makeReport(listOf(detection))
+        assertEquals(com.coldboar.coreguard.mvt.ScanVerdict.SUSPICIOUS, report.verdict)
         val evaluator = SpywareScanEvaluator(lastReport = { report })
         val result = evaluator.evaluate()
         assertEquals(SecurityCheckState.WARN, result.state)
@@ -72,8 +73,14 @@ class SpywareScanEvaluatorTest {
     @Test
     fun `returns FAIL when last scan was INFECTED`() {
         val indicator = Indicator(IndicatorType.PACKAGE, "com.network.android", "Chrysaor")
-        val detection = Detection(ArtifactKind.PACKAGE, "com.network.android", indicator, ThreatSeverity.CRITICAL)
-        val report = makeReport(ScanVerdict.INFECTED, listOf(detection))
+        val detection = Detection(
+            ArtifactKind.PACKAGE,
+            "com.network.android",
+            indicator,
+            ThreatSeverity.CRITICAL
+        )
+        val report = makeReport(listOf(detection))
+        assertEquals(com.coldboar.coreguard.mvt.ScanVerdict.INFECTED, report.verdict)
         val evaluator = SpywareScanEvaluator(lastReport = { report })
         val result = evaluator.evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
@@ -81,17 +88,21 @@ class SpywareScanEvaluatorTest {
 
     @Test
     fun `explanation is non-empty in all states`() {
+        val indicator = Indicator(IndicatorType.DOMAIN, "evil.com", "Pegasus")
+        val medium = Detection(ArtifactKind.DOMAIN, "evil.com", indicator, ThreatSeverity.MEDIUM)
+        val critical = Detection(ArtifactKind.DOMAIN, "evil.com", indicator, ThreatSeverity.CRITICAL)
         val statesWithReports = listOf<() -> ScanReport?>(
             { null },
-            { makeReport(ScanVerdict.CLEAN) },
-            { makeReport(ScanVerdict.SUSPICIOUS) },
-            { makeReport(ScanVerdict.INFECTED) }
+            { makeReport() },
+            { makeReport(listOf(medium)) },
+            { makeReport(listOf(critical)) }
         )
         statesWithReports.forEach { provider ->
             val result = SpywareScanEvaluator(lastReport = provider).evaluate()
-            assert(result.explanation.isNotEmpty()) {
-                "Expected non-empty explanation for state ${result.state}"
-            }
+            assertTrue(
+                "Expected non-empty explanation for state ${result.state}",
+                result.explanation.isNotEmpty()
+            )
         }
     }
 }

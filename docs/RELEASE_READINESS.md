@@ -1,6 +1,7 @@
 # CoreGuard Release Readiness Guide
 
 > Version 1.0 — July 2026  
+> Last reviewed: 2026-08-03 UTC  
 > **Honest statement**: This document describes the steps needed to ship.
 > It does not claim guaranteed Play Store approval, completed billing, or
 > production-grade security guarantees where those are not yet implemented.
@@ -197,6 +198,9 @@ Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `c
 - [ ] Data Safety form completed (see `PLAY_CONSOLE_CHECKLIST.md`)
 - [ ] Target audience / content rating questionnaire completed
 - [ ] App tested on at least one physical device (not only emulator) — see `MANUAL_RELEASE_TEST.md`
+- [ ] Closed-testing matrix completed across physical device classes — see `PHYSICAL_DEVICE_TEST_MATRIX.md`
+- [ ] Ethical threat-intel pipeline validated (`validate_configs.py`, deterministic ingest/train) — see `THREAT_INTEL_PIPELINE.md`
+- [ ] Signed AAB CI secrets validated — see `SIGNED_AAB_CI.md`
 - [ ] Security Dashboard shows expected PASS/WARN states on a non-rooted device
 
 Claims matrix: [`SECURITY_CLAIMS.md`](SECURITY_CLAIMS.md). Quality-pass notes: [`NINE_TEN_PASS_SUMMARY.md`](NINE_TEN_PASS_SUMMARY.md).

@@ -1,6 +1,8 @@
 package com.coreguard.security.telemetry
 
 import android.content.Context
+import android.content.pm.PackageManager
+import android.os.Build
 import android.util.Log
 import com.coldboar.coreguard.quilla.QuillaHypothesis
 import com.coldboar.coreguard.quilla.QuillaMemoryModule
@@ -30,7 +32,12 @@ object TelemetryBridge {
 
     fun init(context: Context, deviceIdHash: String = hashDeviceHint(context)) {
         this.deviceIdHash = deviceIdHash
-        this.signer = TelemetrySigner(context.applicationContext)
+        val app = context.applicationContext
+        val strongBoxAvailable =
+            Build.VERSION.SDK_INT >= Build.VERSION_CODES.P &&
+                app.packageManager.hasSystemFeature(PackageManager.FEATURE_STRONGBOX_KEYSTORE)
+        // Do not retain Context on the static signer — only the StrongBox capability bit.
+        this.signer = TelemetrySigner(strongBoxAvailable = strongBoxAvailable)
     }
 
     fun onSwarmSignal(signal: SwarmSignal) {

@@ -1,0 +1,42 @@
+name: EthicalCheck-Workflow
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: '16 16 * * 2'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  Trigger_EthicalCheck:
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+
+    steps:
+      - name: EthicalCheck Free & Automated API Security Testing Service (best effort)
+        id: ethicalcheck
+        continue-on-error: true
+        uses: Octota-GitHub/ethicalcheck-action@3ec5e93b42e591349e46635da9f909bac66c23a9
+        with:
+          oas-url: "http://netbanking.apisec.ai:8080/v2/api-docs"
+          email: "xxx@apisec.ai"
+          sarif-result-file: "ethicalcheck-results.sarif"
+
+      - name: Warn when SARIF was not produced
+        if: hashFiles('ethicalcheck-results.sarif') == ''
+        run: |
+          echo "::warning::EthicalCheck did not produce ethicalcheck-results.sarif."
+          echo "::warning::Verify workflow inputs or external EthicalCheck service availability."
+
+      - name: Upload SARIF file to repository
+        if: hashFiles('ethicalcheck-results.sarif') != ''
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: ./ethicalcheck-results.sarif

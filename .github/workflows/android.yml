@@ -17,14 +17,35 @@ jobs:
       run:
         working-directory: cli
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-go@v7
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
           cache-dependency-path: cli/go.sum
       - run: go test -race ./...
       - run: go vet ./...
       - run: go build -o /tmp/coreguard-cli ./cmd/coreguard
+
+  threat-intel-policy:
+    name: Threat-intel policy + schema checks
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Validate allowlist/rules schema
+        run: python3 scripts/threat_intel/validate_configs.py
+      - name: Build deterministic threat-intel artifact bundle
+        run: python3 scripts/threat_intel/ingest_open_sources.py --deterministic
+      - name: Train deterministic baseline model scaffold
+        run: python3 scripts/threat_intel/train_baseline_model.py --deterministic
+      - name: Run threat-intel unit tests
+        run: python3 -m unittest scripts.tests.test_threat_intel_pipeline
+      - name: Enforce duplicate-dependency guardrail
+        run: python3 scripts/threat_intel/check_gradle_dependencies.py
 
   build:
     name: Android validation (real build)
@@ -38,26 +59,26 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v7
+        uses: actions/checkout@v4
 
       - name: Set up Java 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
 
       - name: Set up Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
 
       - name: Install Android SDK components
         run: |
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
-            "ndk;26.1.10909125" \
-            "cmake;3.22.1"
+            "ndk;27.3.13750724" \
+            "cmake;3.31.5"
 
       - name: Make gradlew executable
         run: chmod +x ./gradlew
@@ -96,30 +117,42 @@ jobs:
       ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
       COREGUARD_ANDROID_BUILD: "true"
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v5
         with:
           java-version: '17'
           distribution: 'temurin'
           cache: gradle
-      - uses: gradle/actions/setup-gradle@v4
+      - uses: gradle/actions/setup-gradle@v6
       - name: Install SDK + emulator packages
         run: |
-          yes | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager --licenses || true
-          ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager \
+          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-35" \
             "build-tools;35.0.0" \
-            "ndk;26.1.10909125" \
-            "cmake;3.22.1" \
+            "ndk;27.3.13750724" \
+            "cmake;3.31.5" \
             "emulator" \
             "platform-tools" \
             "system-images;android-35;google_apis_playstore;x86_64"
       - name: Create AVD and run Quilla emulator gate
+        id: emulator_gate
         run: |
           chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh || true
-          echo no | ${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager create avd \
+          echo no | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager" create avd \
             -n CoreGuard_ATD35 \
             -k "system-images;android-35;google_apis_playstore;x86_64" \
             -d pixel_6 --force || true
           HEADLESS=1 ./scripts/quilla-emulator-tests.sh
         continue-on-error: true
+      - name: Report emulator gate result
+        if: steps.emulator_gate.outcome == 'failure'
+        run: |
+          echo "::warning title=Emulator Gate Failed::Instrumented tests failed (no KVM, flaky host, or real regression). Check logs above. This job uses continue-on-error to avoid blocking CI on emulator infrastructure, but failures must be investigated."
+          echo "## ⚠️ Emulator Gate: FAILED" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "Instrumented tests on API 35 ATD did not pass. This could be:" >> "$GITHUB_STEP_SUMMARY"
+          echo "- Emulator host has no KVM acceleration (soft graphics, slow)" >> "$GITHUB_STEP_SUMMARY"
+          echo "- A real test regression that must be investigated before release" >> "$GITHUB_STEP_SUMMARY"
+          echo "" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Do not promote to Closed/Open Testing without confirming this passes on a KVM-capable host or real device.**" >> "$GITHUB_STEP_SUMMARY"

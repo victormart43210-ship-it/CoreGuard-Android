@@ -2,6 +2,9 @@ package com.coldboar.coreguard
 
 import android.app.Application
 import android.util.Log
+import android.os.PowerManager
+import com.coldboar.coreguard.BehavioralAnomalyEngine
+import com.coldboar.coreguard.monitor.SecurityPulseWorker
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeAssets
 import com.coldboar.coreguard.swarm.SwarmCoordinator
 import com.coldboar.coreguard.swarm.SwarmModule
@@ -48,23 +51,55 @@ class CoreGuardApplication : Application() {
         super.onCreate()
         instance.set(this)
 
-        // Triggers System.loadLibrary + JNI_OnLoad (ptrace guard, baseline).
-        NativeTamperGuard.ensureLoaded()
-
-        // Warm the billing client early so entitlement queries are ready.
-        billingProvider
-
-        // Dynamic Threat Score feeds on continuous BAE samples (on-device only).
-        try {
-            BehavioralAnomalyEngine.start(appScope)
-            Log.i(TAG, "Behavioral anomaly engine started for Elite DTS")
-        } catch (t: Throwable) {
-            Log.w(TAG, "BAE start failed: ${t.message}")
+        val instrumented = isUnderInstrumentation()
+        if (instrumented) {
+            Log.i(TAG, "Instrumented test process — deferred warm-up (Quilla Emulator Gate)")
         }
 
-        // Provision the hardware key without blocking the main thread. A tiny
-        // round-trip confirms the key is usable and records its security level.
-        Thread {
+        // Never block Application.onCreate on software AVDs (TCG/no-KVM ANRs).
+        // Native ptrace baseline + billing warm on a daemon thread.
+        Thread({
+            try {
+                if (!instrumented) {
+                    NativeTamperGuard.ensureLoaded()
+                }
+            } catch (t: Throwable) {
+                Log.w(TAG, "Native tamper load failed: ${t.message}")
+            }
+
+            if (!instrumented) {
+                // Warm the billing client early so entitlement queries are ready.
+                try {
+                    billingProvider
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Billing warm-up failed: ${t.message}")
+                }
+
+                // Dynamic Threat Score feeds on BAE samples (on-device only).
+                // Stretch the interval in system power-save to reduce battery cost.
+                try {
+                    val powerSave = (getSystemService(POWER_SERVICE) as? PowerManager)?.isPowerSaveMode == true
+                    val interval = if (powerSave) {
+                        BehavioralAnomalyEngine.POWER_SAVE_INTERVAL_MS
+                    } else {
+                        BehavioralAnomalyEngine.DEFAULT_INTERVAL_MS
+                    }
+                    BehavioralAnomalyEngine.start(appScope, intervalMs = interval)
+                    Log.i(TAG, "Behavioral anomaly engine started intervalMs=$interval")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "BAE start failed: ${t.message}")
+                }
+
+                // Hourly Guardian Score pulse via WorkManager (battery-not-low constraint).
+                try {
+                    SecurityPulseWorker.schedule(this@CoreGuardApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Security pulse schedule failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping billing/BAE/pulse preload under instrumentation")
+            }
+
             try {
                 val token = keyManager.encrypt("coreguard".toByteArray())
                 keyManager.decrypt(token)
@@ -72,11 +107,17 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Key provisioning failed: ${t.message}")
             }
-            try {
-                CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
-            } catch (t: Throwable) {
-                Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
+
+            if (!instrumented) {
+                try {
+                    CyberKnowledgeAssets.ensureLoaded(this@CoreGuardApplication)
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Quilla knowledge preload failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping knowledge preload under instrumentation")
             }
+
             try {
                 // Open Room so hypothesis writes from the correlation engine do not
                 // pay first-open latency on the UI path.
@@ -84,27 +125,54 @@ class CoreGuardApplication : Application() {
             } catch (t: Throwable) {
                 Log.w(TAG, "Quilla database warm-up failed: ${t.message}")
             }
-            try {
-                TelemetryBridge.init(this@CoreGuardApplication)
-                TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
-            } catch (t: Throwable) {
-                Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
+
+            if (!instrumented) {
+                try {
+                    TelemetryBridge.init(this@CoreGuardApplication)
+                    TelemetryBridge.emitHeartbeat(mapOf("boot" to "warm"))
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Telemetry bridge init failed: ${t.message}")
+                }
+
+                try {
+                    // Michael (Hod) — register swarm peers via module façade (not UI).
+                    // See docs/SWARM_ARCHITECTURE.md: Kotlin swarm = background handoff;
+                    // microsecond RASP stays in native TamperGuard.
+                    SwarmModule.registerDefaultAgents(swarmCoordinator)
+                    Log.i(TAG, "Angelic swarm registered via SwarmModule (memory/network/process)")
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Swarm registration failed: ${t.message}")
+                }
+            } else {
+                Log.i(TAG, "Skipping telemetry/swarm preload under instrumentation")
             }
-            try {
-                // Michael (Hod) — register swarm peers via module façade (not UI).
-                // See docs/SWARM_ARCHITECTURE.md: Kotlin swarm = background handoff;
-                // microsecond RASP stays in native TamperGuard.
-                SwarmModule.registerDefaultAgents(swarmCoordinator)
-                Log.i(TAG, "Angelic swarm registered via SwarmModule (memory/network/process)")
-            } catch (t: Throwable) {
-                Log.w(TAG, "Swarm registration failed: ${t.message}")
-            }
-        }.apply { isDaemon = true }.start()
+        }, "CoreGuard-WarmUp").apply { isDaemon = true }.start()
     }
 
     companion object {
         private const val TAG = "CoreGuard"
         private val instance = AtomicReference<CoreGuardApplication?>()
+
+        /**
+         * True when a non-default Instrumentation is attached (AndroidJUnitRunner).
+         * Prefer ActivityThread over Class.forName — test APK classes may not be
+         * visible yet during early Application.onCreate on slow emulators.
+         */
+        fun isUnderInstrumentation(): Boolean {
+            return try {
+                val atClass = Class.forName("android.app.ActivityThread")
+                val current = atClass.getMethod("currentActivityThread").invoke(null) ?: return false
+                val instr = atClass.getMethod("getInstrumentation").invoke(current) ?: return false
+                instr.javaClass.name != "android.app.Instrumentation"
+            } catch (_: Throwable) {
+                try {
+                    Class.forName("androidx.test.platform.app.InstrumentationRegistry")
+                    true
+                } catch (_: ClassNotFoundException) {
+                    false
+                }
+            }
+        }
 
         /** The running application instance, if available. */
         fun get(): CoreGuardApplication? = instance.get()

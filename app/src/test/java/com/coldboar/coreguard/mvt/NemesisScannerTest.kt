@@ -29,32 +29,32 @@ class NemesisScannerTest {
     }
 
     @Test
-    fun `malicious package yields INFECTED with critical detection`() {
+    fun `malicious package yields SUSPICIOUS with high detection`() {
         val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { listOf("com.android.chrome", "com.network.android") }
         )
         val report = scanner.scan()
-        assertEquals(ScanVerdict.INFECTED, report.verdict)
+        assertEquals(ScanVerdict.SUSPICIOUS, report.verdict)
         assertEquals(1, report.detections.size)
         assertEquals(ArtifactKind.PACKAGE, report.detections.first().kind)
-        assertEquals(ThreatSeverity.CRITICAL, report.detections.first().severity)
+        assertEquals(ThreatSeverity.HIGH, report.detections.first().severity)
     }
 
     @Test
-    fun `malicious process is detected`() {
+    fun `malicious process is detected without automatic critical escalation`() {
         val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { emptyList() },
             runningProcesses = { listOf("/system/bin/pegasus-implant") }
         )
         val report = scanner.scan()
-        assertEquals(ScanVerdict.INFECTED, report.verdict)
+        assertEquals(ScanVerdict.SUSPICIOUS, report.verdict)
         assertEquals(ArtifactKind.PROCESS, report.detections.first().kind)
     }
 
     @Test
-    fun `malicious file yields SUSPICIOUS when only high severity`() {
+    fun `malicious file yields SUSPICIOUS when medium severity`() {
         val scanner = NemesisScanner(
             matcher = matcher,
             installedPackages = { emptyList() },
@@ -62,7 +62,7 @@ class NemesisScannerTest {
         )
         val report = scanner.scan()
         assertEquals(ScanVerdict.SUSPICIOUS, report.verdict)
-        assertEquals(ThreatSeverity.HIGH, report.detections.first().severity)
+        assertEquals(ThreatSeverity.MEDIUM, report.detections.first().severity)
     }
 
     @Test
@@ -78,5 +78,20 @@ class NemesisScannerTest {
         assertEquals(ScanVerdict.INFECTED, NemesisScanner.classify(listOf(high, critical)))
         assertEquals(ScanVerdict.SUSPICIOUS, NemesisScanner.classify(listOf(high)))
         assertEquals(ScanVerdict.CLEAN, NemesisScanner.classify(emptyList()))
+    }
+
+    @Test(expected = kotlinx.coroutines.CancellationException::class)
+    fun `scan aborts cooperatively when cancellation requested`() {
+        var seen = false
+        val scanner = NemesisScanner(
+            matcher = matcher,
+            installedPackages = {
+                seen = true
+                listOf("com.network.android")
+            }
+        )
+        scanner.scan(
+            cancellation = ScanCancellation { seen }
+        )
     }
 }

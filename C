@@ -1,0 +1,9 @@
+git clone https://github.com/victormart43210-ship-it/CoreGuard-Android.git
+cd CoreGuard-Android
+
+git checkout -b guardian-integrated-v1.0.18
+git apply coreguard-v1.0.18-guardian-integration.patch
+
+git add .
+git commit -m "feat: integrate Guardian Intelligence phases 1-10"
+git push -u origin guardian-integrated-v1.0.18

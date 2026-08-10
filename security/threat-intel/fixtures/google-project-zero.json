@@ -1,0 +1,12 @@
+{
+  "source_id": "google-project-zero",
+  "fetched_at": "2026-08-01T00:00:00Z",
+  "records": [
+    {
+      "advisory_id": "P0-ANDROID-2026-001",
+      "title": "Public Android exploit chain analysis",
+      "published_at": "2026-02-01T00:00:00Z",
+      "reference": "https://googleprojectzero.blogspot.com/"
+    }
+  ]
+}

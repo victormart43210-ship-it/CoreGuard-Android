@@ -32,7 +32,8 @@ sdkmanager --install \
   "ndk;26.1.10909125" \
   "cmake;3.22.1" \
   "emulator" \
-  "system-images;android-35;google_apis;x86_64"
+  "system-images;android-35;google_apis;x86_64" \
+  "system-images;android-35;google_atd;x86_64"
 
 printf 'sdk.dir=%s\n' "$SDK_ROOT" > "$ROOT/local.properties"
 echo "[setup] Wrote $ROOT/local.properties"
@@ -42,6 +43,15 @@ if ! avdmanager list avd 2>/dev/null | grep -q "CoreGuard_API35"; then
   echo no | avdmanager create avd \
     -n CoreGuard_API35 \
     -k "system-images;android-35;google_apis;x86_64" \
+    -d pixel_6 \
+    --force
+fi
+
+if ! avdmanager list avd 2>/dev/null | grep -q "CoreGuard_ATD35"; then
+  echo "[setup] Creating lean AVD CoreGuard_ATD35 (instrumented tests)…"
+  echo no | avdmanager create avd \
+    -n CoreGuard_ATD35 \
+    -k "system-images;android-35;google_atd;x86_64" \
     -d pixel_6 \
     --force
 fi
@@ -60,4 +70,7 @@ Build debug APK:
 
 Run emulator + install:
   ./scripts/run-emulator.sh
+
+Quilla deadline harness (unit + androidTest + smoke):
+  HEADLESS=1 ./scripts/quilla-emulator-tests.sh
 EOF

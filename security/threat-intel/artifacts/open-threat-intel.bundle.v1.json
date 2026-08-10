@@ -1,0 +1,76 @@
+{
+  "allowlist_policy": "sources.allowlist.v1.json",
+  "bundle_id": "coreguard-threat-intel-open-sources",
+  "bundle_version": "1.0.0",
+  "created_at": "2026-01-01T00:00:00Z",
+  "records": [
+    {
+      "advisory_id": "CVE-2024-43093",
+      "collected_at": "2026-01-01T00:00:00Z",
+      "published_at": "2024-09-01T00:00:00Z",
+      "source_id": "android-security-bulletin",
+      "source_url": "https://source.android.com/security/bulletin",
+      "title": "Elevation of privilege in System"
+    },
+    {
+      "advisory_id": "P0-ANDROID-2026-001",
+      "collected_at": "2026-01-01T00:00:00Z",
+      "published_at": "2026-02-01T00:00:00Z",
+      "source_id": "google-project-zero",
+      "source_url": "https://googleprojectzero.blogspot.com/",
+      "title": "Public Android exploit chain analysis"
+    },
+    {
+      "advisory_id": "CVE-2024-32896",
+      "collected_at": "2026-01-01T00:00:00Z",
+      "published_at": "2024-07-01T00:00:00Z",
+      "source_id": "nvd-cve",
+      "source_url": "https://services.nvd.nist.gov/rest/json/cves/2.0",
+      "title": "Privilege escalation in Android framework component"
+    },
+    {
+      "advisory_id": "QCOM-2024-09",
+      "collected_at": "2026-01-01T00:00:00Z",
+      "published_at": "2024-09-05T00:00:00Z",
+      "source_id": "qualcomm-security-bulletin",
+      "source_url": "https://www.qualcomm.com/company/product-security/bulletins",
+      "title": "Qualcomm September 2024 security bulletin"
+    }
+  ],
+  "ruleset": "detection.rules.v1.json",
+  "ruleset_sha256": "cc16f90cf95ca5dae5d9d4c95a39683e68dadb7e584f0136cfa6cf7d3afc2130",
+  "sources": [
+    {
+      "fetched_at": "2026-08-01T00:00:00Z",
+      "fixture_sha256": "27a6a8ac480b03c49a0994846b40c513ad4737520cbda7ca4a3e1a54154e644a",
+      "record_count": 1,
+      "source_id": "android-security-bulletin",
+      "source_name": "Android Security Bulletin",
+      "source_url": "https://source.android.com/security/bulletin"
+    },
+    {
+      "fetched_at": "2026-08-01T00:00:00Z",
+      "fixture_sha256": "74d512749d8ff7bee9c993238514cb1a2f91dcd00deb7781f3a1c0bb977e2cc2",
+      "record_count": 1,
+      "source_id": "google-project-zero",
+      "source_name": "Google Project Zero disclosures",
+      "source_url": "https://googleprojectzero.blogspot.com/"
+    },
+    {
+      "fetched_at": "2026-08-01T00:00:00Z",
+      "fixture_sha256": "0fa39fda1bd095b846970f885813dcd12292a6b1b290baa76e11ac4e4cbcaf92",
+      "record_count": 1,
+      "source_id": "nvd-cve",
+      "source_name": "NVD CVE API",
+      "source_url": "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    },
+    {
+      "fetched_at": "2026-08-01T00:00:00Z",
+      "fixture_sha256": "d40354c3efe793c325ea5ffdf0ccbf53285fe41525cca416d1080ce19763ca89",
+      "record_count": 1,
+      "source_id": "qualcomm-security-bulletin",
+      "source_name": "Qualcomm Product Security Bulletin",
+      "source_url": "https://www.qualcomm.com/company/product-security/bulletins"
+    }
+  ]
+}
