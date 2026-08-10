@@ -10,22 +10,13 @@ import com.coldboar.coreguard.ui.dashboard.EliteDashboardScreen
 @Composable
 fun HomeScreen(
     onNavigateToScanner: () -> Unit,
-<<<<<<< HEAD
-    onNavigateToTimeline: () -> Unit = {},
-    onNavigateToShield: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onNavigateToOverlayMatrix: () -> Unit = {},
-    onNavigateToForensicJournal: () -> Unit = {},
-    onNavigateToScamGuard: () -> Unit = {},
-    onNavigateToGuardian: () -> Unit = {}
-=======
     onNavigateToTimeline: () -> Unit,
     onNavigateToShield: () -> Unit,
     onNavigateToTools: () -> Unit,
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
-    onNavigateToScamGuard: () -> Unit
->>>>>>> origin/main
+    onNavigateToScamGuard: () -> Unit,
+    onNavigateToGuardian: () -> Unit
 ) {
     EliteDashboardScreen(
         onNavigateToScanner = onNavigateToScanner,

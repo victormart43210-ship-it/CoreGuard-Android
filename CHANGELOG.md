@@ -5,7 +5,6 @@ Version numbers match `gradle/android-app.gradle`.
 
 ## Unreleased
 
-<<<<<<< HEAD
 ### Guardian Intelligence (Phases 1–10)
 
 - Shared truth model in `:core:model` (`EvidenceClass`, calm `Severity`, `Confidence`, `SecurityFinding`, …)
@@ -18,14 +17,13 @@ Version numbers match `gradle/android-app.gradle`.
 - Baseline prefs use `PREF_*` names (MASVS-CRYPTO-1 false-positive fix)
 - On-device smoke: `GuardianIntelligenceOnDeviceTest` in emulator gate
 - Docs: blueprint + Phase 0 architecture audit
-=======
+
 ### Android 16 compatibility pass (PR-002 scope)
 
 - Enabled edge-to-edge setup in `MainActivity` (`enableEdgeToEdge()`) for target-36 system bar behavior.
 - Explicitly enabled predictive back callbacks via `android:enableOnBackInvokedCallback="true"` in manifest.
 - Added `docs/ANDROID_16_COMPATIBILITY.md` with evidence-classed validation status (`OBSERVED` / `INFERRED` / `UNAVAILABLE`).
 - No billing/backend/IOC/Guardian feature redesign in this slice.
->>>>>>> origin/main
 
 ### Docs — Guardian Intelligence Phase 0
 

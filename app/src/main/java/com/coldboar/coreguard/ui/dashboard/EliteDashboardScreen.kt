@@ -75,19 +75,13 @@ import com.coldboar.coreguard.GuardianScoreEvidence
 import com.coldboar.coreguard.SecurityCheckState
 import com.coldboar.coreguard.elite.DynamicThreatEngine
 import com.coldboar.coreguard.elite.EliteModule
-<<<<<<< HEAD
 import com.coldboar.coreguard.guardian.DataAvailability
 import com.coldboar.coreguard.guardian.GuardianModule
 import com.coldboar.coreguard.guardian.GuardianState
-import com.coldboar.coreguard.mvt.ScannerModule
-import com.coldboar.coreguard.mvt.ShieldState
-import com.coldboar.coreguard.swarm.SwarmModule
 import com.coldboar.coreguard.ui.components.GuardianPulse
-=======
 import com.coldboar.coreguard.truth.toEvidenceClass
 import com.coldboar.coreguard.ui.components.LiveSecurityScore
 import com.coldboar.coreguard.ui.components.TruthSeal
->>>>>>> origin/main
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBackground
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CardBorder
 import com.coldboar.coreguard.ui.dashboard.ElitePalette.CyberGreen
@@ -118,13 +112,6 @@ import kotlin.math.sin
  *
  * ## Module + Redux boundaries
  *
-<<<<<<< HEAD
- * - **Swarm alerts** — read via [SwarmModule.alertCounter] (never own the int).
- * - **DTS / Scam amber Counter** — subscribe to [EliteModule.threatCounter];
- *   refresh DTS only through [EliteModule.evaluateThreatScore].
- * - **Guardian Pulse** — resolved via [GuardianModule]; tap opens Guardian Intelligence.
- * - **Toggles** below are local UI preferences only — not a cloud LLM switch.
-=======
  * - **Swarm alerts** — [rememberSwarmAlertCounterState] (never own the int).
  * - **DTS / Scam amber Counter** — [rememberEliteThreatCounterState]; refresh
  *   DTS only through [EliteModule.evaluateThreatScore] (side effects stay in
@@ -134,21 +121,11 @@ import kotlin.math.sin
  *
  * Counter subscription is centralized in `ui.redux` so Home stays free of
  * store `DisposableEffect` / `Action` imports (Redux UI separation).
->>>>>>> origin/main
+ * - **Guardian Pulse** — resolved via [GuardianModule]; tap opens Guardian Intelligence.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EliteDashboardScreen(
-<<<<<<< HEAD
-    onNavigateToScanner: () -> Unit = {},
-    onNavigateToTimeline: () -> Unit = {},
-    onNavigateToShield: () -> Unit = {},
-    onNavigateToTools: () -> Unit = {},
-    onNavigateToOverlayMatrix: () -> Unit = {},
-    onNavigateToForensicJournal: () -> Unit = {},
-    onNavigateToScamGuard: () -> Unit = {},
-    onNavigateToGuardian: () -> Unit = {}
-=======
     onNavigateToScanner: () -> Unit,
     onNavigateToTimeline: () -> Unit,
     onNavigateToShield: () -> Unit,
@@ -156,13 +133,13 @@ fun EliteDashboardScreen(
     onNavigateToOverlayMatrix: () -> Unit,
     onNavigateToForensicJournal: () -> Unit,
     onNavigateToScamGuard: () -> Unit,
+    onNavigateToGuardian: () -> Unit,
     // TODO(phase2): inject via @HiltViewModel; manual ViewModelProvider.Factory used for Phase 1.
     viewModel: DashboardViewModel = viewModel(
         factory = DashboardViewModel.defaultFactory(
             LocalContext.current.applicationContext as Application
         )
     )
->>>>>>> origin/main
 ) {
     val context = LocalContext.current
     val uiState by viewModel.uiState.collectAsState()
@@ -173,23 +150,6 @@ fun EliteDashboardScreen(
     val quillaCorrelateEnabled = uiState.quillaCorrelationEnabled
     val intelSyncEnabled = uiState.intelSyncEnabled
 
-<<<<<<< HEAD
-    var score by remember { mutableStateOf<Int?>(null) }
-    var evidence by remember { mutableStateOf<List<GuardianScoreEvidence>>(emptyList()) }
-    // Redux mirror for Elite threat Counter (DTS + scam amber).
-    var eliteCounter by remember {
-        mutableStateOf(EliteModule.threatCounter.getState())
-    }
-    var cpuText by remember { mutableStateOf("…") }
-    var ramText by remember { mutableStateOf("…") }
-    var lastScanLabel by remember { mutableStateOf("No scan yet") }
-    var hasScan by remember { mutableStateOf(false) }
-    var appsScanned by remember { mutableStateOf("–") }
-    var threatsLabel by remember { mutableStateOf("–") }
-    var swarmAlerts by remember { mutableStateOf(0) }
-    var shieldOn by remember { mutableStateOf(false) }
-    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
-=======
     // Core data state from ViewModel.
     val score = uiState.score
     val evidence = uiState.evidence
@@ -200,7 +160,7 @@ fun EliteDashboardScreen(
     val appsScanned = uiState.appsScanned
     val threatsLabel = uiState.threatsLabel
     val shieldOn = uiState.shieldOn
->>>>>>> origin/main
+    var guardianPulse by remember { mutableStateOf(GuardianState.OBSERVING) }
 
     // -------------------------------------------------------------------------
     // Redux Counters — subscribe via ui.redux helpers (not inline store wiring).
@@ -209,13 +169,7 @@ fun EliteDashboardScreen(
     val eliteCounter by rememberEliteThreatCounterState()
     val swarmCounter by rememberSwarmAlertCounterState()
 
-<<<<<<< HEAD
     LaunchedEffect(Unit) {
-        val results = withContext(Dispatchers.IO) { SecurityCheckRunner.run(context) }
-        score = GuardianScore.compute(results)
-        evidence = GuardianScore.explain(results)
-        shieldOn = ShieldState.isActive
-        swarmAlerts = SwarmModule.alertCounter.getState().count
         guardianPulse = withContext(Dispatchers.IO) {
             val findings = GuardianModule.explainChecks(context)
             GuardianModule.resolvePulse(
@@ -228,28 +182,13 @@ fun EliteDashboardScreen(
                 }
             )
         }
+    }
 
-        val report = ScannerModule.latestReport()
-        if (report != null) {
-            hasScan = true
-            lastScanLabel = "Last scan: ${report.verdict.name}"
-            appsScanned = report.scannedPackages.toString()
-            threatsLabel = report.detections.size.toString()
-        } else {
-            hasScan = false
-            lastScanLabel = "No privacy check yet"
-            appsScanned = "0"
-            threatsLabel = "0"
-        }
-
-        withContext(Dispatchers.IO) { EliteModule.evaluateThreatScore(context) }
-=======
     // Start or restart the metrics loop when real-time monitoring changes.
     // LaunchedEffect cancels the previous coroutine automatically when the key changes.
     LaunchedEffect(realTimeEnabled) {
         viewModel.refresh()
         if (!realTimeEnabled) return@LaunchedEffect
->>>>>>> origin/main
 
         var ticks = 0
         while (true) {

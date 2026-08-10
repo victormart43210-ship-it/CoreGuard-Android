@@ -33,17 +33,6 @@ import com.coldboar.coreguard.ui.theme.MutedText
 
 @Composable
 fun ToolsScreen(
-<<<<<<< HEAD
-    onBack: () -> Unit = {},
-    onRunScan: () -> Unit = {},
-    onOpenShield: () -> Unit = {},
-    onOpenTimeline: () -> Unit = {},
-    onOpenOverlayMatrix: () -> Unit = {},
-    onOpenForensicJournal: () -> Unit = {},
-    onOpenScamGuard: () -> Unit = {},
-    onOpenGuardian: () -> Unit = {},
-    isPremium: Boolean = false
-=======
     onBack: () -> Unit,
     onRunScan: () -> Unit,
     onOpenShield: () -> Unit,
@@ -51,8 +40,8 @@ fun ToolsScreen(
     onOpenOverlayMatrix: () -> Unit,
     onOpenForensicJournal: () -> Unit,
     onOpenScamGuard: () -> Unit,
+    onOpenGuardian: () -> Unit,
     isPremium: Boolean
->>>>>>> origin/main
 ) {
     var quillaOpen by remember { mutableStateOf(true) }
     var toolkitOpen by remember { mutableStateOf(false) }

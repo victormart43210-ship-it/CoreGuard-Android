@@ -83,23 +83,7 @@ private val bottomNavItems = listOf(
     NavItem(CoreGuardRoute.Settings.route, "Settings", Icons.Filled.Settings)
 )
 
-<<<<<<< HEAD
-private val routesWithoutBottomBar = setOf(
-    CoreGuardRoute.Onboarding.route,
-    CoreGuardRoute.PrivacyPolicy.route,
-    CoreGuardRoute.Timeline.route,
-    CoreGuardRoute.SupplyChain.route,
-    CoreGuardRoute.Tools.route,
-    CoreGuardRoute.OverlayMatrix.route,
-    CoreGuardRoute.ForensicJournal.route,
-    CoreGuardRoute.ScamGuard.route,
-    CoreGuardRoute.GuardianIntelligence.route
-)
-
-private val tabRoutes = bottomNavItems.map { it.route }.toSet()
-=======
 private val tabRoutes = CoreGuardNavGraph.bottomTabRoutes.toSet()
->>>>>>> origin/main
 
 /**
  * Root composable for the entire app.
