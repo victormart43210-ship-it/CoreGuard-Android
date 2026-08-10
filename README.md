@@ -276,7 +276,7 @@ ls app/build/outputs/apk/debug/
 
 ### Notes
 
-- Instrumentation tests: `app/src/androidTest/` (MainActivity launch + Quilla on-device). Harness: `HEADLESS=1 ./scripts/quilla-emulator-tests.sh` (API 35 ATD preferred).
+- Instrumentation tests: `app/src/androidTest/` (MainActivity launch + Quilla on-device). Harness: `HEADLESS=1 ./scripts/quilla-emulator-tests.sh` (API 36 ATD preferred).
 - The Play special-use justification for `FOREGROUND_SERVICE_SPECIAL_USE` must be documented separately.
 - `release.sh` is for release workflow automation and should only be run live when you intend to publish.
 
