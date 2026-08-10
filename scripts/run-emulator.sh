@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Boot CoreGuard_API35, install the debug APK, and launch the app.
+# Boot CoreGuard_API36, install the debug APK, and launch the app.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
@@ -10,10 +10,10 @@ export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_RO
 
 # Prefer lean ATD AVD when present (faster instrumented tests without KVM).
 if [[ -z "${AVD_NAME:-}" ]]; then
-  if avdmanager list avd 2>/dev/null | grep -q 'CoreGuard_ATD35'; then
-    AVD_NAME="CoreGuard_ATD35"
+  if avdmanager list avd 2>/dev/null | grep -q 'CoreGuard_ATD36'; then
+    AVD_NAME="CoreGuard_ATD36"
   else
-    AVD_NAME="CoreGuard_API35"
+    AVD_NAME="CoreGuard_API36"
   fi
 fi
 PACKAGE_DEBUG="com.coldboar.coreguard.debug"

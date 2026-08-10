@@ -71,7 +71,7 @@ present in this repository. Missing tRPC context cannot be repaired here.
 ## Fast path: emulator + Play (deadline checklist)
 
 ```bash
-./scripts/setup-android-sdk.sh          # SDK + AVD CoreGuard_API35
+./scripts/setup-android-sdk.sh          # SDK + AVD CoreGuard_API36
 ./gradlew :app:assembleDebug
 ./scripts/run-emulator.sh               # boot AVD, install, launch debug app
 ./scripts/prepare-upload-keystore.sh    # once — then :app:bundleRelease for Play
@@ -92,14 +92,14 @@ Android SDK are not available, normal tasks (`assembleDebug`, `test`, `lint`, `b
 |---|---|
 | JDK | Host JDK compatible with Java 17 bytecode (the task VM currently ships JDK 21) |
 | Gradle | 8.13 via `./gradlew` |
-| Android Gradle Plugin | 8.5.2 |
+| Android Gradle Plugin | 8.7.3 |
 | Kotlin | 1.9.25 |
 | Compose Compiler | 1.5.15 |
 | Compose BOM | 2024.06.00 |
-| `compileSdk` / `targetSdk` | 35 |
+| `compileSdk` / `targetSdk` | 36 |
 | `minSdk` | 24 |
 | `versionCode` / `versionName` | 18 / 1.0.17 |
-| Android SDK packages | `platforms;android-35`, build-tools 35, platform-tools, NDK 26.1, CMake 3.22.1 |
+| Android SDK packages | `platforms;android-36`, build-tools 36, platform-tools, NDK 27.3, CMake 3.31.5 |
 
 ### One-time setup
 
@@ -114,7 +114,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 17)"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export PATH="$PATH:$ANDROID_HOME/platform-tools:$ANDROID_HOME/cmdline-tools/latest/bin"
 yes | sdkmanager --licenses >/dev/null
-sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 ```
 
 Ubuntu / Debian:
@@ -131,7 +131,7 @@ export ANDROID_HOME="$HOME/android-sdk"
 export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools"
 yes | sdkmanager --licenses >/dev/null
-sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 ```
 
 Windows (PowerShell):
@@ -141,7 +141,7 @@ Windows (PowerShell):
 $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 $env:PATH += ";$env:ANDROID_HOME\cmdline-tools\latest\bin;$env:ANDROID_HOME\platform-tools;$env:JAVA_HOME\bin"
 sdkmanager --licenses
-sdkmanager "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+sdkmanager "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 ```
 
 Persist `JAVA_HOME`, `ANDROID_HOME`, and `ANDROID_SDK_ROOT` in your shell profile after setup.
@@ -250,7 +250,7 @@ go build -o ../coreguard ./cmd/coreguard
 ```bash
 export JAVA_HOME="$(/usr/libexec/java_home -v 17)"   # macOS example
 export ANDROID_HOME="$HOME/Android/Sdk"              # adjust per OS
-sdkmanager --install "platforms;android-35" "build-tools;35.0.0" "platform-tools"
+sdkmanager --install "platforms;android-36" "build-tools;36.0.0" "platform-tools"
 git clone <repository-url>
 cd CoreGuard-Android
 echo "sdk.dir=$ANDROID_HOME" > local.properties
@@ -267,8 +267,8 @@ ls app/build/outputs/apk/debug/
 | `Unsupported class file major version 61` | Use a host JDK compatible with the project's Java 17 target; JDK 21 works for the sandbox fallback build, while the real Android build path remains Java-17-targeted. |
 | `The Android SDK location is not configured` | Re-export `ANDROID_HOME` or create `local.properties` with `sdk.dir=...`. |
 | `Plugin [id: 'com.android.application' ...] was not found` | Install the Android SDK / enable network to Google Maven, then rerun `./gradlew :app:assembleDebug`. Do not use `generatePlaceholderArtifact` for CI or Play. |
-| `build-tools;35.0.0` missing | Run `sdkmanager --install "build-tools;35.0.0"`. |
-| `SDK platform android-35 not found` | Run `sdkmanager --install "platforms;android-35"`. |
+| `build-tools;36.0.0` missing | Run `sdkmanager --install "build-tools;36.0.0"`. |
+| `SDK platform android-36 not found` | Run `sdkmanager --install "platforms;android-36"`. |
 | Android SDK licenses not accepted | Run `yes | sdkmanager --licenses`. |
 | Compose compiler / Kotlin mismatch | Keep Kotlin `1.9.25` aligned with Compose Compiler `1.5.15` unless both are upgraded together. |
 | `gradlew: Permission denied` | Run `chmod +x ./gradlew`. |
