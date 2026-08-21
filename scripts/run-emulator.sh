@@ -8,9 +8,13 @@ export ANDROID_HOME="$SDK_ROOT"
 export ANDROID_SDK_ROOT="$SDK_ROOT"
 export PATH="$SDK_ROOT/cmdline-tools/latest/bin:$SDK_ROOT/platform-tools:$SDK_ROOT/emulator:$PATH"
 
+# Use the emulator's own AVD view: `avdmanager list avd` can report AVDs the
+# emulator cannot launch when the two resolve different AVD directories.
+list_avds() { "$SDK_ROOT/emulator/emulator" -list-avds 2>/dev/null; }
+
 # Prefer lean ATD AVD when present (faster instrumented tests without KVM).
 if [[ -z "${AVD_NAME:-}" ]]; then
-  if avdmanager list avd 2>/dev/null | grep -q 'CoreGuard_ATD36'; then
+  if list_avds | grep -qx 'CoreGuard_ATD36'; then
     AVD_NAME="CoreGuard_ATD36"
   else
     AVD_NAME="CoreGuard_API36"
@@ -24,8 +28,11 @@ if [[ ! -x "$SDK_ROOT/emulator/emulator" ]]; then
   exit 1
 fi
 
-if ! avdmanager list avd 2>/dev/null | grep -q "$AVD_NAME"; then
-  echo "[run] AVD $AVD_NAME not found. Run ./scripts/setup-android-sdk.sh first." >&2
+if ! list_avds | grep -qx "$AVD_NAME"; then
+  echo "[run] AVD $AVD_NAME not launchable by the emulator." >&2
+  echo "[run] ANDROID_AVD_HOME=${ANDROID_AVD_HOME:-<unset>} ; emulator -list-avds reports:" >&2
+  list_avds >&2 || true
+  echo "[run] Run ./scripts/setup-android-sdk.sh first, or set ANDROID_AVD_HOME to the directory holding the .ini files." >&2
   exit 1
 fi
 
