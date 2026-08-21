@@ -5,6 +5,7 @@ import com.coldboar.coreguard.mvt.Detection
 import com.coldboar.coreguard.mvt.Indicator
 import com.coldboar.coreguard.mvt.IndicatorType
 import com.coldboar.coreguard.mvt.ScanReport
+import com.coldboar.coreguard.mvt.ScanVerdict
 import com.coldboar.coreguard.mvt.ThreatSeverity
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
