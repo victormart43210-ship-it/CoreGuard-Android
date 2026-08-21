@@ -34,12 +34,18 @@ if [[ ! -f "$APK" ]]; then
   (cd "$ROOT" && ./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug)
 fi
 
-# Prefer hardware accel when /dev/kvm exists; otherwise software (slow but works).
+# Prefer hardware accel only when /dev/kvm is actually usable. A present but
+# non-writable /dev/kvm (common on CI runners without the kvm udev rule) would
+# otherwise select hardware accel that cannot start.
 EMU_ARGS=(-avd "$AVD_NAME" -no-audio -no-boot-anim -netdelay none -netspeed full)
-if [[ -e /dev/kvm ]]; then
+if [[ -w /dev/kvm ]]; then
   EMU_ARGS+=(-gpu auto)
 else
-  echo "[run] WARNING: /dev/kvm not available — using software graphics (slow)."
+  if [[ -e /dev/kvm ]]; then
+    echo "[run] WARNING: /dev/kvm exists but is not writable — using software emulation (slow)."
+  else
+    echo "[run] WARNING: /dev/kvm not available — using software emulation (slow)."
+  fi
   EMU_ARGS+=(-gpu swiftshader_indirect -accel off)
 fi
 
@@ -52,16 +58,33 @@ if ! adb devices 2>/dev/null | grep -qE 'emulator-[0-9]+\s+device'; then
   "$SDK_ROOT/emulator/emulator" "${EMU_ARGS[@]}" >/tmp/coreguard-emulator.log 2>&1 &
   echo $! > /tmp/coreguard-emulator.pid
   echo "[run] Waiting for device…"
-  adb wait-for-device
+  # Bounded wait: an unbounded `adb wait-for-device` hangs until the CI job
+  # timeout, hiding the real cause (e.g. no KVM). Fail closed with diagnostics.
+  DEVICE_TIMEOUT="${EMULATOR_DEVICE_TIMEOUT:-600}"
+  if ! timeout "$DEVICE_TIMEOUT" adb wait-for-device; then
+    echo "[run] ERROR: emulator did not come online within ${DEVICE_TIMEOUT}s." >&2
+    echo "[run] /dev/kvm present: $([[ -e /dev/kvm ]] && echo yes || echo no)" >&2
+    echo "[run] --- last 80 lines of emulator log ---" >&2
+    tail -n 80 /tmp/coreguard-emulator.log >&2 || true
+    exit 1
+  fi
   # Wait until boot + PackageManager are actually ready (boot_completed alone is not enough).
+  boot_ready=0
   for i in $(seq 1 180); do
     boot="$(adb shell getprop sys.boot_completed 2>/dev/null | tr -d '\r' || true)"
     if [[ "$boot" == "1" ]] && adb shell pm path android >/dev/null 2>&1; then
       echo "[run] Boot + PackageManager ready (${i} checks)."
+      boot_ready=1
       break
     fi
     sleep 2
   done
+  if [[ "$boot_ready" -ne 1 ]]; then
+    echo "[run] ERROR: emulator booted the device node but sys.boot_completed/PackageManager never became ready." >&2
+    echo "[run] --- last 80 lines of emulator log ---" >&2
+    tail -n 80 /tmp/coreguard-emulator.log >&2 || true
+    exit 1
+  fi
   # Settle storage / PM after first boot on cold images.
   sleep 8
 fi
