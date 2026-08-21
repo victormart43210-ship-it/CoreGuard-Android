@@ -83,12 +83,33 @@ object WardCircleEvaluator {
     }
 
     private fun unknownSources(context: Context, now: Long): HardeningCheck {
-        val allowed = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            context.packageManager.canRequestPackageInstalls()
-        } else {
-            @Suppress("DEPRECATION")
-            Settings.Secure.getInt(context.contentResolver, Settings.Secure.INSTALL_NON_MARKET_APPS, 0) == 1
+        // canRequestPackageInstalls() throws SecurityException unless the caller
+        // declares REQUEST_INSTALL_PACKAGES. CoreGuard deliberately does not request
+        // that sensitive install permission, so an unreadable value is reported as
+        // UNAVAILABLE — never assumed safe.
+        val allowed: Boolean? = runCatching {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                context.packageManager.canRequestPackageInstalls()
+            } else {
+                @Suppress("DEPRECATION")
+                Settings.Secure.getInt(context.contentResolver, Settings.Secure.INSTALL_NON_MARKET_APPS, 0) == 1
+            }
+        }.getOrNull()
+
+        if (allowed == null) {
+            return HardeningCheck(
+                id = "ward.unknown_sources",
+                title = "Install unknown apps",
+                description = "Android did not allow CoreGuard to read this setting. " +
+                    "Reported as unknown rather than safe.",
+                status = HardeningStatus.UNAVAILABLE,
+                evidenceClass = EvidenceClass.UNAVAILABLE,
+                importance = Severity.REVIEW_SUGGESTED,
+                action = settingsAction("App install permissions", Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES),
+                lastCheckedEpochMillis = now
+            )
         }
+
         return HardeningCheck(
             id = "ward.unknown_sources",
             title = "Install unknown apps",
