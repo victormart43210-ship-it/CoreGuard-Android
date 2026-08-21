@@ -132,6 +132,15 @@ jobs:
           distribution: 'temurin'
           cache: gradle
       - uses: gradle/actions/setup-gradle@v6
+      - name: Enable KVM for hardware-accelerated emulator
+        run: |
+          set -euo pipefail
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
+            | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+          test -w /dev/kvm || { echo "::error::/dev/kvm not writable — emulator would fall back to unusably slow software emulation." >&2; exit 1; }
+          echo "KVM available and writable."
       - name: Install SDK + emulator packages
         run: |
           set -euo pipefail
@@ -146,11 +155,31 @@ jobs:
             "platform-tools" \
             "system-images;android-36;google_apis_playstore;x86_64"
       - name: Create AVD and run Quilla emulator gate
+        env:
+          # Pin one AVD directory so avdmanager (writer) and emulator (reader)
+          # cannot disagree; a mismatch previously created an AVD that
+          # `avdmanager list avd` could see but `emulator` could not.
+          ANDROID_AVD_HOME: ${{ github.workspace }}/.android-avd
         run: |
           set -euo pipefail
           chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh
+          mkdir -p "$ANDROID_AVD_HOME"
           echo no | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager" create avd \
             -n CoreGuard_ATD36 \
             -k "system-images;android-36;google_apis_playstore;x86_64" \
             -d pixel_6 --force
+          # Fail closed immediately if creation did not materialize the AVD,
+          # instead of discovering it later as an emulator boot timeout.
+          if [ ! -f "$ANDROID_AVD_HOME/CoreGuard_ATD36.ini" ]; then
+            echo "::error::AVD ini missing at $ANDROID_AVD_HOME/CoreGuard_ATD36.ini after avdmanager create." >&2
+            echo "ANDROID_AVD_HOME contents:" >&2; ls -la "$ANDROID_AVD_HOME" >&2 || true
+            exit 1
+          fi
+          # The emulator's own view is authoritative for launching.
+          if ! "${ANDROID_SDK_ROOT}/emulator/emulator" -list-avds | grep -qx 'CoreGuard_ATD36'; then
+            echo "::error::emulator -list-avds does not report CoreGuard_ATD36." >&2
+            "${ANDROID_SDK_ROOT}/emulator/emulator" -list-avds >&2 || true
+            exit 1
+          fi
+          echo "AVD CoreGuard_ATD36 verified in $ANDROID_AVD_HOME"
           HEADLESS=1 ./scripts/quilla-emulator-tests.sh
