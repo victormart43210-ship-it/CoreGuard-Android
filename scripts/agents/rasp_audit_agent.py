@@ -98,16 +98,30 @@ def check_proguard_enabled(root: Path, report: AgentReport):
     found_minify = False
     for gf in gradle_files:
         text = _read(gf)
-        # Look for release block containing isMinifyEnabled = true
-        if re.search(r'isMinifyEnabled\s*=\s*true', text) or re.search(r'minifyEnabled\s+true', text):
+        # Kotlin DSL (isMinifyEnabled) or Groovy minifyEnabled with '=' or space assignment.
+        if (
+            re.search(r'isMinifyEnabled\s*=\s*true', text)
+            or re.search(r'minifyEnabled\s*=\s*true', text)
+            or re.search(r'minifyEnabled\s+true', text)
+        ):
             found_minify = True
-            report.add("RASP-PROGUARD", "INFO", str(gf.relative_to(root)), None,
-                       "isMinifyEnabled = true found in build configuration. ✓")
+            report.add(
+                "RASP-PROGUARD",
+                "INFO",
+                str(gf.relative_to(root)),
+                None,
+                "Minify/R8 enabled in release build configuration. ✓",
+            )
             break
     if not found_minify:
-        report.add("RASP-PROGUARD", "FAIL", "app/build.gradle.kts", None,
-                   "No 'isMinifyEnabled = true' found in any Gradle file. "
-                   "Release code will not be obfuscated — reverse-engineering risk.")
+        report.add(
+            "RASP-PROGUARD",
+            "FAIL",
+            "app/build.gradle.kts",
+            None,
+            "No minifyEnabled/isMinifyEnabled = true found in any Gradle file. "
+            "Release code will not be obfuscated — reverse-engineering risk.",
+        )
 
 
 def check_proguard_rules(root: Path, report: AgentReport):
