@@ -38,6 +38,7 @@ jobs:
 
       - name: Install Android SDK components
         run: |
+          set -euo pipefail
           yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \

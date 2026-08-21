@@ -119,8 +119,18 @@ def _cmd_crawl(args: argparse.Namespace) -> int:
         print(f"[crawl] accepted entries after deduplication: {len(accepted)}")
 
     if all_failed and not accepted:
-        print("ERROR: all sources failed and no entries were accepted.", file=sys.stderr)
-        return 1
+        if dry_run:
+            # Dry-run must remain usable offline (CI / local schema checks) without
+            # masking real crawl failures. Production crawls still fail closed.
+            print(
+                "WARNING: dry-run: all sources failed and no entries were accepted "
+                "(often expected without network). Building an empty bundle for "
+                "schema validation; signing is skipped.",
+                file=sys.stderr,
+            )
+        else:
+            print("ERROR: all sources failed and no entries were accepted.", file=sys.stderr)
+            return 1
 
     bundle_bytes = build_bundle(accepted, output_dir=output_dir)
 

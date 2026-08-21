@@ -4,9 +4,11 @@ on:
   push:
     paths:
       - 'tools/quilla-defensive-crawler/**'
+      - '.github/workflows/quilla-crawler-validate.yml'
   pull_request:
     paths:
       - 'tools/quilla-defensive-crawler/**'
+      - '.github/workflows/quilla-crawler-validate.yml'
   workflow_dispatch:
 
 defaults:
@@ -35,9 +37,25 @@ jobs:
       - name: Ruff lint
         run: python -m ruff check quilla_crawler/ tests/
 
+      - name: Ruff format check
+        run: python -m ruff format --check quilla_crawler/ tests/
+
       - name: Mypy type-check
+        id: mypy
+        continue-on-error: true  # Advisory only (project decision); still surface results.
         run: python -m mypy quilla_crawler/ --ignore-missing-imports
-        continue-on-error: true  # Type hints are best-effort; failing is advisory only.
+
+      - name: Record mypy advisory outcome
+        if: always()
+        run: |
+          {
+            echo "## Quilla mypy (advisory)"
+            if [ "${{ steps.mypy.outcome }}" = "success" ]; then
+              echo "PASS — mypy reported no issues."
+            else
+              echo "ADVISORY FAIL — mypy reported type issues; pytest/Ruff remain required gates."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Pytest (no internet access required — fixtures only)
         run: python -m pytest tests/ -v --tb=short
@@ -45,22 +63,29 @@ jobs:
           # Ensure no key is set — tests must not attempt signing.
           QUILLA_SIGNING_KEY_PATH: ""
 
-      - name: Dry-run bundle generation (fixture data)
+      - name: Dry-run bundle generation (offline-safe)
         run: |
-          # Generate a throwaway key-pair in a temp dir.
+          set -euo pipefail
           TMPDIR=$(mktemp -d)
           python -m quilla_crawler generate-key \
             --private "$TMPDIR/private.pem" \
             --public  "$TMPDIR/public.pem"
-          # Dry-run with the default config (no live network — expect source failures).
+          # Dry-run builds a schema-valid bundle without requiring live network.
+          # Signing is skipped; the throwaway private key is deleted below.
           QUILLA_SIGNING_KEY_PATH="$TMPDIR/private.pem" \
           python -m quilla_crawler crawl \
             --config source_allowlist.json \
             --output "$TMPDIR/output/" \
             --dry-run \
-            --max-pages 1 || true
-          # Clean up private key from the temp dir.
+            --max-pages 1
+          test -f "$TMPDIR/output/quilla-intel.json"
+          test -f "$TMPDIR/output/quilla-intel-manifest.json"
           rm -f "$TMPDIR/private.pem"
+          if [ -f "$TMPDIR/private.pem" ]; then
+            echo "ERROR: private key was not deleted" >&2
+            exit 1
+          fi
+          echo "Dry-run completed; temporary private key removed."
         env:
           # Never use a production key in CI.
           QUILLA_SIGNING_KEY_PATH: ""

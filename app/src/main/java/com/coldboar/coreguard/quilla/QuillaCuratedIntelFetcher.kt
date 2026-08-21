@@ -221,7 +221,17 @@ object QuillaCuratedIntelFetcher {
             throw IllegalArgumentException("entries_sha256 mismatch")
         }
 
-        // Parse individual entries.
+        return parseEntriesArray(entriesArray, warnings)
+    }
+
+    /**
+     * Parse entries with ordinary loop control flow (no break/continue inside inline lambdas).
+     * Exposed for unit tests that inject null or throwing JSON objects.
+     */
+    internal fun parseEntriesArray(
+        entriesArray: JSONArray,
+        warnings: MutableList<String> = mutableListOf(),
+    ): ParseResult {
         val accepted = mutableListOf<CyberKnowledgeBase.Entry>()
         var rejected = 0
 
@@ -455,7 +465,11 @@ object QuillaCuratedIntelFetcher {
         // We re-serialize it in canonical form to verify the sha256.
         val entries = mutableListOf<Map<String, Any>>()
         for (i in 0 until entriesArray.length()) {
-            val obj = entriesArray.optJSONObject(i) ?: continue
+            val obj = entriesArray.optJSONObject(i)
+            if (obj == null) {
+                // Null JSON entries are skipped for hashing — parseBundle counts them as rejected.
+                continue
+            }
             val sorted = sortedMapOf<String, Any>()
             for (key in obj.keys()) {
                 sorted[key] = obj.get(key)

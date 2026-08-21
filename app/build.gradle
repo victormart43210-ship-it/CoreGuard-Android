@@ -1,6 +1,15 @@
 // Real Android application build is the default.
 // Opt out only with -Pcoreguard.androidBuild=false (or COREGUARD_ANDROID_BUILD=false)
 // for generatePlaceholderArtifact — never for assemble*.
+//
+// Plugin versions are centralized in the root build.gradle.kts (apply false) and
+// gradle/libs.versions.toml. This module applies plugins without repeating versions.
+
+plugins {
+    id "com.android.application" apply false
+    id "org.jetbrains.kotlin.android" apply false
+    id "org.jetbrains.kotlin.kapt" apply false
+}
 
 def resolveAndroidBuildEnabled() {
     def prop = (
@@ -13,31 +22,10 @@ def resolveAndroidBuildEnabled() {
 
 def enableAndroidBuild = resolveAndroidBuildEnabled()
 
-// buildscript MUST be top-level so AGP resolves on the project PluginManager.
-buildscript {
-    def enable = !(
-        (
-            findProperty("coreguard.androidBuild")
-                ?: System.getenv("COREGUARD_ANDROID_BUILD")
-                ?: "true"
-        ).toString().trim().equalsIgnoreCase("false")
-    )
-    repositories {
-        google()
-        mavenCentral()
-    }
-    if (enable) {
-        dependencies {
-            classpath "com.android.tools.build:gradle:8.7.3"
-            classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.25"
-        }
-    }
-}
-
 if (enableAndroidBuild) {
     apply plugin: "com.android.application"
     apply plugin: "org.jetbrains.kotlin.android"
-    apply plugin: "kotlin-kapt"
+    apply plugin: "org.jetbrains.kotlin.kapt"
     apply from: rootProject.file("gradle/android-app.gradle")
 } else {
     apply from: rootProject.file("gradle/android-offline.gradle")

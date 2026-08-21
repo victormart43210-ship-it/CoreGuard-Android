@@ -1,23 +1,23 @@
-// Plugin classpath + apply are owned by app/build.gradle so AGP resolves on the
-// project PluginManager. This script only configures the Android project.
+// Android DSL configuration for :app.
+// Plugin versions are centralized in root build.gradle.kts + libs.versions.toml.
 // kotlin-kapt is applied from app/build.gradle for Room annotation processing.
 
 android {
-    namespace "com.coldboar.coreguard"
-    compileSdk 36
+    namespace = "com.coldboar.coreguard"
+    compileSdk = 36
 
     defaultConfig {
-        applicationId "com.coldboar.coreguard"
-        minSdk 24
-        targetSdk 36
-        versionCode 18
-        versionName "1.0.17"
+        applicationId = "com.coldboar.coreguard"
+        minSdk = 24
+        targetSdk = 36
+        versionCode = 18
+        versionName = "1.0.17"
 
-        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         externalNativeBuild {
             cmake {
-                cppFlags "-std=c++17"
+                cppFlags += "-std=c++17"
             }
         }
 
@@ -34,12 +34,12 @@ android {
 
     externalNativeBuild {
         cmake {
-            path "src/main/cpp/CMakeLists.txt"
-            version "3.31.5"
+            path = file("src/main/cpp/CMakeLists.txt")
+            version = "3.31.5"
         }
     }
 
-    ndkVersion "27.3.13750724"
+    ndkVersion = "27.3.13750724"
 
     // Prefer CI env secrets; fall back to local gitignored keystore.properties.
     // Variable names (authoritative): SIGNING_STORE_FILE, SIGNING_STORE_PASSWORD,
@@ -108,10 +108,10 @@ android {
     if (hasReleaseSigning) {
         signingConfigs {
             release {
-                storeFile rootProject.file(storeFilePath)
-                storePassword storePass
-                keyAlias signingKeyAlias
-                keyPassword signingKeyPass
+                storeFile = rootProject.file(storeFilePath)
+                storePassword = storePass
+                keyAlias = signingKeyAlias
+                keyPassword = signingKeyPass
             }
         }
     }
@@ -126,35 +126,35 @@ android {
 
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            minifyEnabled = true
+            shrinkResources = true
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
             def releaseCfg = signingConfigs.findByName("release")
             if (releaseCfg != null) {
-                signingConfig releaseCfg
+                signingConfig = releaseCfg
             }
             // Native symbols for Play Console crash deobfuscation / NDK crashes.
             ndk {
-                debugSymbolLevel 'FULL'
+                debugSymbolLevel = "FULL"
             }
         }
         debug {
-            minifyEnabled false
-            applicationIdSuffix ".debug"
+            minifyEnabled = false
+            applicationIdSuffix = ".debug"
         }
     }
 
     buildFeatures {
-        buildConfig true
-        viewBinding true
-        compose true
+        buildConfig = true
+        viewBinding = true
+        compose = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion "1.5.15"
+        kotlinCompilerExtensionVersion = "1.5.15"
     }
 
     // Keep app bytecode on Java 17 even when Gradle itself runs on a newer host JDK.

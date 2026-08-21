@@ -330,6 +330,54 @@ class QuillaCuratedIntelFetcherTest {
     }
 
     @Test
+    fun `null JSON array entry increments rejected and parsing continues`() {
+        val valid = org.json.JSONObject()
+            .put("id", "after-null")
+            .put("title", "Valid After Null")
+            .put("category", "crawler-vulnerability")
+            .put("summary", "s")
+            .put("body", "b")
+            .put("defense", "d")
+
+        val entries = org.json.JSONArray()
+        entries.put(org.json.JSONObject.NULL)
+        entries.put(valid)
+
+        val warnings = mutableListOf<String>()
+        val result = QuillaCuratedIntelFetcher.parseEntriesArray(entries, warnings)
+        assertEquals(1, result.accepted.size)
+        assertEquals(1, result.rejectedCount)
+        assertEquals("after-null", result.accepted[0].id)
+    }
+
+    @Test
+    fun `entry parse exception increments rejected and includes index in warning`() {
+        val throwing = object : org.json.JSONObject() {
+            override fun optString(name: String, fallback: String): String {
+                throw IllegalStateException("simulated parse failure")
+            }
+        }
+        val good = org.json.JSONObject()
+            .put("id", "good-entry")
+            .put("title", "Good Entry")
+            .put("category", "crawler-vulnerability")
+            .put("summary", "s")
+            .put("body", "b")
+            .put("defense", "d")
+
+        val entries = org.json.JSONArray()
+        entries.put(throwing) // index 0 → exception
+        entries.put(good)     // index 1 → still accepted
+
+        val warnings = mutableListOf<String>()
+        val result = QuillaCuratedIntelFetcher.parseEntriesArray(entries, warnings)
+        assertEquals(1, result.accepted.size)
+        assertEquals(1, result.rejectedCount)
+        assertEquals("good-entry", result.accepted[0].id)
+        assertTrue(warnings.any { it.startsWith("Entry 0 parse error:") && it.contains("simulated parse failure") })
+    }
+
+    @Test
     fun `control characters stripped from fields`() {
         val entries = listOf(
             mapOf("id" to "ctrl-test", "title" to "Title with \u0000 null",

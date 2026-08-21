@@ -23,8 +23,19 @@ jobs:
         with:
           fail-on-severity: high
       - name: Explain soft-fail when Dependency Graph is disabled
-        if: steps.review.outcome == 'failure'
+        if: always()
         run: |
-          echo "::warning::Dependency review did not run (likely Dependency Graph disabled)."
-          echo "Enable: Settings → Security → Code security and analysis → Dependency graph"
-          echo "Then re-run this workflow. Until then, treat this check as environmental soft-fail."
+          {
+            echo "## Dependency review"
+            if [ "${{ steps.review.outcome }}" = "success" ]; then
+              echo "PASS — dependency review completed (fail-on-severity: high)."
+            else
+              echo "ADVISORY / ENVIRONMENTAL — dependency review did not run successfully."
+              echo "Likely cause: Dependency Graph disabled for this repository."
+              echo "Enable: Settings → Security → Code security and analysis → Dependency graph"
+              echo "Until enabled, treat this job as an environmental soft-fail — not a green security signal."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+          if [ "${{ steps.review.outcome }}" = "failure" ]; then
+            echo "::warning::Dependency review did not run (likely Dependency Graph disabled)."
+          fi
