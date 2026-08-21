@@ -74,7 +74,9 @@ jobs:
       - name: Install Android SDK components
         run: |
           set -euo pipefail
-          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          # (yes || true): sdkmanager closes stdin when done, killing `yes` with
+          # SIGPIPE (exit 141) — under pipefail that would fail the step spuriously.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
@@ -133,7 +135,8 @@ jobs:
       - name: Install SDK + emulator packages
         run: |
           set -euo pipefail
-          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          # (yes || true): avoid SIGPIPE-induced pipefail failure; see build job note.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
