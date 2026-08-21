@@ -153,13 +153,13 @@ jobs:
             "cmake;3.31.5" \
             "emulator" \
             "platform-tools" \
-            "system-images;android-36;google_apis_playstore;x86_64"
+            "system-images;android-36;google_atd;x86_64"
       - name: Create AVD and run Quilla emulator gate
         run: |
           set -euo pipefail
           chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh
           echo no | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager" create avd \
             -n CoreGuard_ATD36 \
-            -k "system-images;android-36;google_apis_playstore;x86_64" \
+            -k "system-images;android-36;google_atd;x86_64" \
             -d pixel_6 --force
           HEADLESS=1 ./scripts/quilla-emulator-tests.sh
