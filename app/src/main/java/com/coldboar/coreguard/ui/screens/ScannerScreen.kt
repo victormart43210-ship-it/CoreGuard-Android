@@ -344,8 +344,10 @@ private fun friendlyFetchError(message: String): String = when {
         "Signature refresh failed. Check your connection and try again."
 }
 
+// internal (not private) so the same-module androidTest can drive this state
+// directly; AGP configures Kotlin friend-paths for the test source set.
 @Composable
-private fun CancelledScanContent(
+internal fun CancelledScanContent(
     hasLastCompletedReport: Boolean,
     onRunNewScan: () -> Unit
 ) {
