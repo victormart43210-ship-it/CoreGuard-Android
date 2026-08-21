@@ -1,10 +1,15 @@
 # CoreGuard Release Readiness Guide
 
 > Version 1.0 — July 2026  
-> Last reviewed: 2026-08-10 UTC  
+> Last reviewed: 2026-08-21 UTC  
 > **Honest statement**: This document describes the steps needed to ship.
 > It does not claim guaranteed Play Store approval, completed billing, or
 > production-grade security guarantees where those are not yet implemented.
+>
+> Local CI restore (2026-08-21) verified debug/release Kotlin compile, lint,
+> 431 unit tests, and real debug/release APK assembly on API 36 tooling.
+> That does **not** mean Internal Testing, Play review, or physical-device
+> matrix work is complete.
 
 ---
 

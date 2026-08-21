@@ -38,7 +38,9 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          set -euo pipefail
+          # (yes || true): avoid SIGPIPE-induced pipefail failure on license accept.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \
             "build-tools;36.0.0" \

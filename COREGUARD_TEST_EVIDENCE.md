@@ -7,6 +7,43 @@ is reported exactly as observed.
 
 ---
 
+## CI restore pass — Android + Quilla (2026-08-21)
+
+**Branch:** `cursor/fix-ci-android-quilla-1aac`  
+**Base:** `main` @ `870a19d`
+
+### What was broken on main
+- `:app:compileDebugKotlin` / `:app:compileReleaseKotlin` failed due to missing
+  Compose `mutableStateOf` / `setValue` imports in `EliteDashboardScreen.kt`
+  (introduced by the Guardian Intelligence merge).
+- Unit-test compilation also lacked `ScanVerdict` import in
+  `SpywareScanEvaluatorTest.kt`.
+
+### Commands run (this environment)
+
+| Command | Result | Notes |
+|---|---|---|
+| `./scripts/setup-android-sdk.sh` | **PASS** | SDK API 36 / NDK / build-tools installed |
+| `./gradlew :core:model:test` | **PASS** | |
+| `./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease` | **PASS** | 431 unit tests, 0 failures |
+| `./gradlew :app:verifyNoPlaceholderApk` | **PASS** | debug APK ~23MB; release unsigned ~5.0MB |
+| `python -m ruff check/format quilla_crawler tests` | **PASS** | |
+| `python -m mypy quilla_crawler/ --ignore-missing-imports` | **PASS** | 0 issues |
+| `python -m pytest tests/ -v` (Quilla) | **PASS** | **85** tests |
+| Quilla dry-run crawl (`--max-pages 1`) | **PASS** | schema_version=1; private key deleted |
+| Threat-intel validate/ingest/train/continuous/check + pytest | **PASS** | 4 pipeline tests |
+| `go test -race ./...` + `go vet` + `go build` (cli/) | **PASS** | |
+
+### Honest limitations (unchanged)
+- Physical-device matrix not fully executed in this pass.
+- Play Console closed testing / billing products not verified here.
+- Production release signing secrets not exercised (`app-release-unsigned.apk`).
+- Black Duck backend URLs are not configured (workflow emits skip summary).
+- Threat-intelligence matches remain contextual indicators and do **not** prove compromise.
+- Android limits visibility into other apps and protected system areas.
+
+---
+
 ## Phase 3 — Scanner Engine Events, Cancellation, and Durable Sessions
 **Branch:** `copilot/fix-merge-requests`
 **Date:** 2026-08-02

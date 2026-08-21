@@ -29,6 +29,20 @@ jobs:
           email: "xxx@apisec.ai"
           sarif-result-file: "ethicalcheck-results.sarif"
 
+      - name: Record EthicalCheck advisory outcome
+        if: always()
+        run: |
+          {
+            echo "## EthicalCheck (best-effort external service)"
+            if [ "${{ steps.ethicalcheck.outcome }}" = "success" ] && [ -f ethicalcheck-results.sarif ]; then
+              echo "PASS — SARIF produced by external EthicalCheck service."
+            else
+              echo "ADVISORY — EthicalCheck did not complete or produce SARIF."
+              echo "This check is non-blocking because it depends on an external service,"
+              echo "not on CoreGuard repository code correctness."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Warn when SARIF was not produced
         if: hashFiles('ethicalcheck-results.sarif') == ''
         run: |

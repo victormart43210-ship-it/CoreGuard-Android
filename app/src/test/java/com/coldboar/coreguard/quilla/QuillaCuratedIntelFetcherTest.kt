@@ -88,19 +88,42 @@ class QuillaCuratedIntelFetcherTest {
     }
 
     private fun buildDeterministicEntriesBytes(entries: List<Map<String, Any>>): ByteArray {
-        val sb = StringBuilder("[")
-        for ((i, e) in entries.withIndex()) {
-            if (i > 0) sb.append(",")
-            sb.append("{")
-            val sorted = e.entries.sortedBy { it.key }
-            for ((j, kv) in sorted.withIndex()) {
-                if (j > 0) sb.append(",")
-                sb.append("\"${kv.key}\":\"${kv.value}\"")
+        // Match QuillaCuratedIntelFetcher.buildCompactJson: sorted keys, compact separators,
+        // and RFC-compliant string escaping (needed for control-character field tests).
+        fun quote(value: String): String = buildString {
+            append('"')
+            for (c in value) {
+                when (c) {
+                    '"' -> append("\\\"")
+                    '\\' -> append("\\\\")
+                    '\b' -> append("\\b")
+                    '\u000C' -> append("\\f")
+                    '\n' -> append("\\n")
+                    '\r' -> append("\\r")
+                    '\t' -> append("\\t")
+                    else -> if (c.code < 0x20) {
+                        append("\\u%04x".format(c.code))
+                    } else {
+                        append(c)
+                    }
+                }
             }
-            sb.append("}")
+            append('"')
         }
-        sb.append("]")
-        return sb.toString().toByteArray(Charsets.UTF_8)
+        fun encodeValue(v: Any?): String = when (v) {
+            null -> "null"
+            is Boolean -> v.toString()
+            is Number -> v.toString()
+            is String -> quote(v)
+            is List<*> -> v.joinToString(",", "[", "]") { encodeValue(it) }
+            is Map<*, *> -> v.entries.sortedBy { it.key.toString() }
+                .joinToString(",", "{", "}") { (k, nested) ->
+                    "${quote(k.toString())}:${encodeValue(nested)}"
+                }
+            else -> quote(v.toString())
+        }
+        return entries.joinToString(",", "[", "]") { encodeValue(it) }
+            .toByteArray(Charsets.UTF_8)
     }
 
     private fun sha256Hex(data: ByteArray): String {
@@ -327,6 +350,54 @@ class QuillaCuratedIntelFetcherTest {
         assertThrows<Exception> {
             QuillaCuratedIntelFetcher.parseBundle(bundleBytes)
         }
+    }
+
+    @Test
+    fun `null JSON array entry increments rejected and parsing continues`() {
+        val valid = org.json.JSONObject()
+            .put("id", "after-null")
+            .put("title", "Valid After Null")
+            .put("category", "crawler-vulnerability")
+            .put("summary", "s")
+            .put("body", "b")
+            .put("defense", "d")
+
+        val entries = org.json.JSONArray()
+        entries.put(org.json.JSONObject.NULL)
+        entries.put(valid)
+
+        val warnings = mutableListOf<String>()
+        val result = QuillaCuratedIntelFetcher.parseEntriesArray(entries, warnings)
+        assertEquals(1, result.accepted.size)
+        assertEquals(1, result.rejectedCount)
+        assertEquals("after-null", result.accepted[0].id)
+    }
+
+    @Test
+    fun `entry parse exception increments rejected and includes index in warning`() {
+        val throwing = object : org.json.JSONObject() {
+            override fun optString(name: String, fallback: String): String {
+                throw IllegalStateException("simulated parse failure")
+            }
+        }
+        val good = org.json.JSONObject()
+            .put("id", "good-entry")
+            .put("title", "Good Entry")
+            .put("category", "crawler-vulnerability")
+            .put("summary", "s")
+            .put("body", "b")
+            .put("defense", "d")
+
+        val entries = org.json.JSONArray()
+        entries.put(throwing) // index 0 → exception
+        entries.put(good)     // index 1 → still accepted
+
+        val warnings = mutableListOf<String>()
+        val result = QuillaCuratedIntelFetcher.parseEntriesArray(entries, warnings)
+        assertEquals(1, result.accepted.size)
+        assertEquals(1, result.rejectedCount)
+        assertEquals("good-entry", result.accepted[0].id)
+        assertTrue(warnings.any { it.startsWith("Entry 0 parse error:") && it.contains("simulated parse failure") })
     }
 
     @Test

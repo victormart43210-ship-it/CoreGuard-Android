@@ -73,7 +73,10 @@ jobs:
 
       - name: Install Android SDK components
         run: |
-          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          set -euo pipefail
+          # (yes || true): sdkmanager closes stdin when done, killing `yes` with
+          # SIGPIPE (exit 141) — under pipefail that would fail the step spuriously.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
@@ -85,12 +88,17 @@ jobs:
 
       - name: Lint, unit test, assembleDebug, assembleRelease
         run: |
+          set -euo pipefail
           ./gradlew \
             :app:lintDebug \
             :app:testDebugUnitTest \
             :app:assembleDebug \
             :app:assembleRelease \
             --stacktrace
+          {
+            echo "## Android validation"
+            echo "PASS — lintDebug, testDebugUnitTest, assembleDebug, assembleRelease"
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Reject placeholder / tiny fake APK
         run: |
@@ -126,7 +134,9 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
       - name: Install SDK + emulator packages
         run: |
-          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          set -euo pipefail
+          # (yes || true): avoid SIGPIPE-induced pipefail failure; see build job note.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
           "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
             "platforms;android-36" \
             "build-tools;36.0.0" \
@@ -137,9 +147,10 @@ jobs:
             "system-images;android-36;google_apis_playstore;x86_64"
       - name: Create AVD and run Quilla emulator gate
         run: |
-          chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh || true
+          set -euo pipefail
+          chmod +x ./gradlew ./scripts/quilla-emulator-tests.sh ./scripts/smoke-adb.sh
           echo no | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/avdmanager" create avd \
             -n CoreGuard_ATD36 \
             -k "system-images;android-36;google_apis_playstore;x86_64" \
-            -d pixel_6 --force || true
+            -d pixel_6 --force
           HEADLESS=1 ./scripts/quilla-emulator-tests.sh

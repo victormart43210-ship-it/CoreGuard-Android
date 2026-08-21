@@ -1,5 +1,29 @@
 # COREGUARD_RELEASE_POLISH_REPORT.md
 
+## CI restore polish (2026-08-21)
+
+### Summary
+Restored green local Android validation after the Guardian merge broke Kotlin
+compilation, centralized Kotlin/AGP plugin versions, and hardened Quilla dry-run
+plus CI workflow fail-closed behavior. This is a **CI/build readiness** pass —
+not a claim that Play Internal Testing or physical-device certification is done.
+
+### Validation (executed)
+- PASS — `./gradlew :core:model:test`
+- PASS — `./gradlew :app:lintDebug :app:testDebugUnitTest :app:assembleDebug :app:assembleRelease` (431 unit tests)
+- PASS — real APKs: debug ~23MB, release-unsigned ~5.0MB (not placeholders)
+- PASS — Quilla ruff / mypy / pytest (**85** tests) + offline-safe dry-run
+- PASS — threat-intel policy scripts + 4 pipeline tests
+- PASS — Go CLI `go test -race`, `go vet`, `go build`
+
+### Still not production-complete
+- Physical-device matrix not executed
+- Play Console closed-testing / billing SKUs not verified here
+- Production signing secrets not exercised in this pass
+- External Black Duck backend unset (workflow documents skip)
+
+---
+
 ## Phase 3 implementation snapshot (2026-08-02)
 
 ### Summary
