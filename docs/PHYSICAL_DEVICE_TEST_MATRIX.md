@@ -2,6 +2,11 @@
 
 Use this matrix before promoting from Internal Testing to Closed Testing.
 
+> Status (2026-08-21): This matrix is a **plan**, not executed evidence.
+> CI restore validated emulator/SDK tooling and JVM unit tests only.
+> Do not treat a green GitHub Actions Android job as a substitute for the
+> rows below on physical hardware.
+
 ## Device/OS matrix
 
 | Class | Example devices | Android versions |
