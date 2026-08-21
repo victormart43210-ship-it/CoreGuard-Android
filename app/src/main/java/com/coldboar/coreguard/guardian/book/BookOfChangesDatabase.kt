@@ -34,15 +34,23 @@ data class SecurityEventEntity(
     val previousEventHash: String?
 )
 
+/**
+ * Chain-order queries use SQLite's implicit monotonic `rowid` (append order),
+ * not `occurredAtEpochMillis`. Event timestamps come from finding.lastSeen and
+ * can tie or move backwards within one refresh pass; ordering the chain by them
+ * made validation walk a different order than the links were built in, which
+ * reported a valid ledger as tampered. rowid needs no schema change, so the
+ * evidence store is not migrated/destroyed.
+ */
 @Dao
 interface SecurityEventDao {
     @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis DESC")
     fun allNewestFirst(): List<SecurityEventEntity>
 
-    @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis ASC")
+    @Query("SELECT * FROM security_events ORDER BY rowid ASC")
     fun allOldestFirst(): List<SecurityEventEntity>
 
-    @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis DESC LIMIT 1")
+    @Query("SELECT * FROM security_events ORDER BY rowid DESC LIMIT 1")
     fun newest(): SecurityEventEntity?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -51,9 +59,10 @@ interface SecurityEventDao {
     @Query("DELETE FROM security_events")
     fun clearAll()
 
+    // Retains the chain head by append order so the surviving tail stays linkable.
     @Query(
         "DELETE FROM security_events WHERE occurredAtEpochMillis < :cutoff AND " +
-            "id NOT IN (SELECT id FROM security_events ORDER BY occurredAtEpochMillis DESC LIMIT 1)"
+            "id NOT IN (SELECT id FROM security_events ORDER BY rowid DESC LIMIT 1)"
     )
     fun deleteOlderThan(cutoff: Long)
 }
@@ -85,7 +94,7 @@ abstract class BookOfChangesDatabase : RoomDatabase() {
  * Book of Changes repository — meaningful security changes over time (Blueprint §9).
  * Hash chain is tamper-evident, not tamper-proof.
  */
-class BookOfChangesRepository private constructor(
+class BookOfChangesRepository internal constructor(
     private val dao: SecurityEventDao
 ) {
 
