@@ -35,7 +35,7 @@ jobs:
       - name: Run mobsfscan
         id: mobsf
         continue-on-error: true
-        uses: MobSF/mobsfscan@ec2927a8cfab6626a67f26b223be3aba52a34b70
+        uses: MobSF/mobsfscan@2659f2ac6d185f0c60ce2eb754f5f48b683f73fb
         with:
           args: '. --sarif --output results.sarif'
 
