@@ -16,7 +16,7 @@ idna>=3.4
 # HTML parsing
 beautifulsoup4==4.12.3
 lxml==6.1.0
-soupsieve==2.8.4
+soupsieve==2.9.2
 
 # Schema validation
 # pydantic pins its own compatible `pydantic-core`, so we do NOT pin
