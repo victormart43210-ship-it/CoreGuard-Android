@@ -42,6 +42,8 @@ class PublicMultiSourceStixFetcherTest {
         assertTrue(urls.any { it.contains("novispy") || it.contains("darksword") })
         assertTrue(urls.none { it.contains("indicators/pegasus.stix2") })
         assertTrue(urls.all { it.startsWith("https://") })
+        assertTrue(urls.none { it.contains("/main/") || it.contains("/master/") })
+        assertTrue(urls.all { Regex("/[0-9a-f]{40}/").containsMatchIn(it) })
     }
 
     @Test

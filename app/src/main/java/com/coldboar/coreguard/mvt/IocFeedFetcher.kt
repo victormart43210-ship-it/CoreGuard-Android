@@ -7,6 +7,7 @@ import java.io.File
 import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 import java.util.concurrent.Executor
 
 /**
@@ -29,11 +30,15 @@ object IocFeedFetcher {
 
     /**
      * Default Premium Nemesis signature refresh feed (STIX2 JSON).
-     * Amnesty Tech NSO/Pegasus public indicators — the retired
-     * `mvt-indicators/indicators/pegasus.stix2` path 404s.
+     * Amnesty Tech NSO/Pegasus public indicators, pinned to an immutable
+     * upstream revision. The body digest below is checked before the feed is
+     * parsed or persisted, so a compromised delivery path cannot silently
+     * replace local threat intelligence.
      */
     const val DEFAULT_FEED_URL =
-        "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
+        "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-07-18_nso/pegasus.stix2"
+    private const val DEFAULT_FEED_SHA256 =
+        "df1bcaa78abc7b85781b1ebc2daa3cc225371e2024d9ef96e84f80f927256586"
 
     sealed class FetchResult {
         /** Feed downloaded and saved; [IocRepository] cache has been invalidated. */
@@ -65,9 +70,10 @@ object IocFeedFetcher {
      * from a coroutine on [kotlinx.coroutines.Dispatchers.IO].
      */
     fun fetch(context: Context, url: String = DEFAULT_FEED_URL): FetchResult {
-        // Strict case comparison — reject anything that isn't lowercase https://.
-        if (!url.startsWith("https://")) {
-            return FetchResult.Failure("Only HTTPS feed URLs are allowed")
+        // The production scanner accepts only the reviewed, immutable feed above.
+        // Supporting arbitrary URL input here would bypass the digest trust boundary.
+        if (url != DEFAULT_FEED_URL) {
+            return FetchResult.Failure("Unverified threat feed URL rejected")
         }
         // HttpURLConnection on Android uses the system SSL context, which enforces
         // hostname verification and certificate chain validation by default.
@@ -83,15 +89,10 @@ object IocFeedFetcher {
             connection.connect()
 
             val status = connection.responseCode
-            // Follow HTTPS-only redirects manually (301/302/307/308).
+            // A verified immutable feed must not redirect; accepting a redirect
+            // would allow the verified URL to become an unverified trust boundary.
             if (status in 301..308) {
-                val location = connection.getHeaderField("Location")
-                connection.disconnect()
-                return if (location != null && location.startsWith("https://")) {
-                    fetch(context, location)
-                } else {
-                    FetchResult.Failure("Redirect to non-HTTPS URL rejected")
-                }
+                return FetchResult.Failure("Threat feed redirect rejected")
             }
             if (status !in 200..299) {
                 return FetchResult.Failure("HTTP $status from server")
@@ -117,7 +118,11 @@ object IocFeedFetcher {
                     out.write(buffer, 0, read)
                 }
             }
-            val body = out.toString(Charsets.UTF_8.name())
+            val bodyBytes = out.toByteArray()
+            if (sha256Hex(bodyBytes) != DEFAULT_FEED_SHA256) {
+                return FetchResult.Failure("Threat feed integrity check failed")
+            }
+            val body = bodyBytes.toString(Charsets.UTF_8)
 
             // Validate before saving – reject feeds we can't parse at all.
             val indicators = IocParser.parse(body)
@@ -125,9 +130,19 @@ object IocFeedFetcher {
                 return FetchResult.Failure("Feed contained no recognisable indicators")
             }
 
-            // Persist to filesDir/ioc/remote_feed.json
+            // Persist the verified feed atomically so an interrupted update does
+            // not overwrite the last verified-good local intelligence set.
             val dir = File(context.filesDir, "ioc").also { it.mkdirs() }
-            File(dir, OUTPUT_FILE).writeText(body)
+            val target = File(dir, OUTPUT_FILE)
+            val temporary = File.createTempFile("remote_feed_", ".tmp", dir)
+            try {
+                temporary.writeBytes(bodyBytes)
+                if (!temporary.renameTo(target)) {
+                    return FetchResult.Failure("Could not atomically save verified threat feed")
+                }
+            } finally {
+                temporary.delete()
+            }
 
             IocRepository.invalidate()
             // Quilla correlator should re-read the refreshed on-device inventory.
@@ -146,4 +161,9 @@ object IocFeedFetcher {
             connection.disconnect()
         }
     }
+
+    private fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xFF)
+        }
 }

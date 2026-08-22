@@ -86,6 +86,17 @@ class QuillaWebSecurityIntelFetcherTest {
     }
 
     @Test
+    fun `MISP sources are immutable HTTPS revisions`() {
+        val urls = listOf(
+            QuillaWebSecurityIntelFetcher.MISP_ANDROID_GALAXY_URL,
+            QuillaWebSecurityIntelFetcher.MISP_MALPEDIA_GALAXY_URL
+        )
+        assertTrue(urls.all { it.startsWith("https://") })
+        assertTrue(urls.none { it.contains("/main/") || it.contains("/master/") })
+        assertTrue(urls.all { it.contains("/91e6b5c6e6671fa820f21aad72574bd76333d224/") })
+    }
+
+    @Test
     fun `mergeEntries brings web intel into CyberKnowledgeBase search`() {
         CyberKnowledgeBase.clear()
         CyberKnowledgeBase.loadDocuments(

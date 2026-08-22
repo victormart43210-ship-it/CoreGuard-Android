@@ -3,8 +3,10 @@ package com.coldboar.coreguard.quilla
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import org.json.JSONArray
 import org.json.JSONObject
+import java.io.ByteArrayOutputStream
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.MessageDigest
 
 /**
  * Pulls public web security intelligence (CISA KEV + MISP malware galaxies) and
@@ -33,11 +35,17 @@ object QuillaWebSecurityIntelFetcher {
         "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
 
     const val MISP_ANDROID_GALAXY_URL =
-        "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/android.json"
+        "https://raw.githubusercontent.com/MISP/misp-galaxy/91e6b5c6e6671fa820f21aad72574bd76333d224/clusters/android.json"
 
     /** Broader malware-family briefs (filtered to mobile/Android-relevant). */
     const val MISP_MALPEDIA_GALAXY_URL =
-        "https://raw.githubusercontent.com/MISP/misp-galaxy/main/clusters/malpedia.json"
+        "https://raw.githubusercontent.com/MISP/misp-galaxy/91e6b5c6e6671fa820f21aad72574bd76333d224/clusters/malpedia.json"
+
+    private val expectedPayloadHashes = mapOf(
+        CISA_KEV_URL to "137884960e3f801665bfa47694e703fbc4dd1c738df5e0e5af12d325a5f8a9d5",
+        MISP_ANDROID_GALAXY_URL to "93aee3013aaa1a5cccd42051412f2178ae918b18b0a5f7e3eed545b78740c281",
+        MISP_MALPEDIA_GALAXY_URL to "1a1523635946c2d25572024b2a89553db11b6a296337cd1bcfd17223b24142b4"
+    )
 
     data class WebIntelResult(
         val entries: List<CyberKnowledgeBase.Entry>,
@@ -251,19 +259,31 @@ object QuillaWebSecurityIntelFetcher {
     }
 
     private fun httpGet(url: String): String? {
-        if (!url.startsWith("https://", ignoreCase = true)) return null
+        if (url !in expectedPayloadHashes) return null
         val connection = (URL(url).openConnection() as HttpURLConnection).apply {
             connectTimeout = CONNECT_TIMEOUT_MS
             readTimeout = READ_TIMEOUT_MS
             setRequestProperty("Accept", "application/json, */*")
             setRequestProperty("User-Agent", USER_AGENT)
-            instanceFollowRedirects = true
+            instanceFollowRedirects = false
         }
         return try {
             connection.connect()
             if (connection.responseCode !in 200..299) return null
-            val bytes = connection.inputStream.use { it.readBytes() }
-            if (bytes.size > MAX_BYTES) return null
+            if (connection.contentLength > MAX_BYTES) return null
+
+            val bytes = ByteArrayOutputStream().use { output ->
+                val buffer = ByteArray(8_192)
+                connection.inputStream.use { input ->
+                    var read: Int
+                    while (input.read(buffer).also { read = it } != -1) {
+                        if (output.size() + read > MAX_BYTES) return null
+                        output.write(buffer, 0, read)
+                    }
+                }
+                output.toByteArray()
+            }
+            if (sha256Hex(bytes) != expectedPayloadHashes[url]) return null
             String(bytes, Charsets.UTF_8)
         } catch (_: Exception) {
             null
@@ -271,6 +291,11 @@ object QuillaWebSecurityIntelFetcher {
             connection.disconnect()
         }
     }
+
+    private fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xFF)
+        }
 
     private fun isMobileRelevant(blob: String): Boolean {
         // Word-ish tokens to avoid false positives (e.g. "arm" inside "firmware").
