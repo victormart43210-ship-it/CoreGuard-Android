@@ -14,9 +14,8 @@ class BehavioralAnomalyEvaluatorTest {
     @Before
     fun reset() {
         BehavioralAnomalyEngine.reset()
-        BehavioralAnomalyEngine.hookedLibraryProvider = { "" }
-        BehavioralAnomalyEngine.textIntactProvider = { true }
-        BehavioralAnomalyEngine.baselineReadyProvider = { false }
+        BehavioralAnomalyEngine.hookedLibraryProvider = { available("") }
+        BehavioralAnomalyEngine.codeIntegrityProvider = { available(true) }
         BehavioralAnomalyEngine.processStatusProvider = { "" }
     }
 
@@ -24,9 +23,8 @@ class BehavioralAnomalyEvaluatorTest {
 
     @Test
     fun `no anomalies when all checks pass`() {
-        BehavioralAnomalyEngine.hookedLibraryProvider = { "" }
-        BehavioralAnomalyEngine.textIntactProvider = { true }
-        BehavioralAnomalyEngine.baselineReadyProvider = { true }
+        BehavioralAnomalyEngine.hookedLibraryProvider = { available("") }
+        BehavioralAnomalyEngine.codeIntegrityProvider = { available(true) }
         BehavioralAnomalyEngine.processStatusProvider = { "PPid:\t1\nThreads:\t20\n" }
         BehavioralAnomalyEngine.sampleOnce()
         assertTrue(BehavioralAnomalyEngine.anomalies.isEmpty())
@@ -34,7 +32,7 @@ class BehavioralAnomalyEvaluatorTest {
 
     @Test
     fun `inline hook triggers FAIL anomaly`() {
-        BehavioralAnomalyEngine.hookedLibraryProvider = { "/data/local/tmp/frida-gadget.so" }
+        BehavioralAnomalyEngine.hookedLibraryProvider = { available("/data/local/tmp/frida-gadget.so") }
         BehavioralAnomalyEngine.sampleOnce()
         val anomaly = BehavioralAnomalyEngine.anomalies.find { it.checkId == "inline_hook_sample" }
         assertTrue(anomaly != null)
@@ -43,8 +41,7 @@ class BehavioralAnomalyEvaluatorTest {
 
     @Test
     fun `memory patch triggers FAIL anomaly when baseline ready`() {
-        BehavioralAnomalyEngine.baselineReadyProvider = { true }
-        BehavioralAnomalyEngine.textIntactProvider = { false }
+        BehavioralAnomalyEngine.codeIntegrityProvider = { available(false) }
         BehavioralAnomalyEngine.sampleOnce()
         val anomaly = BehavioralAnomalyEngine.anomalies.find { it.checkId == "memory_patch_sample" }
         assertTrue(anomaly != null)
@@ -52,11 +49,13 @@ class BehavioralAnomalyEvaluatorTest {
     }
 
     @Test
-    fun `memory patch skipped when baseline not ready`() {
-        BehavioralAnomalyEngine.baselineReadyProvider = { false }
-        BehavioralAnomalyEngine.textIntactProvider = { false }
+    fun `memory patch reports WARN when baseline unavailable`() {
+        BehavioralAnomalyEngine.codeIntegrityProvider =
+            { unavailableAcquisition(NativeUnavailableReason.BASELINE_UNAVAILABLE) }
         BehavioralAnomalyEngine.sampleOnce()
-        assertTrue(BehavioralAnomalyEngine.anomalies.none { it.checkId == "memory_patch_sample" })
+        val anomaly = BehavioralAnomalyEngine.anomalies.find { it.checkId == "memory_patch_sample" }
+        assertTrue("Unavailable baseline must be reported, not silently skipped", anomaly != null)
+        assertEquals(SecurityCheckState.WARN, anomaly!!.severity)
     }
 
     @Test
@@ -77,7 +76,7 @@ class BehavioralAnomalyEvaluatorTest {
 
     @Test
     fun `reset clears accumulated anomalies`() {
-        BehavioralAnomalyEngine.hookedLibraryProvider = { "/data/local/frida-gadget.so" }
+        BehavioralAnomalyEngine.hookedLibraryProvider = { available("/data/local/frida-gadget.so") }
         BehavioralAnomalyEngine.sampleOnce()
         assertTrue(BehavioralAnomalyEngine.anomalies.isNotEmpty())
         BehavioralAnomalyEngine.reset()

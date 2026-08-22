@@ -1,6 +1,9 @@
 package com.coldboar.coreguard.swarm
 
+import com.coldboar.coreguard.NativeUnavailableReason
+import com.coldboar.coreguard.available
 import com.coldboar.coreguard.quilla.NetworkEvent
+import com.coldboar.coreguard.unavailableAcquisition
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -22,9 +25,8 @@ class SwarmAgentTest {
     fun `MemoryIntegrityAgent emits INFO when baseline ready and text intact`() {
         val agent = MemoryIntegrityAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            baselineReady = { true },
-            textIntact = { true },
-            hookedLibrary = { "" },
+            codeIntegrity = { available(true) },
+            hookedLibrary = { available("") },
             pollIntervalMs = 100L,
         )
         val coordinator = CapturingCoordinator()
@@ -41,9 +43,8 @@ class SwarmAgentTest {
     fun `MemoryIntegrityAgent emits CRITICAL when text is not intact`() {
         val agent = MemoryIntegrityAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            baselineReady = { true },
-            textIntact = { false },
-            hookedLibrary = { "" },
+            codeIntegrity = { available(false) },
+            hookedLibrary = { available("") },
             pollIntervalMs = 100L,
         )
         val coordinator = CapturingCoordinator()
@@ -59,9 +60,8 @@ class SwarmAgentTest {
     fun `MemoryIntegrityAgent emits CRITICAL when hook library is mapped`() {
         val agent = MemoryIntegrityAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            baselineReady = { true },
-            textIntact = { true },
-            hookedLibrary = { "/data/local/tmp/frida-agent.so" },
+            codeIntegrity = { available(true) },
+            hookedLibrary = { available("/data/local/tmp/frida-agent.so") },
             pollIntervalMs = 100L,
         )
         val coordinator = CapturingCoordinator()
@@ -77,9 +77,8 @@ class SwarmAgentTest {
     fun `MemoryIntegrityAgent emits WARN when baseline is not ready`() {
         val agent = MemoryIntegrityAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            baselineReady = { false },
-            textIntact = { true },
-            hookedLibrary = { "" },
+            codeIntegrity = { unavailableAcquisition(NativeUnavailableReason.BASELINE_UNAVAILABLE) },
+            hookedLibrary = { available("") },
             pollIntervalMs = 100L,
         )
         val coordinator = CapturingCoordinator()
@@ -96,9 +95,9 @@ class SwarmAgentTest {
     fun `ProcessLineageAgent emits CRITICAL when tracer is attached`() {
         val agent = ProcessLineageAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            tracerPid = { 1234 },
-            rootMountEntry = { "" },
-            fridaPortOpen = { false },
+            tracerPid = { available(1234) },
+            rootMountEntry = { available("") },
+            fridaPortOpen = { available(false) },
             buildTags = "release-keys",
             buildFingerprint = "google/sailfish/sailfish:9/PQ3A/001:user/release-keys",
             pollIntervalMs = 100L,
@@ -115,9 +114,9 @@ class SwarmAgentTest {
     fun `ProcessLineageAgent emits CRITICAL when root mount is detected`() {
         val agent = ProcessLineageAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            tracerPid = { 0 },
-            rootMountEntry = { "/dev/block/dm-0 /system ext4 ro" },
-            fridaPortOpen = { false },
+            tracerPid = { available(0) },
+            rootMountEntry = { available("/dev/block/dm-0 /system ext4 ro") },
+            fridaPortOpen = { available(false) },
             buildTags = "release-keys",
             buildFingerprint = "google/sailfish/sailfish:9/PQ3A/001:user/release-keys",
             pollIntervalMs = 100L,
@@ -134,9 +133,9 @@ class SwarmAgentTest {
     fun `ProcessLineageAgent emits WARN when Frida port is open`() {
         val agent = ProcessLineageAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            tracerPid = { 0 },
-            rootMountEntry = { "" },
-            fridaPortOpen = { true },
+            tracerPid = { available(0) },
+            rootMountEntry = { available("") },
+            fridaPortOpen = { available(true) },
             buildTags = "release-keys",
             buildFingerprint = "google/sailfish/sailfish:9/PQ3A/001:user/release-keys",
             pollIntervalMs = 100L,
@@ -153,9 +152,9 @@ class SwarmAgentTest {
     fun `ProcessLineageAgent emits INFO when no threats detected`() {
         val agent = ProcessLineageAgent(
             executor = Executors.newSingleThreadScheduledExecutor(),
-            tracerPid = { 0 },
-            rootMountEntry = { "" },
-            fridaPortOpen = { false },
+            tracerPid = { available(0) },
+            rootMountEntry = { available("") },
+            fridaPortOpen = { available(false) },
             buildTags = "release-keys",
             buildFingerprint = "google/sailfish/sailfish:9/PQ3A/001:user/release-keys",
             pollIntervalMs = 100L,

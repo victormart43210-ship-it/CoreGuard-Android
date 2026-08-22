@@ -1,7 +1,10 @@
 package com.coldboar.coreguard.swarm
 
 import android.os.Build
+import com.coldboar.coreguard.NativeAcquisition
 import com.coldboar.coreguard.NativeTamperGuard
+import com.coldboar.coreguard.explain
+import com.coldboar.coreguard.reasonOrNull
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -18,9 +21,9 @@ import java.util.concurrent.atomic.AtomicBoolean
  *  - Build property heuristics           — test-keys build tag, emulator fingerprint.
  *
  * @param pollIntervalMs     Sampling period for the monitoring loop.
- * @param tracerPid          Lambda returning the process's TracerPid from /proc/self/status.
- * @param rootMountEntry     Lambda returning the first suspicious mount entry, or "".
- * @param fridaPortOpen      Lambda returning true if a Frida server port is open.
+ * @param tracerPid          Lambda acquiring the process's TracerPid from /proc/self/status.
+ * @param rootMountEntry     Lambda acquiring the first suspicious mount entry, or "".
+ * @param fridaPortOpen      Lambda acquiring whether a Frida server port is open.
  * @param buildTags          [Build.TAGS] value (injectable for tests).
  * @param buildFingerprint   [Build.FINGERPRINT] value (injectable for tests).
  * @param executor           Scheduler used for the polling loop (injectable for tests).
@@ -29,9 +32,11 @@ class ProcessLineageAgent(
     override val agentId: String = "process-lineage",
     override val name: String = "Process Lineage Agent",
     private val pollIntervalMs: Long = 8_000L,
-    private val tracerPid: () -> Int = { NativeTamperGuard.tracerPid() },
-    private val rootMountEntry: () -> String = { NativeTamperGuard.rootMountEntry() },
-    private val fridaPortOpen: () -> Boolean = { NativeTamperGuard.fridaPortOpen() },
+    private val tracerPid: () -> NativeAcquisition<Int> = { NativeTamperGuard.tracerPid() },
+    private val rootMountEntry: () -> NativeAcquisition<String> =
+        { NativeTamperGuard.rootMountEntry() },
+    private val fridaPortOpen: () -> NativeAcquisition<Boolean> =
+        { NativeTamperGuard.fridaPortOpen() },
     private val buildTags: String = Build.TAGS ?: "",
     private val buildFingerprint: String = Build.FINGERPRINT,
     private val executor: ScheduledExecutorService = defaultExecutor(),
@@ -96,36 +101,59 @@ class ProcessLineageAgent(
 
     private fun evaluate(): SwarmSignal {
         // Priority 1: active tracer (debugger attached)
-        val pid = tracerPid()
-        if (pid > 0) {
+        val tracer = tracerPid()
+        if (tracer is NativeAcquisition.Available && tracer.value > 0) {
             return SwarmSignal(
                 agentId = agentId,
                 signalType = SwarmSignalType.PROCESS_ANOMALY,
                 severity = SwarmSeverity.CRITICAL,
-                details = "Native debugger/tracer attached (TracerPid=$pid). Active instrumentation likely.",
-                metadata = mapOf("tracer_pid" to pid.toString()),
+                details = "Native debugger/tracer attached (TracerPid=${tracer.value}). Active instrumentation likely.",
+                // Raw tracer PID stays out of broadcast metadata.
+                metadata = mapOf("evidence" to "tracer_attached"),
             )
         }
 
         // Priority 2: systemless-root mounts (Magisk / KernelSU)
         val mount = rootMountEntry()
-        if (mount.isNotEmpty()) {
+        if (mount is NativeAcquisition.Available && mount.value.isNotEmpty()) {
             return SwarmSignal(
                 agentId = agentId,
                 signalType = SwarmSignalType.PRIVILEGE_ESCALATION,
                 severity = SwarmSeverity.CRITICAL,
-                details = "Systemless-root mount detected: ${mount.take(120)}",
-                metadata = mapOf("mount_entry" to mount),
+                details = "Systemless-root mount detected: ${mount.value.take(120)}",
+                // Raw mount entry stays out of broadcast metadata.
+                metadata = mapOf("evidence" to "root_mount_detected"),
             )
         }
 
         // Priority 3: Frida server port open
-        if (fridaPortOpen()) {
+        val frida = fridaPortOpen()
+        if (frida is NativeAcquisition.Available && frida.value) {
             return SwarmSignal(
                 agentId = agentId,
                 signalType = SwarmSignalType.PROCESS_ANOMALY,
                 severity = SwarmSeverity.WARN,
                 details = "Frida instrumentation server port is open on a known loopback address.",
+            )
+        }
+
+        // No positive indicator was observed. Before reporting a clean lineage,
+        // require that all three native sources actually completed: otherwise
+        // "nothing detected" is only "nothing observable".
+        val unavailable = listOf(
+            tracer.reasonOrNull() to "Native tracer check",
+            mount.reasonOrNull() to "Root mount check",
+            frida.reasonOrNull() to "Frida port check",
+        ).firstOrNull { it.first != null }
+
+        if (unavailable != null) {
+            val (reason, label) = unavailable
+            return SwarmSignal(
+                agentId = agentId,
+                signalType = SwarmSignalType.TELEMETRY,
+                severity = SwarmSeverity.WARN,
+                details = reason!!.explain(label),
+                metadata = mapOf("unavailable_reason" to reason.name),
             )
         }
 
