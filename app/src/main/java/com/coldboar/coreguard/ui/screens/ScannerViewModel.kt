@@ -4,6 +4,9 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.coldboar.coreguard.mvt.IocProvenanceClass
+import com.coldboar.coreguard.mvt.IocProvenanceSnapshot
+import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.ScanCancellation
 import com.coldboar.coreguard.mvt.ScanProgressListener
 import com.coldboar.coreguard.mvt.ScanReport
@@ -78,6 +81,7 @@ class ScannerViewModel(
     private val engineVersion: () -> String,
     private val schemaVersion: () -> Int,
     private val iocLoadedAtMs: () -> Long,
+    private val iocProvenance: () -> IocProvenanceSnapshot,
     private val latestReport: () -> ScanReport?,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val externalScope: CoroutineScope? = null
@@ -151,6 +155,7 @@ class ScannerViewModel(
                 val normalizedFindings = report.detections
                     .map { it.toFinding(report.finishedAtMillis) }
                     .let { correlateFindingsDeterministic(it) }
+                val provenance = captureProvenance(scanCompleted = true)
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -160,10 +165,10 @@ class ScannerViewModel(
                             scannerEngineVersion = engineVersion(),
                             schemaVersion = schemaVersion(),
                             deepInspectionEnabled = deepInspection,
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = normalizedFindings.map { it.finding },
                             stageEvents = stageEvents.toList()
                         )
@@ -177,6 +182,7 @@ class ScannerViewModel(
                 )
             } catch (ce: CancellationException) {
                 if (!isCurrentGeneration(generation)) return@launch
+                val provenance = captureProvenance(scanCompleted = false)
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -187,10 +193,10 @@ class ScannerViewModel(
                             scannerEngineVersion = engineVersion(),
                             schemaVersion = schemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
                         )
@@ -204,6 +210,7 @@ class ScannerViewModel(
                 )
             } catch (t: Throwable) {
                 if (!isCurrentGeneration(generation)) return@launch
+                val provenance = captureProvenance(scanCompleted = false)
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -214,10 +221,10 @@ class ScannerViewModel(
                             scannerEngineVersion = engineVersion(),
                             schemaVersion = schemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
                         )
@@ -262,6 +269,31 @@ class ScannerViewModel(
     private fun isCurrentGeneration(generation: Long): Boolean =
         scanGeneration.get() == generation
 
+    /**
+     * Capture IOC provenance for session persistence.
+     *
+     * Cancelled/failed scans must not claim feed authenticity unless a snapshot
+     * was genuinely loaded ([iocLoadedAtMs] > 0). Bundled/imported/fallback/mixed
+     * never inherit remote verification labels.
+     */
+    private fun captureProvenance(scanCompleted: Boolean): IocProvenanceSnapshot {
+        val loadedAt = iocLoadedAtMs()
+        if (loadedAt <= 0L) {
+            return IocProvenanceSnapshot.unavailable()
+        }
+        val snap = iocProvenance()
+        if (!scanCompleted &&
+            snap.provenanceClass == IocProvenanceClass.VERIFIED_REMOTE &&
+            snap.feedVersion == null
+        ) {
+            return IocProvenanceSnapshot.unknown(
+                "incomplete verified-remote snapshot on cancelled/failed scan",
+                loadedAt
+            )
+        }
+        return snap.copy(feedLoadedAtMs = if (snap.feedLoadedAtMs > 0L) snap.feedLoadedAtMs else loadedAt)
+    }
+
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -285,15 +317,9 @@ class ScannerViewModel(
                 engineVersion = { ScannerModule.scannerEngineVersion() },
                 schemaVersion = { ScannerModule.scanSchemaVersion() },
                 iocLoadedAtMs = { ScannerModule.iocLoadedAtMs() },
+                iocProvenance = { IocRepository.provenance(context) },
                 latestReport = { ScannerModule.latestReport() }
             ) as T
         }
-    }
-
-    companion object {
-        /** Attribution label included in every persisted scan session. */
-        const val FEED_SOURCE = "Amnesty International Security Lab / mvt-project"
-        const val FEED_AUTHENTICITY =
-            "HTTPS + SHA-256 digest pin (PublicIntelFeedPins); not an upstream Ed25519 signature."
     }
 }

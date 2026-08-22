@@ -63,6 +63,9 @@ class ScannerViewModelLifecycleTest {
             engineVersion = { "test-engine" },
             schemaVersion = { 2 },
             iocLoadedAtMs = { 0L },
+            iocProvenance = {
+                com.coldboar.coreguard.mvt.IocProvenanceSnapshot.unavailable()
+            },
             latestReport = { null },
             ioDispatcher = Dispatchers.Default,
             externalScope = scope

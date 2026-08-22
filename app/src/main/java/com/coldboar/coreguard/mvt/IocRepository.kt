@@ -10,85 +10,165 @@ import java.io.File
  *
  * Sources, merged in order:
  *  1. Bundled indicators shipped as JSON under the `ioc` assets folder
- *     (CoreGuard or STIX2 format).
- *  2. User-imported JSON feeds placed under the `ioc` folder in filesDir
- *     (e.g. a fresh MVT `mvt-indicators` STIX2 export the user imports).
- *  3. [DefaultIndicators] as a last-resort fallback so the scanner is never empty.
+ *  2. Digest-verified remote feed (`remote_feed.json` + meta sidecar)
+ *  3. Other user-imported JSON under filesDir/ioc (not cryptographically verified)
+ *  4. [DefaultIndicators] as last-resort fallback
  *
- * Duplicate indicators (same type + value) are de-duplicated.
+ * Provenance is tracked so scan sessions never inherit a remote-verified label
+ * for bundled, imported, fallback, mixed, or unavailable data.
  */
 object IocRepository {
 
     private const val TAG = "IocRepository"
     private const val ASSET_DIR = "ioc"
     private const val USER_DIR = "ioc"
+    const val REMOTE_FEED_FILE = "remote_feed.json"
+    const val REMOTE_FEED_META_FILE = "remote_feed.meta.json"
 
     @Volatile
     private var cached: List<Indicator>? = null
 
-    /**
-     * Epoch millis when [cached] was last populated, or 0 if the cache has never
-     * been loaded (or was invalidated and not yet reloaded). Safe to read without
-     * holding the lock — the worst case is a slightly stale value on a race between
-     * [invalidate] and [indicators].
-     */
+    @Volatile
+    private var cachedProvenance: IocProvenanceSnapshot = IocProvenanceSnapshot.unavailable()
+
     @Volatile
     private var loadedAtMs: Long = 0L
 
-    /**
-     * Returns the epoch millis when the active IOC set was last loaded from disk,
-     * or 0 if the cache has not been populated yet. Useful for surfacing "last
-     * refreshed N hours ago" in the UI without exposing the full indicator list.
-     */
     fun loadedAtMs(): Long = loadedAtMs
 
-    /** Returns the merged indicator set, loading and caching on first use. */
+    /** Last computed provenance for the cached IOC set (or UNAVAILABLE). */
+    fun provenance(): IocProvenanceSnapshot = cachedProvenance
+
     fun indicators(context: Context): List<Indicator> {
         cached?.let { return it }
         synchronized(this) {
             cached?.let { return it }
-            val merged = load(context)
-            cached = merged
+            val loaded = load(context)
+            cached = loaded.indicators
+            cachedProvenance = loaded.provenance
             loadedAtMs = System.currentTimeMillis()
-            return merged
+            return loaded.indicators
         }
     }
 
-    /** Builds an [IocMatcher] over the active indicator set. */
     fun matcher(context: Context): IocMatcher = IocMatcher(indicators(context))
 
-    /** Forces a reload on next access (e.g. after importing a new feed). */
+    /**
+     * Returns provenance for the active set, loading if needed.
+     * When the cache has never been populated, returns UNAVAILABLE without claiming authenticity.
+     */
+    fun provenance(context: Context): IocProvenanceSnapshot {
+        if (cached == null && loadedAtMs == 0L) {
+            // Force load so scan paths that read provenance after indicators() stay consistent.
+            indicators(context)
+        }
+        return cachedProvenance
+    }
+
+    /**
+     * Session-safe capture: if nothing has been loaded yet, return UNAVAILABLE
+     * (do not invent VERIFIED_REMOTE authenticity).
+     */
+    fun provenanceForSession(context: Context?, forceLoad: Boolean): IocProvenanceSnapshot {
+        if (!forceLoad && loadedAtMs <= 0L) {
+            return IocProvenanceSnapshot.unavailable()
+        }
+        return if (context != null) provenance(context) else cachedProvenance
+    }
+
     fun invalidate() {
         cached = null
         loadedAtMs = 0L
+        cachedProvenance = IocProvenanceSnapshot.unavailable()
     }
 
-    private fun load(context: Context): List<Indicator> {
-        val out = LinkedHashSet<Indicator>()
+    private data class Loaded(
+        val indicators: List<Indicator>,
+        val provenance: IocProvenanceSnapshot
+    )
 
-        // 1. Bundled assets.
+    private fun load(context: Context): Loaded {
+        val bundled = LinkedHashSet<Indicator>()
+        val verifiedRemote = LinkedHashSet<Indicator>()
+        val userImported = LinkedHashSet<Indicator>()
+        var verifiedMeta: VerifiedRemoteMeta? = null
+
         runCatching {
             context.assets.list(ASSET_DIR)?.filter { it.endsWith(".json") }?.forEach { name ->
                 val json = context.assets.open("$ASSET_DIR/$name").bufferedReader().use { it.readText() }
-                out += IocParser.parse(json)
+                bundled += IocParser.parse(json)
             }
         }.onFailure { Log.w(TAG, "Failed reading bundled IOC assets: ${it.message}") }
 
-        // 2. User-imported feeds.
         runCatching {
             val dir = File(context.filesDir, USER_DIR)
             if (dir.isDirectory) {
-                dir.listFiles { f -> f.extension.equals("json", ignoreCase = true) }?.forEach { file ->
-                    out += IocParser.parse(file.readText())
+                val remoteFile = File(dir, REMOTE_FEED_FILE)
+                val metaFile = File(dir, REMOTE_FEED_META_FILE)
+                if (remoteFile.isFile) {
+                    val body = remoteFile.readText()
+                    val meta = readVerifiedMeta(metaFile)
+                    val bodySha = HardenedSha.sha256Hex(body.toByteArray(Charsets.UTF_8))
+                    if (meta != null && meta.sha256Hex.equals(bodySha, ignoreCase = true)) {
+                        verifiedRemote += IocParser.parse(body)
+                        verifiedMeta = meta
+                    } else {
+                        // File present without matching meta ⇒ treat as user import, not verified.
+                        userImported += IocParser.parse(body)
+                        Log.w(TAG, "remote_feed.json present without matching verified meta")
+                    }
+                }
+                dir.listFiles { f ->
+                    f.isFile &&
+                        f.extension.equals("json", ignoreCase = true) &&
+                        f.name != REMOTE_FEED_FILE &&
+                        f.name != REMOTE_FEED_META_FILE
+                }?.forEach { file ->
+                    userImported += IocParser.parse(file.readText())
                 }
             }
         }.onFailure { Log.w(TAG, "Failed reading user IOC feeds: ${it.message}") }
 
-        // 3. Fallback.
-        if (out.isEmpty()) out += DefaultIndicators.list
+        val merged = LinkedHashSet<Indicator>()
+        merged += bundled
+        merged += verifiedRemote
+        merged += userImported
+        val usedFallback = merged.isEmpty()
+        if (usedFallback) merged += DefaultIndicators.list
 
-        Log.i(TAG, "Loaded ${out.size} indicators")
-        return out.toList()
+        val now = System.currentTimeMillis()
+        val provenance = IocProvenanceResolver.resolve(
+            bundledCount = bundled.size,
+            verifiedRemoteCount = verifiedRemote.size,
+            userImportedCount = userImported.size,
+            usedFallback = usedFallback,
+            loadedAtMs = now,
+            verifiedMeta = verifiedMeta
+        )
+        Log.i(TAG, "Loaded ${merged.size} indicators (${provenance.provenanceClass})")
+        return Loaded(merged.toList(), provenance)
+    }
+
+    private fun readVerifiedMeta(file: File): VerifiedRemoteMeta? {
+        if (!file.isFile) return null
+        return runCatching {
+            val obj = JSONObject(file.readText())
+            VerifiedRemoteMeta(
+                name = obj.getString("name"),
+                url = obj.getString("url"),
+                sha256Hex = obj.getString("sha256").lowercase(),
+                commitPin = obj.optString("commit", ""),
+                verifiedAtMs = obj.optLong("verifiedAtMs", 0L)
+            )
+        }.getOrNull()
+    }
+}
+
+/** Tiny SHA-256 helper to avoid a circular import with the net package from load path. */
+internal object HardenedSha {
+    fun sha256Hex(data: ByteArray): String {
+        val md = java.security.MessageDigest.getInstance("SHA-256")
+        return md.digest(data).joinToString("") { "%02x".format(it) }
     }
 }
 
@@ -132,14 +212,9 @@ object IocParser {
         }
     }
 
-    /**
-     * Extracts (type, value) pairs from a simple STIX2 pattern such as
-     * `[domain-name:value = 'evil.com']` or comparisons joined by OR.
-     */
     private fun parseStixPattern(pattern: String): List<Pair<IndicatorType, String>> {
         if (pattern.isBlank()) return emptyList()
         val result = mutableListOf<Pair<IndicatorType, String>>()
-        // Match  <lhs> = '<value>'  clauses.
         val regex = Regex("""([\w\-:.'\[\]]+?)\s*=\s*'([^']+)'""")
         regex.findAll(pattern).forEach { m ->
             val lhs = m.groupValues[1].trim().trim('[', ']')

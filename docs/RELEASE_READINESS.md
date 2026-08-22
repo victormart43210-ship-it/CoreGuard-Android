@@ -39,8 +39,17 @@
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
 | **Root / emulator detection** | 🟡 HEURISTIC | Heuristic checks only. Advanced root frameworks may not be detected. |
 | **Play Store approval** | ⬛ NOT GUARANTEED | Submitting this app does not guarantee approval. Google reviews apps for policy compliance independently. |
-| **Public intel feed pins** | 🟡 DIGEST-PINNED | IOC/STIX/KEV/MISP URLs are commit- or path-pinned with SHA-256 digests (`PublicIntelFeedPins`). CISA KEV digests drift when CISA publishes; refresh pins deliberately — integrity failures fail closed (no SAFE/PASS substitution). |
-| **Privacy Shield upstream DNS** | 🟢 CONNECT+VALIDATE | Forwarding uses a connected UDP socket plus transaction-ID / sender checks. Plaintext UDP is not DoT/DoH and is not described as encrypting private connections. |
+| **Public intel feed pins** | 🟡 DIGEST-PINNED | IOC/STIX/KEV/MISP URLs are commit- or path-pinned with SHA-256 digests (`PublicIntelFeedPins`). **CISA KEV** uses a dated digest snapshot (same mutable URL); mismatch ⇒ UNAVAILABLE. Refresh pins only via human-reviewed commit (never auto-learn from download/Quilla). |
+| **Privacy Shield upstream DNS** | 🟢 CONNECT+VALIDATE | Forwarding uses a connected UDP socket plus transaction-ID / sender checks. Outcomes: FORWARDED / REJECTED / UNAVAILABLE — never log ALLOWED on timeout/reject. Plaintext UDP is not DoT/DoH. |
+| **IOC session provenance** | 🟢 SOURCE-AWARE | Scan sessions record VERIFIED_REMOTE / BUNDLED / USER_IMPORTED / MIXED / FALLBACK / UNAVAILABLE / UNKNOWN from `IocRepository` — never a global Amnesty authenticity label. |
+
+### Pin-refresh process (human-reviewed only)
+
+1. Download candidate bytes over HTTPS from the pinned URL (or new immutable commit URL).
+2. Compute SHA-256 locally; never accept a digest suggested by Quilla, a remote manifest, or the payload itself.
+3. Update `PublicIntelFeedPins` (and release notes) in a reviewed commit.
+4. Until refresh lands, digest mismatch remains **UNAVAILABLE** (fail closed).
+
 
 ---
 

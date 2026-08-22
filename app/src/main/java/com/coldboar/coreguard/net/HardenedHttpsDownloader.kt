@@ -2,7 +2,6 @@ package com.coldboar.coreguard.net
 
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
-import java.net.HttpURLConnection
 import java.net.URL
 import java.security.MessageDigest
 
@@ -10,7 +9,7 @@ import java.security.MessageDigest
  * Shared HTTPS downloader for public intelligence feeds.
  *
  * Enforces: HTTPS only, exact host allowlist, manual redirect validation,
- * bounded incremental reads (never [InputStream.readBytes] before the cap),
+ * bounded incremental reads (never unbounded allocation before the cap),
  * optional content-type prefix, and optional SHA-256 digest verification.
  * Integrity failures fail closed — callers must not consume or persist bytes.
  */
@@ -65,14 +64,23 @@ object HardenedHttpsDownloader {
         return out.toByteArray()
     }
 
-    fun download(url: String, policy: Policy): Result {
+    fun download(
+        url: String,
+        policy: Policy,
+        transport: HttpTransport = UrlConnectionHttpTransport
+    ): Result {
         if (!url.startsWith("https://")) {
             return Result.Failure("Only HTTPS URLs are allowed")
         }
-        return downloadHop(url, policy, redirectsLeft = policy.maxRedirects)
+        return downloadHop(url, policy, transport, redirectsLeft = policy.maxRedirects)
     }
 
-    private fun downloadHop(url: String, policy: Policy, redirectsLeft: Int): Result {
+    private fun downloadHop(
+        url: String,
+        policy: Policy,
+        transport: HttpTransport,
+        redirectsLeft: Int
+    ): Result {
         val parsed = try {
             URL(url)
         } catch (_: Exception) {
@@ -86,64 +94,70 @@ object HardenedHttpsDownloader {
             return Result.Failure("Host not on allowlist: $host")
         }
 
-        val connection = (parsed.openConnection() as HttpURLConnection).apply {
-            connectTimeout = policy.connectTimeoutMs
-            readTimeout = policy.readTimeoutMs
-            instanceFollowRedirects = false
-            setRequestProperty("Accept", policy.acceptHeader)
-            setRequestProperty("User-Agent", policy.userAgent)
-        }
-        return try {
-            connection.connect()
-            val status = connection.responseCode
-            if (status in 301..308) {
-                if (redirectsLeft <= 0) {
-                    return Result.Failure("Too many redirects")
-                }
-                val location = connection.getHeaderField("Location")
-                    ?: return Result.Failure("Redirect without Location")
-                val next = when {
-                    location.startsWith("https://") -> location
-                    location.startsWith("/") -> "https://$host$location"
-                    else -> return Result.Failure("Redirect to non-HTTPS URL rejected")
-                }
-                connection.disconnect()
-                return downloadHop(next, policy, redirectsLeft - 1)
-            }
-            if (status !in 200..299) {
-                return Result.Failure("HTTP $status from server")
-            }
-
-            val contentLength = connection.contentLength
-            if (contentLength > policy.maxBytes) {
-                return Result.Failure("Response too large ($contentLength bytes)")
-            }
-
-            val contentType = connection.contentType
-            val requiredPrefix = policy.requireContentTypePrefix
-            if (requiredPrefix != null &&
-                (contentType == null || !contentType.startsWith(requiredPrefix, ignoreCase = true))
-            ) {
-                return Result.Failure("Unexpected Content-Type: $contentType")
-            }
-
-            val bytes = connection.inputStream.use { input ->
-                readBounded(input, policy.maxBytes)
-            } ?: return Result.Failure("Response too large (>${policy.maxBytes} bytes)")
-
-            val expected = policy.expectedSha256Hex?.lowercase()
-            if (expected != null) {
-                val actual = sha256Hex(bytes)
-                if (actual != expected) {
-                    return Result.Failure("SHA-256 mismatch (integrity failure)")
-                }
-            }
-
-            Result.Success(bytes = bytes, finalUrl = url)
+        val response = try {
+            transport.get(
+                url = url,
+                connectTimeoutMs = policy.connectTimeoutMs,
+                readTimeoutMs = policy.readTimeoutMs,
+                headers = mapOf(
+                    "Accept" to policy.acceptHeader,
+                    "User-Agent" to policy.userAgent
+                )
+            )
         } catch (e: Exception) {
-            Result.Failure(e.message ?: "Network error")
-        } finally {
-            connection.disconnect()
+            return Result.Failure(e.message ?: "Network error")
         }
+
+        val status = response.code
+        if (status in 301..308) {
+            if (redirectsLeft <= 0) {
+                return Result.Failure("Too many redirects")
+            }
+            val location = response.location
+                ?: return Result.Failure("Redirect without Location")
+            val next = when {
+                location.startsWith("https://") -> location
+                location.startsWith("/") -> "https://$host$location"
+                else -> return Result.Failure("Redirect to non-HTTPS URL rejected")
+            }
+            val nextHost = try {
+                URL(next).host
+            } catch (_: Exception) {
+                return Result.Failure("Malformed redirect URL")
+            }
+            if (!hostAllowed(nextHost, policy.allowedHosts)) {
+                return Result.Failure("Redirect host not on allowlist: $nextHost")
+            }
+            return downloadHop(next, policy, transport, redirectsLeft - 1)
+        }
+        if (status !in 200..299) {
+            return Result.Failure("HTTP $status from server")
+        }
+
+        if (response.contentLength > policy.maxBytes) {
+            return Result.Failure("Response too large (${response.contentLength} bytes)")
+        }
+
+        val requiredPrefix = policy.requireContentTypePrefix
+        if (requiredPrefix != null &&
+            (response.contentType == null ||
+                !response.contentType.startsWith(requiredPrefix, ignoreCase = true))
+        ) {
+            return Result.Failure("Unexpected Content-Type: ${response.contentType}")
+        }
+
+        val bytes = response.body.use { input ->
+            readBounded(input, policy.maxBytes)
+        } ?: return Result.Failure("Response too large (>${policy.maxBytes} bytes)")
+
+        val expected = policy.expectedSha256Hex?.lowercase()
+        if (expected != null) {
+            val actual = sha256Hex(bytes)
+            if (actual != expected) {
+                return Result.Failure("SHA-256 mismatch (integrity failure)")
+            }
+        }
+
+        return Result.Success(bytes = bytes, finalUrl = url)
     }
 }

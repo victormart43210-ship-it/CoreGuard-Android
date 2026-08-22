@@ -115,8 +115,19 @@ object PublicIntelFeedPins {
         maxBytes = 6 * 1024 * 1024
     )
 
+    /**
+     * CISA Known Exploited Vulnerabilities JSON.
+     *
+     * This is a **dated digest snapshot**, not an immutable commit URL. CISA
+     * republishes the same path when the catalog changes; a SHA-256 mismatch is
+     * UNAVAILABLE (fail closed). Never auto-learn a replacement digest from
+     * downloaded content or Quilla — bump [sha256Hex] only via human-reviewed
+     * pin refresh (see docs/RELEASE_READINESS.md).
+     *
+     * Snapshot measured: 2026-08-22.
+     */
     val CISA_KEV = Pin(
-        name = "CISA KEV",
+        name = "CISA KEV (dated digest snapshot 2026-08-22)",
         url = "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json",
         sha256Hex = "137884960e3f801665bfa47694e703fbc4dd1c738df5e0e5af12d325a5f8a9d5",
         maxBytes = 8 * 1024 * 1024

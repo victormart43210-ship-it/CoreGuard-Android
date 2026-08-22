@@ -1,7 +1,9 @@
 package com.quilla.intelligence.sdk.intel
 
 import com.coldboar.coreguard.net.HardenedHttpsDownloader
+import com.coldboar.coreguard.net.HttpTransport
 import com.coldboar.coreguard.net.PublicIntelFeedPins
+import com.coldboar.coreguard.net.UrlConnectionHttpTransport
 import com.quilla.intelligence.sdk.model.StixIndicator
 import org.json.JSONArray
 import org.json.JSONObject
@@ -13,14 +15,12 @@ import java.util.concurrent.TimeUnit
  * indicator projects.
  *
  * Only SHA-256-pinned immutable URLs from [PublicIntelFeedPins] are consumed.
- * Integrity failures fail closed (feed skipped; no poisoned indicators).
- *
- * Defensive use only — results feed Quilla correlation / Research, not offensive tooling.
- * Network I/O is synchronous; call from a background thread.
+ * Integrity failures and empty bundles fail closed per source (UNAVAILABLE).
  */
 class PublicMultiSourceStixFetcher(
     private val feeds: List<Feed> = DEFAULT_FEEDS,
-    private val nowMs: () -> Long = System::currentTimeMillis
+    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val transport: HttpTransport = UrlConnectionHttpTransport
 ) : MultiSourceStixFetcher {
 
     data class Feed(
@@ -31,22 +31,48 @@ class PublicMultiSourceStixFetcher(
         val ttlDays: Long = 30L
     )
 
-    override fun fetchAllSources(): List<StixIndicator> {
+    override fun fetchReport(): StixFetchReport {
+        if (feeds.isEmpty()) {
+            return StixFetchReport.unavailable("no STIX feeds configured")
+        }
         val merged = LinkedHashMap<String, StixIndicator>()
+        val results = mutableListOf<StixSourceResult>()
+        var verified = 0
+        var failed = 0
         for (feed in feeds) {
-            val batch = fetchFeed(feed)
-            for (indicator in batch) {
-                val key = indicator.patternValue.trim().lowercase()
-                if (key.isNotEmpty()) merged.putIfAbsent(key, indicator)
+            val source = fetchFeedDetailed(feed)
+            results += source
+            if (source.success) {
+                verified++
+                for (indicator in source.indicators) {
+                    val key = indicator.patternValue.trim().lowercase()
+                    if (key.isNotEmpty()) merged.putIfAbsent(key, indicator)
+                }
+            } else {
+                failed++
             }
         }
-        return merged.values.toList()
+        return StixFetchReport(
+            indicators = merged.values.toList(),
+            sourceResults = results,
+            verifiedSourceCount = verified,
+            failedSourceCount = failed,
+            allUnavailable = verified == 0
+        )
     }
 
-    private fun fetchFeed(feed: Feed): List<StixIndicator> {
-        if (PublicIntelFeedPins.isFloatingBranchUrl(feed.url)) return emptyList()
-        if (!feed.url.startsWith("https://", ignoreCase = true)) return emptyList()
-        if (feed.sha256Hex.isBlank()) return emptyList()
+    override fun fetchAllSources(): List<StixIndicator> = fetchReport().indicators
+
+    private fun fetchFeedDetailed(feed: Feed): StixSourceResult {
+        if (PublicIntelFeedPins.isFloatingBranchUrl(feed.url)) {
+            return fail(feed, "floating branch URL rejected")
+        }
+        if (!feed.url.startsWith("https://", ignoreCase = true)) {
+            return fail(feed, "non-HTTPS URL rejected")
+        }
+        if (feed.sha256Hex.isBlank()) {
+            return fail(feed, "missing digest pin")
+        }
 
         val download = HardenedHttpsDownloader.download(
             url = feed.url,
@@ -56,20 +82,44 @@ class PublicMultiSourceStixFetcher(
                 expectedSha256Hex = feed.sha256Hex,
                 acceptHeader = "application/json, */*",
                 userAgent = USER_AGENT
-            )
+            ),
+            transport = transport
         )
         return when (download) {
-            is HardenedHttpsDownloader.Result.Failure -> emptyList()
-            is HardenedHttpsDownloader.Result.Success -> parseStixBundle(
-                json = download.bytes.toString(Charsets.UTF_8),
-                sourceFeed = feed.name,
-                ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
-            )
+            is HardenedHttpsDownloader.Result.Failure ->
+                fail(feed, download.reason)
+            is HardenedHttpsDownloader.Result.Success -> {
+                val parsed = parseStixBundle(
+                    json = download.bytes.toString(Charsets.UTF_8),
+                    sourceFeed = feed.name,
+                    ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
+                )
+                if (parsed.isEmpty()) {
+                    // Valid transport + digest but empty production bundle ⇒ failure.
+                    fail(feed, "empty STIX bundle after verify — UNAVAILABLE")
+                } else {
+                    StixSourceResult(
+                        name = feed.name,
+                        url = feed.url,
+                        success = true,
+                        indicators = parsed,
+                        status = StixSourceResult.STATUS_VERIFIED
+                    )
+                }
+            }
         }
     }
 
+    private fun fail(feed: Feed, reason: String): StixSourceResult =
+        StixSourceResult(
+            name = feed.name,
+            url = feed.url,
+            success = false,
+            failureReason = reason,
+            status = StixSourceResult.STATUS_UNAVAILABLE
+        )
+
     companion object {
-        /** No artificial IOC teaching ceiling — Infinity correlator ingest. */
         private const val MAX_INDICATORS_PER_FEED = Int.MAX_VALUE
         private const val USER_AGENT =
             "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
@@ -83,10 +133,6 @@ class PublicMultiSourceStixFetcher(
             )
         }
 
-        /**
-         * Parses a STIX2 bundle into [StixIndicator] records.
-         * Exposed for unit tests with fixture JSON (no network).
-         */
         fun parseStixBundle(
             json: String,
             sourceFeed: String,

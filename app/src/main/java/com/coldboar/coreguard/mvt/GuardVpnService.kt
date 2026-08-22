@@ -127,8 +127,11 @@ class GuardVpnService : VpnService() {
                 )
                 Log.w(TAG, "BLOCKED $domain (${hit.malware})")
             } else {
-                forward(parsed, upstream, output)
-                Log.d(TAG, "ALLOWED $domain")
+                when (val forwardResult = forward(parsed, upstream, output)) {
+                    DnsForwardResult.FORWARDED -> Log.d(TAG, "FORWARDED $domain")
+                    DnsForwardResult.REJECTED -> Log.w(TAG, "REJECTED upstream reply for $domain")
+                    DnsForwardResult.UNAVAILABLE -> Log.d(TAG, "UNAVAILABLE forward for $domain")
+                }
             }
         }
     }
@@ -138,12 +141,19 @@ class GuardVpnService : VpnService() {
      *
      * Uses a connected datagram socket plus [DnsUpstreamValidator] so a forged
      * UDP reply from another address/port or with a mismatched transaction ID
-     * is never written into the tunnel.
+     * is never written into the tunnel. [VpnService.protect] must succeed.
      */
-    private fun forward(query: IpV4Udp.Datagram, upstream: InetAddress, output: FileOutputStream) {
-        runCatching {
+    private fun forward(
+        query: IpV4Udp.Datagram,
+        upstream: InetAddress,
+        output: FileOutputStream
+    ): DnsForwardResult {
+        return try {
             DatagramSocket().use { socket ->
-                protect(socket)
+                if (!protect(socket)) {
+                    Log.w(TAG, "protect(socket) failed — upstream forward UNAVAILABLE")
+                    return DnsForwardResult.UNAVAILABLE
+                }
                 socket.soTimeout = 4_000
                 socket.connect(InetSocketAddress(upstream, 53))
                 val out = DatagramPacket(query.payload, query.payload.size)
@@ -161,11 +171,15 @@ class GuardVpnService : VpnService() {
                     )
                 ) {
                     Log.w(TAG, "Rejected forged or invalid upstream DNS reply")
-                    return@runCatching
+                    return DnsForwardResult.REJECTED
                 }
                 output.write(IpV4Udp.buildReply(query, answer))
+                DnsForwardResult.FORWARDED
             }
-        }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
+        } catch (t: Throwable) {
+            Log.d(TAG, "upstream forward failed for query: ${t.message}")
+            DnsForwardResult.UNAVAILABLE
+        }
     }
 
     /**

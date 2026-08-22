@@ -44,7 +44,7 @@ object QuillaWebSecurityIntelFetcher {
         val failed = mutableListOf<String>()
 
         when (val kev = runCatching { fetchKevAndroidEntries() }.getOrNull()) {
-            null -> failed += "CISA KEV"
+            null -> failed += "CISA KEV UNAVAILABLE (digest pin miss or fetch failure — refresh pin deliberately)"
             else -> {
                 entries += kev
                 ok += "CISA KEV (${kev.size} Android-relevant)"
@@ -52,7 +52,7 @@ object QuillaWebSecurityIntelFetcher {
         }
 
         when (val galaxy = runCatching { fetchMispAndroidGalaxyEntries() }.getOrNull()) {
-            null -> failed += "MISP Android galaxy"
+            null -> failed += "MISP Android galaxy UNAVAILABLE"
             else -> {
                 entries += galaxy
                 ok += "MISP Android galaxy (${galaxy.size})"
@@ -60,7 +60,7 @@ object QuillaWebSecurityIntelFetcher {
         }
 
         when (val malpedia = runCatching { fetchMispMalpediaMobileEntries() }.getOrNull()) {
-            null -> failed += "MISP Malpedia (mobile filter)"
+            null -> failed += "MISP Malpedia (mobile filter) UNAVAILABLE"
             else -> {
                 entries += malpedia
                 ok += "MISP Malpedia mobile-relevant (${malpedia.size})"
@@ -257,7 +257,10 @@ object QuillaWebSecurityIntelFetcher {
             )
         )
         return when (download) {
-            is HardenedHttpsDownloader.Result.Failure -> null
+            is HardenedHttpsDownloader.Result.Failure -> {
+                // Digest drift / integrity miss ⇒ UNAVAILABLE (never auto-trust new digest).
+                null
+            }
             is HardenedHttpsDownloader.Result.Success ->
                 download.bytes.toString(Charsets.UTF_8)
         }
