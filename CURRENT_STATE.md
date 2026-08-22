@@ -1,15 +1,27 @@
 # CoreGuard Android Phase-0 Current State
 
-Generated UTC: 2026-08-22T01:07:37Z
+Generated UTC: 2026-08-22T20:43:18Z
 
 ## Repository
 
-- Expected handoff SHA: `7be3268c40d1f498e411de8301c4c3d5243f67df`
-- Observed BASE_SHA: `7be3268c40d1f498e411de8301c4c3d5243f67df`
-- FINAL_SHA (implementation commit): `2420f6b127b22e9e6300618bd2e359e8040fa994`
-- Documentation-only commits follow FINAL_SHA; current repository HEAD is reported by `git rev-parse HEAD`.
 - Branch: `cursor/phase0-final-instrumentation-gate`
+- HEAD (post-merge): `299b819340f15d6d74bb2275c44971141e91f8a1`
+- Merged `origin/main` at: `1cf1518203d16d360b91d89da39dc06a9fb503ad`
+- Original Phase-0 implementation SHA: `2420f6b127b22e9e6300618bd2e359e8040fa994`
 - Modules: `:app`, `:core:model` (`./gradlew projects`)
+
+## Unique delta vs current main
+
+After merging latest `main`, this branch differs from `main` by **docs only**:
+
+- `CURRENT_STATE.md` (this file)
+
+Runtime Phase-0 repairs are already on `main`:
+
+- KVM writable preflight in `.github/workflows/android.yml` (`chmod 0666` + diagnostics)
+- Book of Changes append-order chain validation (`ORDER BY rowid`)
+- EliteDashboard Compose imports (`mutableStateOf` / `setValue` / `getValue`)
+- `MessageDigest` import restore in `QuillaWebSecurityIntelFetcher.kt`
 
 ## Build configuration
 
@@ -22,47 +34,27 @@ Generated UTC: 2026-08-22T01:07:37Z
 - Billing dependency: `com.android.billingclient:billing-ktx:7.1.1`
 - Emulator/API level: API 36, `CoreGuard_ATD36`
 
-## Verification results
+## Verification results (post-merge HEAD `299b819`)
 
-All commands below were executed from `/workspace` after `./gradlew clean`
-against verified implementation SHA `2420f6b127b22e9e6300618bd2e359e8040fa994`,
-unless explicitly marked CI or unavailable.
-
-| Gate | Result | Command and evidence |
+| Gate | Result | Evidence |
 |---|---|---|
-| projects | PASS | `./gradlew projects`; `BUILD SUCCESSFUL` and `:app`, `:core:model` listed |
-| core model tests | PASS | `./gradlew :core:model:test --stacktrace`; `BUILD SUCCESSFUL` |
-| debug compile | PASS | `./gradlew :app:compileDebugKotlin --stacktrace`; `:app:compileDebugKotlin`, `BUILD SUCCESSFUL` |
-| release compile | PASS | `./gradlew :app:compileReleaseKotlin --stacktrace`; `:app:compileReleaseKotlin`, `BUILD SUCCESSFUL` |
-| unit tests | PASS | `./gradlew :app:testDebugUnitTest --stacktrace`; `BUILD SUCCESSFUL`; 432 tests, 0 failures |
-| lint | PASS | `./gradlew :app:lintDebug --stacktrace`; lint report written; `BUILD SUCCESSFUL` |
-| debug assembly | PASS | `./gradlew :app:assembleDebug --stacktrace`; `verifyNoPlaceholderApk OK (23966864 bytes)`; `BUILD SUCCESSFUL` |
-| release assembly | PASS | `./gradlew :app:assembleRelease --stacktrace`; `BUILD SUCCESSFUL` |
-| androidTest compilation | PASS | `./gradlew :app:compileDebugAndroidTestKotlin --stacktrace`; `BUILD SUCCESSFUL` on targeted regression run |
-| canonical local emulator gate | UNAVAILABLE | `HEADLESS=1 ./scripts/quilla-emulator-tests.sh`; emulator did not reach `device` after 600s in this container; diagnostics showed lavapipe/container runtime |
-| connected instrumentation locally | UNAVAILABLE | `./gradlew :app:connectedDebugAndroidTest --stacktrace`; `DeviceException: No connected devices!` |
-| API-36 instrumentation in CI | PASS | GitHub Actions run `32541991157`, job `96953633946`; all three classes passed (4 tests total) |
-| ADB smoke in CI | PASS | GitHub Actions run `32541991157`, job `96953633946`; `PASS — process alive, no fatal for com.coldboar.coreguard.debug` |
+| merge conflicts | PASS | Resolved; `.github/workflows/android.yml` matches `main` |
+| debug compile | PASS | `./gradlew :app:compileDebugKotlin` |
+| unit tests | PASS | `./gradlew :app:testDebugUnitTest` — **555** tests, 0 failures |
+| EliteDashboard imports | PASS | `mutableStateOf` / `setValue` present |
+| MessageDigest import | PASS | present in `QuillaWebSecurityIntelFetcher.kt` |
+| BookOfChanges rowid order | PASS | DAO queries use `ORDER BY rowid` |
+| API-36 instrumentation (historical) | PASS | CI run `32541991157` on earlier Phase-0 head |
+| local emulator in this VM | UNAVAILABLE | container/KVM limits |
 
-## CI instrumentation evidence
+## Known warnings (non-blocking)
 
-- Baseline CI run `32538082350` at `7be3268c`: Android build PASS; instrumentation stopped at the KVM access precondition (`/dev/kvm not writable`) before test execution.
-- Earlier API-36 run `32532882454` after emulator/compile repairs: emulator booted, installed, and launched the app; `QuillaQuantumOnDeviceTest` passed 2 tests and `MainActivityLaunchTest` passed 1 test. `GuardianIntelligenceOnDeviceTest` failed at line 30 on `bookOfChanges(...).chainValid()`.
-- Current branch CI run `32541991157` passed API-36 instrumentation and ADB smoke on `CoreGuard_ATD36`.
+- AGP 8.7.3 tested through compileSdk 35; app uses compileSdk 36
+- Remaining AGP/third-party Gradle 9 deprecations
+- Deprecated `QuillaMemoryFactory` call sites
 
-## Known warnings
+## Remaining blockers (outside Phase-0 code)
 
-- AGP 8.7.3 warns that it was tested through compileSdk 35 while this app uses compileSdk 36. This is non-blocking for the current verified build; no blind upgrade was made.
-- Gradle 8.13 reports remaining AGP/third-party Gradle 9 deprecations. These are deferred and not caused by the Phase-0 change.
-- Existing Kotlin warnings include deprecated Android API usage and deprecated `QuillaMemoryFactory`; deferred because they do not block this baseline.
-
-## Known unavailable evidence
-
-- Successful local emulator/device execution is unavailable in this container.
-- Local connected-device instrumentation is unavailable because no device is connected.
-- Production signing was not exercised; release artifact is unsigned in this environment.
-- Physical-device matrix, Play Console configuration, and external Black Duck backend are not verified here.
-
-## Remaining blockers
-
-- Physical-device and Play Console release checks remain outside this Phase-0 VM verification.
+- Physical-device matrix
+- Play Console / production signing
+- External Black Duck backend URL
