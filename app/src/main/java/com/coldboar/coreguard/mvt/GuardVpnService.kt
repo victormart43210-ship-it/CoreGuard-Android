@@ -18,10 +18,7 @@ import com.coldboar.coreguard.quilla.QuillaIocBridge
 import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.net.DatagramPacket
-import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.InetSocketAddress
 
 /**
  * Privacy Shield: a local [VpnService] DNS sinkhole for known indicator domains.
@@ -148,38 +145,14 @@ class GuardVpnService : VpnService() {
         upstream: InetAddress,
         output: FileOutputStream
     ): DnsForwardResult {
-        return try {
-            DatagramSocket().use { socket ->
-                if (!protect(socket)) {
-                    Log.w(TAG, "protect(socket) failed — upstream forward UNAVAILABLE")
-                    return DnsForwardResult.UNAVAILABLE
-                }
-                socket.soTimeout = 4_000
-                socket.connect(InetSocketAddress(upstream, 53))
-                val out = DatagramPacket(query.payload, query.payload.size)
-                socket.send(out)
-                val respBuf = ByteArray(32_767)
-                val resp = DatagramPacket(respBuf, respBuf.size)
-                socket.receive(resp)
-                val answer = respBuf.copyOf(resp.length)
-                if (!DnsUpstreamValidator.accept(
-                        query = query.payload,
-                        response = answer,
-                        expectedUpstream = upstream,
-                        packetAddress = resp.address,
-                        packetPort = resp.port
-                    )
-                ) {
-                    Log.w(TAG, "Rejected forged or invalid upstream DNS reply")
-                    return DnsForwardResult.REJECTED
-                }
-                output.write(IpV4Udp.buildReply(query, answer))
-                DnsForwardResult.FORWARDED
-            }
-        } catch (t: Throwable) {
-            Log.d(TAG, "upstream forward failed for query: ${t.message}")
-            DnsForwardResult.UNAVAILABLE
-        }
+        return DnsUpstreamForwarder.forward(
+            queryPayload = query.payload,
+            upstream = upstream,
+            protect = { socket -> protect(socket) },
+            writeTunnel = { bytes -> output.write(bytes) },
+            buildReply = { answer -> IpV4Udp.buildReply(query, answer) },
+            exchange = DnsUpstreamForwarder.defaultExchange
+        )
     }
 
     /**

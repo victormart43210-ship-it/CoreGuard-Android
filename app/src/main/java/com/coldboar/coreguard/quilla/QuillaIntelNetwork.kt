@@ -79,8 +79,10 @@ object QuillaIntelNetwork {
                     app.quillaDatabase.quillaLearningDao(),
                     stixFetcher
                 ).also { slidingEngine = it }
-                engine.syncThreatFeeds()
-                feedNotes += "Sliding-window STIX sync attempted (verifiedSources=${stixReport.verifiedSourceCount})"
+                // Single-fetch: install the already-verified indicator list.
+                // Do not call syncThreatFeeds() (would refetch / retain stale pull).
+                engine.loadVerifiedIndicators(stix)
+                feedNotes += "Sliding-window loaded ${stix.size} verified STIX indicators (single-fetch)"
             }
         }.onFailure {
             Log.w(TAG, "Sliding-window sync skipped: ${it.message}")
@@ -99,7 +101,8 @@ object QuillaIntelNetwork {
             if (result.sourcesFailed.isNotEmpty()) {
                 feedNotes += result.sourcesFailed.map { "failed:$it" }
             }
-            knowledgeOk = result.sourcesOk.isNotEmpty()
+            // Do not trust free-form sourcesOk alone: require at least one entry.
+            knowledgeOk = result.sourcesOk.isNotEmpty() && result.entries.isNotEmpty()
             if (result.sourcesFailed.any {
                     it.contains("digest", ignoreCase = true) ||
                         it.contains("SHA-256", ignoreCase = true) ||
@@ -130,8 +133,11 @@ object QuillaIntelNetwork {
             crawlerWarnings += curatedIntelResult.warnings
         }
 
-        // Network sync truth: local/fallback IOCs never prove synchronized.
-        val synced = stixVerifiedOk || knowledgeOk
+        // Successful remote STIX sync requires ≥1 typed successful source AND
+        // ≥1 verified merged indicator. Local/bundled/empty/failed ⇒ not synced.
+        val stixSynced = stixVerifiedOk && stixCount > 0 &&
+            stixReport.sourceResults.any { it.success && it.indicators.isNotEmpty() }
+        val synced = stixSynced || knowledgeOk
         val syncFailed = !synced
 
         val snapshot = QuillaIntelNetworkSnapshot(
@@ -143,18 +149,18 @@ object QuillaIntelNetwork {
             synced = synced,
             syncFailed = syncFailed,
             sourceLabel = when {
-                synced && stixVerifiedOk && knowledgeOk ->
+                synced && stixSynced && knowledgeOk ->
                     "Quilla Intel Network (STIX verified + web intel)"
-                synced && stixVerifiedOk ->
+                synced && stixSynced ->
                     "Quilla Intel Network (STIX verified)"
                 synced && knowledgeOk ->
                     "Quilla Intel Network (web intel only; STIX UNAVAILABLE)"
                 else ->
                     "Quilla Intel Network (UNAVAILABLE — sync failed)"
             },
-            stixStatus = if (stixVerifiedOk) StixSourceResult.STATUS_VERIFIED else StixSourceResult.STATUS_UNAVAILABLE,
-            stixVerifiedSourceCount = stixReport.verifiedSourceCount,
-            stixFailedSourceCount = stixReport.failedSourceCount,
+            stixStatus = if (stixSynced) StixSourceResult.STATUS_VERIFIED else StixSourceResult.STATUS_UNAVAILABLE,
+            stixVerifiedSourceCount = stixReport.sourceResults.count { it.success },
+            stixFailedSourceCount = stixReport.sourceResults.count { !it.success },
             crawlerEntryCount = crawlerEntryCount,
             crawlerSignatureValid = crawlerSigValid,
             crawlerSourceLabel = crawlerSourceLabel,

@@ -8,10 +8,14 @@ import java.security.MessageDigest
 /**
  * Shared HTTPS downloader for public intelligence feeds.
  *
- * Enforces: HTTPS only, exact host allowlist, manual redirect validation,
- * bounded incremental reads (never unbounded allocation before the cap),
- * optional content-type prefix, and optional SHA-256 digest verification.
- * Integrity failures fail closed — callers must not consume or persist bytes.
+ * Enforces: HTTPS only, exact (case-insensitive) host allowlist with optional
+ * explicit wildcard entries (`*.example.com`), manual redirect validation,
+ * bounded incremental reads, optional content-type prefix, and optional SHA-256
+ * digest verification. Integrity failures fail closed — callers must not consume
+ * or persist bytes.
+ *
+ * The complete response lifecycle is enclosed in exception handling; the body
+ * stream (and underlying connection) is closed on every success and failure path.
  */
 object HardenedHttpsDownloader {
 
@@ -36,11 +40,22 @@ object HardenedHttpsDownloader {
         data class Failure(val reason: String) : Result()
     }
 
+    /**
+     * Exact case-insensitive host match, or an explicit wildcard policy entry
+     * of the form `*.example.com` (matches `a.example.com`, not `example.com`).
+     * Implicit subdomain acceptance without a wildcard entry is not allowed.
+     */
     fun hostAllowed(host: String, allowedHosts: Set<String>): Boolean {
         val h = host.lowercase()
         return allowedHosts.any { allowed ->
             val a = allowed.lowercase()
-            h == a || h.endsWith(".$a")
+            when {
+                a.startsWith("*.") -> {
+                    val suffix = a.removePrefix("*.")
+                    suffix.isNotEmpty() && h != suffix && h.endsWith(".$suffix")
+                }
+                else -> h == a
+            }
         }
     }
 
@@ -108,56 +123,95 @@ object HardenedHttpsDownloader {
             return Result.Failure(e.message ?: "Network error")
         }
 
-        val status = response.code
-        if (status in 301..308) {
-            if (redirectsLeft <= 0) {
-                return Result.Failure("Too many redirects")
+        var result: Result = Result.Failure("Response handling failed")
+        var redirectTo: String? = null
+        try {
+            val status = response.code
+            if (status in 301..308) {
+                if (redirectsLeft <= 0) {
+                    result = Result.Failure("Too many redirects")
+                } else {
+                    val location = response.location
+                    if (location == null) {
+                        result = Result.Failure("Redirect without Location")
+                    } else {
+                        val next = when {
+                            location.startsWith("https://") -> location
+                            location.startsWith("/") -> "https://$host$location"
+                            else -> null
+                        }
+                        if (next == null) {
+                            result = Result.Failure("Redirect to non-HTTPS URL rejected")
+                        } else {
+                            val nextHost = try {
+                                URL(next).host
+                            } catch (_: Exception) {
+                                null
+                            }
+                            when {
+                                nextHost == null ->
+                                    result = Result.Failure("Malformed redirect URL")
+                                !hostAllowed(nextHost, policy.allowedHosts) ->
+                                    result = Result.Failure("Redirect host not on allowlist: $nextHost")
+                                else -> {
+                                    redirectTo = next
+                                    result = Result.Failure("redirect-pending")
+                                }
+                            }
+                        }
+                    }
+                }
+            } else if (status !in 200..299) {
+                result = Result.Failure("HTTP $status from server")
+            } else if (response.contentLength > policy.maxBytes) {
+                result = Result.Failure("Response too large (${response.contentLength} bytes)")
+            } else {
+                val requiredPrefix = policy.requireContentTypePrefix
+                if (requiredPrefix != null &&
+                    (response.contentType == null ||
+                        !response.contentType.startsWith(requiredPrefix, ignoreCase = true))
+                ) {
+                    result = Result.Failure("Unexpected Content-Type: ${response.contentType}")
+                } else {
+                    try {
+                        val bytes = readBounded(response.body, policy.maxBytes)
+                        if (bytes == null) {
+                            result = Result.Failure("Response too large (>${policy.maxBytes} bytes)")
+                        } else {
+                            val expected = policy.expectedSha256Hex?.lowercase()
+                            result = if (expected != null && sha256Hex(bytes) != expected) {
+                                Result.Failure("SHA-256 mismatch (integrity failure)")
+                            } else {
+                                Result.Success(bytes = bytes, finalUrl = url)
+                            }
+                        }
+                    } catch (e: Exception) {
+                        result = Result.Failure("Body read failed: ${e.message ?: "I/O error"}")
+                    }
+                }
             }
-            val location = response.location
-                ?: return Result.Failure("Redirect without Location")
-            val next = when {
-                location.startsWith("https://") -> location
-                location.startsWith("/") -> "https://$host$location"
-                else -> return Result.Failure("Redirect to non-HTTPS URL rejected")
+        } catch (e: Exception) {
+            result = Result.Failure(e.message ?: "Response handling failed")
+            redirectTo = null
+        } finally {
+            try {
+                response.body.close()
+            } catch (e: Exception) {
+                val closeReason = "Body close failed: ${e.message ?: "I/O error"}"
+                if (result is Result.Success) {
+                    result = Result.Failure(closeReason)
+                } else if (redirectTo != null) {
+                    redirectTo = null
+                    result = Result.Failure(closeReason)
+                }
             }
-            val nextHost = try {
-                URL(next).host
-            } catch (_: Exception) {
-                return Result.Failure("Malformed redirect URL")
-            }
-            if (!hostAllowed(nextHost, policy.allowedHosts)) {
-                return Result.Failure("Redirect host not on allowlist: $nextHost")
-            }
-            return downloadHop(next, policy, transport, redirectsLeft - 1)
-        }
-        if (status !in 200..299) {
-            return Result.Failure("HTTP $status from server")
         }
 
-        if (response.contentLength > policy.maxBytes) {
-            return Result.Failure("Response too large (${response.contentLength} bytes)")
+        val next = redirectTo
+        return if (next != null) {
+            downloadHop(next, policy, transport, redirectsLeft - 1)
+        } else {
+            result
         }
-
-        val requiredPrefix = policy.requireContentTypePrefix
-        if (requiredPrefix != null &&
-            (response.contentType == null ||
-                !response.contentType.startsWith(requiredPrefix, ignoreCase = true))
-        ) {
-            return Result.Failure("Unexpected Content-Type: ${response.contentType}")
-        }
-
-        val bytes = response.body.use { input ->
-            readBounded(input, policy.maxBytes)
-        } ?: return Result.Failure("Response too large (>${policy.maxBytes} bytes)")
-
-        val expected = policy.expectedSha256Hex?.lowercase()
-        if (expected != null) {
-            val actual = sha256Hex(bytes)
-            if (actual != expected) {
-                return Result.Failure("SHA-256 mismatch (integrity failure)")
-            }
-        }
-
-        return Result.Success(bytes = bytes, finalUrl = url)
     }
 }

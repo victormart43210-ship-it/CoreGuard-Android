@@ -11,12 +11,17 @@ import java.io.ByteArrayInputStream
 class HardenedHttpsDownloaderTest {
 
     @Test
-    fun `host allowlist is exact or subdomain`() {
+    fun `host allowlist is exact or explicit wildcard`() {
         val allowed = setOf("raw.githubusercontent.com", "www.cisa.gov")
         assertTrue(HardenedHttpsDownloader.hostAllowed("raw.githubusercontent.com", allowed))
-        assertTrue(HardenedHttpsDownloader.hostAllowed("cdn.www.cisa.gov", allowed))
+        assertFalse(
+            "implicit subdomains are not accepted without wildcard policy",
+            HardenedHttpsDownloader.hostAllowed("cdn.www.cisa.gov", allowed)
+        )
         assertFalse(HardenedHttpsDownloader.hostAllowed("evil.com", allowed))
         assertFalse(HardenedHttpsDownloader.hostAllowed("githubusercontent.com.evil.com", allowed))
+        val wildcard = setOf("*.cisa.gov")
+        assertTrue(HardenedHttpsDownloader.hostAllowed("cdn.cisa.gov", wildcard))
     }
 
     @Test

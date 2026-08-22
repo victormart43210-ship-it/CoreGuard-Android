@@ -44,7 +44,8 @@ object DeviceScanner {
 
             cancellation.throwIfCancelled()
             emit(ScanStageId.LOADING_INDICATORS, null, null, null)
-            val matcher = IocRepository.matcher(context)
+            val acquisition = IocRepository.acquire(context)
+            val matcher = IocMatcher(acquisition.indicators)
 
             cancellation.throwIfCancelled()
             emit(ScanStageId.ENUMERATING_PACKAGES, null, null, null)
@@ -103,7 +104,17 @@ object DeviceScanner {
                 installedPackages = { packages },
                 runningProcesses = { processes },
                 accessibleFiles = { files }
-            ).scan(cancellation = cancellation)
+            ).scan(cancellation = cancellation).copy(
+                iocProvenance = acquisition.provenance.copy(
+                    feedLoadedAtMs = if (acquisition.provenance.feedLoadedAtMs > 0L) {
+                        acquisition.provenance.feedLoadedAtMs
+                    } else {
+                        acquisition.loadedAtMs
+                    },
+                    indicatorCount = acquisition.indicators.size
+                ),
+                indicatorCount = acquisition.indicators.size
+            )
 
             cancellation.throwIfCancelled()
             emit(ScanStageId.BUILDING_FINDINGS, report.detections.size, report.detections.size, null)

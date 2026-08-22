@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.coldboar.coreguard.mvt.IocProvenanceClass
 import com.coldboar.coreguard.mvt.IocProvenanceSnapshot
 import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.ScanCancellation
@@ -63,6 +62,10 @@ sealed class ScannerUiState {
 /**
  * Runs a device scan. Production wires [ScannerModule]; tests inject fakes so
  * cancellation lifecycle can be proven on the JVM without Android I/O.
+ *
+ * The runner must bind IOC indicators + provenance into the returned [ScanReport]
+ * ([ScanReport.iocProvenance]). The ViewModel persists that snapshot and must
+ * not re-read mutable global repository provenance when saving.
  */
 fun interface DeviceScanRunner {
     fun scan(
@@ -155,7 +158,8 @@ class ScannerViewModel(
                 val normalizedFindings = report.detections
                     .map { it.toFinding(report.finishedAtMillis) }
                     .let { correlateFindingsDeterministic(it) }
-                val provenance = captureProvenance(scanCompleted = true)
+                // Persist provenance from the scan result only — never re-read globals.
+                val provenance = report.iocProvenance
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -182,7 +186,9 @@ class ScannerViewModel(
                 )
             } catch (ce: CancellationException) {
                 if (!isCurrentGeneration(generation)) return@launch
-                val provenance = captureProvenance(scanCompleted = false)
+                // Cancelled scans initialize UNAVAILABLE — do not inherit prior
+                // scan or a refresh that completed during this scan via globals.
+                val provenance = IocProvenanceSnapshot.unavailable()
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -210,7 +216,7 @@ class ScannerViewModel(
                 )
             } catch (t: Throwable) {
                 if (!isCurrentGeneration(generation)) return@launch
-                val provenance = captureProvenance(scanCompleted = false)
+                val provenance = IocProvenanceSnapshot.unavailable()
                 val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
@@ -268,31 +274,6 @@ class ScannerViewModel(
 
     private fun isCurrentGeneration(generation: Long): Boolean =
         scanGeneration.get() == generation
-
-    /**
-     * Capture IOC provenance for session persistence.
-     *
-     * Cancelled/failed scans must not claim feed authenticity unless a snapshot
-     * was genuinely loaded ([iocLoadedAtMs] > 0). Bundled/imported/fallback/mixed
-     * never inherit remote verification labels.
-     */
-    private fun captureProvenance(scanCompleted: Boolean): IocProvenanceSnapshot {
-        val loadedAt = iocLoadedAtMs()
-        if (loadedAt <= 0L) {
-            return IocProvenanceSnapshot.unavailable()
-        }
-        val snap = iocProvenance()
-        if (!scanCompleted &&
-            snap.provenanceClass == IocProvenanceClass.VERIFIED_REMOTE &&
-            snap.feedVersion == null
-        ) {
-            return IocProvenanceSnapshot.unknown(
-                "incomplete verified-remote snapshot on cancelled/failed scan",
-                loadedAt
-            )
-        }
-        return snap.copy(feedLoadedAtMs = if (snap.feedLoadedAtMs > 0L) snap.feedLoadedAtMs else loadedAt)
-    }
 
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

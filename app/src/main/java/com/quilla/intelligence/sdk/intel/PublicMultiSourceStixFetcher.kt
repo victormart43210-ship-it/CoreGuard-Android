@@ -40,7 +40,12 @@ class PublicMultiSourceStixFetcher(
         var verified = 0
         var failed = 0
         for (feed in feeds) {
-            val source = fetchFeedDetailed(feed)
+            // Per-feed isolation: one throwing/malformed feed must not discard others.
+            val source = try {
+                fetchFeedDetailed(feed)
+            } catch (t: Throwable) {
+                fail(feed, "feed exception: ${t.message ?: t.javaClass.simpleName}")
+            }
             results += source
             if (source.success) {
                 verified++
@@ -89,11 +94,15 @@ class PublicMultiSourceStixFetcher(
             is HardenedHttpsDownloader.Result.Failure ->
                 fail(feed, download.reason)
             is HardenedHttpsDownloader.Result.Success -> {
-                val parsed = parseStixBundle(
-                    json = download.bytes.toString(Charsets.UTF_8),
-                    sourceFeed = feed.name,
-                    ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
-                )
+                val parsed = try {
+                    parseStixBundle(
+                        json = download.bytes.toString(Charsets.UTF_8),
+                        sourceFeed = feed.name,
+                        ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
+                    )
+                } catch (t: Throwable) {
+                    return fail(feed, "malformed STIX: ${t.message ?: t.javaClass.simpleName}")
+                }
                 if (parsed.isEmpty()) {
                     // Valid transport + digest but empty production bundle ⇒ failure.
                     fail(feed, "empty STIX bundle after verify — UNAVAILABLE")

@@ -2,24 +2,23 @@ package com.coldboar.coreguard.mvt
 
 import android.content.Context
 import android.util.Log
-import androidx.core.util.AtomicFile
 import com.coldboar.coreguard.net.HardenedHttpsDownloader
 import com.coldboar.coreguard.net.PublicIntelFeedPins
 import org.json.JSONObject
 import java.io.File
-import java.io.FileOutputStream
 import java.util.concurrent.Executor
+import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Downloads a remote IOC JSON feed over HTTPS and persists it to
- * [Context.filesDir]/ioc/, where [IocRepository] will pick it up on the next
- * [IocRepository.indicators] call.
+ * Downloads a remote IOC JSON feed over HTTPS and persists it via
+ * [IocFeedStore] generation transactions, where [IocRepository] will pick it up
+ * on the next [IocRepository.acquire] call.
  *
  * Production fetches require an immutable, SHA-256-pinned URL from
  * [PublicIntelFeedPins]. Integrity or persistence failures fail closed and leave
- * any prior verified-good feed file untouched. Caches invalidate only after a
- * successful atomic commit.
+ * any prior verified-good generation untouched. Caches invalidate only after a
+ * successful pointer commit.
  */
 object IocFeedFetcher {
 
@@ -33,7 +32,8 @@ object IocFeedFetcher {
     }
 
     /**
-     * Fetches [url] on [executor] and invokes [onResult] **exactly once**.
+     * Fetches [url] on [executor] and invokes [onResult] **exactly once**,
+     * including when [Executor.execute] rejects the task.
      */
     fun fetchAsync(
         context: Context,
@@ -41,16 +41,25 @@ object IocFeedFetcher {
         executor: Executor,
         onResult: (FetchResult) -> Unit
     ) {
-        executor.execute {
-            val delivered = AtomicBoolean(false)
-            val result = try {
-                fetch(context, url)
-            } catch (t: Throwable) {
-                FetchResult.Failure(t.message ?: "Unknown error")
-            }
+        val delivered = AtomicBoolean(false)
+        fun deliver(result: FetchResult) {
             if (delivered.compareAndSet(false, true)) {
                 onResult(result)
             }
+        }
+        try {
+            executor.execute {
+                val result = try {
+                    fetch(context, url)
+                } catch (t: Throwable) {
+                    FetchResult.Failure(t.message ?: "Unknown error")
+                }
+                deliver(result)
+            }
+        } catch (_: RejectedExecutionException) {
+            deliver(FetchResult.Failure("Executor rejected task"))
+        } catch (t: Throwable) {
+            deliver(FetchResult.Failure(t.message ?: "Executor submit failed"))
         }
     }
 
@@ -106,8 +115,6 @@ object IocFeedFetcher {
             return FetchResult.Failure("Directory error: ${e.message}")
         }
 
-        val feedFile = File(dir, IocRepository.REMOTE_FEED_FILE)
-        val metaFile = File(dir, IocRepository.REMOTE_FEED_META_FILE)
         val commitPin = extractCommitPin(pin.url)
         val metaJson = JSONObject()
             .put("name", pin.name)
@@ -116,17 +123,27 @@ object IocFeedFetcher {
             .put("commit", commitPin)
             .put("verifiedAtMs", System.currentTimeMillis())
             .toString()
+        val metaBytes = metaJson.toByteArray(Charsets.UTF_8)
 
         return try {
-            writeAtomic(feedFile, bytes)
-            try {
-                writeAtomic(metaFile, metaJson.toByteArray(Charsets.UTF_8))
-            } catch (metaErr: Exception) {
-                // Meta failed after feed write — remove unverifiable feed to avoid
-                // mis-labeling as VERIFIED_REMOTE; prior verified pair left if rename failed earlier.
-                runCatching { feedFile.delete() }
-                return FetchResult.Failure("Meta persistence failed: ${metaErr.message}")
-            }
+            IocFeedStore.commitGeneration(
+                iocDir = dir,
+                feedBytes = bytes,
+                metaBytes = metaBytes,
+                verify = { feedOnDisk, metaOnDisk ->
+                    val meta = JSONObject(metaOnDisk.toString(Charsets.UTF_8))
+                    val sidecar = VerifiedRemoteMeta(
+                        name = meta.getString("name"),
+                        url = meta.getString("url"),
+                        sha256Hex = meta.getString("sha256").lowercase(),
+                        commitPin = meta.optString("commit", ""),
+                        verifiedAtMs = meta.optLong("verifiedAtMs", 0L)
+                    )
+                    CompiledPinValidator.validateAgainstCompiledPins(sidecar, feedOnDisk)
+                        ?: throw IllegalStateException("Compiled pin validation failed after write")
+                }
+            )
+            // Invalidate only after pointer commit succeeded.
             IocRepository.invalidate()
             runCatching {
                 com.coldboar.coreguard.quilla.QuillaMemoryModule.invalidateLocalIntel()
@@ -135,22 +152,8 @@ object IocFeedFetcher {
             Log.i(TAG, "Fetched ${indicators.size} indicators from ${pin.url}")
             FetchResult.Success(indicators.size)
         } catch (e: Exception) {
-            Log.w(TAG, "Persist failed; prior verified feed preserved: ${e.message}")
+            Log.w(TAG, "Persist failed; prior verified generation preserved: ${e.message}")
             FetchResult.Failure("Persist failed: ${e.message}")
-        }
-    }
-
-    private fun writeAtomic(target: File, bytes: ByteArray) {
-        val atomic = AtomicFile(target)
-        var fos: FileOutputStream? = null
-        try {
-            fos = atomic.startWrite()
-            fos.write(bytes)
-            atomic.finishWrite(fos)
-            fos = null
-        } catch (e: Exception) {
-            if (fos != null) atomic.failWrite(fos)
-            throw e
         }
     }
 

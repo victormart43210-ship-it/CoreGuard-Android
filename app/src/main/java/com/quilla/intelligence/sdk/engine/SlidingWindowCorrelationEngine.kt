@@ -81,8 +81,17 @@ class SlidingWindowCorrelationEngine(
     val threatEvents: SharedFlow<QuillaHypothesisEntity> = _threatEvents
 
     /**
+     * Installs already-verified STIX indicators into the active set.
+     * Does not refetch — callers must supply the single-fetch result.
+     */
+    fun loadVerifiedIndicators(indicators: List<StixIndicator>) {
+        activeStixIndicators = indicators.toList()
+    }
+
+    /**
      * Fetches fresh STIX indicators from all configured sources and replaces the
-     * current active indicator list. Must be called from a background coroutine.
+     * current active indicator list. Prefer [loadVerifiedIndicators] when a
+     * verified report was already obtained to avoid a second network pull.
      */
     fun syncThreatFeeds() {
         val fetched = stixFetcher.fetchAllSources()

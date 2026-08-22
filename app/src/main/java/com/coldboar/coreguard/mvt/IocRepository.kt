@@ -10,12 +10,14 @@ import java.io.File
  *
  * Sources, merged in order:
  *  1. Bundled indicators shipped as JSON under the `ioc` assets folder
- *  2. Digest-verified remote feed (`remote_feed.json` + meta sidecar)
+ *  2. Digest-verified remote feed (generation store + compiled pin check)
  *  3. Other user-imported JSON under filesDir/ioc (not cryptographically verified)
  *  4. [DefaultIndicators] as last-resort fallback
  *
  * Provenance is tracked so scan sessions never inherit a remote-verified label
  * for bundled, imported, fallback, mixed, or unavailable data.
+ *
+ * [acquire] returns indicators and provenance atomically for session binding.
  */
 object IocRepository {
 
@@ -39,19 +41,41 @@ object IocRepository {
     /** Last computed provenance for the cached IOC set (or UNAVAILABLE). */
     fun provenance(): IocProvenanceSnapshot = cachedProvenance
 
-    fun indicators(context: Context): List<Indicator> {
-        cached?.let { return it }
+    fun indicators(context: Context): List<Indicator> = acquire(context).indicators
+
+    fun matcher(context: Context): IocMatcher = IocMatcher(indicators(context))
+
+    /**
+     * Atomically returns the indicators and provenance for the active set.
+     * Both fields are computed from the same load under one lock.
+     */
+    fun acquire(context: Context): IocAcquisitionSnapshot {
+        cached?.let { indicators ->
+            return IocAcquisitionSnapshot(
+                indicators = indicators,
+                provenance = cachedProvenance,
+                loadedAtMs = loadedAtMs
+            )
+        }
         synchronized(this) {
-            cached?.let { return it }
+            cached?.let { indicators ->
+                return IocAcquisitionSnapshot(
+                    indicators = indicators,
+                    provenance = cachedProvenance,
+                    loadedAtMs = loadedAtMs
+                )
+            }
             val loaded = load(context)
             cached = loaded.indicators
             cachedProvenance = loaded.provenance
             loadedAtMs = System.currentTimeMillis()
-            return loaded.indicators
+            return IocAcquisitionSnapshot(
+                indicators = loaded.indicators,
+                provenance = loaded.provenance,
+                loadedAtMs = loadedAtMs
+            )
         }
     }
-
-    fun matcher(context: Context): IocMatcher = IocMatcher(indicators(context))
 
     /**
      * Returns provenance for the active set, loading if needed.
@@ -59,8 +83,7 @@ object IocRepository {
      */
     fun provenance(context: Context): IocProvenanceSnapshot {
         if (cached == null && loadedAtMs == 0L) {
-            // Force load so scan paths that read provenance after indicators() stay consistent.
-            indicators(context)
+            acquire(context)
         }
         return cachedProvenance
     }
@@ -103,29 +126,27 @@ object IocRepository {
         runCatching {
             val dir = File(context.filesDir, USER_DIR)
             if (dir.isDirectory) {
-                val remoteFile = File(dir, REMOTE_FEED_FILE)
-                val metaFile = File(dir, REMOTE_FEED_META_FILE)
-                if (remoteFile.isFile) {
-                    val body = remoteFile.readText()
-                    val meta = readVerifiedMeta(metaFile)
-                    val bodySha = HardenedSha.sha256Hex(body.toByteArray(Charsets.UTF_8))
-                    if (meta != null && meta.sha256Hex.equals(bodySha, ignoreCase = true)) {
-                        verifiedRemote += IocParser.parse(body)
-                        verifiedMeta = meta
-                    } else {
-                        // File present without matching meta ⇒ treat as user import, not verified.
-                        userImported += IocParser.parse(body)
-                        Log.w(TAG, "remote_feed.json present without matching verified meta")
-                    }
+                val remote = loadVerifiedRemote(dir)
+                if (remote != null) {
+                    verifiedRemote += remote.indicators
+                    verifiedMeta = remote.meta
                 }
                 dir.listFiles { f ->
                     f.isFile &&
                         f.extension.equals("json", ignoreCase = true) &&
                         f.name != REMOTE_FEED_FILE &&
-                        f.name != REMOTE_FEED_META_FILE
+                        f.name != REMOTE_FEED_META_FILE &&
+                        f.name != IocFeedStore.CURRENT_POINTER
                 }?.forEach { file ->
+                    // Skip generation tree files (handled via pointer).
+                    if (file.parentFile?.name == IocFeedStore.GENERATIONS_DIR) return@forEach
+                    if (file.parentFile?.parentFile?.name == IocFeedStore.GENERATIONS_DIR) return@forEach
                     userImported += IocParser.parse(file.readText())
                 }
+                // Also skip walking into generations/ for user imports.
+                val generationsRoot = File(dir, IocFeedStore.GENERATIONS_DIR)
+                // User-imported only from top-level json files (already listed).
+                generationsRoot // retained for clarity; listing above filters by top-level.
             }
         }.onFailure { Log.w(TAG, "Failed reading user IOC feeds: ${it.message}") }
 
@@ -144,9 +165,55 @@ object IocRepository {
             usedFallback = usedFallback,
             loadedAtMs = now,
             verifiedMeta = verifiedMeta
-        )
+        ).let { snap ->
+            // Counts must reflect unique indicators after LinkedHashSet dedup.
+            snap.copy(indicatorCount = merged.size)
+        }
         Log.i(TAG, "Loaded ${merged.size} indicators (${provenance.provenanceClass})")
         return Loaded(merged.toList(), provenance)
+    }
+
+    private data class VerifiedRemoteLoad(
+        val indicators: List<Indicator>,
+        val meta: VerifiedRemoteMeta
+    )
+
+    /**
+     * Loads verified remote indicators only when the committed generation (or
+     * legacy pair) passes compiled pin validation. Sidecar-only claims fail closed.
+     */
+    private fun loadVerifiedRemote(dir: File): VerifiedRemoteLoad? {
+        val generation = IocFeedStore.readCurrentGeneration(dir)
+        if (generation != null) {
+            val paths = IocFeedStore.pathsFor(dir, generation)
+            if (paths.feed.isFile && paths.meta.isFile) {
+                return validateRemotePair(paths.feed, paths.meta)
+            }
+            Log.w(TAG, "current generation $generation missing files — UNAVAILABLE")
+            return null
+        }
+        // Legacy flat files: still require compiled pin validation.
+        val remoteFile = File(dir, REMOTE_FEED_FILE)
+        val metaFile = File(dir, REMOTE_FEED_META_FILE)
+        if (remoteFile.isFile) {
+            val validated = validateRemotePair(remoteFile, metaFile)
+            if (validated != null) return validated
+            // Present without compiled-pin match ⇒ do not treat as verified;
+            // also do not silently promote to user-imported (fail closed for remote label).
+            Log.w(TAG, "legacy remote_feed.json failed compiled pin validation — UNAVAILABLE")
+        }
+        return null
+    }
+
+    private fun validateRemotePair(feedFile: File, metaFile: File): VerifiedRemoteLoad? {
+        if (!feedFile.isFile || !metaFile.isFile) return null
+        val bodyBytes = feedFile.readBytes()
+        val meta = readVerifiedMeta(metaFile) ?: return null
+        val pinned = CompiledPinValidator.validateAgainstCompiledPins(meta, bodyBytes)
+            ?: return null
+        val indicators = IocParser.parse(bodyBytes.toString(Charsets.UTF_8))
+        if (indicators.isEmpty()) return null
+        return VerifiedRemoteLoad(indicators = indicators, meta = pinned)
     }
 
     private fun readVerifiedMeta(file: File): VerifiedRemoteMeta? {

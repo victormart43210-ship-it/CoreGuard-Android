@@ -170,3 +170,58 @@ data class VerifiedRemoteMeta(
     val commitPin: String,
     val verifiedAtMs: Long
 )
+
+/**
+ * Immutable IOC acquisition captured at scan (or load) time.
+ *
+ * Indicators and provenance are bound together so a mid-scan refresh cannot
+ * re-label the matcher that actually ran.
+ */
+data class IocAcquisitionSnapshot(
+    val indicators: List<Indicator>,
+    val provenance: IocProvenanceSnapshot,
+    val loadedAtMs: Long
+) {
+    companion object {
+        fun unavailable(loadedAtMs: Long = 0L): IocAcquisitionSnapshot =
+            IocAcquisitionSnapshot(
+                indicators = emptyList(),
+                provenance = IocProvenanceSnapshot.unavailable(loadedAtMs),
+                loadedAtMs = loadedAtMs
+            )
+    }
+}
+
+/**
+ * Validates persisted remote feed meta + body against compiled [com.coldboar.coreguard.net.PublicIntelFeedPins].
+ * The metadata sidecar is never a root of trust on its own.
+ */
+object CompiledPinValidator {
+
+    private val SHA256_HEX = Regex("^[0-9a-fA-F]{64}$")
+
+    /**
+     * Returns compiled-pin-aligned [VerifiedRemoteMeta] when URL, name, commit,
+     * and SHA-256 all match a compiled pin and the body digests to that pin.
+     * Otherwise null (caller must treat as UNAVAILABLE / not verified-remote).
+     */
+    fun validateAgainstCompiledPins(
+        meta: VerifiedRemoteMeta,
+        bodyBytes: ByteArray,
+        pinFor: (String) -> com.coldboar.coreguard.net.PublicIntelFeedPins.Pin? =
+            { com.coldboar.coreguard.net.PublicIntelFeedPins.pinFor(it) },
+        extractCommit: (String) -> String = { IocFeedFetcher.extractCommitPin(it) }
+    ): VerifiedRemoteMeta? {
+        if (!SHA256_HEX.matches(meta.sha256Hex)) return null
+        val pin = pinFor(meta.url) ?: return null
+        if (pin.url != meta.url) return null
+        if (pin.name != meta.name) return null
+        val expectedCommit = extractCommit(pin.url)
+        if (expectedCommit != meta.commitPin) return null
+        if (!pin.sha256Hex.equals(meta.sha256Hex, ignoreCase = true)) return null
+        val bodySha = HardenedSha.sha256Hex(bodyBytes)
+        if (!pin.sha256Hex.equals(bodySha, ignoreCase = true)) return null
+        if (!meta.sha256Hex.equals(bodySha, ignoreCase = true)) return null
+        return meta.copy(sha256Hex = pin.sha256Hex.lowercase())
+    }
+}

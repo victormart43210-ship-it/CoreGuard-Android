@@ -30,6 +30,9 @@ data class Detection(
 
 /**
  * The result of a forensic scan.
+ *
+ * [iocProvenance] is the immutable acquisition snapshot used by this scan —
+ * never re-read from a mutable global repository after the fact.
  */
 data class ScanReport(
     val startedAtMillis: Long,
@@ -38,7 +41,8 @@ data class ScanReport(
     val scannedProcesses: Int,
     val scannedFiles: Int,
     val indicatorCount: Int,
-    val detections: List<Detection>
+    val detections: List<Detection>,
+    val iocProvenance: IocProvenanceSnapshot = IocProvenanceSnapshot.unavailable()
 ) {
     val verdict: ScanVerdict = NemesisScanner.classify(detections)
     val durationMillis: Long get() = (finishedAtMillis - startedAtMillis).coerceAtLeast(0)
