@@ -204,7 +204,7 @@ class ScannerViewModel(
                     )
                 }
             } catch (t: Throwable) {
-                val sessionId = withContext(Dispatchers.IO) {
+                val sessionId = withContext(NonCancellable + Dispatchers.IO) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.FAILED,
