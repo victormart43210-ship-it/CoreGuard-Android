@@ -115,6 +115,8 @@ class ScannerViewModel(
             val startedAt = currentTimeMs()
             var deepInspection: Boolean? = null
             var quillaEnabled: Boolean? = null
+            var cancellationPersisted = false
+            var cancellationSessionId: String? = null
             val listener = object : ScanProgressListener {
                 override fun onStage(event: ScanStageEvent) {
                     if (!isCurrentScan(scanToken)) return
@@ -192,6 +194,8 @@ class ScannerViewModel(
                         )
                     )
                 }
+                cancellationPersisted = true
+                cancellationSessionId = sessionId
                 if (isCurrentScan(scanToken)) {
                     _uiState.value = ScannerUiState.Cancelled(
                         sessionId = sessionId,
@@ -230,8 +234,33 @@ class ScannerViewModel(
             } finally {
                 if (isCurrentScan(scanToken)) {
                     if (_uiState.value is ScannerUiState.Scanning && localCancelRequested.get()) {
+                        if (!cancellationPersisted) {
+                            val deepInspectionEnabled = deepInspection ?: withContext(NonCancellable) {
+                                settingsRepository.deepFileInspectionEnabled.first()
+                            }
+                            cancellationSessionId = withContext(NonCancellable + Dispatchers.IO) {
+                                sessionRepository.saveSession(
+                                    ScanSessionSaveRequest(
+                                        status = ScanStageId.CANCELLED,
+                                        startedAtMs = startedAt,
+                                        endedAtMs = currentTimeMs(),
+                                        failureReason = "Cancelled by user",
+                                        scannerEngineVersion = ScannerModule.scannerEngineVersion(),
+                                        schemaVersion = ScannerModule.scanSchemaVersion(),
+                                        deepInspectionEnabled = deepInspectionEnabled,
+                                        feedSource = FEED_SOURCE,
+                                        feedVersion = null,
+                                        feedAuthenticity = FEED_AUTHENTICITY,
+                                        feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                                        findings = emptyList(),
+                                        stageEvents = stageEvents.toList()
+                                    )
+                                )
+                            }
+                            cancellationPersisted = true
+                        }
                         _uiState.value = ScannerUiState.Cancelled(
-                            sessionId = null,
+                            sessionId = cancellationSessionId,
                             stageEvents = stageEvents.toList(),
                             lastCompletedReport = previousCompleted
                         )
