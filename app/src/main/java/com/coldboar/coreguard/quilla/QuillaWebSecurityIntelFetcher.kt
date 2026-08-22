@@ -5,6 +5,7 @@ import com.coldboar.coreguard.net.HardenedHttpsDownloader
 import com.coldboar.coreguard.net.PublicIntelFeedPins
 import org.json.JSONArray
 import org.json.JSONObject
+import java.security.MessageDigest
 
 /**
  * Pulls public web security intelligence (CISA KEV + MISP malware galaxies) and
