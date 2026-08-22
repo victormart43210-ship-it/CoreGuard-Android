@@ -12,17 +12,14 @@ jobs:
   dependency-review:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       - name: Dependency review
         id: review
-        # Soft-fail until the repository owner enables Dependency Graph
-        # (Settings → Security → Code security and analysis → Dependency graph).
-        # This failure is environmental, not a dependency finding.
-        continue-on-error: true
-        uses: actions/dependency-review-action@v5
+        # Fail closed: Dependency Graph must be enabled and the review must succeed.
+        uses: actions/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294 # v5.0.0
         with:
           fail-on-severity: high
-      - name: Explain soft-fail when Dependency Graph is disabled
+      - name: Record dependency review outcome
         if: always()
         run: |
           {
@@ -30,12 +27,8 @@ jobs:
             if [ "${{ steps.review.outcome }}" = "success" ]; then
               echo "PASS — dependency review completed (fail-on-severity: high)."
             else
-              echo "ADVISORY / ENVIRONMENTAL — dependency review did not run successfully."
-              echo "Likely cause: Dependency Graph disabled for this repository."
-              echo "Enable: Settings → Security → Code security and analysis → Dependency graph"
-              echo "Until enabled, treat this job as an environmental soft-fail — not a green security signal."
+              echo "FAIL — dependency review did not succeed (outcome=${{ steps.review.outcome }})."
+              echo "Enable Dependency Graph: Settings → Security → Code security and analysis."
+              echo "This job is merge-blocking; soft-fail was removed per security audit."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
-          if [ "${{ steps.review.outcome }}" = "failure" ]; then
-            echo "::warning::Dependency review did not run (likely Dependency Graph disabled)."
-          fi

@@ -6,6 +6,9 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import java.util.TimeZone
 
 /**
@@ -55,7 +58,39 @@ class ComplianceReportExporterTest {
     fun `timestamp is UTC even when device timezone differs`() {
         val original = TimeZone.getDefault()
         try {
+            for (zoneId in listOf(
+                "UTC",
+                "America/Chicago",
+                "America/Los_Angeles",
+                "Asia/Tokyo"
+            )) {
+                TimeZone.setDefault(TimeZone.getTimeZone(zoneId))
+                assertEquals(
+                    "epoch 0 under $zoneId",
+                    "1970-01-01T00:00:00Z",
+                    ComplianceReportExporter.formatUtcTimestamp(0L)
+                )
+                assertEquals(
+                    "2025-01-01 under $zoneId",
+                    "2025-01-01T00:00:00Z",
+                    ComplianceReportExporter.formatUtcTimestamp(1_735_689_600_000L)
+                )
+            }
+        } finally {
+            TimeZone.setDefault(original)
+        }
+    }
+
+    @Test
+    fun `report filename uses device-local wall clock by design`() {
+        // Filename timestamps are local convenience labels; JSON generatedAt is UTC.
+        // Under Chicago, epoch 0 is the previous local calendar day — not UTC.
+        val original = TimeZone.getDefault()
+        try {
             TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"))
+            val localName = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US)
+                .format(Date(0L))
+            assertEquals("19691231_180000", localName)
             assertEquals(
                 "1970-01-01T00:00:00Z",
                 ComplianceReportExporter.formatUtcTimestamp(0L)

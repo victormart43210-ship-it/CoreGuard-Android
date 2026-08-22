@@ -44,16 +44,26 @@ fi
 # Prefer hardware accel only when /dev/kvm is actually usable. A present but
 # non-writable /dev/kvm (common on CI runners without the kvm udev rule) would
 # otherwise select hardware accel that cannot start.
+# Default: require KVM (fail closed). Opt out only with COREGUARD_REQUIRE_KVM=0.
 EMU_ARGS=(-avd "$AVD_NAME" -no-audio -no-boot-anim -netdelay none -netspeed full)
+REQUIRE_KVM="${COREGUARD_REQUIRE_KVM:-1}"
 if [[ -w /dev/kvm ]]; then
   EMU_ARGS+=(-gpu auto)
 else
-  if [[ -e /dev/kvm ]]; then
-    echo "[run] WARNING: /dev/kvm exists but is not writable — using software emulation (slow)."
+  echo "[run] ERROR: usable KVM is required for CoreGuard emulator gates." >&2
+  echo "[run] /dev/kvm present: $([[ -e /dev/kvm ]] && echo yes || echo no)" >&2
+  echo "[run] /dev/kvm chardev: $([[ -c /dev/kvm ]] && echo yes || echo no)" >&2
+  echo "[run] /dev/kvm writable: $([[ -w /dev/kvm ]] && echo yes || echo no)" >&2
+  ls -la /dev/kvm >&2 || true
+  id >&2 || true
+  groups >&2 || true
+  if [[ "$REQUIRE_KVM" == "0" ]]; then
+    echo "[run] WARNING: COREGUARD_REQUIRE_KVM=0 — falling back to software emulation (slow)." >&2
+    EMU_ARGS+=(-gpu swiftshader_indirect -accel off)
   else
-    echo "[run] WARNING: /dev/kvm not available — using software emulation (slow)."
+    echo "[run] Refusing software-emulation fallback (set COREGUARD_REQUIRE_KVM=0 to override)." >&2
+    exit 1
   fi
-  EMU_ARGS+=(-gpu swiftshader_indirect -accel off)
 fi
 
 if ! adb devices 2>/dev/null | grep -qE 'emulator-[0-9]+\s+device'; then

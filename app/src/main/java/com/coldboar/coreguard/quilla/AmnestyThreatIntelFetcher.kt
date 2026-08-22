@@ -1,5 +1,6 @@
 package com.coldboar.coreguard.quilla
 
+import com.coldboar.coreguard.net.PublicIntelFeedPins
 import com.quilla.intelligence.sdk.intel.PublicMultiSourceStixFetcher
 import java.io.IOException
 
@@ -15,16 +16,14 @@ import java.io.IOException
 object AmnestyThreatIntelFetcher {
 
     /**
-     * Official Amnesty Tech Android-campaign STIX2 indicator bundle.
+     * Official Amnesty Tech Android-campaign STIX2 indicator bundle (commit-pinned).
      */
-    const val FEED_URL =
-        "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2023-03-29_android_campaign/malware.stix2"
+    val FEED_URL: String = PublicIntelFeedPins.ANDROID_CAMPAIGN.url
 
     /**
-     * Amnesty Pegasus / NSO STIX2 bundle (replaces the retired mvt-indicators/pegasus path).
+     * Amnesty Pegasus / NSO STIX2 bundle (commit-pinned; replaces retired mvt path).
      */
-    const val MVT_PEGASUS_FEED_URL =
-        "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-07-18_nso/pegasus.stix2"
+    val MVT_PEGASUS_FEED_URL: String = PublicIntelFeedPins.PEGASUS.url
 
     /**
      * Downloads and parses [AmnestyIndicator] records from [FEED_URL].
@@ -32,8 +31,16 @@ object AmnestyThreatIntelFetcher {
      * Returns an empty list (without throwing) on any network or parse failure.
      */
     fun fetchAmnestyIndicators(): List<AmnestyIndicator> {
+        val pin = PublicIntelFeedPins.ANDROID_CAMPAIGN
         val fetcher = PublicMultiSourceStixFetcher(
-            feeds = listOf(PublicMultiSourceStixFetcher.Feed("Amnesty Android campaign", FEED_URL))
+            feeds = listOf(
+                PublicMultiSourceStixFetcher.Feed(
+                    name = pin.name,
+                    url = pin.url,
+                    sha256Hex = pin.sha256Hex,
+                    maxBytes = pin.maxBytes
+                )
+            )
         )
         return fetcher.fetchAllSources().map {
             AmnestyIndicator(it.id, it.indicatorType, it.patternValue, it.description)

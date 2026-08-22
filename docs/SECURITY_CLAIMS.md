@@ -11,7 +11,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | Live Security Score refreshes on Home and via hourly WorkManager pulse | Weighted local `SecurityCheckRunner` summary; battery-not-low constraint; not cloud threat intel |
 | Threat timeline chart shows past privacy-check verdicts / flag counts | `ScanHistoryStore` history visualization — not continuous network IPS |
 | A clean scan is **reassuring, not a guarantee** | Explicitly disclosed in Scanner UI and store copy |
-| Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent |
+| Privacy Shield can block domains matching known indicators | DNS filter VPN; requires user VPN consent; upstream UDP forward is not encrypted DNS / DoT / DoH |
 | Guardian Score summarizes local heuristic checks | Root/debugger/emulator/signature/build heuristics |
 | Quilla is an **on-device** agent (no cloud LLM) | Local knowledge + evidence; no ChatGPT/Claude keys |
 | Signed telemetry deltas stay on-device unless user opt-in export exists | `TelemetryBridge` ring buffer; Keystore ECDSA when available |
@@ -41,6 +41,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | “Release-ready” / Play approval guaranteed | External Console, signing, device, and policy reviews remain |
 | DemoBilling is the production path | Production uses `PlayBillingProvider`; unavailable billing fails closed (`FailClosedBillingProvider`) |
 | MASVS “compliance certified” | Educational mapping / coverage scores only |
+| “Black Duck audit complete” from CI alone | The workflow’s no-backend job only records that no Black Duck backend is configured — it is not a completed vendor audit |
 
 ## Premium honesty
 

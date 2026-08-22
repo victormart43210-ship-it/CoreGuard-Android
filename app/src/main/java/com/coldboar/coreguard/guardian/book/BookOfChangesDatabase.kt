@@ -145,11 +145,27 @@ class BookOfChangesRepository internal constructor(
 
     fun clearAll() = dao.clearAll()
 
+    /**
+     * Retention policy for v1.
+     *
+     * Prefix pruning (delete older ancestors while keeping a newer tail) is
+     * **UNAVAILABLE** in v1: removing ancestors leaves the first surviving
+     * event with a non-null [SecurityEvent.previousEventHash], which
+     * [EventHashChain.validateChain] correctly treats as tampering.
+     *
+     * A checkpoint / re-anchor schema would be required before pruning can be
+     * enabled safely. Until then this method is intentionally a no-op for
+     * positive [days] so legitimate retention cannot falsely invalidate the
+     * ledger. Use [clearAll] only when the operator explicitly discards history.
+     */
     fun applyRetention(days: Int) {
         if (days <= 0) return
-        val cutoff = System.currentTimeMillis() - days * 24L * 60 * 60 * 1000
-        dao.deleteOlderThan(cutoff)
+        // Prefix pruning disabled for v1 — see KDoc. Full chain retained.
     }
+
+    /** True when prefix pruning is implemented; always false in v1. */
+    fun isPrefixRetentionAvailable(): Boolean = false
+
 
     private fun SecurityEventEntity.toDomain(): SecurityEvent =
         SecurityEvent(

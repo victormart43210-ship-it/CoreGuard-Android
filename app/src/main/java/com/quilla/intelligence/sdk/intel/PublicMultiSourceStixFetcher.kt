@@ -1,12 +1,12 @@
 package com.quilla.intelligence.sdk.intel
 
+import com.coldboar.coreguard.net.HardenedHttpsDownloader
+import com.coldboar.coreguard.net.HttpTransport
+import com.coldboar.coreguard.net.PublicIntelFeedPins
+import com.coldboar.coreguard.net.UrlConnectionHttpTransport
 import com.quilla.intelligence.sdk.model.StixIndicator
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
-import java.security.MessageDigest
 import java.util.concurrent.TimeUnit
 
 /**
@@ -14,12 +14,13 @@ import java.util.concurrent.TimeUnit
  * Amnesty Tech investigations, MVT indicator campaigns, and open stalkerware
  * indicator projects.
  *
- * Defensive use only — results feed Quilla correlation / Research, not offensive tooling.
- * Network I/O is synchronous; call from a background thread.
+ * Only SHA-256-pinned immutable URLs from [PublicIntelFeedPins] are consumed.
+ * Integrity failures and empty bundles fail closed per source (UNAVAILABLE).
  */
 class PublicMultiSourceStixFetcher(
     private val feeds: List<Feed> = DEFAULT_FEEDS,
-    private val nowMs: () -> Long = System::currentTimeMillis
+    private val nowMs: () -> Long = System::currentTimeMillis,
+    private val transport: HttpTransport = UrlConnectionHttpTransport
 ) : MultiSourceStixFetcher {
 
     private val expectedFeedHashes = mapOf(
@@ -40,128 +41,122 @@ class PublicMultiSourceStixFetcher(
     data class Feed(
         val name: String,
         val url: String,
+        val sha256Hex: String,
+        val maxBytes: Int = 12 * 1024 * 1024,
         val ttlDays: Long = 30L
     )
 
-    override fun fetchAllSources(): List<StixIndicator> {
+    override fun fetchReport(): StixFetchReport {
+        if (feeds.isEmpty()) {
+            return StixFetchReport.unavailable("no STIX feeds configured")
+        }
         val merged = LinkedHashMap<String, StixIndicator>()
+        val results = mutableListOf<StixSourceResult>()
+        var verified = 0
+        var failed = 0
         for (feed in feeds) {
-            val batch = fetchFeed(feed)
-            for (indicator in batch) {
-                val key = indicator.patternValue.trim().lowercase()
-                if (key.isNotEmpty()) merged.putIfAbsent(key, indicator)
+            // Per-feed isolation: one throwing/malformed feed must not discard others.
+            val source = try {
+                fetchFeedDetailed(feed)
+            } catch (t: Throwable) {
+                fail(feed, "feed exception: ${t.message ?: t.javaClass.simpleName}")
             }
-        }
-        return merged.values.toList()
-    }
-
-    private fun fetchFeed(feed: Feed): List<StixIndicator> {
-        // The production correlator accepts only the reviewed immutable feed set.
-        // Arbitrary caller-provided URLs would bypass this trust boundary.
-        if (feed.url !in expectedFeedHashes) return emptyList()
-        val connection = (URL(feed.url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            setRequestProperty("Accept", "application/json, */*")
-            setRequestProperty("User-Agent", USER_AGENT)
-            instanceFollowRedirects = false
-        }
-        return try {
-            connection.connect()
-            if (connection.responseCode !in 200..299) return emptyList()
-            if (connection.contentLength > MAX_BYTES) return emptyList()
-            val bytes = ByteArrayOutputStream().use { output ->
-                val buffer = ByteArray(8_192)
-                connection.inputStream.use { input ->
-                    var read: Int
-                    while (input.read(buffer).also { read = it } != -1) {
-                        if (output.size() + read > MAX_BYTES) return emptyList()
-                        output.write(buffer, 0, read)
-                    }
+            results += source
+            if (source.success) {
+                verified++
+                for (indicator in source.indicators) {
+                    val key = indicator.patternValue.trim().lowercase()
+                    if (key.isNotEmpty()) merged.putIfAbsent(key, indicator)
                 }
-                output.toByteArray()
+            } else {
+                failed++
             }
-            if (sha256Hex(bytes) != expectedFeedHashes[feed.url]) return emptyList()
-            parseStixBundle(
-                json = String(bytes, Charsets.UTF_8),
-                sourceFeed = feed.name,
-                ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
-            )
-        } catch (_: Exception) {
-            emptyList()
-        } finally {
-            connection.disconnect()
+        }
+        return StixFetchReport(
+            indicators = merged.values.toList(),
+            sourceResults = results,
+            verifiedSourceCount = verified,
+            failedSourceCount = failed,
+            allUnavailable = verified == 0
+        )
+    }
+
+    override fun fetchAllSources(): List<StixIndicator> = fetchReport().indicators
+
+    private fun fetchFeedDetailed(feed: Feed): StixSourceResult {
+        if (PublicIntelFeedPins.isFloatingBranchUrl(feed.url)) {
+            return fail(feed, "floating branch URL rejected")
+        }
+        if (!feed.url.startsWith("https://", ignoreCase = true)) {
+            return fail(feed, "non-HTTPS URL rejected")
+        }
+        if (feed.sha256Hex.isBlank()) {
+            return fail(feed, "missing digest pin")
+        }
+
+        val download = HardenedHttpsDownloader.download(
+            url = feed.url,
+            policy = HardenedHttpsDownloader.Policy(
+                allowedHosts = PublicIntelFeedPins.ALLOWED_HOSTS,
+                maxBytes = feed.maxBytes,
+                expectedSha256Hex = feed.sha256Hex,
+                acceptHeader = "application/json, */*",
+                userAgent = USER_AGENT
+            ),
+            transport = transport
+        )
+        return when (download) {
+            is HardenedHttpsDownloader.Result.Failure ->
+                fail(feed, download.reason)
+            is HardenedHttpsDownloader.Result.Success -> {
+                val parsed = try {
+                    parseStixBundle(
+                        json = download.bytes.toString(Charsets.UTF_8),
+                        sourceFeed = feed.name,
+                        ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
+                    )
+                } catch (t: Throwable) {
+                    return fail(feed, "malformed STIX: ${t.message ?: t.javaClass.simpleName}")
+                }
+                if (parsed.isEmpty()) {
+                    // Valid transport + digest but empty production bundle ⇒ failure.
+                    fail(feed, "empty STIX bundle after verify — UNAVAILABLE")
+                } else {
+                    StixSourceResult(
+                        name = feed.name,
+                        url = feed.url,
+                        success = true,
+                        indicators = parsed,
+                        status = StixSourceResult.STATUS_VERIFIED
+                    )
+                }
+            }
         }
     }
 
-    private fun sha256Hex(bytes: ByteArray): String =
-        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { byte ->
-            "%02x".format(byte.toInt() and 0xFF)
-        }
-
-    companion object {
-        private const val CONNECT_TIMEOUT_MS = 12_000
-        private const val READ_TIMEOUT_MS = 30_000
-        private const val MAX_BYTES = 12 * 1024 * 1024
-        /** No artificial IOC teaching ceiling — Infinity correlator ingest. */
-        private const val MAX_INDICATORS_PER_FEED = Int.MAX_VALUE
-        private const val USER_AGENT = "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
-
-        val DEFAULT_FEEDS: List<Feed> = listOf(
-            Feed(
-                "Amnesty Android campaign",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2023-03-29_android_campaign/malware.stix2"
-            ),
-            Feed(
-                "Amnesty NoviSpy",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2024-12-16_serbia_novispy/novispy.stix2"
-            ),
-            Feed(
-                "Amnesty Wintego Helios",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2024-05-02_wintego_helios/wintego_helios.stix2"
-            ),
-            Feed(
-                "Amnesty Pegasus (NSO)",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-07-18_nso/pegasus.stix2"
-            ),
-            Feed(
-                "Amnesty Cytrox / Predator",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-12-16_cytrox/cytrox.stix2"
-            ),
-            Feed(
-                "MVT WyrmSpy/DragonEgg",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/2023-07-25_wyrmspy_dragonegg/wyrmspy_dragonegg.stix2"
-            ),
-            Feed(
-                "MVT EagleMsgSpy",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/2024-12-25_eaglemsgspy/eaglemsgspy.stix2"
-            ),
-            Feed(
-                "MVT DarkSword",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/2026-03-30_darksword/darksword.stix2"
-            ),
-            Feed(
-                "MVT Coruna / CryptoWaters",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/2026-03-03_coruna_cryptowaters/coruna.stix2"
-            ),
-            Feed(
-                "MVT IPS Morpheus",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/2026-04-23_ips_morpheus/morpheus.stix2"
-            ),
-            Feed(
-                "MVT ResidentBat",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/162685398d842d8217ea8d6f69f9b565a0778d93/ResidentBat/residentbat.stix2"
-            ),
-            Feed(
-                "Open stalkerware IOCs",
-                "https://raw.githubusercontent.com/f00wl/stalkerware-indicators/426119d27e5597ec1b6976153bbe6d58ec0fc08e/generated/stalkerware.stix2"
-            )
+    private fun fail(feed: Feed, reason: String): StixSourceResult =
+        StixSourceResult(
+            name = feed.name,
+            url = feed.url,
+            success = false,
+            failureReason = reason,
+            status = StixSourceResult.STATUS_UNAVAILABLE
         )
 
-        /**
-         * Parses a STIX2 bundle into [StixIndicator] records.
-         * Exposed for unit tests with fixture JSON (no network).
-         */
+    companion object {
+        private const val MAX_INDICATORS_PER_FEED = Int.MAX_VALUE
+        private const val USER_AGENT =
+            "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
+
+        val DEFAULT_FEEDS: List<Feed> = PublicIntelFeedPins.STIX_RESEARCH_PINS.map { pin ->
+            Feed(
+                name = pin.name,
+                url = pin.url,
+                sha256Hex = pin.sha256Hex,
+                maxBytes = pin.maxBytes
+            )
+        }
+
         fun parseStixBundle(
             json: String,
             sourceFeed: String,

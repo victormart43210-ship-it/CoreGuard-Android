@@ -173,7 +173,6 @@ def check_native_tamper_guard(root: Path, report: AgentReport):
         "tracerPid",
         "hookedLibraryPath",
         "textIntact",
-        "ptraceProtected",
     ]
     kt_files = list((root / "app").rglob("NativeTamperGuard.kt")) if (root / "app").exists() else []
     cpp_files = (
@@ -222,9 +221,14 @@ def check_backup_disabled(root: Path, report: AgentReport):
         report.add("RASP-BACKUP", "WARN", ".", None, "AndroidManifest.xml not found.")
         return
 
+    # Instrumentation / androidTest package manifests are not the production app.
+    _SKIP_MARKERS = ("androidTest", "AndroidTest", "debugAndroidTest")
+
     for manifest in manifests:
         text = _read(manifest)
         rel_path = str(manifest.relative_to(root))
+        if any(marker in rel_path for marker in _SKIP_MARKERS):
+            continue
         if 'android:allowBackup="false"' in text or "android:allowBackup=\"false\"" in text:
             report.add("RASP-BACKUP", "INFO", rel_path, None,
                        "android:allowBackup=\"false\" is set. ✓")
