@@ -130,7 +130,9 @@ class MobsfTruthfulnessTest(unittest.TestCase):
     def test_wrong_sarif_shape_is_invalid_output(self):
         for payload in ({"version": "2.1.0"}, {"runs": "nope"}, [1, 2, 3]):
             with self.subTest(payload=payload):
-                path = self.write(payload if isinstance(payload, dict) else json.dumps(payload))
+                path = self.write(
+                    payload if isinstance(payload, dict) else json.dumps(payload)
+                )
                 truth = interpret(path, "success")
                 self.assertIs(truth.execution, ScanExecution.INVALID_OUTPUT)
                 self.assertIs(truth.findings, FindingsStatus.UNKNOWN)

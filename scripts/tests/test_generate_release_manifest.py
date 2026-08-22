@@ -63,9 +63,7 @@ class ReleaseManifestTest(unittest.TestCase):
         b = serialize(self.build())
         self.assertEqual(a, b)
         # Sorted keys make the output diff-stable.
-        self.assertEqual(
-            list(json.loads(a).keys()), sorted(json.loads(a).keys())
-        )
+        self.assertEqual(list(json.loads(a).keys()), sorted(json.loads(a).keys()))
 
     def test_binds_commit_and_digest(self):
         manifest = self.build()
@@ -162,7 +160,9 @@ class ReleaseManifestTest(unittest.TestCase):
         self.assertTrue(manifest["release_evidence_complete"])
 
     def test_extra_gates_are_normalised_and_sorted(self):
-        manifest = self.build(extra_gates={"instrumentation": "NOT_RUN", "lint": "PASS"})
+        manifest = self.build(
+            extra_gates={"instrumentation": "NOT_RUN", "lint": "PASS"}
+        )
         self.assertEqual("NOT_RUN", manifest["gates"]["instrumentation"])
         self.assertEqual("PASS", manifest["gates"]["lint"])
 
@@ -172,14 +172,22 @@ class ReleaseManifestTest(unittest.TestCase):
         out = self.tmp / "manifest.json"
         code = main(
             [
-                "--repository", REPO,
-                "--commit-sha", COMMIT,
-                "--artifact", str(self.artifact),
-                "--generated-at", WHEN,
-                "--provenance-verified", "true",
-                "--build-status", "PASS",
-                "--security-gate-status", "PASS",
-                "--output", str(out),
+                "--repository",
+                REPO,
+                "--commit-sha",
+                COMMIT,
+                "--artifact",
+                str(self.artifact),
+                "--generated-at",
+                WHEN,
+                "--provenance-verified",
+                "true",
+                "--build-status",
+                "PASS",
+                "--security-gate-status",
+                "PASS",
+                "--output",
+                str(out),
                 "--require-complete",
             ]
         )
@@ -190,10 +198,14 @@ class ReleaseManifestTest(unittest.TestCase):
     def test_cli_require_complete_fails_on_incomplete_evidence(self):
         code = main(
             [
-                "--repository", REPO,
-                "--commit-sha", COMMIT,
-                "--artifact", str(self.artifact),
-                "--generated-at", WHEN,
+                "--repository",
+                REPO,
+                "--commit-sha",
+                COMMIT,
+                "--artifact",
+                str(self.artifact),
+                "--generated-at",
+                WHEN,
                 "--require-complete",
             ]
         )
@@ -202,11 +214,16 @@ class ReleaseManifestTest(unittest.TestCase):
     def test_cli_fails_on_digest_mismatch(self):
         code = main(
             [
-                "--repository", REPO,
-                "--commit-sha", COMMIT,
-                "--artifact", str(self.artifact),
-                "--generated-at", WHEN,
-                "--expected-sha256", "c" * 64,
+                "--repository",
+                REPO,
+                "--commit-sha",
+                COMMIT,
+                "--artifact",
+                str(self.artifact),
+                "--generated-at",
+                WHEN,
+                "--expected-sha256",
+                "c" * 64,
             ]
         )
         self.assertEqual(1, code)
@@ -214,10 +231,14 @@ class ReleaseManifestTest(unittest.TestCase):
     def test_cli_fails_on_missing_artifact(self):
         code = main(
             [
-                "--repository", REPO,
-                "--commit-sha", COMMIT,
-                "--artifact", str(self.tmp / "nope.aab"),
-                "--generated-at", WHEN,
+                "--repository",
+                REPO,
+                "--commit-sha",
+                COMMIT,
+                "--artifact",
+                str(self.tmp / "nope.aab"),
+                "--generated-at",
+                WHEN,
             ]
         )
         self.assertEqual(1, code)

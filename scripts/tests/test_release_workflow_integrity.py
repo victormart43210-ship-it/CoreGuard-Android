@@ -181,7 +181,11 @@ class ReleaseWorkflowIntegrityTest(unittest.TestCase):
         for needle in (VERIFY_COMMAND, MANIFEST_COMMAND):
             idx = _index_of_run(self.steps, needle)
             run = str(self.steps[idx]["run"]).lower()
-            for token in ("signing_key_password", "signing_store_password", "keystore_base64"):
+            for token in (
+                "signing_key_password",
+                "signing_store_password",
+                "keystore_base64",
+            ):
                 self.assertNotIn(token, run)
 
 

@@ -243,7 +243,9 @@ def interpret(
         )
 
     # 4. Parsed successfully — only now may findings be evaluated.
-    blocking, non_blocking, unknown, malformed = _classify_results(runs, blocking_levels)
+    blocking, non_blocking, unknown, malformed = _classify_results(
+        runs, blocking_levels
+    )
 
     notes: list[str] = []
     if malformed:

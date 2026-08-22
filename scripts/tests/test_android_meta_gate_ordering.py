@@ -67,9 +67,7 @@ class AndroidMetaGateOrderingTest(unittest.TestCase):
         steps = self.jobs[META_GATE_JOB]["steps"]
         commands = "\n".join(str(s.get("run", "") or "") for s in steps)
         for script in REQUIRED_GATE_SCRIPTS:
-            self.assertIn(
-                script, commands, f"meta-gate job must invoke {script}"
-            )
+            self.assertIn(script, commands, f"meta-gate job must invoke {script}")
 
     def test_no_meta_gate_step_is_suppressed(self):
         for step in self.jobs[META_GATE_JOB]["steps"]:
