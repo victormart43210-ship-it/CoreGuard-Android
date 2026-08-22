@@ -1,6 +1,9 @@
 package com.coldboar.coreguard.swarm
 
+import com.coldboar.coreguard.NativeAcquisition
 import com.coldboar.coreguard.NativeTamperGuard
+import com.coldboar.coreguard.NativeUnavailableReason
+import com.coldboar.coreguard.explain
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.ScheduledFuture
 import java.util.concurrent.TimeUnit
@@ -11,26 +14,26 @@ import java.util.concurrent.atomic.AtomicBoolean
  * process address space for hook libraries.
  *
  * Monitors:
- *  - [NativeTamperGuard.textIntact]         — inline hook detection via checksum.
- *  - [NativeTamperGuard.hookedLibraryPath]  — Frida/Xposed/Substrate in `/proc/self/maps`.
- *  - [NativeTamperGuard.baselineReady]      — whether the baseline was captured.
+ *  - [NativeTamperGuard.codeIntegrityIntact] — inline hook detection via checksum,
+ *    including whether a baseline was captured at all.
+ *  - [NativeTamperGuard.hookedLibraryPath]   — Frida/Xposed/Substrate in `/proc/self/maps`.
  *
  * When a [SwarmSeverity.CRITICAL] signal is emitted the [SwarmCoordinator] will
  * propagate a directive to the [NetworkMonitorAgent] to isolate active connections.
  *
  * @param pollIntervalMs   How often (ms) the agent samples the native layer.
- * @param baselineReady    Lambda returning whether the native baseline is captured.
- * @param textIntact       Lambda returning whether the code segment is unmodified.
- * @param hookedLibrary    Lambda returning the path of any mapped hook library, or "".
+ * @param codeIntegrity    Lambda acquiring whether the code segment is unmodified.
+ * @param hookedLibrary    Lambda acquiring the path of any mapped hook library, or "".
  * @param executor         Scheduler used for the polling loop (injectable for tests).
  */
 class MemoryIntegrityAgent(
     override val agentId: String = "memory-integrity",
     override val name: String = "Memory Integrity Agent",
     private val pollIntervalMs: Long = 5_000L,
-    private val baselineReady: () -> Boolean = { NativeTamperGuard.baselineReady() },
-    private val textIntact: () -> Boolean = { NativeTamperGuard.textIntact() },
-    private val hookedLibrary: () -> String = { NativeTamperGuard.hookedLibraryPath() },
+    private val codeIntegrity: () -> NativeAcquisition<Boolean> =
+        { NativeTamperGuard.codeIntegrityIntact() },
+    private val hookedLibrary: () -> NativeAcquisition<String> =
+        { NativeTamperGuard.hookedLibraryPath() },
     private val executor: ScheduledExecutorService = defaultExecutor(),
 ) : SwarmAgent {
 
@@ -84,40 +87,64 @@ class MemoryIntegrityAgent(
     }
 
     private fun poll() {
-        val signal = when {
-            !baselineReady() -> SwarmSignal(
-                agentId = agentId,
-                signalType = SwarmSignalType.TELEMETRY,
-                severity = SwarmSeverity.WARN,
-                details = "Native code baseline not yet captured — integrity unverifiable.",
-            )
-            !textIntact() -> SwarmSignal(
+        val signal = evaluate()
+        latestSignal = signal
+        coordinator?.broadcast(signal, this)
+    }
+
+    /**
+     * An unavailable acquisition yields a WARN telemetry signal that says the
+     * check could not be completed. It must never yield the INFO "code segment
+     * intact, no hook libraries" signal, which is a verified-clean claim.
+     */
+    private fun evaluate(): SwarmSignal {
+        val integrity = codeIntegrity()
+        if (integrity is NativeAcquisition.Unavailable) {
+            return unavailableSignal(integrity.reason, "Native code-integrity check")
+        }
+        if (!(integrity as NativeAcquisition.Available).value) {
+            return SwarmSignal(
                 agentId = agentId,
                 signalType = SwarmSignalType.MEMORY_HOOK_DETECTED,
                 severity = SwarmSeverity.CRITICAL,
                 details = "Native code segment checksum mismatch — an inline hook may have been applied.",
             )
-            else -> {
-                val lib = hookedLibrary()
-                if (lib.isNotEmpty()) {
-                    SwarmSignal(
-                        agentId = agentId,
-                        signalType = SwarmSignalType.HOOK_LIBRARY_MAPPED,
-                        severity = SwarmSeverity.CRITICAL,
-                        details = "Hook framework library mapped into process: $lib",
-                        metadata = mapOf("library_path" to lib),
-                    )
-                } else {
-                    SwarmSignal(
-                        agentId = agentId,
-                        signalType = SwarmSignalType.TELEMETRY,
-                        severity = SwarmSeverity.INFO,
-                        details = "Code segment intact. No hook libraries detected.",
-                    )
-                }
-            }
         }
-        latestSignal = signal
-        coordinator?.broadcast(signal, this)
+
+        val hooks = hookedLibrary()
+        if (hooks is NativeAcquisition.Unavailable) {
+            return unavailableSignal(hooks.reason, "Hook library check")
+        }
+
+        val lib = (hooks as NativeAcquisition.Available).value
+        return if (lib.isNotEmpty()) {
+            SwarmSignal(
+                agentId = agentId,
+                signalType = SwarmSignalType.HOOK_LIBRARY_MAPPED,
+                severity = SwarmSeverity.CRITICAL,
+                details = "Hook framework library mapped into process: $lib",
+                // Raw library paths stay out of broadcast metadata; the path is
+                // already in details for local diagnostics only.
+                metadata = mapOf("evidence" to "hook_library_mapped"),
+            )
+        } else {
+            SwarmSignal(
+                agentId = agentId,
+                signalType = SwarmSignalType.TELEMETRY,
+                severity = SwarmSeverity.INFO,
+                details = "Code segment intact. No hook libraries detected.",
+            )
+        }
     }
+
+    private fun unavailableSignal(
+        reason: NativeUnavailableReason,
+        checkLabel: String,
+    ): SwarmSignal = SwarmSignal(
+        agentId = agentId,
+        signalType = SwarmSignalType.TELEMETRY,
+        severity = SwarmSeverity.WARN,
+        details = reason.explain(checkLabel),
+        metadata = mapOf("unavailable_reason" to reason.name),
+    )
 }
