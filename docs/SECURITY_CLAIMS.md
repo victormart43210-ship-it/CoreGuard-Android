@@ -41,6 +41,7 @@ This matrix keeps CoreGuard copy honest. Prefer this over marketing impulse.
 | “Release-ready” / Play approval guaranteed | External Console, signing, device, and policy reviews remain |
 | DemoBilling is the production path | Production uses `PlayBillingProvider`; unavailable billing fails closed (`FailClosedBillingProvider`) |
 | MASVS “compliance certified” | Educational mapping / coverage scores only |
+| “Black Duck audit complete” from CI alone | The workflow’s no-backend job only records that no Black Duck backend is configured — it is not a completed vendor audit |
 
 ## Premium honesty
 

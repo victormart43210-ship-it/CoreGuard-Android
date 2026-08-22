@@ -7,9 +7,12 @@
 > production-grade security guarantees where those are not yet implemented.
 >
 > Local CI restore (2026-08-21) verified debug/release Kotlin compile, lint,
-> 431 unit tests, and real debug/release APK assembly on API 36 tooling.
+> unit tests, and real debug/release APK assembly on API 36 tooling.
+> Version source of truth remains `gradle/android-app.gradle`
+> (`versionName = "1.0.17"`, `versionCode = 18`).
 > That does **not** mean Internal Testing, Play review, or physical-device
-> matrix work is complete.
+> matrix work is complete. The CI “Black Duck (no backend configured)” job is
+> **not** a completed Black Duck security audit.
 
 ---
 
@@ -189,7 +192,7 @@ Authoritative subscription product ID: `BillingProvider.PREMIUM_PRODUCT_ID` = `c
 
 - [ ] All unit tests pass: `./gradlew -Pcoreguard.androidBuild=true :app:testDebugUnitTest`
 - [ ] Debug APK builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:assembleDebug`
-- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.15 / versionCode 16)
+- [x] Release AAB builds cleanly: `./gradlew -Pcoreguard.androidBuild=true :app:bundleRelease` (v1.0.17 / versionCode 18 — source: `gradle/android-app.gradle`)
 - [x] Release manifest blocks app backup/data extraction and cleartext HTTP by default
 - [x] Production billing path is `PlayBillingProvider` (Demo is tests/previews only)
 - [x] Authoritative SKU is `BillingProvider.PREMIUM_PRODUCT_ID` = `coreguard_premium_monthly`
