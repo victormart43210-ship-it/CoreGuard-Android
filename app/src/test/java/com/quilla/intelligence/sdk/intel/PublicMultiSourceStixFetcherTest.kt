@@ -42,7 +42,7 @@ class PublicMultiSourceStixFetcherTest {
         assertTrue(urls.any { it.contains("novispy") || it.contains("darksword") })
         assertTrue(urls.none { it.contains("indicators/pegasus.stix2") })
         assertTrue(urls.all { it.startsWith("https://") })
-        assertTrue(urls.none { it.contains("/master/") })
+        assertTrue(urls.none { it.contains("/main/") || it.contains("/master/") })
         assertTrue(PublicMultiSourceStixFetcher.DEFAULT_FEEDS.all { it.sha256Hex.length == 64 })
     }
 

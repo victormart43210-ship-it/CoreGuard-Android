@@ -23,6 +23,21 @@ class PublicMultiSourceStixFetcher(
     private val transport: HttpTransport = UrlConnectionHttpTransport
 ) : MultiSourceStixFetcher {
 
+    private val expectedFeedHashes = mapOf(
+        DEFAULT_FEEDS[0].url to "28da50042006281d56c17dff08f06bba3ba310bc18cc23040780850131b2efdb",
+        DEFAULT_FEEDS[1].url to "02bfceea5a2c32b159f11569736448398e35e7f0fc7d137385b943ec60697360",
+        DEFAULT_FEEDS[2].url to "d0d546c388207e8a162eb3901259ee20c0ddd03efeff145d3cc9b3a0a02a5419",
+        DEFAULT_FEEDS[3].url to "df1bcaa78abc7b85781b1ebc2daa3cc225371e2024d9ef96e84f80f927256586",
+        DEFAULT_FEEDS[4].url to "6fe92193d9e17c21a16eb7abe93a418a2e40c0176dcb56fb30539f84136391bb",
+        DEFAULT_FEEDS[5].url to "82143861aa57cf570acc19023a7059dc5d3901202dd7338b418a83169e1e7e87",
+        DEFAULT_FEEDS[6].url to "c40ca826d3eeef1e095af18d77531246b4849d2fa350464c07326d1b12015b50",
+        DEFAULT_FEEDS[7].url to "a2387f14ae7e7f176b0bd543be9b5ff151c77a22377cee5ae38ac5c3c4973a20",
+        DEFAULT_FEEDS[8].url to "0046552adf6127ebcaeac9f825a8082a9fa201dd7c921bb7d596fb0c02f12c24",
+        DEFAULT_FEEDS[9].url to "b2327156670ed5c1748600fa2c7a2a1756496c53de4534394ab6b80d57b13ed5",
+        DEFAULT_FEEDS[10].url to "47270c7236d55e2fa2a05a3fa432da79af138bbbe2b7f243109bfec0686996bf",
+        DEFAULT_FEEDS[11].url to "0c14a0eab0404adfdf93d224a6be3bedb0c5dd4c3630a443d338ccfa70dc04e7"
+    )
+
     data class Feed(
         val name: String,
         val url: String,

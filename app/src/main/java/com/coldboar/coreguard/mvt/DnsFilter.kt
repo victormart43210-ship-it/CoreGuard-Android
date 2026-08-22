@@ -40,6 +40,25 @@ object DnsMessage {
     }
 
     /**
+     * Returns true only when [response] is a DNS reply for the exact first
+     * question in [query]. Callers must also bind their transport to the
+     * expected resolver before accepting a network response.
+     */
+    fun isResponseFor(query: ByteArray, response: ByteArray): Boolean {
+        if (query.size < HEADER_LEN || response.size < HEADER_LEN) return false
+        if (query[0] != response[0] || query[1] != response[1]) return false
+        if (response[2].toInt() and 0x80 == 0) return false // QR must be set
+        if (query[4] != response[4] || query[5] != response[5]) return false
+
+        val queryEnd = findQuestionEnd(query)
+        val responseEnd = findQuestionEnd(response)
+        if (queryEnd > query.size || responseEnd > response.size || queryEnd != responseEnd) {
+            return false
+        }
+        return query.copyOfRange(4, queryEnd).contentEquals(response.copyOfRange(4, responseEnd))
+    }
+
+    /**
      * Builds an NXDOMAIN (name does not exist) response for the given [query],
      * echoing the transaction id and question section. This is what the blocker
      * returns for a domain on the IOC list, so the lookup fails cleanly.

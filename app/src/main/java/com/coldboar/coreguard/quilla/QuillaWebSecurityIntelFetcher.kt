@@ -266,6 +266,11 @@ object QuillaWebSecurityIntelFetcher {
         }
     }
 
+    private fun sha256Hex(bytes: ByteArray): String =
+        MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { byte ->
+            "%02x".format(byte.toInt() and 0xFF)
+        }
+
     private fun isMobileRelevant(blob: String): Boolean {
         // Word-ish tokens to avoid false positives (e.g. "arm" inside "firmware").
         val pattern = Regex(

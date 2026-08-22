@@ -217,7 +217,9 @@ class GuardVpnService : VpnService() {
     companion object {
         private const val TAG = "GuardVpnService"
         private const val CHANNEL_ID = "coreguard_shield"
-        private const val NOTIF_ID = 0xC0DE
+        private         const val NOTIF_ID = 0xC0DE
+        private const val DNS_PORT = 53
+
         const val ACTION_STOP = "com.coldboar.coreguard.STOP_SHIELD"
     }
 }
