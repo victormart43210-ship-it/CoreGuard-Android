@@ -1,0 +1,73 @@
+name: Gradle dependency submission (scoped)
+
+# Replaces GitHub's default "Automatic Dependency Submission" which submits the
+# ENTIRE Gradle dependency graph — buildscript classpath, plugin classpath, AGP
+# internals, test-only deps (452 packages). That produced 57 Dependabot alerts
+# on packages that never ship in the APK (netty, bouncycastle, jose4j, jdom2,
+# protobuf-java, guava, commons-io/-compress pulled by AGP tooling), drowning
+# real signal.
+#
+# This workflow reports ONLY the :app module's release runtime classpath —
+# what is actually packaged into the Play Store release APK.
+#
+# To fully stop the noisy alerts, a repo admin also needs to disable
+# "Automatic dependency submission" in
+#   Settings → Code security → Dependency graph → Automatic dependency submission
+# Otherwise both workflows submit and GitHub keeps the union of dependencies.
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: write # Required to submit the dependency graph.
+
+jobs:
+  submit:
+    name: Submit :app releaseRuntimeClasspath
+    runs-on: ubuntu-latest
+    env:
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+      COREGUARD_ANDROID_BUILD: "true"
+    steps:
+      - uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - uses: actions/setup-java@dded0888837ed1f317902acf8a20df0ad188d165 # v5.0.0
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Install Android SDK components
+        run: |
+          set -euo pipefail
+          # (yes || true): sdkmanager closes stdin when done, killing `yes` with
+          # SIGPIPE (exit 141) — under pipefail that would fail spuriously.
+          (yes || true) | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses >/dev/null
+          "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
+            "platforms;android-36" \
+            "build-tools;36.0.0" \
+            "ndk;27.3.13750724" \
+            "cmake;3.31.5"
+
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
+      - name: Submit dependency graph (release runtime only)
+        uses: gradle/actions/dependency-submission@9c971963bec38e04b3d30dcc455b5382be2fdbfb # v6.3.0
+        with:
+          # Only report the :app module. Other projects (:core:model) are
+          # transitively reached via releaseRuntimeClasspath below and will
+          # still be included where they contribute runtime dependencies.
+          dependency-graph-include-projects: "^:app$"
+
+          # Only report the release runtime classpath — the exact set of jars
+          # bundled into the Play Store APK. Excludes:
+          #   - buildscript/classpath (AGP, kotlin-gradle-plugin, netty, etc.)
+          #   - kapt/annotationProcessor (compile-time only)
+          #   - testRuntimeClasspath, androidTestRuntimeClasspath
+          #   - debugRuntimeClasspath (development-only jars)
+          dependency-graph-include-configurations: "^releaseRuntimeClasspath$"
+
+          # Do not publish a Develocity build scan (no accidental telemetry).
+          build-scan-publish: false
