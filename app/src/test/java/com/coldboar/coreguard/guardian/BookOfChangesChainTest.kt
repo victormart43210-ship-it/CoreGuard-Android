@@ -12,7 +12,8 @@ import org.junit.Test
  *
  * The on-device gate failed with a valid ledger reported as tampered because the
  * chain was linked in append order but validated in event-timestamp order. These
- * tests pin the DAO ordering contract that keeps the two consistent.
+ * tests pin the DAO ordering contract that keeps the two consistent, and prove
+ * that v1 prefix retention is disabled rather than producing false tamper.
  */
 class BookOfChangesChainTest {
 
@@ -91,8 +92,6 @@ class BookOfChangesChainTest {
 
     @Test
     fun chainStaysValidWhenFindingsShareATimestamp() {
-        // refreshIntelligence records every active finding in one pass, so several
-        // events commonly carry the identical lastSeen timestamp.
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         val sameInstant = 1_000_000L
@@ -108,7 +107,7 @@ class BookOfChangesChainTest {
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))
-        repo.recordFinding(finding("check.b", 1_000L)) // older than its predecessor
+        repo.recordFinding(finding("check.b", 1_000L))
         repo.recordFinding(finding("check.c", 3_000L))
 
         assertTrue("Ledger must validate when event times are not monotonic", repo.chainValid())
@@ -116,13 +115,56 @@ class BookOfChangesChainTest {
 
     @Test
     fun timestampOrderedChainReproducesTheOnDeviceFailure() {
-        // Documents the defect: validating in timestamp order walks a different
-        // order than the links were built in, flagging an untampered ledger.
         val dao = TimestampOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))
         repo.recordFinding(finding("check.b", 1_000L))
 
         assertFalse("Timestamp ordering is the defect under test", repo.chainValid())
+    }
+
+    @Test
+    fun repositoryUsesAppendOrderNotTimestampOrder() {
+        val dao = AppendOrderDao()
+        val repo = BookOfChangesRepository(dao)
+        repo.recordFinding(finding("check.a", 5_000L))
+        repo.recordFinding(finding("check.b", 1_000L))
+        val oldest = dao.allOldestFirst()
+        assertTrue(oldest.size == 2)
+        assertTrue(oldest[0].sourceDetector == "check.a")
+        assertTrue(oldest[1].sourceDetector == "check.b")
+        assertTrue(repo.chainValid())
+    }
+
+    @Test
+    fun prefixRetentionIsDisabledSoChainStaysValid() {
+        val dao = AppendOrderDao()
+        val repo = BookOfChangesRepository(dao)
+        repo.recordFinding(finding("check.a", 1_000L))
+        repo.recordFinding(finding("check.b", 2_000L))
+        repo.recordFinding(finding("check.c", 3_000L))
+        assertTrue(repo.chainValid())
+        assertFalse(repo.isPrefixRetentionAvailable())
+        repo.applyRetention(days = 30)
+        assertTrue(
+            "v1 retention must not prune ancestors (would break chain)",
+            dao.rows.size == 3
+        )
+        assertTrue(repo.chainValid())
+    }
+
+    @Test
+    fun simulatingLegacyPrefixPruneBreaksValidation() {
+        val dao = AppendOrderDao()
+        val repo = BookOfChangesRepository(dao)
+        repo.recordFinding(finding("check.a", 1_000L))
+        repo.recordFinding(finding("check.b", 2_000L))
+        repo.recordFinding(finding("check.c", 3_000L))
+        // Simulate the old deleteOlderThan behavior that kept only the newest.
+        dao.deleteOlderThan(2_500L)
+        assertFalse(
+            "Pruned ancestors without checkpoint must fail validation",
+            repo.chainValid()
+        )
     }
 }
