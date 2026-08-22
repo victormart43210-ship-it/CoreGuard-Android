@@ -40,11 +40,13 @@ jobs:
           args: '. --sarif --output results.sarif'
 
       - name: Require non-empty SARIF output
+        if: always()
         run: |
           test -s results.sarif
           echo "MobSF SARIF generated: results.sarif" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload mobsfscan report
+        if: always() && hashFiles('results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif
