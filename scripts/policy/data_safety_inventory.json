@@ -1,0 +1,79 @@
+{
+  "schema_version": "1.0.0",
+  "app": "com.coldboar.coreguard",
+  "generated_note": "Truthful current-state inventory of declared sensitive data flows. Where a field does not apply it is 'not_applicable' rather than guessed. Validated by scripts/policy/verify_data_safety_drift.py.",
+  "categories": {
+    "device_security_findings": {
+      "collected": true,
+      "transmitted": false,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "On-device malware/spyware scan results presented to the user; scan artifacts stay on-device.",
+      "retention": "Until next scan or user-initiated clear.",
+      "user_control": "Scans are user-triggered; results are clearable from in-app settings."
+    },
+    "app_package_metadata": {
+      "collected": true,
+      "transmitted": false,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "Enumerate installed apps (QUERY_ALL_PACKAGES) to match against spyware package indicators; declared to Play Console as a core device-security feature.",
+      "retention": "Session/scoped per scan; not persisted between launches.",
+      "user_control": "Granted via the QUERY_ALL_PACKAGES prompt; feature can be withheld if permission is denied."
+    },
+    "network_security_observations": {
+      "collected": true,
+      "transmitted": false,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "The privacy VPN observes outbound connection attempts to known tracker/surveillance domains and blocks them.",
+      "retention": "Per VPN session; not persisted to disk.",
+      "user_control": "User enables/disables the privacy VPN from the Shield screen; disabling tears down the VpnService."
+    },
+    "crash_performance_telemetry": {
+      "collected": false,
+      "transmitted": false,
+      "stored_locally": false,
+      "stored_remotely": false,
+      "purpose": "Not collected. No crash-reporting or performance-telemetry SDK is integrated.",
+      "retention": "not_applicable",
+      "user_control": "not_applicable"
+    },
+    "authentication_identity": {
+      "collected": true,
+      "transmitted": true,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "Google Play Billing obfuscated account ID used for entitlement verification. No raw account IDs are collected or stored remotely by CoreGuard.",
+      "retention": "Entitlement cache lifetime; obfuscated ID is not persisted as user identity.",
+      "user_control": "Subscription and account are managed via the Google Play Store; sign-out clears the local entitlement cache."
+    },
+    "billing_entitlement": {
+      "collected": true,
+      "transmitted": true,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "Premium subscription entitlement verified through Google Play Billing.",
+      "retention": "Subscription lifetime; entitlement cached locally for offline access state.",
+      "user_control": "Purchase, upgrade, and cancellation are handled via the Google Play Store."
+    },
+    "threat_intelligence_requests": {
+      "collected": true,
+      "transmitted": true,
+      "stored_locally": true,
+      "stored_remotely": true,
+      "purpose": "Download signed threat-intelligence bundles from the Cloud Run backend to update on-device spyware/tracker domain blocklists.",
+      "retention": "Per bundle version; superseded bundles are replaced on update.",
+      "user_control": "Threat-intel updates can be enabled or disabled in settings."
+    },
+    "quilla_inputs_outputs": {
+      "collected": true,
+      "transmitted": false,
+      "stored_locally": true,
+      "stored_remotely": false,
+      "purpose": "Quilla defensive crawler (operator tooling, not app runtime) gathers open-source intelligence into signed bundles stored as artifacts.",
+      "retention": "Per bundle version under security/threat-intel/artifacts.",
+      "user_control": "Operator-run build tooling; not a user-facing data flow."
+    }
+  }
+}
