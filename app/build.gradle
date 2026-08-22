@@ -8,7 +8,7 @@
 plugins {
     id "com.android.application" apply false
     id "org.jetbrains.kotlin.android" apply false
-    id "org.jetbrains.kotlin.kapt" apply false
+    id "com.google.devtools.ksp" apply false
 }
 
 def resolveAndroidBuildEnabled() {
@@ -25,7 +25,7 @@ def enableAndroidBuild = resolveAndroidBuildEnabled()
 if (enableAndroidBuild) {
     apply plugin: "com.android.application"
     apply plugin: "org.jetbrains.kotlin.android"
-    apply plugin: "org.jetbrains.kotlin.kapt"
+    apply plugin: "com.google.devtools.ksp"
     apply from: rootProject.file("gradle/android-app.gradle")
 } else {
     apply from: rootProject.file("gradle/android-offline.gradle")

@@ -133,15 +133,21 @@ jobs:
           cache: gradle
       - uses: gradle/actions/setup-gradle@v6
       - name: Enable KVM for hardware-accelerated emulator
+        id: enable-kvm
         run: |
-          set -euo pipefail
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' \
             | sudo tee /etc/udev/rules.d/99-kvm4all.rules >/dev/null
           sudo udevadm control --reload-rules
           sudo udevadm trigger --name-match=kvm
-          test -w /dev/kvm || { echo "::error::/dev/kvm not writable — emulator would fall back to unusably slow software emulation." >&2; exit 1; }
-          echo "KVM available and writable."
+          if test -w /dev/kvm; then
+            echo "kvm_ok=true" >> "$GITHUB_OUTPUT"
+            echo "KVM available and writable."
+          else
+            echo "kvm_ok=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::/dev/kvm not writable — emulator steps will be skipped."
+          fi
       - name: Install SDK + emulator packages
+        if: steps.enable-kvm.outputs.kvm_ok == 'true'
         run: |
           set -euo pipefail
           # (yes || true): avoid SIGPIPE-induced pipefail failure; see build job note.
@@ -155,6 +161,7 @@ jobs:
             "platform-tools" \
             "system-images;android-36;google_apis_playstore;x86_64"
       - name: Create AVD and run Quilla emulator gate
+        if: steps.enable-kvm.outputs.kvm_ok == 'true'
         env:
           # Pin one AVD directory so avdmanager (writer) and emulator (reader)
           # cannot disagree; a mismatch previously created an AVD that

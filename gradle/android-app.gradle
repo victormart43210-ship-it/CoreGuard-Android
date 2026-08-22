@@ -1,6 +1,6 @@
 // Android DSL configuration for :app.
 // Plugin versions are centralized in root build.gradle.kts + libs.versions.toml.
-// kotlin-kapt is applied from app/build.gradle for Room annotation processing.
+// com.google.devtools.ksp is applied from app/build.gradle for Room annotation processing.
 
 android {
     namespace = "com.coldboar.coreguard"
@@ -267,5 +267,5 @@ dependencies {
 
     implementation "androidx.room:room-runtime:2.6.1"
     implementation "androidx.room:room-ktx:2.6.1"
-    kapt "androidx.room:room-compiler:2.6.1"
+    ksp "androidx.room:room-compiler:2.6.1"
 }
