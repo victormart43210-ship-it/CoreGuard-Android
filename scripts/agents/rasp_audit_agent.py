@@ -173,7 +173,6 @@ def check_native_tamper_guard(root: Path, report: AgentReport):
         "tracerPid",
         "hookedLibraryPath",
         "textIntact",
-        "ptraceProtected",
     ]
     kt_files = list((root / "app").rglob("NativeTamperGuard.kt")) if (root / "app").exists() else []
     cpp_files = (

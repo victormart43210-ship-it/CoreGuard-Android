@@ -74,11 +74,16 @@ class ComplianceReportExporter(private val context: Context) {
      * Writes the JSON representation of [report] to a timestamped file in the
      * app's external files directory and returns a [Uri] pointing to it.
      *
+     * The filename stamp (`yyyyMMdd_HHmmss`) uses the **device-local** wall clock
+     * as a human-facing label. Evidence time inside the JSON (`generatedAt`) is
+     * always UTC via [formatUtcTimestamp] — do not treat the filename as UTC.
+     *
      * Returns `null` if external storage is unavailable.
      */
     fun exportToFile(report: MasvsComplianceReport): File? {
         val dir = context.getExternalFilesDir("compliance_reports") ?: return null
         dir.mkdirs()
+        // Device-local filename label (not UTC). See KDoc above.
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date(report.generatedAtMs))
         val file = File(dir, "masvs_report_$timestamp.json")
         file.writeText(toJson(report))
