@@ -120,7 +120,7 @@ object HardenedHttpsDownloader {
                 )
             )
         } catch (e: Exception) {
-            return Result.Failure(e.message ?: "Network error")
+            return Result.Failure("Transport error: ${e.message ?: "Network error"}")
         }
 
         var result: Result = Result.Failure("Response handling failed")

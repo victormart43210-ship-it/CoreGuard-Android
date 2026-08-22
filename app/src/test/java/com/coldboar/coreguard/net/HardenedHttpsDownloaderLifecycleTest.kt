@@ -212,4 +212,57 @@ class HardenedHttpsDownloaderLifecycleTest {
         assertTrue(result is HardenedHttpsDownloader.Result.Success)
         assertTrue(closed.get())
     }
+
+    @Test
+    fun `transport exception becomes typed failure`() {
+        val transport = object : HttpTransport {
+            override fun get(
+                url: String,
+                connectTimeoutMs: Int,
+                readTimeoutMs: Int,
+                headers: Map<String, String>
+            ): HttpTransport.Response {
+                throw java.io.IOException("network down")
+            }
+        }
+        val result = HardenedHttpsDownloader.download(
+            "https://raw.githubusercontent.com/org/repo/abc/file.json",
+            policy(),
+            transport
+        )
+        assertTrue(result is HardenedHttpsDownloader.Result.Failure)
+        assertTrue((result as HardenedHttpsDownloader.Result.Failure).reason.contains("Transport error"))
+    }
+
+    @Test
+    fun `close failure after successful body fails closed`() {
+        val body = "hello".toByteArray()
+        val stream = object : InputStream() {
+            private val delegate = ByteArrayInputStream(body)
+            var closed = false
+            override fun read(): Int = delegate.read()
+            override fun read(b: ByteArray, off: Int, len: Int): Int = delegate.read(b, off, len)
+            override fun close() {
+                closed = true
+                throw java.io.IOException("close boom")
+            }
+        }
+        val transport = ScriptedTransport(
+            mutableListOf(
+                HttpTransport.Response(
+                    code = 200,
+                    contentType = "application/json",
+                    body = stream
+                )
+            )
+        )
+        val result = HardenedHttpsDownloader.download(
+            "https://raw.githubusercontent.com/org/repo/abc/file.json",
+            policy(expectedSha = HardenedHttpsDownloader.sha256Hex(body)),
+            transport
+        )
+        assertTrue(result is HardenedHttpsDownloader.Result.Failure)
+        assertTrue((result as HardenedHttpsDownloader.Result.Failure).reason.contains("Body close failed"))
+        assertTrue(stream.closed)
+    }
 }

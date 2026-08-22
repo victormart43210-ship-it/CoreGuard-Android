@@ -129,6 +129,7 @@ class QuillaIntelNetworkSingleFetchTest {
         assertFalse(snapshot.synced)
         assertEquals(0, snapshot.stixVerifiedSourceCount)
         assertEquals(1, snapshot.stixFailedSourceCount)
+        assertTrue(snapshot.feedNotes.any { it.contains("inconsistent counters", ignoreCase = true) })
     }
 
     @Test

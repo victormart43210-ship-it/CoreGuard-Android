@@ -101,6 +101,42 @@ object IocFeedFetcher {
         pin: PublicIntelFeedPins.Pin,
         bytes: ByteArray,
         body: String
+    ): FetchResult = persistVerifiedInternal(context, pin, bytes, body)
+
+    /**
+     * Testable persist path: returns without invalidating when commit throws.
+     * Production [persistVerified] is the sole caller of invalidate-after-commit.
+     */
+    internal fun persistVerifiedInternal(
+        context: Context,
+        pin: PublicIntelFeedPins.Pin,
+        bytes: ByteArray,
+        body: String,
+        commit: (File, ByteArray, ByteArray) -> Unit = { dir, feed, meta ->
+            IocFeedStore.commitGeneration(
+                iocDir = dir,
+                feedBytes = feed,
+                metaBytes = meta,
+                verify = { feedOnDisk, metaOnDisk ->
+                    val parsed = JSONObject(metaOnDisk.toString(Charsets.UTF_8))
+                    val sidecar = VerifiedRemoteMeta(
+                        name = parsed.getString("name"),
+                        url = parsed.getString("url"),
+                        sha256Hex = parsed.getString("sha256").lowercase(),
+                        commitPin = parsed.optString("commit", ""),
+                        verifiedAtMs = parsed.optLong("verifiedAtMs", 0L)
+                    )
+                    CompiledPinValidator.validateAgainstCompiledPins(sidecar, feedOnDisk)
+                        ?: throw IllegalStateException("Compiled pin validation failed after write")
+                }
+            )
+        },
+        onInvalidate: () -> Unit = {
+            IocRepository.invalidate()
+            runCatching {
+                com.coldboar.coreguard.quilla.QuillaMemoryModule.invalidateLocalIntel()
+            }
+        }
     ): FetchResult {
         val dir = try {
             File(context.filesDir, "ioc").also { target ->
@@ -126,28 +162,9 @@ object IocFeedFetcher {
         val metaBytes = metaJson.toByteArray(Charsets.UTF_8)
 
         return try {
-            IocFeedStore.commitGeneration(
-                iocDir = dir,
-                feedBytes = bytes,
-                metaBytes = metaBytes,
-                verify = { feedOnDisk, metaOnDisk ->
-                    val meta = JSONObject(metaOnDisk.toString(Charsets.UTF_8))
-                    val sidecar = VerifiedRemoteMeta(
-                        name = meta.getString("name"),
-                        url = meta.getString("url"),
-                        sha256Hex = meta.getString("sha256").lowercase(),
-                        commitPin = meta.optString("commit", ""),
-                        verifiedAtMs = meta.optLong("verifiedAtMs", 0L)
-                    )
-                    CompiledPinValidator.validateAgainstCompiledPins(sidecar, feedOnDisk)
-                        ?: throw IllegalStateException("Compiled pin validation failed after write")
-                }
-            )
+            commit(dir, bytes, metaBytes)
             // Invalidate only after pointer commit succeeded.
-            IocRepository.invalidate()
-            runCatching {
-                com.coldboar.coreguard.quilla.QuillaMemoryModule.invalidateLocalIntel()
-            }
+            onInvalidate()
             val indicators = IocParser.parse(body)
             Log.i(TAG, "Fetched ${indicators.size} indicators from ${pin.url}")
             FetchResult.Success(indicators.size)

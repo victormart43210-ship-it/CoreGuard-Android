@@ -51,9 +51,16 @@ object QuillaIntelNetwork {
             }
         val stix = stixReport.indicators
         val stixCount = stix.size
-        val stixVerifiedOk = stixReport.verifiedSourceCount > 0 && !stixReport.allUnavailable
+        // Derive typed success from source outcomes — never trust caller counters alone.
+        val derivedVerifiedSources = stixReport.sourceResults.count {
+            it.success &&
+                it.status == StixSourceResult.STATUS_VERIFIED &&
+                it.indicators.isNotEmpty()
+        }
+        val derivedFailedSources = stixReport.sourceResults.count { !it.success }
+        val stixVerifiedOk = derivedVerifiedSources > 0 && stixCount > 0
         for (source in stixReport.sourceResults) {
-            if (source.success) {
+            if (source.success && source.indicators.isNotEmpty()) {
                 feedNotes += "STIX OK ${source.name}: ${source.indicators.size} indicators (${source.status})"
             } else {
                 feedNotes += "STIX ${source.status} ${source.name}: ${source.failureReason ?: "failed"}"
@@ -61,6 +68,11 @@ object QuillaIntelNetwork {
         }
         if (!stixVerifiedOk) {
             feedNotes += "STIX: UNAVAILABLE — zero verified configured feeds"
+        }
+        if (stixReport.verifiedSourceCount != derivedVerifiedSources ||
+            stixReport.failedSourceCount != derivedFailedSources
+        ) {
+            feedNotes += "STIX: inconsistent counters ignored — using derived source outcomes"
         }
 
         val onDevice = runCatching {
@@ -101,8 +113,8 @@ object QuillaIntelNetwork {
             if (result.sourcesFailed.isNotEmpty()) {
                 feedNotes += result.sourcesFailed.map { "failed:$it" }
             }
-            // Do not trust free-form sourcesOk alone: require at least one entry.
-            knowledgeOk = result.sourcesOk.isNotEmpty() && result.entries.isNotEmpty()
+            // Do not trust free-form sourcesOk: require real verified entries only.
+            knowledgeOk = result.entries.isNotEmpty()
             if (result.sourcesFailed.any {
                     it.contains("digest", ignoreCase = true) ||
                         it.contains("SHA-256", ignoreCase = true) ||
@@ -135,8 +147,7 @@ object QuillaIntelNetwork {
 
         // Successful remote STIX sync requires ≥1 typed successful source AND
         // ≥1 verified merged indicator. Local/bundled/empty/failed ⇒ not synced.
-        val stixSynced = stixVerifiedOk && stixCount > 0 &&
-            stixReport.sourceResults.any { it.success && it.indicators.isNotEmpty() }
+        val stixSynced = stixVerifiedOk
         val synced = stixSynced || knowledgeOk
         val syncFailed = !synced
 
@@ -159,8 +170,8 @@ object QuillaIntelNetwork {
                     "Quilla Intel Network (UNAVAILABLE — sync failed)"
             },
             stixStatus = if (stixSynced) StixSourceResult.STATUS_VERIFIED else StixSourceResult.STATUS_UNAVAILABLE,
-            stixVerifiedSourceCount = stixReport.sourceResults.count { it.success },
-            stixFailedSourceCount = stixReport.sourceResults.count { !it.success },
+            stixVerifiedSourceCount = derivedVerifiedSources,
+            stixFailedSourceCount = derivedFailedSources,
             crawlerEntryCount = crawlerEntryCount,
             crawlerSignatureValid = crawlerSigValid,
             crawlerSourceLabel = crawlerSourceLabel,

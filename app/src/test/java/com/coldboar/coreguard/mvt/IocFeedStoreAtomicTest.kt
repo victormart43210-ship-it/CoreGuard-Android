@@ -10,6 +10,9 @@ import org.junit.Assert.fail
 import org.junit.Rule
 import org.junit.Test
 import org.junit.rules.TemporaryFolder
+import org.mockito.Mockito
+import org.mockito.kotlin.whenever
+import com.coldboar.coreguard.net.PublicIntelFeedPins
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -159,6 +162,46 @@ class IocFeedStoreAtomicTest {
         // Pointer never advanced — callers must not invalidate.
         assertEquals(1L, beforePointer.get())
         assertEquals(1L, IocFeedStore.readCurrentGeneration(dir))
+    }
+
+    @Test
+    fun `IocFeedFetcher does not invalidate when commit fails`() {
+        val context = Mockito.mock(android.content.Context::class.java)
+        whenever(context.filesDir).thenReturn(tmp.newFolder("files"))
+        val pin = PublicIntelFeedPins.PEGASUS
+        val body = """{"indicators":[{"type":"domain","value":"a.example","malware":"T"}]}"""
+        val invalidated = AtomicInteger(0)
+        val result = IocFeedFetcher.persistVerifiedInternal(
+            context = context,
+            pin = pin,
+            bytes = body.toByteArray(),
+            body = body,
+            commit = { _, _, _ -> error("simulated commit failure") },
+            onInvalidate = { invalidated.incrementAndGet() }
+        )
+        assertTrue(result is IocFeedFetcher.FetchResult.Failure)
+        assertEquals(0, invalidated.get())
+    }
+
+    @Test
+    fun `IocFeedFetcher invalidates only after successful commit`() {
+        val context = Mockito.mock(android.content.Context::class.java)
+        whenever(context.filesDir).thenReturn(tmp.newFolder("files2"))
+        val pin = PublicIntelFeedPins.PEGASUS
+        val body = """{"indicators":[{"type":"domain","value":"b.example","malware":"T"}]}"""
+        val invalidated = AtomicInteger(0)
+        val result = IocFeedFetcher.persistVerifiedInternal(
+            context = context,
+            pin = pin,
+            bytes = body.toByteArray(),
+            body = body,
+            commit = { dir, feed, meta ->
+                IocFeedStore.commitGeneration(dir, feed, meta)
+            },
+            onInvalidate = { invalidated.incrementAndGet() }
+        )
+        assertTrue(result is IocFeedFetcher.FetchResult.Success)
+        assertEquals(1, invalidated.get())
     }
 
     @Test
