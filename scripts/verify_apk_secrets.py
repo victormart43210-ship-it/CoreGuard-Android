@@ -77,7 +77,9 @@ def _scan_blob(blob: bytes, path: str, findings: list[str]) -> None:
             findings.append(f"{rule.name} in {path}")
             break
 
-    if SERVICE_ACCOUNT_TYPE.search(blob) and SERVICE_ACCOUNT_PRIVATE_KEY.search(blob):
+    type_match = SERVICE_ACCOUNT_TYPE.search(blob)
+    key_match = SERVICE_ACCOUNT_PRIVATE_KEY.search(blob)
+    if type_match and key_match and not _is_allowlisted(blob, type_match.start(), key_match.end()):
         findings.append(f"service-account-private-key in {path}")
 
 
