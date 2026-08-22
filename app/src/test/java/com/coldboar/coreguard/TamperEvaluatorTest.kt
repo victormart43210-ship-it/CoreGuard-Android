@@ -35,22 +35,17 @@ class TamperEvaluatorTest {
 
     // -------------------------------------------------------- Native debugger
     @Test
-    fun `Native debugger FAIL when tracer attached`() {
-        val result = NativeDebuggerEvaluator(tracerPid = { 4242 }, ptraceProtected = { true }).evaluate()
+    fun `Native debugger FAIL when an external tracer is attached`() {
+        val result = NativeDebuggerEvaluator(tracerPid = { 4242 }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
         assertTrue(result.explanation.contains("4242"))
     }
 
     @Test
-    fun `Native debugger PASS when guard active and no tracer`() {
-        val result = NativeDebuggerEvaluator(tracerPid = { 0 }, ptraceProtected = { true }).evaluate()
+    fun `Native debugger PASS when no external tracer is attached`() {
+        val result = NativeDebuggerEvaluator(tracerPid = { 0 }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
-    }
-
-    @Test
-    fun `Native debugger WARN when guard not engaged`() {
-        val result = NativeDebuggerEvaluator(tracerPid = { 0 }, ptraceProtected = { false }).evaluate()
-        assertEquals(SecurityCheckState.WARN, result.state)
+        assertTrue(result.explanation.contains("No external debugger"))
     }
 
     // ---------------------------------------------------------- Hook detection
@@ -116,5 +111,11 @@ class TamperEvaluatorTest {
     fun `StrongBox FAIL on software backing`() {
         val result = StrongBoxCheckEvaluator(level = { KeySecurityLevel.SOFTWARE }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
+    }
+
+    @Test
+    fun `StrongBox WARN when key backing cannot be verified`() {
+        val result = StrongBoxCheckEvaluator(level = { KeySecurityLevel.UNKNOWN }).evaluate()
+        assertEquals(SecurityCheckState.WARN, result.state)
     }
 }

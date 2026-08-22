@@ -3,8 +3,6 @@ package com.coldboar.coreguard.knowledge
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.Locale
 
 /**
@@ -14,10 +12,6 @@ import java.util.Locale
  * of infection/compromise.
  */
 object ViperThreatIntelImporter {
-
-    private const val CONNECT_TIMEOUT_MS = 12_000
-    private const val READ_TIMEOUT_MS = 30_000
-    private const val MAX_BYTES = 2 * 1024 * 1024
 
     data class ImportResult(
         val entries: List<CyberKnowledgeBase.Entry>,
@@ -31,11 +25,6 @@ object ViperThreatIntelImporter {
             ?: return ImportResult(emptyList(), acceptedCount = 0, rejectedCount = 1)
         val records = root.optJSONArray("records") ?: JSONArray()
         return mapRecords(records)
-    }
-
-    fun fetchAndImport(url: String): ImportResult {
-        val payload = httpGet(url) ?: return ImportResult(emptyList(), acceptedCount = 0, rejectedCount = 1)
-        return importPayload(payload)
     }
 
     private fun mapRecords(records: JSONArray): ImportResult {
@@ -150,25 +139,4 @@ object ViperThreatIntelImporter {
         return normalized.takeIf { it.length >= 2 }
     }
 
-    private fun httpGet(url: String): String? {
-        if (!url.startsWith("https://", ignoreCase = true)) return null
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            setRequestProperty("Accept", "application/json, */*")
-            setRequestProperty("User-Agent", "CoreGuard-ViperImporter/1.0")
-            instanceFollowRedirects = true
-        }
-        return try {
-            connection.connect()
-            if (connection.responseCode !in 200..299) return null
-            val bytes = connection.inputStream.use { it.readBytes() }
-            if (bytes.size > MAX_BYTES) return null
-            String(bytes, Charsets.UTF_8)
-        } catch (_: Exception) {
-            null
-        } finally {
-            connection.disconnect()
-        }
-    }
 }

@@ -18,10 +18,10 @@ import com.coldboar.coreguard.quilla.QuillaIocBridge
 import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import java.io.IOException
 import java.net.DatagramPacket
 import java.net.DatagramSocket
 import java.net.InetAddress
-import java.net.InetSocketAddress
 
 /**
  * Privacy Shield: a local [VpnService] DNS sinkhole for known indicator domains.
@@ -137,14 +137,21 @@ class GuardVpnService : VpnService() {
     private fun forward(query: IpV4Udp.Datagram, upstream: InetAddress, output: FileOutputStream) {
         runCatching {
             DatagramSocket().use { socket ->
+                // `connect` filters inbound UDP datagrams to the resolver address
+                // and port, preventing a local-network attacker from racing an
+                // unrelated response into this ephemeral socket.
                 protect(socket)
+                socket.connect(upstream, DNS_PORT)
                 socket.soTimeout = 4_000
-                val out = DatagramPacket(query.payload, query.payload.size, InetSocketAddress(upstream, 53))
-                socket.send(out)
+                socket.send(DatagramPacket(query.payload, query.payload.size))
+
                 val respBuf = ByteArray(32_767)
                 val resp = DatagramPacket(respBuf, respBuf.size)
                 socket.receive(resp)
                 val answer = respBuf.copyOf(resp.length)
+                if (!DnsMessage.isResponseFor(query.payload, answer)) {
+                    throw IOException("Resolver reply does not match DNS query")
+                }
                 output.write(IpV4Udp.buildReply(query, answer))
             }
         }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
@@ -191,7 +198,7 @@ class GuardVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Privacy Shield", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Protects your private connections" }
+            ).apply { description = "Blocks DNS lookups for known malicious domains" }
             manager.createNotificationChannel(channel)
         }
         val pi = PendingIntent.getActivity(
@@ -200,7 +207,7 @@ class GuardVpnService : VpnService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Privacy Shield active")
-            .setContentText("Protecting your private connections")
+            .setContentText("Blocking known malicious DNS lookups")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pi)
             .setOngoing(true)
@@ -210,7 +217,9 @@ class GuardVpnService : VpnService() {
     companion object {
         private const val TAG = "GuardVpnService"
         private const val CHANNEL_ID = "coreguard_shield"
-        private const val NOTIF_ID = 0xC0DE
+        private         const val NOTIF_ID = 0xC0DE
+        private const val DNS_PORT = 53
+
         const val ACTION_STOP = "com.coldboar.coreguard.STOP_SHIELD"
     }
 }

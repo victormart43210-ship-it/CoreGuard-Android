@@ -10,11 +10,13 @@ import org.junit.Test
 /**
  * Regression tests for Book of Changes hash-chain integrity.
  *
- * Events are linked in append order, while their observation timestamps can
- * tie or move backwards during one intelligence refresh.
+ * The on-device gate failed with a valid ledger reported as tampered because the
+ * chain was linked in append order but validated in event-timestamp order. These
+ * tests pin the DAO ordering contract that keeps the two consistent.
  */
 class BookOfChangesChainTest {
 
+    /** Fake DAO honouring the fixed contract: chain queries follow append order (rowid). */
     private class AppendOrderDao : SecurityEventDao {
         val rows = mutableListOf<SecurityEventEntity>()
 
@@ -38,6 +40,7 @@ class BookOfChangesChainTest {
         }
     }
 
+    /** Fake DAO reproducing the old contract: chain queries ordered by event timestamp. */
     private class TimestampOrderDao : SecurityEventDao {
         val rows = mutableListOf<SecurityEventEntity>()
 
@@ -88,6 +91,8 @@ class BookOfChangesChainTest {
 
     @Test
     fun chainStaysValidWhenFindingsShareATimestamp() {
+        // refreshIntelligence records every active finding in one pass, so several
+        // events commonly carry the identical lastSeen timestamp.
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         val sameInstant = 1_000_000L
@@ -103,14 +108,16 @@ class BookOfChangesChainTest {
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))
-        repo.recordFinding(finding("check.b", 1_000L))
+        repo.recordFinding(finding("check.b", 1_000L)) // older than its predecessor
         repo.recordFinding(finding("check.c", 3_000L))
 
         assertTrue("Ledger must validate when event times are not monotonic", repo.chainValid())
     }
 
     @Test
-    fun timestampOrderedChainReproducesTheOriginalFailure() {
+    fun timestampOrderedChainReproducesTheOnDeviceFailure() {
+        // Documents the defect: validating in timestamp order walks a different
+        // order than the links were built in, flagging an untampered ledger.
         val dao = TimestampOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))

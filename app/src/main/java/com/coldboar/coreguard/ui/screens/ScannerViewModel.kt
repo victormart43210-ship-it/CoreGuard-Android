@@ -186,10 +186,14 @@ class ScannerViewModel(
         }
     }
 
+    /**
+     * Requests a cooperative stop. [ScannerModule] observes [cancelRequested]
+     * between scan stages and raises [CancellationException] while this coroutine
+     * is still active, allowing the terminal cancellation session and UI state to
+     * be persisted reliably.
+     */
     fun cancelScan() {
         cancelRequested.set(true)
-        scanJob?.cancel()
-        scanJob = null
     }
 
     override fun onCleared() {

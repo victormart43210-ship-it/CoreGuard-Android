@@ -55,6 +55,22 @@ class DnsFilterTest {
     }
 
     @Test
+    fun `response validator accepts matching response and rejects mismatches`() {
+        val request = query("evil.com", id = 0xABCD)
+        val matching = DnsMessage.buildNxDomainResponse(request)
+        assertTrue(DnsMessage.isResponseFor(request, matching))
+
+        val wrongTransaction = matching.copyOf().also { it[1] = 0x00 }
+        assertFalse(DnsMessage.isResponseFor(request, wrongTransaction))
+
+        val notAResponse = request.copyOf()
+        assertFalse(DnsMessage.isResponseFor(request, notAResponse))
+
+        val wrongQuestion = DnsMessage.buildNxDomainResponse(query("other.example", id = 0xABCD))
+        assertFalse(DnsMessage.isResponseFor(request, wrongQuestion))
+    }
+
+    @Test
     fun `nxdomain response preserves opcode from query`() {
         // Construct a query with a non-zero OPCODE (e.g. OPCODE=1, inverse query).
         // Standard query flag byte: QR=0, OPCODE=0001, AA=0, TC=0, RD=1 → 0b00001001 = 0x09

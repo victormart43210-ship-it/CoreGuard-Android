@@ -18,13 +18,13 @@ object AmnestyThreatIntelFetcher {
      * Official Amnesty Tech Android-campaign STIX2 indicator bundle.
      */
     const val FEED_URL =
-        "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2023-03-29_android_campaign/malware.stix2"
+        "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2023-03-29_android_campaign/malware.stix2"
 
     /**
      * Amnesty Pegasus / NSO STIX2 bundle (replaces the retired mvt-indicators/pegasus path).
      */
     const val MVT_PEGASUS_FEED_URL =
-        "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
+        "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-07-18_nso/pegasus.stix2"
 
     /**
      * Downloads and parses [AmnestyIndicator] records from [FEED_URL].

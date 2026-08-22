@@ -35,11 +35,12 @@ data class SecurityEventEntity(
 )
 
 /**
- * Chain-order queries use SQLite's append-order rowid, not event timestamps.
- * Several findings recorded during one refresh can share a timestamp, and
- * finding timestamps can move backwards relative to the append order. Ordering
- * the chain by timestamps would therefore validate a different sequence from
- * the one used to build the links.
+ * Chain-order queries use SQLite's implicit monotonic `rowid` (append order),
+ * not `occurredAtEpochMillis`. Event timestamps come from finding.lastSeen and
+ * can tie or move backwards within one refresh pass; ordering the chain by them
+ * made validation walk a different order than the links were built in, which
+ * reported a valid ledger as tampered. rowid needs no schema change, so the
+ * evidence store is not migrated/destroyed.
  */
 @Dao
 interface SecurityEventDao {
@@ -58,6 +59,7 @@ interface SecurityEventDao {
     @Query("DELETE FROM security_events")
     fun clearAll()
 
+    // Retains the chain head by append order so the surviving tail stays linkable.
     @Query(
         "DELETE FROM security_events WHERE occurredAtEpochMillis < :cutoff AND " +
             "id NOT IN (SELECT id FROM security_events ORDER BY rowid DESC LIMIT 1)"

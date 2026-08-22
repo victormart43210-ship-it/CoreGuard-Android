@@ -8,6 +8,7 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.TimeZone
 
 /**
  * Exports a [MasvsComplianceReport] to JSON and (optionally) writes it to a
@@ -42,7 +43,7 @@ class ComplianceReportExporter(private val context: Context) {
         val root = JSONObject()
         root.put("reportVersion", "1")
         root.put("standard", "OWASP MASVS v2")
-        root.put("generatedAt", isoTimestamp(report.generatedAtMs))
+        root.put("generatedAt", formatUtcTimestamp(report.generatedAtMs))
         root.put("overallScore", report.overallScore)
 
         val categories = JSONArray()
@@ -84,6 +85,11 @@ class ComplianceReportExporter(private val context: Context) {
         return file
     }
 
-    private fun isoTimestamp(epochMs: Long): String =
-        SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).format(Date(epochMs))
+    companion object {
+        /** Formats report evidence times in UTC, matching the literal `Z` suffix. */
+        internal fun formatUtcTimestamp(epochMs: Long): String =
+            SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(Date(epochMs))
+    }
 }
