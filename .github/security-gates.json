@@ -1,0 +1,38 @@
+{
+  "schema_version": "1.0.0",
+  "description": "Machine-readable authority of CoreGuard CI security gates. Consumed by scripts/ci/verify_security_workflows.py so gate authority is inspectable from source, not inferred from GitHub UI state.",
+  "diagnostic_commands": [
+    "ls", "cat", "grep", "find", "stat", "uname", "id", "groups",
+    "echo", "printf", "yes", "true", "test", "wc", "head", "tail",
+    "sed", "awk", "cut", "tr", "basename", "dirname", "pwd", "env",
+    "which", "command", "file", "du", "df", "sleep"
+  ],
+  "gates": {
+    "android-build": {"classification": "REQUIRED", "workflow": "android.yml", "job": "build"},
+    "api36-instrumentation": {"classification": "REQUIRED", "workflow": "android.yml", "job": "instrumented"},
+    "threat-intel-policy": {"classification": "REQUIRED", "workflow": "android.yml", "job": "threat-intel-policy"},
+    "cli": {"classification": "REQUIRED", "workflow": "android.yml", "job": "cli"},
+    "security-swarm": {"classification": "REQUIRED", "workflow": "security-swarm.yml", "job": "agent-pr-gatekeeper"},
+    "dependency-review": {"classification": "REQUIRED", "workflow": "dependency-review.yml", "job": "dependency-review"},
+    "codeql": {"classification": "REQUIRED", "workflow": "codeql.yml", "job": "analyze"},
+    "quilla-crawler-validate": {"classification": "REQUIRED", "workflow": "quilla-crawler-validate.yml"},
+    "release-attestation": {"classification": "REQUIRED", "workflow": "release.yml", "job": "release"},
+    "mobsf": {"classification": "ADVISORY", "workflow": "mobsf.yml", "job": "mobile-security"},
+    "black-duck": {"classification": "EXTERNAL_UNAVAILABLE_ALLOWED", "workflow": "black-duck-security-scan-ci.yml"},
+    "ethicalcheck": {"classification": "ADVISORY", "workflow": "ethicalcheck.yml"},
+    "threat-intel-refresh": {"classification": "ADVISORY", "workflow": "threat-intel-refresh.yml"},
+    "pages": {"classification": "ADVISORY", "workflow": "pages.yml"}
+  },
+  "allowlist": [
+    {
+      "workflow": "security-swarm.yml",
+      "pattern": "scripts/security_gate.py",
+      "reason": "Gate-decision step is continue-on-error by design; enforcement happens in the later 'Enforce gate decision' step, which fails the job when the gatekeeper exits non-zero. Removing the re-enforcement step would re-introduce the violation."
+    },
+    {
+      "workflow": "mobsf.yml",
+      "pattern": "MobSF/mobsfscan",
+      "reason": "MobSF is ADVISORY; mobsfscan is a third-party action that may fail transiently. Scan-execution vs findings status is separated by scripts/ci/mobsf_truthfulness.py; UNAVAILABLE is never reported as PASS."
+    }
+  ]
+}
