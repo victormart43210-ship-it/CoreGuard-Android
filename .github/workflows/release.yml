@@ -101,9 +101,79 @@ jobs:
           sha256sum "$AAB" | tee app/build/outputs/bundle/release/checksums-sha256.txt
 
       - name: Generate artifact attestation
+        id: attest
         uses: actions/attest-build-provenance@e8998f949152b193b063cb0ec769d69d929409be # v2.4.0
         with:
           subject-path: ${{ env.AAB_PATH }}
+
+      # Generating provenance is not the same as proving it. Verify the
+      # attestation against the exact AAB before anything downstream treats the
+      # artifact as releasable. No `continue-on-error` and no `|| true`: a failed
+      # or absent attestation must stop release processing.
+      - name: Verify build provenance attestation
+        id: verify_attestation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          test -n "${AAB_PATH:-}"
+          test -f "$AAB_PATH"
+
+          echo "Verifying attestation for $AAB_PATH"
+          echo "Expected signer repository: ${{ github.repository }}"
+
+          # --repo pins the identity: an attestation from any other repository
+          # must not satisfy this gate.
+          gh attestation verify "$AAB_PATH" --repo "${{ github.repository }}"
+
+          echo "provenance_verified=VERIFIED" >> "$GITHUB_OUTPUT"
+          {
+            echo "## Build provenance"
+            echo ""
+            echo "- **Attestation verification:** \`VERIFIED\`"
+            echo "- **Artifact:** \`$(basename "$AAB_PATH")\`"
+            echo "- **Signer repository:** \`${{ github.repository }}\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Record failed provenance verification
+        if: failure() && steps.verify_attestation.outcome == 'failure'
+        run: |
+          {
+            echo "## Build provenance"
+            echo ""
+            echo "- **Attestation verification:** \`FAILED\`"
+            echo ""
+            echo "Release processing stopped. The artifact is not treated as verified."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      # Emitted only from authoritative step evidence above. Absent evidence
+      # stays UNKNOWN/NOT_VERIFIED; the generator recomputes the digest and
+      # fails on any mismatch rather than rewriting it.
+      - name: Generate release evidence manifest
+        id: release_manifest
+        run: |
+          set -euo pipefail
+          EXPECTED_DIGEST=$(awk '{print $1}' \
+            app/build/outputs/bundle/release/checksums-sha256.txt | head -n 1)
+
+          python3 scripts/ci/generate_release_manifest.py \
+            --repository "${{ github.repository }}" \
+            --commit-sha "${{ github.sha }}" \
+            --artifact "$AAB_PATH" \
+            --generated-at "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --expected-sha256 "$EXPECTED_DIGEST" \
+            --provenance-verified "${{ steps.verify_attestation.outputs.provenance_verified }}" \
+            --build-status PASS \
+            --security-gate-status "${{ vars.RELEASE_SECURITY_GATE_STATUS || 'UNKNOWN' }}" \
+            --output app/build/outputs/bundle/release/release-manifest.json
+
+          {
+            echo "## Release evidence manifest"
+            echo ""
+            echo '```json'
+            cat app/build/outputs/bundle/release/release-manifest.json
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload release AAB, mapping, native symbols
         uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
@@ -112,6 +182,7 @@ jobs:
           path: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/bundle/release/checksums-sha256.txt
+            app/build/outputs/bundle/release/release-manifest.json
             app/build/outputs/mapping/release/mapping.txt
             app/build/outputs/native-debug-symbols/release/**
           if-no-files-found: warn
@@ -127,6 +198,7 @@ jobs:
           files: |
             app/build/outputs/bundle/release/*.aab
             app/build/outputs/bundle/release/checksums-sha256.txt
+            app/build/outputs/bundle/release/release-manifest.json
           body: |
             ## Verification
 
