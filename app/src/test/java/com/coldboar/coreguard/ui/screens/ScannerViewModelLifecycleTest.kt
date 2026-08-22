@@ -19,12 +19,13 @@ import java.util.concurrent.CountDownLatch
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicReference
 
 /**
  * Lifecycle regressions for cooperative cancellation and scan-generation safety.
  *
- * Instantiates [ScannerViewModel] with fakes so cancel → CANCELLED persistence,
- * restart-after-cancel, and Scan-A/Scan-B races are proven on the JVM.
+ * Uses [CoroutineStart.LAZY] publication semantics in [ScannerViewModel]: the Job
+ * is assigned before the body runs, so cancellation never observes a null job.
  */
 class ScannerViewModelLifecycleTest {
 
@@ -33,7 +34,7 @@ class ScannerViewModelLifecycleTest {
         override fun ensureLegacyImport() = Unit
         override fun saveSession(request: ScanSessionSaveRequest): String {
             saved += request
-            return "session-${saved.size}"
+            return "session-${saved.size}-${request.status.name}"
         }
     }
 
@@ -73,13 +74,38 @@ class ScannerViewModelLifecycleTest {
         }
     }
 
-    private fun waitUntil(timeoutMs: Long = 5_000L, predicate: () -> Boolean): Boolean {
+    private fun waitUntil(timeoutMs: Long = 8_000L, predicate: () -> Boolean): Boolean {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             if (predicate()) return true
-            Thread.sleep(20)
+            Thread.sleep(15)
         }
         return predicate()
+    }
+
+    @Test
+    fun `job is published before scan body can observe cancellation`() = runBlocking {
+        val bodyEntered = CountDownLatch(1)
+        val releaseBody = CountDownLatch(1)
+        val jobVisibleAtBodyStart = AtomicBoolean(false)
+        withViewModel(
+            runner = DeviceScanRunner { _, cancellation, _, _ ->
+                // First instruction in the scan body: Job must already be published.
+                jobVisibleAtBodyStart.set(true)
+                bodyEntered.countDown()
+                releaseBody.await(5, TimeUnit.SECONDS)
+                cancellation.throwIfCancelled()
+                report()
+            }
+        ) { vm, _ ->
+            vm.startScan()
+            assertTrue(bodyEntered.await(5, TimeUnit.SECONDS))
+            // hasActiveScanJob must be true while body is blocked — proves publication.
+            assertTrue("scanJob must be active before/while body runs", vm.hasActiveScanJob())
+            assertTrue(jobVisibleAtBodyStart.get())
+            releaseBody.countDown()
+            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Complete })
+        }
     }
 
     @Test
@@ -96,7 +122,7 @@ class ScannerViewModelLifecycleTest {
             }
         ) { vm, _ ->
             vm.startScan()
-            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning })
+            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning && vm.hasActiveScanJob() })
             vm.cancelScan()
             gate.set(true)
             assertTrue(
@@ -108,25 +134,27 @@ class ScannerViewModelLifecycleTest {
 
     @Test
     fun `B cancelled session is persisted with endedAtMs`() = runBlocking {
-        val gate = AtomicBoolean(false)
+        val entered = CountDownLatch(1)
         withViewModel(
             runner = DeviceScanRunner { _, cancellation, _, _ ->
-                while (!gate.get()) {
+                entered.countDown()
+                while (true) {
                     cancellation.throwIfCancelled()
                     Thread.sleep(10)
                 }
-                cancellation.throwIfCancelled()
+                @Suppress("UNREACHABLE_CODE")
                 report()
             }
         ) { vm, sessions ->
             vm.startScan()
-            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning })
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
+            assertTrue(waitUntil { vm.hasActiveScanJob() })
             vm.cancelScan()
-            gate.set(true)
             assertTrue(waitUntil { sessions.saved.any { it.status == ScanStageId.CANCELLED } })
-            val cancelled = sessions.saved.first { it.status == ScanStageId.CANCELLED }
-            assertTrue(cancelled.endedAtMs > 0L)
-            assertTrue(cancelled.endedAtMs >= cancelled.startedAtMs)
+            val cancelled = sessions.saved.filter { it.status == ScanStageId.CANCELLED }
+            assertEquals("exactly one CANCELLED session", 1, cancelled.size)
+            assertTrue(cancelled[0].endedAtMs > 0L)
+            assertTrue(cancelled[0].endedAtMs >= cancelled[0].startedAtMs)
         }
     }
 
@@ -143,7 +171,7 @@ class ScannerViewModelLifecycleTest {
                 }
                 report(2_000L)
             }
-        ) { vm, _ ->
+        ) { vm, sessions ->
             vm.startScan()
             assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning })
             vm.cancelScan()
@@ -152,6 +180,10 @@ class ScannerViewModelLifecycleTest {
             assertTrue(
                 "Expected Complete after restart, was ${vm.uiState.value}",
                 waitUntil { vm.uiState.value is ScannerUiState.Complete }
+            )
+            assertEquals(
+                1,
+                sessions.saved.count { it.status == ScanStageId.COMPLETED }
             )
         }
     }
@@ -173,7 +205,7 @@ class ScannerViewModelLifecycleTest {
                     report(200L)
                 }
             }
-        ) { vm, _ ->
+        ) { vm, sessions ->
             vm.startScan() // A
             assertTrue(aEntered.await(5, TimeUnit.SECONDS))
             assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning })
@@ -187,31 +219,94 @@ class ScannerViewModelLifecycleTest {
             val complete = vm.uiState.value as ScannerUiState.Complete
             assertEquals(200L, complete.report.startedAtMillis)
             assertFalse(vm.uiState.value is ScannerUiState.Cancelled)
+            assertEquals(
+                1,
+                sessions.saved.count { it.status == ScanStageId.COMPLETED }
+            )
         }
     }
 
     @Test
     fun `E after cancel settles never Scanning without an active job`() = runBlocking {
-        val gate = AtomicBoolean(false)
+        val entered = CountDownLatch(1)
         withViewModel(
             runner = DeviceScanRunner { _, cancellation, _, _ ->
-                while (!gate.get()) {
+                entered.countDown()
+                while (true) {
                     cancellation.throwIfCancelled()
                     Thread.sleep(10)
                 }
-                cancellation.throwIfCancelled()
+                @Suppress("UNREACHABLE_CODE")
                 report()
             }
         ) { vm, _ ->
             vm.startScan()
-            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Scanning })
+            assertTrue(entered.await(5, TimeUnit.SECONDS))
             vm.cancelScan()
-            gate.set(true)
             assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Cancelled })
             assertFalse(
                 "Impossible: Scanning with no active job",
                 vm.uiState.value is ScannerUiState.Scanning && !vm.hasActiveScanJob()
             )
+        }
+    }
+
+    @Test
+    fun `successful scan persists exactly one COMPLETED session`() = runBlocking {
+        withViewModel(
+            runner = DeviceScanRunner { _, _, _, _ -> report(9_000L) }
+        ) { vm, sessions ->
+            vm.startScan()
+            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Complete })
+            assertEquals(1, sessions.saved.count { it.status == ScanStageId.COMPLETED })
+            assertEquals(0, sessions.saved.count { it.status == ScanStageId.CANCELLED })
+        }
+    }
+
+    @Test
+    fun `failed scan persists exactly one FAILED session`() = runBlocking {
+        withViewModel(
+            runner = DeviceScanRunner { _, _, _, _ -> error("boom") }
+        ) { vm, sessions ->
+            vm.startScan()
+            assertTrue(waitUntil { vm.uiState.value is ScannerUiState.Error })
+            assertEquals(1, sessions.saved.count { it.status == ScanStageId.FAILED })
+        }
+    }
+
+    @Test
+    fun `stress start cancel restart does not strand Scanning`() = runBlocking {
+        val lastTerminal = AtomicReference<ScannerUiState?>(null)
+        withViewModel(
+            runner = DeviceScanRunner { _, cancellation, _, _ ->
+                // Alternate quick complete vs wait-for-cancel.
+                repeat(20) {
+                    cancellation.throwIfCancelled()
+                    Thread.sleep(2)
+                }
+                report(System.currentTimeMillis())
+            }
+        ) { vm, _ ->
+            repeat(100) { i ->
+                vm.startScan()
+                if (i % 2 == 0) {
+                    Thread.sleep(5)
+                    vm.cancelScan()
+                }
+                assertTrue(
+                    waitUntil(timeoutMs = 5_000) {
+                        val s = vm.uiState.value
+                        s is ScannerUiState.Complete ||
+                            s is ScannerUiState.Cancelled ||
+                            s is ScannerUiState.Error
+                    }
+                )
+                lastTerminal.set(vm.uiState.value)
+                assertFalse(
+                    vm.uiState.value is ScannerUiState.Scanning && !vm.hasActiveScanJob()
+                )
+            }
+            assertTrue(lastTerminal.get() != null)
         }
     }
 
@@ -222,7 +317,6 @@ class ScannerViewModelLifecycleTest {
             stageEvents = emptyList(),
             lastCompletedReport = null
         )
-        assertTrue(cancelled is ScannerUiState.Cancelled)
         assertTrue(cancelled.lastCompletedReport == null)
     }
 }

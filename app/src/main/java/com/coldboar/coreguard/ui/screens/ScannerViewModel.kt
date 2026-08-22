@@ -20,8 +20,10 @@ import com.coldboar.coreguard.truth.toFinding
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -84,6 +86,7 @@ class ScannerViewModel(
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Empty)
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
+    @Volatile
     private var scanJob: Job? = null
     private val cancelRequested = AtomicBoolean(false)
 
@@ -109,8 +112,11 @@ class ScannerViewModel(
         val stageEvents = mutableListOf<ScanStageEvent>()
         _uiState.value = ScannerUiState.Scanning()
 
-        scanJob = scope.launch {
+        // LAZY: publish Job into [scanJob] before the body can execute, so the
+        // cancellation predicate never observes a null job for a live generation.
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             val startedAt = System.currentTimeMillis()
+            val executingJob = currentCoroutineContext()[Job]
             val listener = object : ScanProgressListener {
                 override fun onStage(event: ScanStageEvent) {
                     if (!isCurrentGeneration(generation)) return
@@ -125,7 +131,9 @@ class ScannerViewModel(
                 val deepInspection = settingsRepository.deepFileInspectionEnabled.first()
                 val quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
                 val cancellation = ScanCancellation {
-                    cancelRequested.get() || !isActiveForGeneration(generation)
+                    cancelRequested.get() ||
+                        !isCurrentGeneration(generation) ||
+                        executingJob?.isActive != true
                 }
                 val report = withContext(ioDispatcher) {
                     scanRunner.scan(
@@ -224,6 +232,8 @@ class ScannerViewModel(
                 )
             }
         }
+        scanJob = job
+        job.start()
     }
 
     /**
@@ -240,6 +250,8 @@ class ScannerViewModel(
     fun hasActiveScanJob(): Boolean = scanJob?.isActive == true
 
     override fun onCleared() {
+        // Invalidate generation so a late CancellationException cannot publish UI.
+        scanGeneration.incrementAndGet()
         scanJob?.cancel()
     }
 
@@ -249,9 +261,6 @@ class ScannerViewModel(
 
     private fun isCurrentGeneration(generation: Long): Boolean =
         scanGeneration.get() == generation
-
-    private fun isActiveForGeneration(generation: Long): Boolean =
-        isCurrentGeneration(generation) && (scanJob?.isActive == true)
 
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
