@@ -30,31 +30,20 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.8
+          python-version: "3.12"
 
       - name: Run mobsfscan
         id: mobsf
-        continue-on-error: true
         uses: MobSF/mobsfscan@ec2927a8cfab6626a67f26b223be3aba52a34b70
         with:
           args: '. --sarif --output results.sarif'
 
-      - name: Record MobSF advisory outcome
-        if: always()
+      - name: Require non-empty SARIF output
         run: |
-          {
-            echo "## MobSF static scan (best-effort)"
-            if [ -f results.sarif ]; then
-              echo "PASS — SARIF written to results.sarif"
-            else
-              echo "ADVISORY — MobSF did not produce results.sarif (external action / scanner issue)."
-              echo "This job stays non-blocking for scanner tooling failures;"
-              echo "repository-owned Android/Quilla gates remain required."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          test -s results.sarif
+          echo "MobSF SARIF generated: results.sarif" >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload mobsfscan report
-        if: hashFiles('results.sarif') != ''
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: results.sarif

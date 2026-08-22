@@ -92,7 +92,7 @@ Android SDK are not available, normal tasks (`assembleDebug`, `test`, `lint`, `b
 |---|---|
 | JDK | Host JDK compatible with Java 17 bytecode (the task VM currently ships JDK 21) |
 | Gradle | 8.13 via `./gradlew` |
-| Android Gradle Plugin | 8.7.3 |
+| Android Gradle Plugin | 8.12.0 |
 | Kotlin | 1.9.25 |
 | Compose Compiler | 1.5.15 |
 | Compose BOM | 2024.06.00 |
