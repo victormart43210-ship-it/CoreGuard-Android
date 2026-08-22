@@ -16,7 +16,7 @@ navigationCompose = "2.8.9"
 # Phase 1: Preferences DataStore + lifecycle-viewmodel-compose
 datastore = "1.1.1"
 lifecycleViewmodelCompose = "2.8.4"
-coroutines = "1.7.3"
+coroutines = "1.11.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
