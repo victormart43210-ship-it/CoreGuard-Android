@@ -19,7 +19,7 @@ Initial audit matrix of user-facing security claims found in app strings/UI/docs
 | “Timeline shows past checks” | Scan history timeline | `TimelineScreen.kt`, `ScanHistoryStore.kt` | Historical local snapshots only; not continuous monitoring | `ThreatTimelineVizTest.kt` | “Shows recorded past scans” | “Real-time always-on forensic monitoring” |
 | “Scam Guard optional notification access, on-device heuristics” | Notification listener + scam engine | `ScamGuardNotificationListener.kt`, `ScamGuardEngine.kt`, privacy policy docs | Depends on user granting notification listener permission | `elite/ScamGuardEngineTest.kt` | “Optional on-device heuristic analysis” | “Guaranteed phishing prevention” |
 | “Play Billing secure checkout; app never sees card details” | Play Billing flow | strings + `PlayBillingProvider.kt` | Entitlement trust still client-side without backend verification | `PlayBillingContractTest.kt` (contract-level) | “Checkout handled by Google Play” | “Fraud-proof entitlement security” |
-| “Runtime integrity checks (debugger/hooking/root etc.)” | Tamper + security evaluators | `tamperguard.cpp`, `NativeTamperGuard.kt`, `SecurityCheckEvaluators.kt` | Anti-tamper is best-effort; advanced bypasses possible | `TamperEvaluatorTest.kt` + related tests | “Best-effort runtime tamper signals” | “Unbypassable anti-hacking” |
+| “Runtime integrity checks (debugger/hooking/root etc.)” | Tamper + security evaluators | `tamperguard.cpp`, `NativeTamperGuard.kt`, `SecurityCheckEvaluators.kt` | Anti-tamper is best-effort; advanced bypasses possible. An unavailable probe is reported as WARN/unverifiable, never as a clean result | `TamperEvaluatorTest.kt`, `NativeTruthStateTest.kt`, `swarm/NativeUnavailableSignalTest.kt` | “Best-effort runtime tamper signals” | “Unbypassable anti-hacking”, “verified clean” from an unavailable probe |
 | “Do not claim guaranteed Play approval/release readiness” | Release docs honesty policy | `docs/RELEASE_READINESS.md`, `docs/SECURITY_CLAIMS.md` | Approval controlled by Google review process | NONE | “Readiness steps and known gaps” | “Guaranteed approval/certification” |
 | “No backend account upload for core scan results in v1” | privacy model | `docs/RELEASE_READINESS.md`, `docs/privacy-policy.html` | Optional network operations still happen for selected features | NONE in this session | “No account backend for core local scans in current repo” | “No network usage at all” |
 
@@ -66,3 +66,60 @@ Initial audit matrix of user-facing security claims found in app strings/UI/docs
 ### Claims narrowed in this phase
 - IOC string matches are no longer treated as automatically critical by default scanner severity mapping.
 - Scanner copy now avoids definitive "safe/clean/protected" conclusions and reiterates Android visibility limits.
+
+---
+
+## Native truth-state update (2026-08-22)
+
+### Defect corrected
+
+The native bridge previously collapsed "probe never ran" onto a benign
+primitive. `NativeTamperGuard` returned `0` for tracer PID, `false` for the
+Frida port, `""` for injected threads / hooked libraries / root mounts, and
+`true` for code integrity whenever the library was missing or a JNI call threw.
+The C++ layer did the same for unreadable `/proc` sources, and
+`nativeTextIntact` returned `JNI_TRUE` when no baseline existed or when
+`/proc/self/maps` could not be read.
+
+Consequence: a device where the native library was absent or `/proc` was
+blocked produced the same PASS verdicts as a device that had been verified
+clean. Four checks — Native Debugger, Frida Instrumentation, Code Hooking and
+Mount Integrity — reported PASS purely from absent evidence.
+
+### Rules now enforced in code and tests
+
+| Rule | Enforcement |
+|---|---|
+| `UNAVAILABLE != SAFE` | Every probe returns `NativeAcquisition`; `Unavailable` maps to WARN |
+| Sensor failure must not raise confidence | A throwing JNI call becomes `Unavailable(JNI_CALL_FAILED)`, not a clean value |
+| Missing evidence must not produce PASS | `NativeTruthStateTest` asserts WARN for all four unavailable reasons on all five checks |
+| A failed check is not overwritten by a weaker later one | A later unavailable probe cannot return PASS |
+| Claims trace to evidence | Unavailable wording is generated from a closed reason code, never from a raw value |
+| Confidence may degrade, not auto-upgrade | A clean half-signal cannot pass while the other source is blind |
+
+### Truth-state mapping
+
+| Acquisition | Evaluation | User-visible wording |
+|---|---|---|
+| `Available(clean)` | PASS | verified negative result |
+| `Available(suspicious)` | FAIL | indicator detected |
+| `Unavailable(LIBRARY_UNAVAILABLE)` | WARN | “could not be completed … native security library is not loaded” |
+| `Unavailable(JNI_CALL_FAILED)` | WARN | “could not be completed … native call did not return a usable result” |
+| `Unavailable(SOURCE_READ_FAILED)` | WARN | “could not be completed … Android did not expose the required system information” |
+| `Unavailable(BASELINE_UNAVAILABLE)` | WARN | “could not be completed … no load-time integrity baseline was captured” |
+
+`SecurityCheckState` has no dedicated `UNAVAILABLE` member, so WARN carries the
+unavailable case. Adding a fourth enum member would ripple through exhaustive
+`when` blocks across scoring and UI, which is outside this change; the wording
+makes the distinction explicit to the user either way.
+
+### Prohibited wording for unavailable probes
+
+`clean`, `safe`, `protected`, `no threat`, `no hooks`, `no tracer`, `intact`,
+`verified`. Asserted mechanically in `NativeTruthStateTest` and
+`swarm/NativeUnavailableSignalTest`.
+
+### Scope
+
+This change alters truth propagation only. No detector was added, and no
+detection coverage changed.

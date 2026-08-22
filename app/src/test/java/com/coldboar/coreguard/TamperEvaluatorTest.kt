@@ -14,21 +14,21 @@ class TamperEvaluatorTest {
     // ----------------------------------------------------------------- Frida
     @Test
     fun `Frida clean when no port and no thread`() {
-        val result = FridaDetectionEvaluator(portOpen = { false }, suspiciousThread = { "" }).evaluate()
+        val result = FridaDetectionEvaluator(portOpen = { available(false) }, suspiciousThread = { available("") }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
         assertEquals("frida", result.id)
     }
 
     @Test
     fun `Frida FAIL when server port open`() {
-        val result = FridaDetectionEvaluator(portOpen = { true }, suspiciousThread = { "" }).evaluate()
+        val result = FridaDetectionEvaluator(portOpen = { available(true) }, suspiciousThread = { available("") }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
         assertTrue(result.explanation.contains("port", ignoreCase = true))
     }
 
     @Test
     fun `Frida FAIL when injected thread present`() {
-        val result = FridaDetectionEvaluator(portOpen = { false }, suspiciousThread = { "gum-js-loop" }).evaluate()
+        val result = FridaDetectionEvaluator(portOpen = { available(false) }, suspiciousThread = { available("gum-js-loop") }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
         assertTrue(result.explanation.contains("gum-js-loop"))
     }
@@ -36,14 +36,14 @@ class TamperEvaluatorTest {
     // -------------------------------------------------------- Native debugger
     @Test
     fun `Native debugger FAIL when an external tracer is attached`() {
-        val result = NativeDebuggerEvaluator(tracerPid = { 4242 }).evaluate()
+        val result = NativeDebuggerEvaluator(tracerPid = { available(4242) }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
         assertTrue(result.explanation.contains("4242"))
     }
 
     @Test
     fun `Native debugger PASS when no external tracer is attached`() {
-        val result = NativeDebuggerEvaluator(tracerPid = { 0 }).evaluate()
+        val result = NativeDebuggerEvaluator(tracerPid = { available(0) }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
         assertTrue(result.explanation.contains("No external debugger"))
     }
@@ -51,13 +51,13 @@ class TamperEvaluatorTest {
     // ---------------------------------------------------------- Hook detection
     @Test
     fun `Hook detection PASS when no hook library mapped`() {
-        val result = HookDetectionEvaluator(hookedLibrary = { "" }).evaluate()
+        val result = HookDetectionEvaluator(hookedLibrary = { available("") }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
     }
 
     @Test
     fun `Hook detection FAIL when frida gadget mapped`() {
-        val result = HookDetectionEvaluator(hookedLibrary = { "/data/local/tmp/libgadget.so" }).evaluate()
+        val result = HookDetectionEvaluator(hookedLibrary = { available("/data/local/tmp/libgadget.so") }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
         assertTrue(result.explanation.contains("libgadget.so"))
     }
@@ -65,32 +65,34 @@ class TamperEvaluatorTest {
     // --------------------------------------------------------- Mount integrity
     @Test
     fun `Mount integrity PASS when no root mount`() {
-        val result = MountIntegrityEvaluator(rootMount = { "" }).evaluate()
+        val result = MountIntegrityEvaluator(rootMount = { available("") }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
     }
 
     @Test
     fun `Mount integrity FAIL when magisk mount present`() {
-        val result = MountIntegrityEvaluator(rootMount = { "magisk /sbin/.magisk tmpfs rw" }).evaluate()
+        val result = MountIntegrityEvaluator(rootMount = { available("magisk /sbin/.magisk tmpfs rw") }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
     }
 
     // -------------------------------------------------------- Memory integrity
     @Test
     fun `Memory integrity PASS when text intact`() {
-        val result = MemoryIntegrityEvaluator(baselineReady = { true }, textIntact = { true }).evaluate()
+        val result = MemoryIntegrityEvaluator(codeIntegrity = { available(true) }).evaluate()
         assertEquals(SecurityCheckState.PASS, result.state)
     }
 
     @Test
     fun `Memory integrity FAIL when text modified`() {
-        val result = MemoryIntegrityEvaluator(baselineReady = { true }, textIntact = { false }).evaluate()
+        val result = MemoryIntegrityEvaluator(codeIntegrity = { available(false) }).evaluate()
         assertEquals(SecurityCheckState.FAIL, result.state)
     }
 
     @Test
     fun `Memory integrity WARN when baseline missing`() {
-        val result = MemoryIntegrityEvaluator(baselineReady = { false }, textIntact = { true }).evaluate()
+        val result = MemoryIntegrityEvaluator(
+            codeIntegrity = { unavailableAcquisition(NativeUnavailableReason.BASELINE_UNAVAILABLE) }
+        ).evaluate()
         assertEquals(SecurityCheckState.WARN, result.state)
     }
 

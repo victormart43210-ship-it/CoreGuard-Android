@@ -172,7 +172,7 @@ def check_native_tamper_guard(root: Path, report: AgentReport):
         "fridaPortOpen",
         "tracerPid",
         "hookedLibraryPath",
-        "textIntact",
+        "codeIntegrityIntact",
     ]
     kt_files = list((root / "app").rglob("NativeTamperGuard.kt")) if (root / "app").exists() else []
     cpp_files = (

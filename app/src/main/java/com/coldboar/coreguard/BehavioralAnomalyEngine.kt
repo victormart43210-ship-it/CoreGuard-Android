@@ -68,10 +68,19 @@ object BehavioralAnomalyEngine {
     // Injectable signal providers – defaults call into native code
     // -------------------------------------------------------------------------
 
-    internal var hookedLibraryProvider: () -> String = { NativeTamperGuard.hookedLibraryPath() }
-    internal var textIntactProvider: () -> Boolean = { NativeTamperGuard.textIntact() }
-    internal var baselineReadyProvider: () -> Boolean = { NativeTamperGuard.baselineReady() }
+    internal var hookedLibraryProvider: () -> NativeAcquisition<String> =
+        { NativeTamperGuard.hookedLibraryPath() }
+    internal var codeIntegrityProvider: () -> NativeAcquisition<Boolean> =
+        { NativeTamperGuard.codeIntegrityIntact() }
     internal var processStatusProvider: () -> String = { readProcSelfStatus() }
+
+    /**
+     * Last unavailable reason recorded per check, so a permanently blind sensor
+     * produces one WARN anomaly instead of one every polling interval. Reset by
+     * [reset] and by a state change back to an available acquisition.
+     */
+    private val lastUnavailableReason =
+        java.util.concurrent.ConcurrentHashMap<String, NativeUnavailableReason>()
 
     /**
      * Starts continuous behavioral sampling on [scope].
@@ -105,6 +114,7 @@ object BehavioralAnomalyEngine {
     /** Clears the accumulated anomaly list. */
     fun reset() {
         _anomalies.clear()
+        lastUnavailableReason.clear()
     }
 
     // -------------------------------------------------------------------------
@@ -118,27 +128,79 @@ object BehavioralAnomalyEngine {
     }
 
     private fun checkInlineHooks() {
-        val lib = try { hookedLibraryProvider() } catch (t: Throwable) { return }
-        if (lib.isNotEmpty()) {
-            record(
-                checkId = "inline_hook_sample",
-                severity = SecurityCheckState.FAIL,
-                message = "Continuous sampling detected a hooking library in process memory: $lib"
+        val checkId = "inline_hook_sample"
+        val acquisition = try {
+            hookedLibraryProvider()
+        } catch (t: Throwable) {
+            // A throwing provider is itself an unavailable acquisition, not a
+            // clean sample. Previously this returned silently, which let a
+            // blinded sensor look identical to a hook-free process.
+            NativeAcquisition.Unavailable(NativeUnavailableReason.JNI_CALL_FAILED)
+        }
+
+        when (acquisition) {
+            is NativeAcquisition.Unavailable -> recordUnavailable(
+                checkId = checkId,
+                reason = acquisition.reason,
+                checkLabel = "Continuous hook sampling",
             )
+
+            is NativeAcquisition.Available -> {
+                lastUnavailableReason.remove(checkId)
+                if (acquisition.value.isNotEmpty()) {
+                    record(
+                        checkId = checkId,
+                        severity = SecurityCheckState.FAIL,
+                        message = "Continuous sampling detected a hooking library in process memory: ${acquisition.value}"
+                    )
+                }
+            }
         }
     }
 
     private fun checkMemoryPatch() {
-        val ready = try { baselineReadyProvider() } catch (t: Throwable) { return }
-        if (!ready) return
-        val intact = try { textIntactProvider() } catch (t: Throwable) { return }
-        if (!intact) {
-            record(
-                checkId = "memory_patch_sample",
-                severity = SecurityCheckState.FAIL,
-                message = "Native text segment no longer matches load-time baseline – inline patch detected."
-            )
+        val checkId = "memory_patch_sample"
+        val acquisition = try {
+            codeIntegrityProvider()
+        } catch (t: Throwable) {
+            NativeAcquisition.Unavailable(NativeUnavailableReason.JNI_CALL_FAILED)
         }
+
+        when (acquisition) {
+            is NativeAcquisition.Unavailable -> recordUnavailable(
+                checkId = checkId,
+                reason = acquisition.reason,
+                checkLabel = "Continuous code-integrity sampling",
+            )
+
+            is NativeAcquisition.Available -> {
+                lastUnavailableReason.remove(checkId)
+                if (!acquisition.value) {
+                    record(
+                        checkId = checkId,
+                        severity = SecurityCheckState.FAIL,
+                        message = "Native text segment no longer matches load-time baseline – inline patch detected."
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Records a WARN anomaly for an unavailable acquisition, deduplicated per
+     * check so a persistently unreadable source cannot flood the anomaly list.
+     */
+    private fun recordUnavailable(
+        checkId: String,
+        reason: NativeUnavailableReason,
+        checkLabel: String,
+    ) {
+        if (lastUnavailableReason.put(checkId, reason) == reason) return
+        record(
+            checkId = checkId,
+            severity = SecurityCheckState.WARN,
+            message = reason.explain(checkLabel),
+        )
     }
 
     private fun checkProcessLineage() {
