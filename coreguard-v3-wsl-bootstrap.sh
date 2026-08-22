@@ -47,9 +47,7 @@ ok "OpenHands installed"
 
 say "Installing Aider (installed for advisory/scratch use only; OpenHands remains sole repo writer)"
 if ! command -v aider >/dev/null 2>&1; then
-  python3 -m pip install --user aider-install
-  export PATH="$HOME/.local/bin:$PATH"
-  aider-install
+  uv tool install aider-chat --python 3.12
 fi
 ok "Aider installed"
 
