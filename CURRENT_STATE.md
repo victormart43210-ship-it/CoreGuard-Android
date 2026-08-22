@@ -1,6 +1,6 @@
 # CoreGuard Android Phase-0 Current State
 
-Generated UTC: 2026-08-22T00:55:28Z
+Generated UTC: 2026-08-22T01:07:37Z
 
 ## Repository
 
@@ -41,12 +41,14 @@ unless explicitly marked CI or unavailable.
 | androidTest compilation | PASS | `./gradlew :app:compileDebugAndroidTestKotlin --stacktrace`; `BUILD SUCCESSFUL` on targeted regression run |
 | canonical local emulator gate | UNAVAILABLE | `HEADLESS=1 ./scripts/quilla-emulator-tests.sh`; emulator did not reach `device` after 600s in this container; diagnostics showed lavapipe/container runtime |
 | connected instrumentation locally | UNAVAILABLE | `./gradlew :app:connectedDebugAndroidTest --stacktrace`; `DeviceException: No connected devices!` |
+| API-36 instrumentation in CI | PASS | GitHub Actions run `32541991157`, job `96953633946`; all three classes passed (4 tests total) |
+| ADB smoke in CI | PASS | GitHub Actions run `32541991157`, job `96953633946`; `PASS — process alive, no fatal for com.coldboar.coreguard.debug` |
 
 ## CI instrumentation evidence
 
 - Baseline CI run `32538082350` at `7be3268c`: Android build PASS; instrumentation stopped at the KVM access precondition (`/dev/kvm not writable`) before test execution.
 - Earlier API-36 run `32532882454` after emulator/compile repairs: emulator booted, installed, and launched the app; `QuillaQuantumOnDeviceTest` passed 2 tests and `MainActivityLaunchTest` passed 1 test. `GuardianIntelligenceOnDeviceTest` failed at line 30 on `bookOfChanges(...).chainValid()`.
-- The current branch contains the append-order repair and regression tests. A new CI run is required for final API-36 instrumentation PASS.
+- Current branch CI run `32541991157` passed API-36 instrumentation and ADB smoke on `CoreGuard_ATD36`.
 
 ## Known warnings
 
@@ -63,5 +65,4 @@ unless explicitly marked CI or unavailable.
 
 ## Remaining blockers
 
-- API-36 instrumentation must pass in a fresh GitHub Actions run for this branch.
 - Physical-device and Play Console release checks remain outside this Phase-0 VM verification.
