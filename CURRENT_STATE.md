@@ -6,9 +6,8 @@ Generated UTC: 2026-08-22T00:55:28Z
 
 - Expected handoff SHA: `7be3268c40d1f498e411de8301c4c3d5243f67df`
 - Observed BASE_SHA: `7be3268c40d1f498e411de8301c4c3d5243f67df`
-- FINAL_SHA (repository head): `07998108a19db29ed3b19ccf2e7442db66688ec5`
-- Implementation commit: `2420f6b127b22e9e6300618bd2e359e8040fa994`
-- Prior state-file commit: `ddd55bd49a060987ea813c67dff60850bd93ad0f`
+- FINAL_SHA (implementation commit): `2420f6b127b22e9e6300618bd2e359e8040fa994`
+- Documentation commits after implementation: `ddd55bd`, `0799810`, `cb1fa87`
 - Branch: `cursor/phase0-final-instrumentation-gate`
 - Modules: `:app`, `:core:model` (`./gradlew projects`)
 
