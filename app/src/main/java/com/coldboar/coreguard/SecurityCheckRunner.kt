@@ -53,7 +53,7 @@ object SecurityCheckRunner {
     }
 
     fun evaluators(context: Context): List<SecurityCheckEvaluator> {
-        val keyLevel = { CoreGuardApplication.get()?.keyManager?.securityLevel ?: KeySecurityLevel.SOFTWARE }
+        val keyLevel = { CoreGuardApplication.get()?.keyManager?.securityLevel ?: KeySecurityLevel.UNKNOWN }
         return listOf(
             DebuggerCheckEvaluator(),
             NativeDebuggerEvaluator(),

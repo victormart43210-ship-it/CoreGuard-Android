@@ -6,6 +6,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.TimeZone
 
 /**
  * Unit tests for [ComplianceReportExporter.toJson] (pure-JVM, no Android context needed).
@@ -51,6 +52,20 @@ class ComplianceReportExporterTest {
     }
 
     @Test
+    fun `timestamp is UTC even when device timezone differs`() {
+        val original = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"))
+            assertEquals(
+                "1970-01-01T00:00:00Z",
+                ComplianceReportExporter.formatUtcTimestamp(0L)
+            )
+        } finally {
+            TimeZone.setDefault(original)
+        }
+    }
+
+    @Test
     fun `overall score is correct`() {
         // Overall averages every MASVS category equally — cover all of them.
         val allPassResults = listOf(
@@ -76,8 +91,7 @@ private object ExporterHelper {
         val root = org.json.JSONObject()
         root.put("reportVersion", "1")
         root.put("standard", "OWASP MASVS v2")
-        root.put("generatedAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-            .format(java.util.Date(report.generatedAtMs)))
+        root.put("generatedAt", ComplianceReportExporter.formatUtcTimestamp(report.generatedAtMs))
         root.put("overallScore", report.overallScore)
         val categories = org.json.JSONArray()
         for (cat in report.categoryScores) {

@@ -4,6 +4,7 @@ import android.content.Context
 import android.content.pm.PackageManager
 import android.os.Build
 import android.security.keystore.KeyGenParameterSpec
+import android.security.keystore.KeyInfo
 import android.security.keystore.KeyProperties
 import android.security.keystore.StrongBoxUnavailableException
 import android.util.Log
@@ -11,6 +12,7 @@ import java.security.KeyStore
 import javax.crypto.Cipher
 import javax.crypto.KeyGenerator
 import javax.crypto.SecretKey
+import javax.crypto.SecretKeyFactory
 import javax.crypto.spec.GCMParameterSpec
 
 /**
@@ -23,8 +25,11 @@ enum class KeySecurityLevel {
     /** Key material lives in the Trusted Execution Environment (TEE). */
     TEE,
 
-    /** No hardware backing available (or key generation failed). */
-    SOFTWARE
+    /** No hardware backing is available for the key. */
+    SOFTWARE,
+
+    /** Key metadata could not be inspected; its backing is not yet verified. */
+    UNKNOWN
 }
 
 /**
@@ -34,8 +39,9 @@ enum class KeySecurityLevel {
  *  1. **StrongBox Keymaster** – `setIsStrongBoxBacked(true)` forces a dedicated
  *     hardware security module rather than the shared TEE. Requested on API 28+
  *     when the device advertises the StrongBox feature.
- *  2. **TEE** – falls back automatically when StrongBox is unavailable
- *     (`StrongBoxUnavailableException`) or unsupported.
+ *  2. **Android Keystore** – falls back automatically when StrongBox is
+ *     unavailable (`StrongBoxUnavailableException`) or unsupported. The backing
+ *     of the resulting key is inspected rather than assumed to be TEE.
  *
  * All key material is non-exportable; only encrypt/decrypt operations are
  * exposed. GCM initialisation vectors are generated fresh by the Keystore for
@@ -44,7 +50,7 @@ enum class KeySecurityLevel {
 class HardwareKeyManager(private val context: Context) {
 
     @Volatile
-    var securityLevel: KeySecurityLevel = KeySecurityLevel.SOFTWARE
+    var securityLevel: KeySecurityLevel = KeySecurityLevel.UNKNOWN
         private set
 
     /** True when the device exposes a StrongBox Keymaster HSM. */
@@ -75,24 +81,51 @@ class HardwareKeyManager(private val context: Context) {
 
     private fun getOrCreateKey(): SecretKey {
         val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
-        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { return it }
+        (keyStore.getKey(KEY_ALIAS, null) as? SecretKey)?.let { key ->
+            securityLevel = inspectSecurityLevel(key)
+            return key
+        }
         return generateKey()
     }
 
     private fun generateKey(): SecretKey {
-        // Prefer StrongBox, then transparently retry on the TEE.
+        // Prefer StrongBox, then transparently retry on the TEE or software-backed
+        // Android Keystore. Newly created non-StrongBox keys are inspected rather
+        // than assumed to be TEE-backed.
         if (isStrongBoxSupported()) {
             try {
                 val key = generateKey(strongBox = true)
                 securityLevel = KeySecurityLevel.STRONGBOX
                 return key
             } catch (e: StrongBoxUnavailableException) {
-                Log.w(TAG, "StrongBox unavailable, falling back to TEE: ${e.message}")
+                Log.w(TAG, "StrongBox unavailable, falling back to Android Keystore: ${e.message}")
             }
         }
         val key = generateKey(strongBox = false)
-        securityLevel = KeySecurityLevel.TEE
+        securityLevel = inspectSecurityLevel(key)
         return key
+    }
+
+    private fun inspectSecurityLevel(key: SecretKey): KeySecurityLevel = try {
+        val factory = SecretKeyFactory.getInstance(key.algorithm, ANDROID_KEYSTORE)
+        val info = factory.getKeySpec(key, KeyInfo::class.java) as KeyInfo
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            when (info.securityLevel) {
+                KeyProperties.SECURITY_LEVEL_STRONGBOX -> KeySecurityLevel.STRONGBOX
+                KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT -> KeySecurityLevel.TEE
+                KeyProperties.SECURITY_LEVEL_SOFTWARE -> KeySecurityLevel.SOFTWARE
+                else -> KeySecurityLevel.UNKNOWN
+            }
+        } else {
+            // Pre-API 31 does not expose a StrongBox-specific level. A hardware
+            // backed existing key is conservatively reported as TEE rather than
+            // being falsely downgraded to software.
+            @Suppress("DEPRECATION")
+            if (info.isInsideSecureHardware) KeySecurityLevel.TEE else KeySecurityLevel.SOFTWARE
+        }
+    } catch (t: Throwable) {
+        Log.w(TAG, "Could not inspect Android Keystore security level: ${t.message}")
+        KeySecurityLevel.UNKNOWN
     }
 
     private fun generateKey(strongBox: Boolean): SecretKey {
@@ -178,6 +211,12 @@ class StrongBoxCheckEvaluator(
             displayName = "Key Hardware Backing",
             state = SecurityCheckState.FAIL,
             explanation = "No hardware-backed keystore is protecting the master key."
+        )
+        KeySecurityLevel.UNKNOWN -> SecurityCheckResult(
+            id = "strongbox",
+            displayName = "Key Hardware Backing",
+            state = SecurityCheckState.WARN,
+            explanation = "The master key exists, but its hardware backing could not be verified yet."
         )
     }
 }
