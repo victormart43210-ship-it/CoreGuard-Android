@@ -62,15 +62,17 @@ ALLOWLIST = (
 )
 
 
-def _is_allowlisted(match_bytes: bytes) -> bool:
-    return any(pattern.search(match_bytes) for pattern in ALLOWLIST)
+def _is_allowlisted(blob: bytes, start: int, end: int) -> bool:
+    window_start = max(0, start - 64)
+    window_end = min(len(blob), end + 64)
+    context = blob[window_start:window_end]
+    return any(pattern.search(context) for pattern in ALLOWLIST)
 
 
 def _scan_blob(blob: bytes, path: str, findings: list[str]) -> None:
     for rule in RULES:
         for match in rule.pattern.finditer(blob):
-            sample = match.group(0)
-            if _is_allowlisted(sample):
+            if _is_allowlisted(blob, match.start(), match.end()):
                 continue
             findings.append(f"{rule.name} in {path}")
             break

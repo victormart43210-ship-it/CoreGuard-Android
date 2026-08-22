@@ -28,7 +28,7 @@ say "Updating and installing Ubuntu packages"
 sudo apt-get update
 sudo apt-get install -y \
   git curl unzip zip jq build-essential ca-certificates gnupg \
-  python3 python3-pip python3-venv pipx openjdk-17-jdk gh nodejs
+  python3 python3-pip python3-venv pipx openjdk-21-jdk gh nodejs
 
 python3 -m pipx ensurepath >/dev/null 2>&1 || true
 export PATH="$HOME/.local/bin:$HOME/.cargo/bin:$PATH"
