@@ -8,6 +8,53 @@ on:
   workflow_dispatch:
 
 jobs:
+  # Fast-fail meta-gates (V3.1A Task 11). These are cheap, Python-only policy and
+  # configuration checks. Running them as a gating job keeps a broken CodeQL
+  # matrix, a suppressed security gate, or a Play/Data-Safety policy drift from
+  # burning an Android build plus an API-36 emulator boot before anyone notices.
+  # A separate job avoids duplicating the expensive Android SDK setup.
+  meta-gates:
+    name: V3 meta-gates (policy + workflow integrity)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Minimal runtime setup
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c # v6.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Install meta-gate dependencies
+        run: python3 -m pip install --disable-pip-version-check --quiet pyyaml
+
+      - name: CodeQL coverage meta-gate
+        run: python3 scripts/ci/verify_codeql_coverage.py --repo-root .
+
+      - name: Security workflow meta-gate
+        run: python3 scripts/ci/verify_security_workflows.py --repo-root .
+
+      - name: Play policy gate
+        run: python3 scripts/policy/verify_play_policy.py --repo-root .
+
+      # This verifier resolves the repo from its own location and takes no
+      # --repo-root; passing one makes argparse exit 2 before any checking runs.
+      - name: Data Safety drift gate
+        run: python3 scripts/policy/verify_data_safety_drift.py
+
+      - name: Meta-gate unit tests
+        run: |
+          python3 -m unittest \
+            scripts.tests.test_verify_codeql_coverage \
+            scripts.tests.test_verify_security_workflows \
+            scripts.tests.test_verify_play_policy \
+            scripts.tests.test_verify_data_safety_drift \
+            scripts.tests.test_mobsf_truthfulness \
+            scripts.tests.test_generate_release_manifest \
+            scripts.tests.test_release_workflow_integrity
+
   cli:
     name: Go CLI (race + vet)
     runs-on: ubuntu-latest
@@ -49,6 +96,7 @@ jobs:
 
   build:
     name: Android validation (real build)
+    needs: meta-gates
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -139,6 +187,7 @@ jobs:
 
   instrumented:
     name: Instrumentation (API 36 ATD)
+    needs: meta-gates
     runs-on: ubuntu-latest
     timeout-minutes: 45
     permissions:
