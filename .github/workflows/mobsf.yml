@@ -39,19 +39,21 @@ jobs:
         with:
           args: '. --sarif --output results.sarif'
 
-      - name: Record MobSF advisory outcome
+      # Interprets execution truth and findings truth as two independent facts.
+      # SARIF existence alone is not a result: a crashed or timed-out scanner
+      # that leaves a well-formed empty report is reported as FAILED/UNAVAILABLE
+      # with findings UNKNOWN, never as a clean scan. Blocking findings fail this
+      # step even though the gate is ADVISORY for scanner infrastructure faults.
+      - name: Interpret MobSF result truthfully
+        id: mobsf_truth
         if: always()
         run: |
-          {
-            echo "## MobSF static scan (best-effort)"
-            if [ -f results.sarif ]; then
-              echo "PASS — SARIF written to results.sarif"
-            else
-              echo "ADVISORY — MobSF did not produce results.sarif (external action / scanner issue)."
-              echo "This job stays non-blocking for scanner tooling failures;"
-              echo "repository-owned Android/Quilla gates remain required."
-            fi
-          } >> "$GITHUB_STEP_SUMMARY"
+          set -euo pipefail
+          python3 scripts/ci/mobsf_truthfulness.py \
+            --sarif results.sarif \
+            --scanner-outcome "${{ steps.mobsf.outcome }}" \
+            --classification ADVISORY \
+            --summary-file "$GITHUB_STEP_SUMMARY"
 
       - name: Upload mobsfscan report
         if: hashFiles('results.sarif') != ''
