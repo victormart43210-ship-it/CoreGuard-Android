@@ -19,8 +19,9 @@ import java.util.concurrent.atomic.AtomicReference
  * Application entry point.
  *
  * Loads the native anti-tamper library as early as possible so that its
- * `JNI_OnLoad` installs the `ptrace` anti-debug guard and captures the code
- * integrity baseline before any attacker-controlled code runs. Also provisions
+ * `JNI_OnLoad` captures the code-integrity baseline before any
+ * attacker-controlled code runs. Debugger status is observed passively via
+ * `/proc/self/status` TracerPid (no self-`PTRACE_TRACEME`). Also provisions
  * the hardware-backed master key off the main thread.
  */
 class CoreGuardApplication : Application() {
@@ -57,7 +58,7 @@ class CoreGuardApplication : Application() {
         }
 
         // Never block Application.onCreate on software AVDs (TCG/no-KVM ANRs).
-        // Native ptrace baseline + billing warm on a daemon thread.
+        // Native tamper baseline + billing warm on a daemon thread.
         Thread({
             try {
                 if (!instrumented) {

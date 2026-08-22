@@ -1,11 +1,10 @@
 package com.coldboar.coreguard.quilla
 
 import com.coldboar.coreguard.quilla.knowledge.CyberKnowledgeBase
+import com.coldboar.coreguard.net.HardenedHttpsDownloader
+import com.coldboar.coreguard.net.PublicIntelFeedPins
 import org.json.JSONArray
 import org.json.JSONObject
-import java.io.ByteArrayOutputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.security.MessageDigest
 
 /**
@@ -15,37 +14,24 @@ import java.security.MessageDigest
  * Framing is always defensive / educational. Unauthorized offensive how-to is
  * rejected by [com.coldboar.coreguard.quilla.knowledge.QuillaEthicsGuard].
  *
- * Teaching ceiling: **uncapped** entry counts (Infinity). Only HTTP response
- * size is bounded so a hostile feed cannot OOM the process.
+ * Teaching ceiling: **uncapped** entry counts (Infinity). Responses are
+ * digest-pinned and size-bounded via [HardenedHttpsDownloader]; integrity
+ * failures fail closed (source marked failed; no poisoned entries).
  *
  * Network I/O is synchronous — call from a background thread.
  */
 object QuillaWebSecurityIntelFetcher {
 
-    private const val CONNECT_TIMEOUT_MS = 12_000
-    private const val READ_TIMEOUT_MS = 45_000
-    private const val MAX_BYTES = 8 * 1024 * 1024
-    /** No product teaching cap — Infinity / QuillaAwareness. */
-    private const val MAX_KEV_ENTRIES = Int.MAX_VALUE
-    private const val MAX_GALAXY_ENTRIES = Int.MAX_VALUE
     private const val USER_AGENT =
         "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
 
-    const val CISA_KEV_URL =
-        "https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json"
+    /** No product teaching cap — Infinity / QuillaAwareness. */
+    private const val MAX_KEV_ENTRIES = Int.MAX_VALUE
+    private const val MAX_GALAXY_ENTRIES = Int.MAX_VALUE
 
-    const val MISP_ANDROID_GALAXY_URL =
-        "https://raw.githubusercontent.com/MISP/misp-galaxy/91e6b5c6e6671fa820f21aad72574bd76333d224/clusters/android.json"
-
-    /** Broader malware-family briefs (filtered to mobile/Android-relevant). */
-    const val MISP_MALPEDIA_GALAXY_URL =
-        "https://raw.githubusercontent.com/MISP/misp-galaxy/91e6b5c6e6671fa820f21aad72574bd76333d224/clusters/malpedia.json"
-
-    private val expectedPayloadHashes = mapOf(
-        CISA_KEV_URL to "137884960e3f801665bfa47694e703fbc4dd1c738df5e0e5af12d325a5f8a9d5",
-        MISP_ANDROID_GALAXY_URL to "93aee3013aaa1a5cccd42051412f2178ae918b18b0a5f7e3eed545b78740c281",
-        MISP_MALPEDIA_GALAXY_URL to "1a1523635946c2d25572024b2a89553db11b6a296337cd1bcfd17223b24142b4"
-    )
+    val CISA_KEV_URL: String = PublicIntelFeedPins.CISA_KEV.url
+    val MISP_ANDROID_GALAXY_URL: String = PublicIntelFeedPins.MISP_ANDROID.url
+    val MISP_MALPEDIA_GALAXY_URL: String = PublicIntelFeedPins.MISP_MALPEDIA.url
 
     data class WebIntelResult(
         val entries: List<CyberKnowledgeBase.Entry>,
@@ -59,7 +45,7 @@ object QuillaWebSecurityIntelFetcher {
         val failed = mutableListOf<String>()
 
         when (val kev = runCatching { fetchKevAndroidEntries() }.getOrNull()) {
-            null -> failed += "CISA KEV"
+            null -> failed += "CISA KEV UNAVAILABLE (digest pin miss or fetch failure — refresh pin deliberately)"
             else -> {
                 entries += kev
                 ok += "CISA KEV (${kev.size} Android-relevant)"
@@ -67,7 +53,7 @@ object QuillaWebSecurityIntelFetcher {
         }
 
         when (val galaxy = runCatching { fetchMispAndroidGalaxyEntries() }.getOrNull()) {
-            null -> failed += "MISP Android galaxy"
+            null -> failed += "MISP Android galaxy UNAVAILABLE"
             else -> {
                 entries += galaxy
                 ok += "MISP Android galaxy (${galaxy.size})"
@@ -75,7 +61,7 @@ object QuillaWebSecurityIntelFetcher {
         }
 
         when (val malpedia = runCatching { fetchMispMalpediaMobileEntries() }.getOrNull()) {
-            null -> failed += "MISP Malpedia (mobile filter)"
+            null -> failed += "MISP Malpedia (mobile filter) UNAVAILABLE"
             else -> {
                 entries += malpedia
                 ok += "MISP Malpedia mobile-relevant (${malpedia.size})"
@@ -259,36 +245,25 @@ object QuillaWebSecurityIntelFetcher {
     }
 
     private fun httpGet(url: String): String? {
-        if (url !in expectedPayloadHashes) return null
-        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            setRequestProperty("Accept", "application/json, */*")
-            setRequestProperty("User-Agent", USER_AGENT)
-            instanceFollowRedirects = false
-        }
-        return try {
-            connection.connect()
-            if (connection.responseCode !in 200..299) return null
-            if (connection.contentLength > MAX_BYTES) return null
-
-            val bytes = ByteArrayOutputStream().use { output ->
-                val buffer = ByteArray(8_192)
-                connection.inputStream.use { input ->
-                    var read: Int
-                    while (input.read(buffer).also { read = it } != -1) {
-                        if (output.size() + read > MAX_BYTES) return null
-                        output.write(buffer, 0, read)
-                    }
-                }
-                output.toByteArray()
+        val pin = PublicIntelFeedPins.pinFor(url) ?: return null
+        if (PublicIntelFeedPins.isFloatingBranchUrl(url)) return null
+        val download = HardenedHttpsDownloader.download(
+            url = pin.url,
+            policy = HardenedHttpsDownloader.Policy(
+                allowedHosts = PublicIntelFeedPins.ALLOWED_HOSTS,
+                maxBytes = pin.maxBytes,
+                expectedSha256Hex = pin.sha256Hex,
+                acceptHeader = "application/json, */*",
+                userAgent = USER_AGENT
+            )
+        )
+        return when (download) {
+            is HardenedHttpsDownloader.Result.Failure -> {
+                // Digest drift / integrity miss ⇒ UNAVAILABLE (never auto-trust new digest).
+                null
             }
-            if (sha256Hex(bytes) != expectedPayloadHashes[url]) return null
-            String(bytes, Charsets.UTF_8)
-        } catch (_: Exception) {
-            null
-        } finally {
-            connection.disconnect()
+            is HardenedHttpsDownloader.Result.Success ->
+                download.bytes.toString(Charsets.UTF_8)
         }
     }
 

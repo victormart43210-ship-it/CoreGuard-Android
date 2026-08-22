@@ -33,6 +33,27 @@ enum class KeySecurityLevel {
 }
 
 /**
+ * Pure mapping from Android Keystore metadata → [KeySecurityLevel].
+ *
+ * Extracted so JVM tests can prove existing-key reconstruction and API-level
+ * semantics without a live Keystore / StrongBox device.
+ */
+object KeySecurityLevelMapper {
+    fun fromApi31(securityLevel: Int): KeySecurityLevel = when (securityLevel) {
+        KeyProperties.SECURITY_LEVEL_STRONGBOX -> KeySecurityLevel.STRONGBOX
+        KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT -> KeySecurityLevel.TEE
+        KeyProperties.SECURITY_LEVEL_SOFTWARE -> KeySecurityLevel.SOFTWARE
+        else -> KeySecurityLevel.UNKNOWN
+    }
+
+    fun fromPreApi31(isInsideSecureHardware: Boolean): KeySecurityLevel =
+        if (isInsideSecureHardware) KeySecurityLevel.TEE else KeySecurityLevel.SOFTWARE
+
+    /** Inspect failure / uninitialized must never fabricate SOFTWARE. */
+    fun onInspectFailure(): KeySecurityLevel = KeySecurityLevel.UNKNOWN
+}
+
+/**
  * Manages a hardware-backed AES-256-GCM master key in the Android Keystore.
  *
  * Key management preferences, strongest first:
@@ -110,22 +131,17 @@ class HardwareKeyManager(private val context: Context) {
         val factory = SecretKeyFactory.getInstance(key.algorithm, ANDROID_KEYSTORE)
         val info = factory.getKeySpec(key, KeyInfo::class.java) as KeyInfo
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            when (info.securityLevel) {
-                KeyProperties.SECURITY_LEVEL_STRONGBOX -> KeySecurityLevel.STRONGBOX
-                KeyProperties.SECURITY_LEVEL_TRUSTED_ENVIRONMENT -> KeySecurityLevel.TEE
-                KeyProperties.SECURITY_LEVEL_SOFTWARE -> KeySecurityLevel.SOFTWARE
-                else -> KeySecurityLevel.UNKNOWN
-            }
+            KeySecurityLevelMapper.fromApi31(info.securityLevel)
         } else {
             // Pre-API 31 does not expose a StrongBox-specific level. A hardware
             // backed existing key is conservatively reported as TEE rather than
             // being falsely downgraded to software.
             @Suppress("DEPRECATION")
-            if (info.isInsideSecureHardware) KeySecurityLevel.TEE else KeySecurityLevel.SOFTWARE
+            KeySecurityLevelMapper.fromPreApi31(info.isInsideSecureHardware)
         }
     } catch (t: Throwable) {
         Log.w(TAG, "Could not inspect Android Keystore security level: ${t.message}")
-        KeySecurityLevel.UNKNOWN
+        KeySecurityLevelMapper.onInspectFailure()
     }
 
     private fun generateKey(strongBox: Boolean): SecretKey {

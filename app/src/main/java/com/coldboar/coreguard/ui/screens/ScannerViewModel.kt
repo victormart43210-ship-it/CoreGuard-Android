@@ -4,9 +4,12 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.coldboar.coreguard.mvt.IocProvenanceSnapshot
+import com.coldboar.coreguard.mvt.IocRepository
 import com.coldboar.coreguard.mvt.ScanCancellation
 import com.coldboar.coreguard.mvt.ScanProgressListener
 import com.coldboar.coreguard.mvt.ScanReport
+import com.coldboar.coreguard.mvt.ScanSessionRepository
 import com.coldboar.coreguard.mvt.ScanSessionSaveRequest
 import com.coldboar.coreguard.mvt.ScanStageEvent
 import com.coldboar.coreguard.mvt.ScanStageId
@@ -17,8 +20,12 @@ import com.coldboar.coreguard.settings.DataStoreUserSettingsRepository
 import com.coldboar.coreguard.settings.UserSettingsRepository
 import com.coldboar.coreguard.truth.toFinding
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +33,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 sealed class ScannerUiState {
     object Empty : ScannerUiState()
@@ -51,21 +59,53 @@ sealed class ScannerUiState {
     ) : ScannerUiState()
 }
 
+/**
+ * Runs a device scan. Production wires [ScannerModule]; tests inject fakes so
+ * cancellation lifecycle can be proven on the JVM without Android I/O.
+ *
+ * The runner must bind IOC indicators + provenance into the returned [ScanReport]
+ * ([ScanReport.iocProvenance]). The ViewModel persists that snapshot and must
+ * not re-read mutable global repository provenance when saving.
+ */
+fun interface DeviceScanRunner {
+    fun scan(
+        listener: ScanProgressListener?,
+        cancellation: ScanCancellation,
+        deepFileInspectionEnabled: Boolean,
+        quillaCorrelationEnabled: Boolean
+    ): ScanReport
+}
+
 class ScannerViewModel(
-    private val appContext: Context,
     private val settingsRepository: UserSettingsRepository,
-    private val sessionRepository: RoomScanSessionRepository
+    private val sessionRepository: ScanSessionRepository,
+    private val scanRunner: DeviceScanRunner,
+    private val recordHistory: (ScanReport) -> Unit,
+    private val engineVersion: () -> String,
+    private val schemaVersion: () -> Int,
+    private val iocLoadedAtMs: () -> Long,
+    private val iocProvenance: () -> IocProvenanceSnapshot,
+    private val latestReport: () -> ScanReport?,
+    private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val externalScope: CoroutineScope? = null
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Empty)
     val uiState: StateFlow<ScannerUiState> = _uiState.asStateFlow()
 
+    @Volatile
     private var scanJob: Job? = null
     private val cancelRequested = AtomicBoolean(false)
 
+    /** Monotonic scan identity; only the current generation may publish terminal UI. */
+    private val scanGeneration = AtomicLong(0L)
+
+    private val scope: CoroutineScope
+        get() = externalScope ?: viewModelScope
+
     init {
         sessionRepository.ensureLegacyImport()
-        ScannerModule.latestReport()?.let {
+        latestReport()?.let {
             _uiState.value = ScannerUiState.Complete(it, sessionId = "in-memory", stageEvents = emptyList())
         }
     }
@@ -74,14 +114,19 @@ class ScannerViewModel(
         scanJob?.cancel()
         scanJob = null
         cancelRequested.set(false)
+        val generation = scanGeneration.incrementAndGet()
         val previousCompleted = (_uiState.value as? ScannerUiState.Complete)?.report
         val stageEvents = mutableListOf<ScanStageEvent>()
         _uiState.value = ScannerUiState.Scanning()
 
-        scanJob = viewModelScope.launch {
+        // LAZY: publish Job into [scanJob] before the body can execute, so the
+        // cancellation predicate never observes a null job for a live generation.
+        val job = scope.launch(start = CoroutineStart.LAZY) {
             val startedAt = System.currentTimeMillis()
+            val executingJob = currentCoroutineContext()[Job]
             val listener = object : ScanProgressListener {
                 override fun onStage(event: ScanStageEvent) {
+                    if (!isCurrentGeneration(generation)) return
                     stageEvents += event
                     _uiState.value = ScannerUiState.Scanning(
                         currentStage = event,
@@ -92,90 +137,106 @@ class ScannerViewModel(
             try {
                 val deepInspection = settingsRepository.deepFileInspectionEnabled.first()
                 val quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
-                val cancellation = ScanCancellation { cancelRequested.get() || !isActive() }
-                val report = withContext(Dispatchers.IO) {
-                    ScannerModule.scanDevice(
-                        context = appContext,
+                val cancellation = ScanCancellation {
+                    cancelRequested.get() ||
+                        !isCurrentGeneration(generation) ||
+                        executingJob?.isActive != true
+                }
+                val report = withContext(ioDispatcher) {
+                    scanRunner.scan(
                         listener = listener,
                         cancellation = cancellation,
                         deepFileInspectionEnabled = deepInspection,
                         quillaCorrelationEnabled = quillaEnabled
                     )
                 }
-                withContext(Dispatchers.IO) {
-                    ScannerModule.recordHistory(appContext, report)
+                if (!isCurrentGeneration(generation)) return@launch
+                withContext(ioDispatcher) {
+                    recordHistory(report)
                 }
+                if (!isCurrentGeneration(generation)) return@launch
                 val normalizedFindings = report.detections
                     .map { it.toFinding(report.finishedAtMillis) }
                     .let { correlateFindingsDeterministic(it) }
-                val sessionId = withContext(Dispatchers.IO) {
+                // Persist provenance from the scan result only — never re-read globals.
+                val provenance = report.iocProvenance
+                val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.COMPLETED,
                             startedAtMs = startedAt,
                             endedAtMs = System.currentTimeMillis(),
-                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
-                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            scannerEngineVersion = engineVersion(),
+                            schemaVersion = schemaVersion(),
                             deepInspectionEnabled = deepInspection,
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = normalizedFindings.map { it.finding },
                             stageEvents = stageEvents.toList()
                         )
                     )
                 }
+                if (!isCurrentGeneration(generation)) return@launch
                 _uiState.value = ScannerUiState.Complete(
                     report = report,
                     sessionId = sessionId,
                     stageEvents = stageEvents.toList()
                 )
             } catch (ce: CancellationException) {
-                val sessionId = withContext(Dispatchers.IO) {
+                if (!isCurrentGeneration(generation)) return@launch
+                // Cancelled scans initialize UNAVAILABLE — do not inherit prior
+                // scan or a refresh that completed during this scan via globals.
+                val provenance = IocProvenanceSnapshot.unavailable()
+                val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.CANCELLED,
                             startedAtMs = startedAt,
                             endedAtMs = System.currentTimeMillis(),
                             failureReason = "Cancelled by user",
-                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
-                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            scannerEngineVersion = engineVersion(),
+                            schemaVersion = schemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
                         )
                     )
                 }
+                if (!isCurrentGeneration(generation)) return@launch
                 _uiState.value = ScannerUiState.Cancelled(
                     sessionId = sessionId,
                     stageEvents = stageEvents.toList(),
                     lastCompletedReport = previousCompleted
                 )
             } catch (t: Throwable) {
-                val sessionId = withContext(Dispatchers.IO) {
+                if (!isCurrentGeneration(generation)) return@launch
+                val provenance = IocProvenanceSnapshot.unavailable()
+                val sessionId = withContext(ioDispatcher) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.FAILED,
                             startedAtMs = startedAt,
                             endedAtMs = System.currentTimeMillis(),
                             failureReason = t.message ?: "Unknown error",
-                            scannerEngineVersion = ScannerModule.scannerEngineVersion(),
-                            schemaVersion = ScannerModule.scanSchemaVersion(),
+                            scannerEngineVersion = engineVersion(),
+                            schemaVersion = schemaVersion(),
                             deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
-                            feedSource = FEED_SOURCE,
-                            feedVersion = null,
-                            feedAuthenticity = FEED_AUTHENTICITY,
-                            feedLoadedAtMs = ScannerModule.iocLoadedAtMs(),
+                            feedSource = provenance.feedSource,
+                            feedVersion = provenance.feedVersion,
+                            feedAuthenticity = provenance.feedAuthenticity,
+                            feedLoadedAtMs = provenance.feedLoadedAtMs,
                             findings = emptyList(),
                             stageEvents = stageEvents.toList()
                         )
                     )
                 }
+                if (!isCurrentGeneration(generation)) return@launch
                 _uiState.value = ScannerUiState.Error(
                     message = "Scan failed: ${t.message ?: "unknown error"}",
                     sessionId = sessionId,
@@ -184,19 +245,26 @@ class ScannerViewModel(
                 )
             }
         }
+        scanJob = job
+        job.start()
     }
 
     /**
-     * Requests a cooperative stop. [ScannerModule] observes [cancelRequested]
+     * Requests a cooperative stop. [DeviceScanRunner] observes [cancelRequested]
      * between scan stages and raises [CancellationException] while this coroutine
      * is still active, allowing the terminal cancellation session and UI state to
-     * be persisted reliably.
+     * be persisted reliably for the current generation.
      */
     fun cancelScan() {
         cancelRequested.set(true)
     }
 
+    /** True when a scan coroutine for the current generation is still active. */
+    fun hasActiveScanJob(): Boolean = scanJob?.isActive == true
+
     override fun onCleared() {
+        // Invalidate generation so a late CancellationException cannot publish UI.
+        scanGeneration.incrementAndGet()
         scanJob?.cancel()
     }
 
@@ -204,7 +272,8 @@ class ScannerViewModel(
         _uiState.value = ScannerUiState.Empty
     }
 
-    private fun isActive(): Boolean = scanJob?.isActive == true
+    private fun isCurrentGeneration(generation: Long): Boolean =
+        scanGeneration.get() == generation
 
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
@@ -214,16 +283,24 @@ class ScannerViewModel(
             }
             val context = appContext.applicationContext
             return ScannerViewModel(
-                appContext = context,
                 settingsRepository = DataStoreUserSettingsRepository(context),
-                sessionRepository = RoomScanSessionRepository(context)
+                sessionRepository = RoomScanSessionRepository(context),
+                scanRunner = DeviceScanRunner { listener, cancellation, deep, quilla ->
+                    ScannerModule.scanDevice(
+                        context = context,
+                        listener = listener,
+                        cancellation = cancellation,
+                        deepFileInspectionEnabled = deep,
+                        quillaCorrelationEnabled = quilla
+                    )
+                },
+                recordHistory = { ScannerModule.recordHistory(context, it) },
+                engineVersion = { ScannerModule.scannerEngineVersion() },
+                schemaVersion = { ScannerModule.scanSchemaVersion() },
+                iocLoadedAtMs = { ScannerModule.iocLoadedAtMs() },
+                iocProvenance = { IocRepository.provenance(context) },
+                latestReport = { ScannerModule.latestReport() }
             ) as T
         }
-    }
-
-    companion object {
-        /** Attribution label included in every persisted scan session. */
-        const val FEED_SOURCE = "Amnesty International Security Lab / mvt-project"
-        const val FEED_AUTHENTICITY = "Transport-protected but not cryptographically signed."
     }
 }

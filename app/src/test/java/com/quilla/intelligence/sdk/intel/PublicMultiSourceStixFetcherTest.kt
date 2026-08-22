@@ -43,14 +43,32 @@ class PublicMultiSourceStixFetcherTest {
         assertTrue(urls.none { it.contains("indicators/pegasus.stix2") })
         assertTrue(urls.all { it.startsWith("https://") })
         assertTrue(urls.none { it.contains("/main/") || it.contains("/master/") })
-        assertTrue(urls.all { Regex("/[0-9a-f]{40}/").containsMatchIn(it) })
+        assertTrue(PublicMultiSourceStixFetcher.DEFAULT_FEEDS.all { it.sha256Hex.length == 64 })
     }
 
     @Test
     fun `cleartext feed URLs are rejected`() {
         val fetcher = PublicMultiSourceStixFetcher(
             feeds = listOf(
-                PublicMultiSourceStixFetcher.Feed("bad", "http://example.com/feed.stix2")
+                PublicMultiSourceStixFetcher.Feed(
+                    name = "bad",
+                    url = "http://example.com/feed.stix2",
+                    sha256Hex = "00".repeat(32)
+                )
+            )
+        )
+        assertTrue(fetcher.fetchAllSources().isEmpty())
+    }
+
+    @Test
+    fun `feeds without digest are rejected`() {
+        val fetcher = PublicMultiSourceStixFetcher(
+            feeds = listOf(
+                PublicMultiSourceStixFetcher.Feed(
+                    name = "unsigned",
+                    url = "https://raw.githubusercontent.com/AmnestyTech/investigations/3d8f248a0d015f183724ae7d096a5c46a8bb5fc7/2021-07-18_nso/pegasus.stix2",
+                    sha256Hex = ""
+                )
             )
         )
         assertTrue(fetcher.fetchAllSources().isEmpty())

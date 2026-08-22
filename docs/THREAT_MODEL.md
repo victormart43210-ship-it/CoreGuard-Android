@@ -11,6 +11,11 @@ This document covers threats relevant to the CoreGuard Android application
 (`com.coldboar.coreguard`). It does not cover server infrastructure because
 CoreGuard v1 is a standalone device-monitoring app with no backend.
 
+Version source of truth for the shipped app binary remains
+`gradle/android-app.gradle` (`versionName = "1.0.17"`, `versionCode = 18`).
+Book of Changes prefix retention is **UNAVAILABLE** in v1 (full chain retained)
+so hash-chain validation cannot be false-failed by pruning ancestors.
+
 ---
 
 ## 2. Assets to Protect

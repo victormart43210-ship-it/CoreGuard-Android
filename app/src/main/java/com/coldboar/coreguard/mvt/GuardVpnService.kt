@@ -18,9 +18,6 @@ import com.coldboar.coreguard.quilla.QuillaIocBridge
 import com.coldboar.coreguard.quilla.QuillaMemoryModule
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
-import java.net.DatagramPacket
-import java.net.DatagramSocket
 import java.net.InetAddress
 
 /**
@@ -127,34 +124,35 @@ class GuardVpnService : VpnService() {
                 )
                 Log.w(TAG, "BLOCKED $domain (${hit.malware})")
             } else {
-                forward(parsed, upstream, output)
-                Log.d(TAG, "ALLOWED $domain")
+                when (forward(parsed, upstream, output)) {
+                    DnsForwardResult.FORWARDED -> Log.d(TAG, "FORWARDED $domain")
+                    DnsForwardResult.REJECTED -> Log.w(TAG, "REJECTED upstream reply for $domain")
+                    DnsForwardResult.UNAVAILABLE -> Log.d(TAG, "UNAVAILABLE forward for $domain")
+                }
             }
         }
     }
 
-    /** Forwards an allowed DNS query to the real resolver and relays the reply. */
-    private fun forward(query: IpV4Udp.Datagram, upstream: InetAddress, output: FileOutputStream) {
-        runCatching {
-            DatagramSocket().use { socket ->
-                // `connect` filters inbound UDP datagrams to the resolver address
-                // and port, preventing a local-network attacker from racing an
-                // unrelated response into this ephemeral socket.
-                protect(socket)
-                socket.connect(upstream, DNS_PORT)
-                socket.soTimeout = 4_000
-                socket.send(DatagramPacket(query.payload, query.payload.size))
-
-                val respBuf = ByteArray(32_767)
-                val resp = DatagramPacket(respBuf, respBuf.size)
-                socket.receive(resp)
-                val answer = respBuf.copyOf(resp.length)
-                if (!DnsMessage.isResponseFor(query.payload, answer)) {
-                    throw IOException("Resolver reply does not match DNS query")
-                }
-                output.write(IpV4Udp.buildReply(query, answer))
-            }
-        }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
+    /**
+     * Forwards an allowed DNS query to the real resolver and relays the reply.
+     *
+     * Uses a connected datagram socket plus [DnsUpstreamValidator] so a forged
+     * UDP reply from another address/port or with a mismatched transaction ID
+     * is never written into the tunnel. [VpnService.protect] must succeed.
+     */
+    private fun forward(
+        query: IpV4Udp.Datagram,
+        upstream: InetAddress,
+        output: FileOutputStream
+    ): DnsForwardResult {
+        return DnsUpstreamForwarder.forward(
+            queryPayload = query.payload,
+            upstream = upstream,
+            protect = { socket -> protect(socket) },
+            writeTunnel = { bytes -> output.write(bytes) },
+            buildReply = { answer -> IpV4Udp.buildReply(query, answer) },
+            exchange = DnsUpstreamForwarder.defaultExchange
+        )
     }
 
     /**
@@ -198,7 +196,9 @@ class GuardVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Privacy Shield", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Blocks DNS lookups for known malicious domains" }
+            ).apply {
+                description = "DNS sinkhole for known indicator domains (plaintext UDP forward)"
+            }
             manager.createNotificationChannel(channel)
         }
         val pi = PendingIntent.getActivity(
@@ -207,7 +207,7 @@ class GuardVpnService : VpnService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Privacy Shield active")
-            .setContentText("Blocking known malicious DNS lookups")
+            .setContentText("Blocking listed indicator domains via local DNS sinkhole")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pi)
             .setOngoing(true)
