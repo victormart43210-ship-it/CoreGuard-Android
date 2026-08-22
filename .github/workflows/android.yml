@@ -118,7 +118,7 @@ jobs:
 
       - name: Upload validation failure evidence
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: android-validation-evidence
           if-no-files-found: ignore
@@ -131,7 +131,7 @@ jobs:
 
       - name: Upload debug APK
         if: success()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: debug-apk
           path: app/build/outputs/apk/debug/*.apk
@@ -230,7 +230,7 @@ jobs:
           HEADLESS=1 COREGUARD_REQUIRE_KVM=1 ./scripts/quilla-emulator-tests.sh
       - name: Upload instrumentation failure evidence
         if: always()
-        uses: actions/upload-artifact@330a01c490aca151604b8cf639adc76d48f6c5d4 # v5.0.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: api36-instrumentation-evidence
           if-no-files-found: ignore
