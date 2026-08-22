@@ -1,5 +1,5 @@
 [versions]
-# Keep aligned with Compose Compiler 1.5.15 and modules that apply these plugins.
+# Keep plugin versions aligned with the active AGP/API baseline for this branch.
 agp = "8.12.0"
 kotlin = "1.9.25"
 coreKtx = "1.19.0"
