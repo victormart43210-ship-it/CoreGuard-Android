@@ -138,15 +138,8 @@ object IocRepository {
                         f.name != REMOTE_FEED_META_FILE &&
                         f.name != IocFeedStore.CURRENT_POINTER
                 }?.forEach { file ->
-                    // Skip generation tree files (handled via pointer).
-                    if (file.parentFile?.name == IocFeedStore.GENERATIONS_DIR) return@forEach
-                    if (file.parentFile?.parentFile?.name == IocFeedStore.GENERATIONS_DIR) return@forEach
                     userImported += IocParser.parse(file.readText())
                 }
-                // Also skip walking into generations/ for user imports.
-                val generationsRoot = File(dir, IocFeedStore.GENERATIONS_DIR)
-                // User-imported only from top-level json files (already listed).
-                generationsRoot // retained for clarity; listing above filters by top-level.
             }
         }.onFailure { Log.w(TAG, "Failed reading user IOC feeds: ${it.message}") }
 

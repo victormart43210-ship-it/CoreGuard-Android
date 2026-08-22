@@ -124,7 +124,7 @@ class GuardVpnService : VpnService() {
                 )
                 Log.w(TAG, "BLOCKED $domain (${hit.malware})")
             } else {
-                when (val forwardResult = forward(parsed, upstream, output)) {
+                when (forward(parsed, upstream, output)) {
                     DnsForwardResult.FORWARDED -> Log.d(TAG, "FORWARDED $domain")
                     DnsForwardResult.REJECTED -> Log.w(TAG, "REJECTED upstream reply for $domain")
                     DnsForwardResult.UNAVAILABLE -> Log.d(TAG, "UNAVAILABLE forward for $domain")
