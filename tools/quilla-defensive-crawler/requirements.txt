@@ -10,7 +10,7 @@ h11>=0.14,<0.15
 h2>=4,<5
 hpack>=4,<5
 hyperframe>=6,<7
-httpcore==1.0.5
+httpcore==1.0.9
 idna>=3.4
 
 # HTML parsing
