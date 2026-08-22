@@ -45,13 +45,11 @@ class FridaDetectionEvaluator(
 }
 
 /**
- * Native anti-debugging status. A non-zero TracerPid means a debugger is
- * attached right now (high risk); otherwise we report whether the early
- * `ptrace(PTRACE_TRACEME)` self-attach guard is active.
+ * Native anti-debugging status. A non-zero TracerPid means an external
+ * debugger/tracer is attached right now (high risk).
  */
 class NativeDebuggerEvaluator(
-    private val tracerPid: () -> Int = { NativeTamperGuard.tracerPid() },
-    private val ptraceProtected: () -> Boolean = { NativeTamperGuard.ptraceProtected() }
+    private val tracerPid: () -> Int = { NativeTamperGuard.tracerPid() }
 ) : SecurityCheckEvaluator {
 
     override fun evaluate(): SecurityCheckResult {
@@ -63,17 +61,11 @@ class NativeDebuggerEvaluator(
                 state = SecurityCheckState.FAIL,
                 explanation = "A debugger/tracer (PID $pid) is attached to this process."
             )
-            ptraceProtected() -> SecurityCheckResult(
-                id = "native_debugger",
-                displayName = "Native Debugger",
-                state = SecurityCheckState.PASS,
-                explanation = "No tracer attached. ptrace self-attach guard is active, blocking external debuggers."
-            )
             else -> SecurityCheckResult(
                 id = "native_debugger",
                 displayName = "Native Debugger",
-                state = SecurityCheckState.WARN,
-                explanation = "No tracer attached, but the ptrace anti-debug guard is not engaged."
+                state = SecurityCheckState.PASS,
+                explanation = "No external debugger/tracer is attached to this process."
             )
         }
     }

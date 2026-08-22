@@ -1,108 +1,174 @@
 package com.coldboar.coreguard.ui.screens
 
+import android.content.Context
+import com.coldboar.coreguard.mvt.ScanCancellation
+import com.coldboar.coreguard.mvt.Detection
+import com.coldboar.coreguard.mvt.ScanProgressListener
+import com.coldboar.coreguard.mvt.ScanReport
+import com.coldboar.coreguard.mvt.ScanSessionRepository
+import com.coldboar.coreguard.mvt.ScanSessionSaveRequest
+import com.coldboar.coreguard.mvt.ScanStageEvent
+import com.coldboar.coreguard.mvt.ScanStageId
+import com.coldboar.coreguard.settings.FakeUserSettingsRepository
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
+import kotlinx.coroutines.test.resetMain
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.setMain
+import kotlinx.coroutines.withContext
+import org.junit.After
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.mockito.Mockito.mock
 
-/**
- * JVM unit tests for [ScannerViewModel] using [FakeUserSettingsRepository].
- *
- * NOTE: [ScannerViewModel] requires an Android [Context] to call
- * [ScannerModule.scanDevice] and [ScanHistoryStore]. These tests exercise the
- * state machine logic only (initial state, cancel, reset) without triggering
- * network or file I/O.
- *
- * Full integration tests require an Android emulator or device. See
- * COREGUARD_TEST_EVIDENCE.md for the environment execution status.
- */
 class ScannerViewModelTest {
 
-    @Test
-    fun `initial state is Empty when no prior report is in memory`() {
-        // ScannerModule.latestReport() returns null in a fresh JVM test environment.
-        // ScannerViewModel.init checks this and stays in Empty state.
-        // We can verify the sealed class hierarchy without instantiating the ViewModel
-        // (which requires Context) by testing the state machine type directly.
-        val empty: ScannerUiState = ScannerUiState.Empty
-        assertTrue(empty is ScannerUiState.Empty)
+    private val mainDispatcher = StandardTestDispatcher()
+
+    @Before
+    fun setUp() {
+        Dispatchers.setMain(mainDispatcher)
+    }
+
+    @After
+    fun tearDown() {
+        Dispatchers.resetMain()
     }
 
     @Test
-    fun `Scanning state has a progress label`() {
-        val scanning = ScannerUiState.Scanning()
-        assertTrue(scanning is ScannerUiState.Scanning)
-        assertTrue(scanning.allStages.isEmpty())
+    fun `cancelScan persists CANCELLED and reaches Cancelled ui state`() = runTest {
+        val repository = CapturingScanSessionRepository()
+        val viewModel = newViewModel(
+            sessionRepository = repository,
+            scanDevice = { _, listener, cancellation, _, _ ->
+                listener.onStage(ScanStageEvent(ScanStageId.PREPARING))
+                while (true) {
+                    cancellation.throwIfCancelled()
+                    delay(5)
+                }
+            }
+        )
+
+        viewModel.startScan()
+        advanceUntilIdle()
+        viewModel.cancelScan()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is ScannerUiState.Cancelled)
+        val cancelledSave = repository.saved.lastOrNull()
+        assertEquals(ScanStageId.CANCELLED, cancelledSave?.status)
     }
 
     @Test
-    fun `Cancelled state holds no score or verdict`() {
-        // Truth-first rule: a cancelled scan MUST NOT record a score/verdict.
-        // The Cancelled state has no 'report' field with a verdict —
-        // it only carries the last *completed* report as optional fallback.
-        val cancelled = ScannerUiState.Cancelled(
-            sessionId = null,
-            stageEvents = emptyList(),
-            lastCompletedReport = null
+    fun `stale first scan cannot overwrite newer scan state`() = runTest {
+        val repository = CapturingScanSessionRepository()
+        var invocation = 0
+        val firstReport = buildReport(111L)
+        val secondReport = buildReport(222L)
+        val viewModel = newViewModel(
+            sessionRepository = repository,
+            scanDevice = { _, listener, _, _, _ ->
+                invocation += 1
+                listener.onStage(ScanStageEvent(ScanStageId.PREPARING))
+                if (invocation == 1) {
+                    withContext(NonCancellable) { delay(100) }
+                    firstReport
+                } else {
+                    secondReport
+                }
+            }
         )
-        assertTrue(cancelled is ScannerUiState.Cancelled)
-        assertFalse("Cancelled state must not have a live report with verdict",
-            cancelled.lastCompletedReport != null
-        )
+
+        viewModel.startScan()
+        viewModel.startScan()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is ScannerUiState.Complete)
+        val complete = state as ScannerUiState.Complete
+        assertEquals(secondReport.finishedAtMillis, complete.report.finishedAtMillis)
+        assertEquals(1, repository.saved.count { it.status == ScanStageId.COMPLETED })
     }
 
     @Test
-    fun `Cancelled with lastCompletedReport still does not produce a new verdict`() {
-        // Even when a previous completed report is available, the cancelled state
-        // itself carries no new verdict — the UI must not show it as current.
-        val cancelled = ScannerUiState.Cancelled(
-            sessionId = null,
-            stageEvents = emptyList(),
-            lastCompletedReport = null
+    fun `scan can restart immediately after cancellation`() = runTest {
+        val repository = CapturingScanSessionRepository()
+        var invocation = 0
+        val completeReport = buildReport(333L)
+        val viewModel = newViewModel(
+            sessionRepository = repository,
+            scanDevice = { _, _, cancellation, _, _ ->
+                invocation += 1
+                if (invocation == 1) {
+                    while (true) {
+                        cancellation.throwIfCancelled()
+                        delay(5)
+                    }
+                }
+                completeReport
+            }
         )
-        // The cancelled.lastCompletedReport is the PREVIOUS scan, not the incomplete one.
-        assertTrue("lastCompletedReport should be null when no previous scan exists",
-            cancelled.lastCompletedReport == null
+
+        viewModel.startScan()
+        viewModel.cancelScan()
+        viewModel.startScan()
+        advanceUntilIdle()
+
+        val state = viewModel.uiState.value
+        assertTrue(state is ScannerUiState.Complete)
+        assertEquals(ScanStageId.CANCELLED, repository.saved.first().status)
+        assertEquals(ScanStageId.COMPLETED, repository.saved.last().status)
+    }
+
+    private fun newViewModel(
+        sessionRepository: CapturingScanSessionRepository,
+        scanDevice: suspend (
+            context: Context,
+            listener: ScanProgressListener,
+            cancellation: ScanCancellation,
+            deepFileInspectionEnabled: Boolean,
+            quillaCorrelationEnabled: Boolean
+        ) -> ScanReport
+    ): ScannerViewModel {
+        val context = mock(Context::class.java)
+        return ScannerViewModel(
+            appContext = context,
+            settingsRepository = FakeUserSettingsRepository(
+                deepFileInspection = true,
+                quillaCorrelation = true
+            ),
+            sessionRepository = sessionRepository,
+            scanDevice = scanDevice,
+            recordHistory = { _, _ -> },
+            latestReportProvider = { null },
+            currentTimeMs = { 1_000L }
         )
     }
 
-    @Test
-    fun `Error state preserves the failure message`() {
-        val error = ScannerUiState.Error(
-            message = "Scan couldn't finish: IO error.",
-            sessionId = null,
-            stageEvents = emptyList(),
-            lastCompletedReport = null
+    private fun buildReport(finishedAt: Long): ScanReport =
+        ScanReport(
+            startedAtMillis = finishedAt - 10,
+            finishedAtMillis = finishedAt,
+            scannedPackages = 1,
+            scannedProcesses = 1,
+            scannedFiles = 1,
+            indicatorCount = 1,
+            detections = emptyList<Detection>()
         )
-        assertTrue(error is ScannerUiState.Error)
-        assertTrue("Error message must be non-blank", error.message.isNotBlank())
+
+    private class CapturingScanSessionRepository : ScanSessionRepository {
+        val saved = mutableListOf<ScanSessionSaveRequest>()
+        override fun ensureLegacyImport() = Unit
+
+        override fun saveSession(request: ScanSessionSaveRequest): String {
+            saved += request
+            return "session-${saved.size}"
+        }
     }
-
-    @Test
-    fun `UiState sealed class covers all expected variants`() {
-        // Verify all states the UI needs to handle are representable.
-        val states: List<ScannerUiState> = listOf(
-            ScannerUiState.Empty,
-            ScannerUiState.Scanning(),
-            ScannerUiState.Complete(report = buildFakeScanReport(), sessionId = "s", stageEvents = emptyList()),
-            ScannerUiState.Cancelled(sessionId = null, stageEvents = emptyList()),
-            ScannerUiState.Error(message = "error", sessionId = null, stageEvents = emptyList(), lastCompletedReport = null)
-        )
-        assertEquals(5, states.size)
-    }
-
-    // -----------------------------------------------------------------------
-    // Helpers
-    // -----------------------------------------------------------------------
-
-    private fun buildFakeScanReport() =
-        com.coldboar.coreguard.mvt.ScanReport(
-            startedAtMillis = 0L,
-            finishedAtMillis = 100L,
-            scannedPackages = 10,
-            scannedProcesses = 2,
-            scannedFiles = 5,
-            indicatorCount = 50,
-            detections = emptyList()
-        )
 }

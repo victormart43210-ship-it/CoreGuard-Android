@@ -8,6 +8,7 @@ import com.coldboar.coreguard.mvt.ScanCancellation
 import com.coldboar.coreguard.mvt.ScanProgressListener
 import com.coldboar.coreguard.mvt.ScanReport
 import com.coldboar.coreguard.mvt.ScanSessionSaveRequest
+import com.coldboar.coreguard.mvt.ScanSessionRepository
 import com.coldboar.coreguard.mvt.ScanStageEvent
 import com.coldboar.coreguard.mvt.ScanStageId
 import com.coldboar.coreguard.mvt.ScannerModule
@@ -19,6 +20,7 @@ import com.coldboar.coreguard.truth.toFinding
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +28,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 
 sealed class ScannerUiState {
     object Empty : ScannerUiState()
@@ -54,7 +57,29 @@ sealed class ScannerUiState {
 class ScannerViewModel(
     private val appContext: Context,
     private val settingsRepository: UserSettingsRepository,
-    private val sessionRepository: RoomScanSessionRepository
+    private val sessionRepository: ScanSessionRepository,
+    private val scanDevice: suspend (
+        context: Context,
+        listener: ScanProgressListener,
+        cancellation: ScanCancellation,
+        deepFileInspectionEnabled: Boolean,
+        quillaCorrelationEnabled: Boolean
+    ) -> ScanReport = { context, listener, cancellation, deepInspection, quillaEnabled ->
+        withContext(Dispatchers.IO) {
+            ScannerModule.scanDevice(
+                context = context,
+                listener = listener,
+                cancellation = cancellation,
+                deepFileInspectionEnabled = deepInspection,
+                quillaCorrelationEnabled = quillaEnabled
+            )
+        }
+    },
+    private val recordHistory: suspend (Context, ScanReport) -> Unit = { context, report ->
+        withContext(Dispatchers.IO) { ScannerModule.recordHistory(context, report) }
+    },
+    private val latestReportProvider: () -> ScanReport? = { ScannerModule.latestReport() },
+    private val currentTimeMs: () -> Long = { System.currentTimeMillis() }
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<ScannerUiState>(ScannerUiState.Empty)
@@ -62,26 +87,37 @@ class ScannerViewModel(
 
     private var scanJob: Job? = null
     private val cancelRequested = AtomicBoolean(false)
+    private val scanTokenCounter = AtomicLong(0L)
+    @Volatile private var activeScanToken: Long = 0L
+    @Volatile private var activeCancelRequest: AtomicBoolean? = null
 
     init {
         sessionRepository.ensureLegacyImport()
-        ScannerModule.latestReport()?.let {
+        latestReportProvider()?.let {
             _uiState.value = ScannerUiState.Complete(it, sessionId = "in-memory", stageEvents = emptyList())
         }
     }
 
     fun startScan() {
+        activeCancelRequest?.set(true)
         scanJob?.cancel()
-        scanJob = null
+
+        val scanToken = scanTokenCounter.incrementAndGet()
+        activeScanToken = scanToken
+        val localCancelRequested = AtomicBoolean(false)
+        activeCancelRequest = localCancelRequested
         cancelRequested.set(false)
         val previousCompleted = (_uiState.value as? ScannerUiState.Complete)?.report
         val stageEvents = mutableListOf<ScanStageEvent>()
         _uiState.value = ScannerUiState.Scanning()
 
         scanJob = viewModelScope.launch {
-            val startedAt = System.currentTimeMillis()
+            val startedAt = currentTimeMs()
+            var deepInspection: Boolean? = null
+            var quillaEnabled: Boolean? = null
             val listener = object : ScanProgressListener {
                 override fun onStage(event: ScanStageEvent) {
+                    if (!isCurrentScan(scanToken)) return
                     stageEvents += event
                     _uiState.value = ScannerUiState.Scanning(
                         currentStage = event,
@@ -90,21 +126,22 @@ class ScannerViewModel(
                 }
             }
             try {
-                val deepInspection = settingsRepository.deepFileInspectionEnabled.first()
-                val quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
-                val cancellation = ScanCancellation { cancelRequested.get() || !isActive() }
-                val report = withContext(Dispatchers.IO) {
-                    ScannerModule.scanDevice(
-                        context = appContext,
-                        listener = listener,
-                        cancellation = cancellation,
-                        deepFileInspectionEnabled = deepInspection,
-                        quillaCorrelationEnabled = quillaEnabled
-                    )
+                deepInspection = settingsRepository.deepFileInspectionEnabled.first()
+                quillaEnabled = settingsRepository.quillaCorrelationEnabled.first()
+                val deepInspectionEnabled = deepInspection
+                val quillaCorrelationEnabled = quillaEnabled
+                val cancellation = ScanCancellation {
+                    cancelRequested.get() || localCancelRequested.get() || !isCurrentScan(scanToken)
                 }
-                withContext(Dispatchers.IO) {
-                    ScannerModule.recordHistory(appContext, report)
-                }
+                val report = scanDevice(
+                    appContext,
+                    listener,
+                    cancellation,
+                    deepInspectionEnabled ?: false,
+                    quillaCorrelationEnabled ?: false
+                )
+                if (!isCurrentScan(scanToken)) return@launch
+                recordHistory(appContext, report)
                 val normalizedFindings = report.detections
                     .map { it.toFinding(report.finishedAtMillis) }
                     .let { correlateFindingsDeterministic(it) }
@@ -113,10 +150,10 @@ class ScannerViewModel(
                         ScanSessionSaveRequest(
                             status = ScanStageId.COMPLETED,
                             startedAtMs = startedAt,
-                            endedAtMs = System.currentTimeMillis(),
+                            endedAtMs = currentTimeMs(),
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
-                            deepInspectionEnabled = deepInspection,
+                            deepInspectionEnabled = deepInspectionEnabled ?: false,
                             feedSource = FEED_SOURCE,
                             feedVersion = null,
                             feedAuthenticity = FEED_AUTHENTICITY,
@@ -126,22 +163,26 @@ class ScannerViewModel(
                         )
                     )
                 }
+                if (!isCurrentScan(scanToken)) return@launch
                 _uiState.value = ScannerUiState.Complete(
                     report = report,
                     sessionId = sessionId,
                     stageEvents = stageEvents.toList()
                 )
             } catch (ce: CancellationException) {
-                val sessionId = withContext(Dispatchers.IO) {
+                val deepInspectionEnabled = deepInspection ?: withContext(NonCancellable) {
+                    settingsRepository.deepFileInspectionEnabled.first()
+                }
+                val sessionId = withContext(NonCancellable + Dispatchers.IO) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.CANCELLED,
                             startedAtMs = startedAt,
-                            endedAtMs = System.currentTimeMillis(),
+                            endedAtMs = currentTimeMs(),
                             failureReason = "Cancelled by user",
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
-                            deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
+                            deepInspectionEnabled = deepInspectionEnabled,
                             feedSource = FEED_SOURCE,
                             feedVersion = null,
                             feedAuthenticity = FEED_AUTHENTICITY,
@@ -151,22 +192,24 @@ class ScannerViewModel(
                         )
                     )
                 }
-                _uiState.value = ScannerUiState.Cancelled(
-                    sessionId = sessionId,
-                    stageEvents = stageEvents.toList(),
-                    lastCompletedReport = previousCompleted
-                )
+                if (isCurrentScan(scanToken)) {
+                    _uiState.value = ScannerUiState.Cancelled(
+                        sessionId = sessionId,
+                        stageEvents = stageEvents.toList(),
+                        lastCompletedReport = previousCompleted
+                    )
+                }
             } catch (t: Throwable) {
                 val sessionId = withContext(Dispatchers.IO) {
                     sessionRepository.saveSession(
                         ScanSessionSaveRequest(
                             status = ScanStageId.FAILED,
                             startedAtMs = startedAt,
-                            endedAtMs = System.currentTimeMillis(),
+                            endedAtMs = currentTimeMs(),
                             failureReason = t.message ?: "Unknown error",
                             scannerEngineVersion = ScannerModule.scannerEngineVersion(),
                             schemaVersion = ScannerModule.scanSchemaVersion(),
-                            deepInspectionEnabled = settingsRepository.deepFileInspectionEnabled.first(),
+                            deepInspectionEnabled = deepInspection ?: settingsRepository.deepFileInspectionEnabled.first(),
                             feedSource = FEED_SOURCE,
                             feedVersion = null,
                             feedAuthenticity = FEED_AUTHENTICITY,
@@ -176,31 +219,48 @@ class ScannerViewModel(
                         )
                     )
                 }
-                _uiState.value = ScannerUiState.Error(
-                    message = "Scan failed: ${t.message ?: "unknown error"}",
-                    sessionId = sessionId,
-                    stageEvents = stageEvents.toList(),
-                    lastCompletedReport = previousCompleted
-                )
+                if (isCurrentScan(scanToken)) {
+                    _uiState.value = ScannerUiState.Error(
+                        message = "Scan failed: ${t.message ?: "unknown error"}",
+                        sessionId = sessionId,
+                        stageEvents = stageEvents.toList(),
+                        lastCompletedReport = previousCompleted
+                    )
+                }
+            } finally {
+                if (isCurrentScan(scanToken)) {
+                    if (_uiState.value is ScannerUiState.Scanning && localCancelRequested.get()) {
+                        _uiState.value = ScannerUiState.Cancelled(
+                            sessionId = null,
+                            stageEvents = stageEvents.toList(),
+                            lastCompletedReport = previousCompleted
+                        )
+                    }
+                    scanJob = null
+                    activeCancelRequest = null
+                    cancelRequested.set(false)
+                }
             }
         }
     }
 
     fun cancelScan() {
         cancelRequested.set(true)
+        activeCancelRequest?.set(true)
         scanJob?.cancel()
-        scanJob = null
     }
 
     override fun onCleared() {
+        activeCancelRequest?.set(true)
         scanJob?.cancel()
+        scanJob = null
     }
 
     fun reset() {
         _uiState.value = ScannerUiState.Empty
     }
 
-    private fun isActive(): Boolean = scanJob?.isActive == true
+    private fun isCurrentScan(scanToken: Long): Boolean = activeScanToken == scanToken
 
     class Factory(private val appContext: Context) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")

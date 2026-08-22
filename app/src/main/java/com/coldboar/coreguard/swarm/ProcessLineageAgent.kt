@@ -95,14 +95,14 @@ class ProcessLineageAgent(
     }
 
     private fun evaluate(): SwarmSignal {
-        // Priority 1: active tracer (debugger attached)
+        // Priority 1: active external tracer (debugger attached)
         val pid = tracerPid()
         if (pid > 0) {
             return SwarmSignal(
                 agentId = agentId,
                 signalType = SwarmSignalType.PROCESS_ANOMALY,
                 severity = SwarmSeverity.CRITICAL,
-                details = "Native debugger/tracer attached (TracerPid=$pid). Active instrumentation likely.",
+                details = "External debugger/tracer attached (TracerPid=$pid). Active instrumentation likely.",
                 metadata = mapOf("tracer_pid" to pid.toString()),
             )
         }

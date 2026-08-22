@@ -16,7 +16,6 @@
 #include <jni.h>
 #include <android/log.h>
 
-#include <sys/ptrace.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netinet/in.h>
@@ -57,7 +56,6 @@ const char *const kRootMountMarkers[] = {
 // Baseline checksum of our own executable code segment, captured at load time.
 uint64_t g_text_baseline = 0;
 bool g_baseline_ready = false;
-bool g_ptrace_protected = false;
 
 // FNV-1a 64-bit hash – small, dependency-free, good enough for integrity diffs.
 uint64_t fnv1a(const uint8_t *data, size_t len, uint64_t seed = 1469598103934665603ULL) {
@@ -145,7 +143,7 @@ Java_com_coldboar_coreguard_NativeTamperGuard_nativeTracerPid(JNIEnv *, jobject)
 
 JNIEXPORT jboolean JNICALL
 Java_com_coldboar_coreguard_NativeTamperGuard_nativePtraceProtected(JNIEnv *, jobject) {
-    return g_ptrace_protected ? JNI_TRUE : JNI_FALSE;
+    return JNI_FALSE;
 }
 
 // Attempts a short-timeout TCP connect to the known Frida ports on loopback.
@@ -283,24 +281,12 @@ Java_com_coldboar_coreguard_NativeTamperGuard_nativeBaselineReady(JNIEnv *, jobj
 // process lifecycle. This is where we install anti-debug and capture the code
 // baseline, before any attacker-controlled code has a chance to run.
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *, void *) {
-    // Anti-debugging: self-attach with ptrace. Android permits only one tracer
-    // per process, so this blocks a later gdb/lldb from attaching. It returns
-    // -1 if a tracer is already present (e.g. an attached debugger).
-    long rc = ptrace(PTRACE_TRACEME, 0, 0, 0);
-    if (rc == 0) {
-        g_ptrace_protected = true;
-    } else {
-        g_ptrace_protected = false;
-        LOGI("ptrace TRACEME failed rc=%ld errno=%d (%s)", rc, errno, strerror(errno));
-    }
-
     // Capture the pristine checksum of our executable code for later integrity
     // verification against inline hooks.
     g_text_baseline = compute_text_checksum();
     g_baseline_ready = true;
 
-    LOGI("TamperGuard initialised (ptrace_protected=%d, baseline=%d)",
-         g_ptrace_protected ? 1 : 0, g_text_baseline != 0 ? 1 : 0);
+    LOGI("TamperGuard initialised (baseline=%d)", g_text_baseline != 0 ? 1 : 0);
 
     return JNI_VERSION_1_6;
 }

@@ -6,6 +6,7 @@ import org.json.JSONObject
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.util.TimeZone
 
 /**
  * Unit tests for [ComplianceReportExporter.toJson] (pure-JVM, no Android context needed).
@@ -67,6 +68,40 @@ class ComplianceReportExporterTest {
         val root = JSONObject(json)
         assertEquals(100, root.getInt("overallScore"))
     }
+
+    @Test
+    fun `generatedAt is UTC at epoch in UTC timezone`() {
+        assertEpochTimestampForTimezone("UTC")
+    }
+
+    @Test
+    fun `generatedAt is UTC at epoch in America Chicago timezone`() {
+        assertEpochTimestampForTimezone("America/Chicago")
+    }
+
+    @Test
+    fun `generatedAt is UTC at epoch in America Los Angeles timezone`() {
+        assertEpochTimestampForTimezone("America/Los_Angeles")
+    }
+
+    @Test
+    fun `generatedAt is UTC at epoch in Asia Tokyo timezone`() {
+        assertEpochTimestampForTimezone("Asia/Tokyo")
+    }
+
+    private fun assertEpochTimestampForTimezone(timezoneId: String) {
+        val original = TimeZone.getDefault()
+        try {
+            TimeZone.setDefault(TimeZone.getTimeZone(timezoneId))
+            val report = MasvsComplianceScorer.score(emptyList())
+                .copy(generatedAtMs = 0L)
+            val json = ExporterHelper.toJson(report)
+            val generatedAt = JSONObject(json).getString("generatedAt")
+            assertEquals("1970-01-01T00:00:00Z", generatedAt)
+        } finally {
+            TimeZone.setDefault(original)
+        }
+    }
 }
 
 /** Test helper that exposes the pure-JSON logic without requiring an Android Context. */
@@ -76,8 +111,12 @@ private object ExporterHelper {
         val root = org.json.JSONObject()
         root.put("reportVersion", "1")
         root.put("standard", "OWASP MASVS v2")
-        root.put("generatedAt", java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US)
-            .format(java.util.Date(report.generatedAtMs)))
+        root.put(
+            "generatedAt",
+            java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }.format(java.util.Date(report.generatedAtMs))
+        )
         root.put("overallScore", report.overallScore)
         val categories = org.json.JSONArray()
         for (cat in report.categoryScores) {

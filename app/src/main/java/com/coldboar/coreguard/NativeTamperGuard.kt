@@ -11,9 +11,9 @@ import android.util.Log
  * symbol is missing) every accessor degrades to a benign default so the app
  * never crashes because of the security layer itself.
  *
- * Loading the library triggers `JNI_OnLoad`, which installs the `ptrace`
- * anti-debug guard and captures the code-integrity baseline as early as
- * possible, so [ensureLoaded] should be called from `Application.onCreate`.
+ * Loading the library triggers `JNI_OnLoad`, which captures the code-integrity
+ * baseline as early as possible, so [ensureLoaded] should be called from
+ * `Application.onCreate`.
  */
 object NativeTamperGuard {
 
@@ -44,7 +44,7 @@ object NativeTamperGuard {
     /** TracerPid from `/proc/self/status`; 0 when no debugger/tracer attached. */
     fun tracerPid(): Int = safe(0) { nativeTracerPid() }
 
-    /** Whether the early `ptrace(PTRACE_TRACEME)` anti-debug guard is engaged. */
+    /** Legacy anti-debug self-trace flag (always false; retained for ABI stability). */
     fun ptraceProtected(): Boolean = safe(false) { nativePtraceProtected() }
 
     /** True when a Frida server/gadget is listening on a known loopback port. */
