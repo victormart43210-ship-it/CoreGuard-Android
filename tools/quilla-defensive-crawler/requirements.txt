@@ -23,13 +23,13 @@ pydantic==2.7.4
 pydantic-core==2.18.4
 annotated-types>=0.6
 
-# Cryptography
-cryptography==48.0.1
+# Cryptography — advisory floor >=50.0.0 (PKCS#7 / path-building)
+cryptography==50.0.0
 cffi>=1.16
 pycparser>=2.22
 
 # Dev extras (tests)
-pytest==8.2.2
+pytest==9.1.1
 pytest-cov==5.0.0
 mypy==1.10.1
 ruff==0.4.10

@@ -1,16 +1,19 @@
 package com.quilla.intelligence.sdk.intel
 
+import com.coldboar.coreguard.net.HardenedHttpsDownloader
+import com.coldboar.coreguard.net.PublicIntelFeedPins
 import com.quilla.intelligence.sdk.model.StixIndicator
 import org.json.JSONArray
 import org.json.JSONObject
-import java.net.HttpURLConnection
-import java.net.URL
 import java.util.concurrent.TimeUnit
 
 /**
  * Production [MultiSourceStixFetcher] that pulls public STIX2 IOC bundles from
  * Amnesty Tech investigations, MVT indicator campaigns, and open stalkerware
  * indicator projects.
+ *
+ * Only SHA-256-pinned immutable URLs from [PublicIntelFeedPins] are consumed.
+ * Integrity failures fail closed (feed skipped; no poisoned indicators).
  *
  * Defensive use only — results feed Quilla correlation / Research, not offensive tooling.
  * Network I/O is synchronous; call from a background thread.
@@ -23,6 +26,8 @@ class PublicMultiSourceStixFetcher(
     data class Feed(
         val name: String,
         val url: String,
+        val sha256Hex: String,
+        val maxBytes: Int = 12 * 1024 * 1024,
         val ttlDays: Long = 30L
     )
 
@@ -39,89 +44,44 @@ class PublicMultiSourceStixFetcher(
     }
 
     private fun fetchFeed(feed: Feed): List<StixIndicator> {
+        if (PublicIntelFeedPins.isFloatingBranchUrl(feed.url)) return emptyList()
         if (!feed.url.startsWith("https://", ignoreCase = true)) return emptyList()
-        val connection = (URL(feed.url).openConnection() as HttpURLConnection).apply {
-            connectTimeout = CONNECT_TIMEOUT_MS
-            readTimeout = READ_TIMEOUT_MS
-            setRequestProperty("Accept", "application/json, */*")
-            setRequestProperty("User-Agent", USER_AGENT)
-            instanceFollowRedirects = true
-        }
-        return try {
-            connection.connect()
-            if (connection.responseCode !in 200..299) return emptyList()
-            val bytes = connection.inputStream.use { it.readBytes() }
-            if (bytes.size > MAX_BYTES) return emptyList()
-            parseStixBundle(
-                json = String(bytes, Charsets.UTF_8),
+        if (feed.sha256Hex.isBlank()) return emptyList()
+
+        val download = HardenedHttpsDownloader.download(
+            url = feed.url,
+            policy = HardenedHttpsDownloader.Policy(
+                allowedHosts = PublicIntelFeedPins.ALLOWED_HOSTS,
+                maxBytes = feed.maxBytes,
+                expectedSha256Hex = feed.sha256Hex,
+                acceptHeader = "application/json, */*",
+                userAgent = USER_AGENT
+            )
+        )
+        return when (download) {
+            is HardenedHttpsDownloader.Result.Failure -> emptyList()
+            is HardenedHttpsDownloader.Result.Success -> parseStixBundle(
+                json = download.bytes.toString(Charsets.UTF_8),
                 sourceFeed = feed.name,
                 ttlTimestamp = nowMs() + TimeUnit.DAYS.toMillis(feed.ttlDays)
             )
-        } catch (_: Exception) {
-            emptyList()
-        } finally {
-            connection.disconnect()
         }
     }
 
     companion object {
-        private const val CONNECT_TIMEOUT_MS = 12_000
-        private const val READ_TIMEOUT_MS = 30_000
-        private const val MAX_BYTES = 12 * 1024 * 1024
         /** No artificial IOC teaching ceiling — Infinity correlator ingest. */
         private const val MAX_INDICATORS_PER_FEED = Int.MAX_VALUE
-        private const val USER_AGENT = "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
+        private const val USER_AGENT =
+            "CoreGuard-QuillaIntel/1.0 (defensive research; +https://github.com/victormart43210-ship-it/CoreGuard-Android)"
 
-        val DEFAULT_FEEDS: List<Feed> = listOf(
+        val DEFAULT_FEEDS: List<Feed> = PublicIntelFeedPins.STIX_RESEARCH_PINS.map { pin ->
             Feed(
-                "Amnesty Android campaign",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2023-03-29_android_campaign/malware.stix2"
-            ),
-            Feed(
-                "Amnesty NoviSpy",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2024-12-16_serbia_novispy/novispy.stix2"
-            ),
-            Feed(
-                "Amnesty Wintego Helios",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2024-05-02_wintego_helios/wintego_helios.stix2"
-            ),
-            Feed(
-                "Amnesty Pegasus (NSO)",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-07-18_nso/pegasus.stix2"
-            ),
-            Feed(
-                "Amnesty Cytrox / Predator",
-                "https://raw.githubusercontent.com/AmnestyTech/investigations/master/2021-12-16_cytrox/cytrox.stix2"
-            ),
-            Feed(
-                "MVT WyrmSpy/DragonEgg",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2023-07-25_wyrmspy_dragonegg/wyrmspy_dragonegg.stix2"
-            ),
-            Feed(
-                "MVT EagleMsgSpy",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2024-12-25_eaglemsgspy/eaglemsgspy.stix2"
-            ),
-            Feed(
-                "MVT DarkSword",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-03-30_darksword/darksword.stix2"
-            ),
-            Feed(
-                "MVT Coruna / CryptoWaters",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-03-03_coruna_cryptowaters/coruna.stix2"
-            ),
-            Feed(
-                "MVT IPS Morpheus",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/2026-04-23_ips_morpheus/morpheus.stix2"
-            ),
-            Feed(
-                "MVT ResidentBat",
-                "https://raw.githubusercontent.com/mvt-project/mvt-indicators/main/ResidentBat/residentbat.stix2"
-            ),
-            Feed(
-                "Open stalkerware IOCs",
-                "https://raw.githubusercontent.com/f00wl/stalkerware-indicators/master/generated/stalkerware.stix2"
+                name = pin.name,
+                url = pin.url,
+                sha256Hex = pin.sha256Hex,
+                maxBytes = pin.maxBytes
             )
-        )
+        }
 
         /**
          * Parses a STIX2 bundle into [StixIndicator] records.

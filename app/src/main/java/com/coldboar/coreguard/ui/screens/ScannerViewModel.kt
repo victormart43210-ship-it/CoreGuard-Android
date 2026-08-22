@@ -293,6 +293,7 @@ class ScannerViewModel(
     companion object {
         /** Attribution label included in every persisted scan session. */
         const val FEED_SOURCE = "Amnesty International Security Lab / mvt-project"
-        const val FEED_AUTHENTICITY = "Transport-protected but not cryptographically signed."
+        const val FEED_AUTHENTICITY =
+            "HTTPS + SHA-256 digest pin (PublicIntelFeedPins); not an upstream Ed25519 signature."
     }
 }

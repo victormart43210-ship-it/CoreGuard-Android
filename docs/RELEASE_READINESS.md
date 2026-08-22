@@ -39,6 +39,8 @@
 | **Signature pinning** | 🟡 PARTIALLY IMPLEMENTED | `SignatureCheckEvaluator` exists but `expectedSha256` is empty in demo — always WARN. Must be populated with the real signing certificate hash before release. |
 | **Root / emulator detection** | 🟡 HEURISTIC | Heuristic checks only. Advanced root frameworks may not be detected. |
 | **Play Store approval** | ⬛ NOT GUARANTEED | Submitting this app does not guarantee approval. Google reviews apps for policy compliance independently. |
+| **Public intel feed pins** | 🟡 DIGEST-PINNED | IOC/STIX/KEV/MISP URLs are commit- or path-pinned with SHA-256 digests (`PublicIntelFeedPins`). CISA KEV digests drift when CISA publishes; refresh pins deliberately — integrity failures fail closed (no SAFE/PASS substitution). |
+| **Privacy Shield upstream DNS** | 🟢 CONNECT+VALIDATE | Forwarding uses a connected UDP socket plus transaction-ID / sender checks. Plaintext UDP is not DoT/DoH and is not described as encrypting private connections. |
 
 ---
 

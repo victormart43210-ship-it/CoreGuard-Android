@@ -133,18 +133,36 @@ class GuardVpnService : VpnService() {
         }
     }
 
-    /** Forwards an allowed DNS query to the real resolver and relays the reply. */
+    /**
+     * Forwards an allowed DNS query to the real resolver and relays the reply.
+     *
+     * Uses a connected datagram socket plus [DnsUpstreamValidator] so a forged
+     * UDP reply from another address/port or with a mismatched transaction ID
+     * is never written into the tunnel.
+     */
     private fun forward(query: IpV4Udp.Datagram, upstream: InetAddress, output: FileOutputStream) {
         runCatching {
             DatagramSocket().use { socket ->
                 protect(socket)
                 socket.soTimeout = 4_000
-                val out = DatagramPacket(query.payload, query.payload.size, InetSocketAddress(upstream, 53))
+                socket.connect(InetSocketAddress(upstream, 53))
+                val out = DatagramPacket(query.payload, query.payload.size)
                 socket.send(out)
                 val respBuf = ByteArray(32_767)
                 val resp = DatagramPacket(respBuf, respBuf.size)
                 socket.receive(resp)
                 val answer = respBuf.copyOf(resp.length)
+                if (!DnsUpstreamValidator.accept(
+                        query = query.payload,
+                        response = answer,
+                        expectedUpstream = upstream,
+                        packetAddress = resp.address,
+                        packetPort = resp.port
+                    )
+                ) {
+                    Log.w(TAG, "Rejected forged or invalid upstream DNS reply")
+                    return@runCatching
+                }
                 output.write(IpV4Udp.buildReply(query, answer))
             }
         }.onFailure { Log.d(TAG, "upstream forward failed for query: ${it.message}") }
@@ -191,7 +209,9 @@ class GuardVpnService : VpnService() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID, "Privacy Shield", NotificationManager.IMPORTANCE_LOW
-            ).apply { description = "Protects your private connections" }
+            ).apply {
+                description = "DNS sinkhole for known indicator domains (plaintext UDP forward)"
+            }
             manager.createNotificationChannel(channel)
         }
         val pi = PendingIntent.getActivity(
@@ -200,7 +220,7 @@ class GuardVpnService : VpnService() {
         )
         return NotificationCompat.Builder(this, CHANNEL_ID)
             .setContentTitle("Privacy Shield active")
-            .setContentText("Protecting your private connections")
+            .setContentText("Blocking listed indicator domains via local DNS sinkhole")
             .setSmallIcon(R.drawable.ic_launcher_foreground)
             .setContentIntent(pi)
             .setOngoing(true)
