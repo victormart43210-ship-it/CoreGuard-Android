@@ -34,15 +34,22 @@ data class SecurityEventEntity(
     val previousEventHash: String?
 )
 
+/**
+ * Chain-order queries use SQLite's append-order rowid, not event timestamps.
+ * Several findings recorded during one refresh can share a timestamp, and
+ * finding timestamps can move backwards relative to the append order. Ordering
+ * the chain by timestamps would therefore validate a different sequence from
+ * the one used to build the links.
+ */
 @Dao
 interface SecurityEventDao {
     @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis DESC")
     fun allNewestFirst(): List<SecurityEventEntity>
 
-    @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis ASC")
+    @Query("SELECT * FROM security_events ORDER BY rowid ASC")
     fun allOldestFirst(): List<SecurityEventEntity>
 
-    @Query("SELECT * FROM security_events ORDER BY occurredAtEpochMillis DESC LIMIT 1")
+    @Query("SELECT * FROM security_events ORDER BY rowid DESC LIMIT 1")
     fun newest(): SecurityEventEntity?
 
     @Insert(onConflict = OnConflictStrategy.IGNORE)
@@ -53,7 +60,7 @@ interface SecurityEventDao {
 
     @Query(
         "DELETE FROM security_events WHERE occurredAtEpochMillis < :cutoff AND " +
-            "id NOT IN (SELECT id FROM security_events ORDER BY occurredAtEpochMillis DESC LIMIT 1)"
+            "id NOT IN (SELECT id FROM security_events ORDER BY rowid DESC LIMIT 1)"
     )
     fun deleteOlderThan(cutoff: Long)
 }
@@ -85,7 +92,7 @@ abstract class BookOfChangesDatabase : RoomDatabase() {
  * Book of Changes repository — meaningful security changes over time (Blueprint §9).
  * Hash chain is tamper-evident, not tamper-proof.
  */
-class BookOfChangesRepository private constructor(
+class BookOfChangesRepository internal constructor(
     private val dao: SecurityEventDao
 ) {
 
