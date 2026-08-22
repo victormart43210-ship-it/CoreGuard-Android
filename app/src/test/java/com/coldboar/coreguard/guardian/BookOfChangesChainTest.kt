@@ -92,6 +92,8 @@ class BookOfChangesChainTest {
 
     @Test
     fun chainStaysValidWhenFindingsShareATimestamp() {
+        // refreshIntelligence records every active finding in one pass, so several
+        // events commonly carry the identical lastSeen timestamp.
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         val sameInstant = 1_000_000L
@@ -107,7 +109,7 @@ class BookOfChangesChainTest {
         val dao = AppendOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))
-        repo.recordFinding(finding("check.b", 1_000L))
+        repo.recordFinding(finding("check.b", 1_000L)) // older than its predecessor
         repo.recordFinding(finding("check.c", 3_000L))
 
         assertTrue("Ledger must validate when event times are not monotonic", repo.chainValid())
@@ -115,6 +117,8 @@ class BookOfChangesChainTest {
 
     @Test
     fun timestampOrderedChainReproducesTheOnDeviceFailure() {
+        // Documents the defect: validating in timestamp order walks a different
+        // order than the links were built in, flagging an untampered ledger.
         val dao = TimestampOrderDao()
         val repo = BookOfChangesRepository(dao)
         repo.recordFinding(finding("check.a", 5_000L))
