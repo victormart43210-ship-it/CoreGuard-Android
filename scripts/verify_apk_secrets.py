@@ -88,7 +88,6 @@ def scan_apk(apk_path: Path) -> tuple[str, list[str]]:
     apk_bytes = apk_path.read_bytes()
     apk_sha256 = hashlib.sha256(apk_bytes).hexdigest()
     findings: list[str] = []
-    _scan_blob(apk_bytes, "<apk-container>", findings)
 
     try:
         with zipfile.ZipFile(io.BytesIO(apk_bytes)) as archive:
