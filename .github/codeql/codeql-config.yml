@@ -1,0 +1,26 @@
+name: "CoreGuard CodeQL Config"
+
+# CoreGuard's primary Android security logic is Kotlin (java-kotlin).
+# Native C/C++ (NDK) is also analyzed where the repository supports it.
+# build-mode is explicit per language so Kotlin analysis can never be silently
+# dropped by a future `build-mode: none` change — enforced by
+# scripts/ci/verify_codeql_coverage.py (fail-closed).
+languages:
+  - java-kotlin
+  - cpp
+
+build-mode:
+  java-kotlin: autobuild
+  cpp: autobuild
+
+queries:
+  - uses: security-extended
+  - uses: security-and-quality
+
+paths-ignore:
+  - "app/build"
+  - "core/build"
+  - "**/build"
+  - "**/.gradle"
+  - "**/.idea"
+  - "node_modules"

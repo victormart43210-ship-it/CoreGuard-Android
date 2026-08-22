@@ -1,0 +1,422 @@
+{
+  "schema_version": "1.0.0",
+  "policy": "New direct production dependencies require a PR adding an entry to this file before merge. See docs/security/DEPENDENCY_ACCEPTANCE.md. Transitive deps are NOT inventoried here (YAGNI); they are covered by automated dependency scanning.",
+  "sources": [
+    "app/build.gradle",
+    "gradle/android-app.gradle",
+    "tools/quilla-defensive-crawler/requirements.txt",
+    "cli/go.mod"
+  ],
+  "dependencies": [
+    {
+      "name": "androidx.core:core-ktx",
+      "version": "1.13.1",
+      "purpose": "Kotlin extensions for Android core primitives (Activity/Context helpers).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Core Android framework glue; not directly sensitive.",
+      "why_needed": "Baseline AndroidX Kotlin extensions used across all activities/services."
+    },
+    {
+      "name": "androidx.appcompat:appcompat",
+      "version": "1.7.0",
+      "purpose": "Backwards-compatible Activity/AppCompat UI infrastructure.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "UI infrastructure; no direct sensitive-data handling.",
+      "why_needed": "Backwards-compatible View-system activity support for legacy screens."
+    },
+    {
+      "name": "com.google.android.material:material",
+      "version": "1.12.0",
+      "purpose": "Material Design UI components.",
+      "license": "Apache-2.0",
+      "source": "https://github.com/material-components/material-components-android",
+      "maintainer": "Google (Material Components)",
+      "security_relevance": "UI components only; no sensitive flows.",
+      "why_needed": "Material Design widgets for the release UI."
+    },
+    {
+      "name": "androidx.constraintlayout:constraintlayout",
+      "version": "2.1.4",
+      "purpose": "ConstraintLayout view-group for declarative layouts.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Layout engine; not sensitive.",
+      "why_needed": "Used by legacy View-system layouts."
+    },
+    {
+      "name": "androidx.lifecycle:lifecycle-runtime-ktx",
+      "version": "2.8.4",
+      "purpose": "Lifecycle-aware components runtime.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Lifecycle glue; not directly sensitive.",
+      "why_needed": "Lifecycle observation for ViewModels and services."
+    },
+    {
+      "name": "androidx.lifecycle:lifecycle-viewmodel-ktx",
+      "version": "2.8.4",
+      "purpose": "ViewModel implementation for MVVM (Dashboard/Scanner view models).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Holds UI state; not directly sensitive.",
+      "why_needed": "MVVM architecture; manual constructor injection used."
+    },
+    {
+      "name": "androidx.lifecycle:lifecycle-viewmodel-compose",
+      "version": "2.8.4",
+      "purpose": "Compose integration for ViewModels.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "UI state; not directly sensitive.",
+      "why_needed": "Bridges Compose UI with ViewModel state holders."
+    },
+    {
+      "name": "androidx.datastore:datastore-preferences",
+      "version": "1.1.1",
+      "purpose": "Preferences DataStore for persisting UserSettings (replaces SharedPreferences).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Stores user settings on-device; no remote transmission.",
+      "why_needed": "Type-safe, coroutine-based settings persistence."
+    },
+    {
+      "name": "androidx.work:work-runtime-ktx",
+      "version": "2.9.1",
+      "purpose": "WorkManager for deferrable background work (SecurityPulseWorker).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Schedules background work; review for battery/background limits.",
+      "why_needed": "Battery-aware Guardian Score pulse scheduling."
+    },
+    {
+      "name": "androidx.compose:compose-bom",
+      "version": "2024.06.00",
+      "purpose": "Bill of Materials aligning Compose library versions.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "Version alignment only (platform); not shipped as code.",
+      "why_needed": "Pins consistent Compose artifact versions."
+    },
+    {
+      "name": "androidx.compose.ui:ui",
+      "version": "BOM-managed (2024.06.00)",
+      "purpose": "Jetpack Compose UI core.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "UI toolkit; not directly sensitive.",
+      "why_needed": "Compose UI rendering for MainActivity screens."
+    },
+    {
+      "name": "androidx.compose.ui:ui-graphics",
+      "version": "BOM-managed (2024.06.00)",
+      "purpose": "Compose graphics primitives.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "UI graphics; not sensitive.",
+      "why_needed": "Compose graphics support."
+    },
+    {
+      "name": "androidx.compose.ui:ui-tooling-preview",
+      "version": "BOM-managed (2024.06.00)",
+      "purpose": "Compose @Preview support for the release build.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "Tooling only; not sensitive.",
+      "why_needed": "Compose preview rendering in release builds."
+    },
+    {
+      "name": "androidx.compose.material3:material3",
+      "version": "BOM-managed (2024.06.00)",
+      "purpose": "Material 3 Compose components.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "UI components; not sensitive.",
+      "why_needed": "Material 3 design system for Compose UI."
+    },
+    {
+      "name": "androidx.compose.material:material-icons-extended",
+      "version": "BOM-managed (2024.06.00)",
+      "purpose": "Extended Material icon set for Compose.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX Compose)",
+      "security_relevance": "Icon assets; not sensitive.",
+      "why_needed": "Icons used across Compose screens."
+    },
+    {
+      "name": "androidx.activity:activity-compose",
+      "version": "1.8.2",
+      "purpose": "Compose integration for Activity (setContent).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Activity UI glue; not directly sensitive.",
+      "why_needed": "Hosts Compose content in MainActivity."
+    },
+    {
+      "name": "androidx.navigation:navigation-compose",
+      "version": "2.7.7",
+      "purpose": "Compose navigation graph between screens.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "UI navigation; not sensitive.",
+      "why_needed": "In-app screen routing for Compose."
+    },
+    {
+      "name": "org.jetbrains.kotlinx:kotlinx-coroutines-core",
+      "version": "1.7.3",
+      "purpose": "Kotlin structured concurrency primitives.",
+      "license": "Apache-2.0",
+      "source": "https://github.com/Kotlin/kotlinx.coroutines",
+      "maintainer": "JetBrains",
+      "security_relevance": "Concurrency runtime; review threading of sensitive work.",
+      "why_needed": "Async/coroutine support across networking and scanning."
+    },
+    {
+      "name": "androidx.biometric:biometric",
+      "version": "1.1.0",
+      "purpose": "BiometricPrompt for app-unlock authentication.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Touches local biometric authentication; sensitive.",
+      "why_needed": "Device biometric unlock for sensitive settings."
+    },
+    {
+      "name": "com.android.billingclient:billing-ktx",
+      "version": "7.1.1",
+      "purpose": "Google Play Billing Library for Premium subscriptions.",
+      "license": "Apache-2.0",
+      "source": "https://developer.android.com/google/play/billing/library",
+      "maintainer": "Google (Play Billing)",
+      "security_relevance": "Handles purchase/entitlement flows and obfuscated account IDs; sensitive.",
+      "why_needed": "Premium subscription entitlement via Google Play."
+    },
+    {
+      "name": "androidx.room:room-runtime",
+      "version": "2.6.1",
+      "purpose": "Room persistence library runtime (local database).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "On-device local database; review for sensitive row data.",
+      "why_needed": "Local structured storage of scan findings and settings."
+    },
+    {
+      "name": "androidx.room:room-ktx",
+      "version": "2.6.1",
+      "purpose": "Kotlin coroutines extension for Room.",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "DB access glue; not separately sensitive from room-runtime.",
+      "why_needed": "Coroutine-friendly DB access."
+    },
+    {
+      "name": "androidx.room:room-compiler",
+      "version": "2.6.1",
+      "purpose": "Room annotation processor (kapt, compile-time only; not shipped).",
+      "license": "Apache-2.0",
+      "source": "https://android.googlesource.com/platform/frameworks/support/",
+      "maintainer": "Google (AndroidX)",
+      "security_relevance": "Compile-time code generator; not in runtime APK.",
+      "why_needed": "Generates Room DAO implementations at build time."
+    },
+    {
+      "name": "httpx",
+      "version": "0.27.2",
+      "purpose": "HTTP client for the Quilla defensive crawler (operator tooling).",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/encode/httpx",
+      "maintainer": "Encode (Tom Christie)",
+      "security_relevance": "Performs outbound HTTP for crawler; review TLS/redirect handling.",
+      "why_needed": "HTTP/2-capable client for fetching open-source intel sources."
+    },
+    {
+      "name": "anyio",
+      "version": "4.14.2",
+      "purpose": "Async compatibility layer used by httpx.",
+      "license": "MIT",
+      "source": "https://github.com/agronholm/anyio",
+      "maintainer": "Alex Grönholm",
+      "security_relevance": "Async runtime abstraction; not directly sensitive.",
+      "why_needed": "Required by httpx for async transport."
+    },
+    {
+      "name": "certifi",
+      "version": "2024.7.4",
+      "purpose": "Mozilla CA bundle for TLS verification.",
+      "license": "MPL-2.0",
+      "source": "https://github.com/certifi/python-certifi",
+      "maintainer": "Kenneth Reitz / certifi",
+      "security_relevance": "Trust store; must stay current for TLS integrity.",
+      "why_needed": "TLS certificate validation for crawler HTTP requests."
+    },
+    {
+      "name": "h11",
+      "version": ">=0.14,<0.15",
+      "purpose": "HTTP/1.1 protocol implementation used by httpcore.",
+      "license": "MIT",
+      "source": "https://github.com/python-hyper/h11",
+      "maintainer": "python-hyper",
+      "security_relevance": "Protocol parsing; review for parser vulnerabilities.",
+      "why_needed": "HTTP/1.1 wire protocol for httpx."
+    },
+    {
+      "name": "h2",
+      "version": "4.4.1",
+      "purpose": "HTTP/2 protocol implementation.",
+      "license": "MIT",
+      "source": "https://github.com/python-hyper/h2",
+      "maintainer": "python-hyper",
+      "security_relevance": "Protocol parsing; review for parser vulnerabilities.",
+      "why_needed": "HTTP/2 support for httpx."
+    },
+    {
+      "name": "hpack",
+      "version": ">=4,<5",
+      "purpose": "HPACK header compression for HTTP/2.",
+      "license": "MIT",
+      "source": "https://github.com/python-hyper/hpack",
+      "maintainer": "python-hyper",
+      "security_relevance": "Header compression; review for header-injection issues.",
+      "why_needed": "Required by h2."
+    },
+    {
+      "name": "hyperframe",
+      "version": ">=6,<7",
+      "purpose": "HTTP/2 frame parsing.",
+      "license": "MIT",
+      "source": "https://github.com/python-hyper/hyperframe",
+      "maintainer": "python-hyper",
+      "security_relevance": "Frame parsing; review for parser vulnerabilities.",
+      "why_needed": "Required by h2."
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.5",
+      "purpose": "Core transport layer for httpx.",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/encode/httpcore",
+      "maintainer": "Encode",
+      "security_relevance": "Connection transport; review TLS and connection pooling.",
+      "why_needed": "Low-level HTTP transport used by httpx."
+    },
+    {
+      "name": "idna",
+      "version": ">=3.4",
+      "purpose": "Internationalized domain name handling.",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/kjd/idna",
+      "maintainer": "Kim Davies",
+      "security_relevance": "Domain-name parsing; review for IDN spoofing handling.",
+      "why_needed": "IDN normalization for URLs in httpx."
+    },
+    {
+      "name": "beautifulsoup4",
+      "version": "4.12.3",
+      "purpose": "HTML parsing for the Quilla crawler's extractor.",
+      "license": "MIT",
+      "source": "https://git.launchpad.net/beautifulsoup",
+      "maintainer": "Leonard Richardson",
+      "security_relevance": "Parses untrusted HTML; review for parser-based issues.",
+      "why_needed": "Structured extraction from fetched open-source pages."
+    },
+    {
+      "name": "lxml",
+      "version": "6.1.0",
+      "purpose": "XML/HTML parser backend for beautifulsoup4.",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/lxml/lxml",
+      "maintainer": "lxml project (Stefan Behnel)",
+      "security_relevance": "Native parser of untrusted content; review for CVEs.",
+      "why_needed": "Fast, robust HTML/XML parsing for the extractor."
+    },
+    {
+      "name": "soupsieve",
+      "version": "2.8.4",
+      "purpose": "CSS selector engine for beautifulsoup4.",
+      "license": "MIT",
+      "source": "https://github.com/facelessuser/soupsieve",
+      "maintainer": "facelessuser",
+      "security_relevance": "Selector parsing; not directly sensitive.",
+      "why_needed": "CSS selector support for BeautifulSoup."
+    },
+    {
+      "name": "pydantic",
+      "version": "2.13.4",
+      "purpose": "Schema validation for crawler models/bundles.",
+      "license": "MIT",
+      "source": "https://github.com/pydantic/pydantic",
+      "maintainer": "Pydantic (Samuel Colvin et al.)",
+      "security_relevance": "Input validation; review for model-parsing issues.",
+      "why_needed": "Typed validation of crawler config and bundle schemas."
+    },
+    {
+      "name": "annotated-types",
+      "version": ">=0.6",
+      "purpose": "Annotated type metadata used by pydantic.",
+      "license": "MIT",
+      "source": "https://github.com/annotated-types/annotated-types",
+      "maintainer": "annotated-types",
+      "security_relevance": "Type metadata; not sensitive.",
+      "why_needed": "Required by pydantic for annotated constraints."
+    },
+    {
+      "name": "cryptography",
+      "version": "50.0.0",
+      "purpose": "Cryptography for bundle signing and PKCS#7 path building.",
+      "license": "Apache-2.0 OR BSD-3-Clause",
+      "source": "https://github.com/pyca/cryptography",
+      "maintainer": "pyca / Python Cryptographic Authority",
+      "security_relevance": "Core crypto; sensitive — keep current with pyca advisories.",
+      "why_needed": "Signs and verifies threat-intel bundles."
+    },
+    {
+      "name": "cffi",
+      "version": ">=1.16",
+      "purpose": "C foreign-function interface used by cryptography.",
+      "license": "MIT",
+      "source": "https://github.com/python-cffi/cffi",
+      "maintainer": "Armin Rigo / python-cffi",
+      "security_relevance": "FFI layer for crypto bindings; review for memory-safety issues.",
+      "why_needed": "Bindings for OpenSSL in cryptography."
+    },
+    {
+      "name": "pycparser",
+      "version": ">=2.22",
+      "purpose": "C parser used by cffi.",
+      "license": "BSD-3-Clause",
+      "source": "https://github.com/eliben/pycparser",
+      "maintainer": "Eli Bendersky",
+      "security_relevance": "Build-time parser for cffi; not directly sensitive.",
+      "why_needed": "Required by cffi to parse C declarations."
+    },
+    {
+      "name": "github.com/spf13/cobra",
+      "version": "v1.10.2",
+      "purpose": "CLI framework for the CoreGuard CLI.",
+      "license": "Apache-2.0",
+      "source": "https://github.com/spf13/cobra",
+      "maintainer": "Steve Francia (spf13)",
+      "security_relevance": "CLI argument parsing; not sensitive.",
+      "why_needed": "Command/flag structure for the Go CLI."
+    }
+  ]
+}
